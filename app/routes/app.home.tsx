@@ -32,6 +32,9 @@ export default function AppHome() {
 
       <nav className="grid gap-2">
         <Button variant="secondary" asChild className="justify-start">
+          <Link to="/app/hom-nay">Hôm nay (Bát Tự)</Link>
+        </Button>
+        <Button variant="secondary" asChild className="justify-start">
           <Link to="/app/bat-dau">Bắt đầu / chào mừng</Link>
         </Button>
         <Button variant="secondary" asChild className="justify-start">
