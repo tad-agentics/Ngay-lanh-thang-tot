@@ -2,13 +2,13 @@
 Updated: 2026-03-25
 
 ## Current focus
-**Foundation complete** — landing `/` pre-rendered, auth routes wired, `/app` shell guarded, PWA static files + Edge stubs on `staging`.
+**Cross-cutting `legal-settings`** complete: public `/chinh-sach-bao-mat`, `/dieu-khoan`; aliases `/privacy`, `/terms`; `/app/cai-dat-app` (PWA + data-request mailto); Cài đặt + landing footer legal links.
 
-## Active workstreams
-- —
+## Active wave
+**Post-wave** — visual audit, pre-handoff QA, deploy polish.
 
 ## Next up
-Wave 1 (`auth-profile-billing`): PayOS checkout + webhook, Welcome / billing screens per `artifacts/plans/build-plan.md`. Run parallel `/feature` workstreams as needed.
+Visual audit (staging vs Make); pre-handoff `/review`; deploy Edge `SITE_URL` cho `share-og` if not set.
 
 ## Blockers
 None

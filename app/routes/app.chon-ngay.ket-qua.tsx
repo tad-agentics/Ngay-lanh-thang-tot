@@ -1,0 +1,276 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
+import { toast } from "sonner";
+
+import { ChonNgayLoadingPanel } from "~/components/chon-ngay/ChonNgayLoadingPanel";
+import { ResultDayCard } from "~/components/chon-ngay/ResultDayCard";
+import { ErrorBanner } from "~/components/ErrorBanner";
+import { ScreenHeader } from "~/components/ScreenHeader";
+import { Button } from "~/components/ui/button";
+import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
+import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
+import {
+  mapChonNgayPayloadToResultDays,
+  mergeReasonsIntoDays,
+} from "~/lib/chon-ngay-result";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
+import { useProfile } from "~/hooks/useProfile";
+import type { ResultDay } from "~/lib/api-types";
+
+function subscriptionActive(expires: string | null | undefined): boolean {
+  if (!expires) return false;
+  return new Date(expires) > new Date();
+}
+
+type Phase = 0 | 1 | 2;
+
+export default function AppChonNgayKetQua() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as ChonNgayKetQuaState | null;
+
+  const { profile, loading: profileLoading, refresh } = useProfile();
+  const { costs } = useFeatureCosts();
+
+  const [phase, setPhase] = useState<Phase>(0);
+  const [showResults, setShowResults] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [resultDays, setResultDays] = useState<ResultDay[]>([]);
+  const [unlockedDetail, setUnlockedDetail] = useState(false);
+  const [detailBusy, setDetailBusy] = useState(false);
+
+  useEffect(() => {
+    if (!state?.payload) {
+      navigate("/app/chon-ngay", { replace: true });
+    }
+  }, [state, navigate]);
+
+  const parsedDays = useMemo(
+    () => (state?.payload ? mapChonNgayPayloadToResultDays(state.payload, 5) : []),
+    [state?.payload],
+  );
+
+  useEffect(() => {
+    if (!state?.payload) return;
+    setResultDays(parsedDays);
+    setUnlockedDetail(false);
+    setPhase(0);
+    setShowResults(false);
+    setShowShare(false);
+  }, [state?.payload, parsedDays]);
+
+  useEffect(() => {
+    if (!state?.payload) return;
+    const t1 = window.setTimeout(() => setPhase(1), 800);
+    const t2 = window.setTimeout(() => setPhase(2), 1800);
+    const t3 = window.setTimeout(() => setShowResults(true), 2600);
+    const t4 = window.setTimeout(() => setShowShare(true), 4600);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      window.clearTimeout(t4);
+    };
+  }, [state?.payload]);
+
+  const perDetail = costs["chon_ngay_detail"]?.credit_cost ?? 2;
+  const detailTotal = perDetail * Math.max(1, resultDays.length);
+  const hasSub = subscriptionActive(profile?.subscription_expires_at);
+  const canBulkDetail =
+    hasSub || (profile?.credits_balance ?? 0) >= detailTotal;
+  const anyNeedsDetail = resultDays.some((d) => d.reasons.length === 0);
+
+  async function runDetailUnlock() {
+    if (!state || !profile?.ngay_sinh) return;
+    if (!canBulkDetail) {
+      navigate("/app/mua-luong");
+      return;
+    }
+    const base = profileToBatTuPersonQuery(profile);
+    setDetailBusy(true);
+    let next = [...resultDays];
+    for (const d of resultDays) {
+      if (d.reasons.length > 0) continue;
+      const dateDm = isoDateToDdMmYyyy(d.isoDate);
+      if (!dateDm) continue;
+      const res = await invokeBatTu({
+        op: "chon-ngay/detail",
+        body: {
+          ...base,
+          intent: state.intent,
+          date: dateDm,
+        },
+      });
+      if (!res.ok) {
+        toast.error(res.message);
+        setDetailBusy(false);
+        return;
+      }
+      const lines = extractDetailReasonLines(res.data);
+      next = mergeReasonsIntoDays(
+        next,
+        d.isoDate,
+        lines.length
+          ? lines
+          : ["Không có lý do chi tiết trong phản hồi API."],
+      );
+    }
+    setResultDays(next);
+    setUnlockedDetail(true);
+    await refresh();
+    setDetailBusy(false);
+    toast.success("Đã tải lý do chi tiết.");
+  }
+
+  if (!state) {
+    return null;
+  }
+
+  const bestDay = resultDays[0];
+
+  return (
+    <div className="px-4 pb-8">
+      <ScreenHeader
+        title={state.intentLabel}
+        subtitle={`${state.daysInclusive} ngày trong khoảng`}
+        className="pb-2"
+      />
+
+      {!showResults ? (
+        <ChonNgayLoadingPanel
+          dayCount={state.daysInclusive}
+          menh={null}
+          resultCount={3}
+          phase={phase}
+        />
+      ) : (
+        <div className="flex flex-col gap-3">
+          {parsedDays.length === 0 ? (
+            <div className="space-y-3">
+              <ErrorBanner message="Chưa đọc được danh sách ngày từ API — xem JSON gốc bên dưới để chỉnh mapper." />
+              <pre className="text-xs bg-card border border-border rounded-xl p-4 overflow-x-auto whitespace-pre-wrap break-words">
+                {JSON.stringify(state.payload, null, 2)}
+              </pre>
+            </div>
+          ) : (
+            <>
+              <p
+                className="text-muted-foreground text-xs pb-1"
+                style={{ fontFamily: "var(--font-ibm-mono)" }}
+              >
+                {resultDays.length} ngày phù hợp — sắp theo độ ưu tiên
+              </p>
+
+              {resultDays.map((day, i) => (
+                <ResultDayCard
+                  key={day.isoDate}
+                  grade={day.grade}
+                  dateLabel={day.dateLabel}
+                  lunarLabel={day.lunarLabel}
+                  truc={day.truc}
+                  bestHour={day.bestHour}
+                  reasons={unlockedDetail ? day.reasons : []}
+                  animationIndex={i}
+                  detailHref={`/app/ngay/${day.isoDate}`}
+                />
+              ))}
+
+              {!unlockedDetail && anyNeedsDetail ? (
+                <div
+                  className="border border-border bg-card px-4 py-4"
+                  style={{ borderRadius: "var(--radius-lg)" }}
+                >
+                  {profileLoading ? (
+                    <p className="text-muted-foreground text-sm">Đang tải hồ sơ…</p>
+                  ) : canBulkDetail ? (
+                    <>
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                        Xem lý do chi tiết cho các ngày trên —{" "}
+                        <span
+                          className="text-foreground"
+                          style={{ fontFamily: "var(--font-ibm-mono)" }}
+                        >
+                          {detailTotal} lượng
+                        </span>{" "}
+                        ({perDetail} lượng × {resultDays.length} ngày).
+                      </p>
+                      <Button
+                        size="cta_sm"
+                        disabled={detailBusy}
+                        onClick={() => void runDetailUnlock()}
+                      >
+                        {detailBusy ? "Đang tải…" : `Mở lý do (${detailTotal} lượng)`}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                        Cần{" "}
+                        <span
+                          className="text-foreground"
+                          style={{ fontFamily: "var(--font-ibm-mono)" }}
+                        >
+                          {detailTotal} lượng
+                        </span>{" "}
+                        để xem lý do cho {resultDays.length} ngày. Số dư:{" "}
+                        <span
+                          className="text-foreground"
+                          style={{ fontFamily: "var(--font-ibm-mono)" }}
+                        >
+                          {profile?.credits_balance ?? 0} lượng
+                        </span>
+                        .
+                      </p>
+                      <Button size="cta_sm" asChild>
+                        <Link to="/app/mua-luong">Mua thêm lượng</Link>
+                      </Button>
+                    </>
+                  )}
+                </div>
+              ) : null}
+
+              {showShare && bestDay ? (
+                <div className="mt-1">
+                  <Button variant="outline" size="cta_sm" asChild>
+                    <Link
+                      to="/app/chia-se"
+                      state={{
+                        resultType: "day_pick",
+                        suKien: state.intentLabel,
+                        day: {
+                          dateLabel: bestDay.dateLabel,
+                          lunarLabel: bestDay.lunarLabel,
+                          reasons:
+                            bestDay.reasons.length > 0
+                              ? bestDay.reasons
+                              : [
+                                  `${bestDay.truc} · giờ tốt ${bestDay.bestHour}`,
+                                ],
+                        },
+                        grade: bestDay.grade,
+                      }}
+                    >
+                      Chia sẻ ngày tốt
+                    </Link>
+                  </Button>
+                </div>
+              ) : null}
+
+              {unlockedDetail && bestDay ? (
+                <p
+                  className="text-muted-foreground text-xs text-center pt-1"
+                  style={{ fontFamily: "var(--font-ibm-mono)" }}
+                >
+                  Đã mở lý do chi tiết — giờ tốt gợi ý: {bestDay.bestHour}.
+                </p>
+              ) : null}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

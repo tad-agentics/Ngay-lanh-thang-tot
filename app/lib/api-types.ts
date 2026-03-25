@@ -141,6 +141,37 @@ export interface CreditPackage {
   subMonths: number | null;
 }
 
+// ─── tu-tru-api ChonNgay `intent` (OpenAPI IntentEnum) ─────────────────────
+
+export type TuTruIntent =
+  | "KHAI_TRUONG"
+  | "KY_HOP_DONG"
+  | "CAU_TAI"
+  | "NHAM_CHUC"
+  | "AN_HOI"
+  | "CUOI_HOI"
+  | "DAM_CUOI"
+  | "CAU_TU"
+  | "DONG_THO"
+  | "NHAP_TRACH"
+  | "LAM_NHA"
+  | "MUA_NHA_DAT"
+  | "XAY_BEP"
+  | "LAM_GIUONG"
+  | "DAO_GIENG"
+  | "AN_TANG"
+  | "CAI_TANG"
+  | "XUAT_HANH"
+  | "DI_CHUYEN_NGOAI"
+  | "TE_TU"
+  | "GIAI_HAN"
+  | "KHAM_BENH"
+  | "PHAU_THUAT"
+  | "NHAP_HOC_THI_CU"
+  | "KIEN_TUNG"
+  | "TRONG_CAY"
+  | "MAC_DINH";
+
 // ─── Edge: Bát Tự proxy ───────────────────────────────────────────────────
 
 export type BatTuOperation =
@@ -158,6 +189,10 @@ export type BatTuOperation =
   | "phong-thuy"
   | "share";
 
+/**
+ * `body` fields match tu-tru-api where applicable — see https://tu-tru-api.fly.dev/openapi.json
+ * Edge-only: `first_la_so_free` (boolean) skips credit charge for `op: "tu-tru"` when the profile has no lá số yet; it is not forwarded upstream.
+ */
 export interface BatTuRequest {
   op: BatTuOperation;
   body: Record<string, unknown>;
@@ -169,8 +204,10 @@ export interface BatTuResponse<T = unknown> {
 
 // ─── Edge: PayOS ───────────────────────────────────────────────────────────
 
+export type PackageSku = "le" | "goi_6thang" | "goi_12thang";
+
 export interface CreatePayosCheckoutRequest {
-  package_sku: string;
+  package_sku: PackageSku;
   return_url: string;
   cancel_url: string;
 }

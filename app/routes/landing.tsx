@@ -14,11 +14,11 @@ import { useInstallPrompt } from "~/hooks/useInstallPrompt";
 const FAQ_ITEMS = [
   {
     q: "App này có chính xác không?",
-    a: "Dựa trên Bát Tự Tử Trụ — hệ thống được sử dụng hơn 1.000 năm. Engine xử lý 3 tầng: lọc theo lịch vạn niên, loại ngày xung khắc với lá số cá nhân, chấm điểm theo đúng loại sự kiện.",
+    a: "Bát Tự Tứ Trụ là nền tảng đã dùng hơn 1.000 năm. Engine xử lý ba tầng: lọc theo lịch vạn niên, loại ngày xung khắc với lá số cá nhân, chấm điểm theo đúng loại sự kiện.",
   },
   {
     q: "Có cần biết giờ sinh không?",
-    a: "Có giờ sinh sẽ chính xác hơn — tính được Nhật Chủ đúng. Không biết giờ thì app vẫn tính được dựa trên ngày tháng năm sinh.",
+    a: "Có giờ sinh sẽ chính xác hơn — tính được Nhật Chủ đúng. Không biết giờ thì app vẫn tính được từ ngày tháng năm sinh.",
   },
   {
     q: "Khác gì với lịch vạn niên thường?",
@@ -60,7 +60,7 @@ export function meta({}: Route.MetaArgs) {
     {
       name: "description",
       content:
-        "Chọn ngày tốt theo đúng tuổi của bạn — trong 30 giây. Khai trương, đám cưới, nhập trạch, ký hợp đồng. Dựa trên Bát Tự Tử Trụ, kết quả cá nhân hóa.",
+        "Chọn ngày tốt theo đúng tuổi của bạn — trong 30 giây. Khai trương, đám cưới, nhập trạch, ký hợp đồng. Nền tảng Bát Tự Tử Trụ, kết quả cá nhân hóa.",
     },
     { property: "og:title", content: "Ngày Lành Tháng Tốt" },
     {
@@ -165,16 +165,16 @@ export default function Landing() {
         >
           <div className="mx-auto max-w-3xl px-4 py-8 grid gap-4 sm:grid-cols-2 text-sm leading-relaxed">
             <p>
-              <strong className="text-surface-foreground">①</strong> Dựa trên
-              Bát Tự Tử Trụ — hệ thống hơn 1.000 năm
+              <strong className="text-surface-foreground">①</strong> Bát Tự Tứ
+              Trụ — nền tảng hơn 1.000 năm
             </p>
             <p>
               <strong className="text-surface-foreground">②</strong> Kết quả
-              cá nhân hóa theo đúng lá số của bạn
+              cá nhân hóa theo bản mệnh và Dụng Thần của bạn
             </p>
             <p>
-              <strong className="text-surface-foreground">③</strong> Star rating
-              + số người dùng (khi có data thực)
+              <strong className="text-surface-foreground">③</strong> Đánh giá
+              sao và số người dùng (khi có dữ liệu thực)
             </p>
             <p>
               <strong className="text-surface-foreground">④</strong> Không
@@ -189,8 +189,8 @@ export default function Landing() {
           </h2>
           <ul className="mt-6 space-y-3 text-muted-foreground list-disc pl-5">
             <li>
-              Kết quả theo đúng lá số của bạn — không phải lịch chung cho mọi
-              người.
+              Kết quả gắn với bản mệnh của bạn — không phải lịch chung cho từng
+              nhóm tuổi.
             </li>
             <li>
               Phân loại sự kiện: khai trương, cưới hỏi, nhập trạch, ký hợp đồng
@@ -207,7 +207,7 @@ export default function Landing() {
           <h2 className="text-xl font-semibold tracking-tight">Cách hoạt động</h2>
           <ol className="mt-6 space-y-3 text-muted-foreground list-decimal pl-5">
             <li>Lọc theo lịch vạn niên.</li>
-            <li>Loại ngày xung khắc với lá số cá nhân của bạn.</li>
+            <li>Loại ngày xung khắc với bản mệnh của bạn.</li>
             <li>Chấm điểm theo đúng loại sự kiện bạn chọn.</li>
           </ol>
         </section>
@@ -315,6 +315,23 @@ export default function Landing() {
           </div>
         </div>
       ) : null}
+
+      <footer className="border-t border-border bg-muted/20">
+        <div className="mx-auto max-w-3xl px-4 py-8 flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-muted-foreground">
+          <Link
+            to="/chinh-sach-bao-mat"
+            className="hover:text-foreground underline-offset-4 hover:underline"
+          >
+            Chính sách bảo mật
+          </Link>
+          <Link
+            to="/dieu-khoan"
+            className="hover:text-foreground underline-offset-4 hover:underline"
+          >
+            Điều khoản sử dụng
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -16,19 +16,36 @@ export function useFeatureCosts(): {
 
   useEffect(() => {
     let cancelled = false;
-    supabase
-      .from("feature_credit_costs")
-      .select("*")
-      .then(({ data, error: qe }) => {
+
+    void (async () => {
+      try {
+        const { data, error: qe } = await supabase
+          .from("feature_credit_costs")
+          .select("*");
         if (cancelled) return;
-        if (qe) setError(qe.message);
-        else setError(null);
-        const rows: CostRow[] = (data ?? []) as CostRow[];
-        const map: Record<string, CostRow> = {};
-        for (const row of rows) map[row.feature_key] = row;
-        setCosts(map);
-        setLoading(false);
-      });
+        if (qe) {
+          setError(qe.message);
+          setCosts({});
+        } else {
+          setError(null);
+          const rows: CostRow[] = (data ?? []) as CostRow[];
+          const map: Record<string, CostRow> = {};
+          for (const row of rows) map[row.feature_key] = row;
+          setCosts(map);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setError(
+          e instanceof Error
+            ? e.message
+            : "Không tải được bảng giá lượng.",
+        );
+        setCosts({});
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
     return () => {
       cancelled = true;
     };

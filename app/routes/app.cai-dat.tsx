@@ -1,0 +1,314 @@
+import { useEffect, useState } from "react";
+import { ChevronRight, ExternalLink } from "lucide-react";
+import { Link } from "react-router";
+import { toast } from "sonner";
+
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useAuth } from "~/lib/auth";
+import { useProfile } from "~/hooks/useProfile";
+import {
+  BAT_TU_BIRTH_TIME_OPTIONS,
+  batTuBirthTimeCodeToGioSinh,
+  gioSinhToBatTuBirthTime,
+  gioiTinhToBatTuGender,
+  ngaySinhToBatTuBirthDate,
+} from "~/lib/bat-tu-birth";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { profileHasLaso } from "~/lib/la-so-ui";
+import { supabase } from "~/lib/supabase";
+
+const UNSET = "__unset__";
+
+export default function AppCaiDat() {
+  const { user, signOut } = useAuth();
+  const { profile, loading, refresh } = useProfile();
+  const [ngaySinh, setNgaySinh] = useState("");
+  const [birthTimeCode, setBirthTimeCode] = useState<string>(UNSET);
+  const [gioiTinh, setGioiTinh] = useState<string>(UNSET);
+  const [saving, setSaving] = useState(false);
+  const [pushCount, setPushCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!profile || loading) return;
+    setNgaySinh(profile.ngay_sinh?.slice(0, 10) ?? "");
+    const code = gioSinhToBatTuBirthTime(profile.gio_sinh);
+    setBirthTimeCode(code !== undefined ? String(code) : UNSET);
+    setGioiTinh(profile.gioi_tinh ?? UNSET);
+  }, [profile, loading]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("push_subscriptions")
+        .select("id")
+        .eq("user_id", user.id);
+      if (cancelled) return;
+      if (error) setPushCount(0);
+      else setPushCount(data?.length ?? 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const birthLocked = Boolean(profile?.birth_data_locked_at);
+
+  async function saveBirth() {
+    if (!user || birthLocked) return;
+    setSaving(true);
+    const hadLaso = profile ? profileHasLaso(profile.la_so) : true;
+    const gioSinh =
+      birthTimeCode === UNSET
+        ? null
+        : batTuBirthTimeCodeToGioSinh(Number(birthTimeCode));
+    if (birthTimeCode !== UNSET && !gioSinh) {
+      toast.error("Giờ sinh không hợp lệ.");
+      setSaving(false);
+      return;
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        ngay_sinh: ngaySinh.trim() ? ngaySinh.trim() : null,
+        gio_sinh: gioSinh,
+        gioi_tinh: gioiTinh === UNSET ? null : (gioiTinh as "nam" | "nu"),
+      })
+      .eq("id", user.id);
+    if (error) {
+      setSaving(false);
+      toast.error(error.message);
+      return;
+    }
+
+    let lasoBootstrapError: string | null = null;
+    let lasoBootstrapOk = false;
+    if (!hadLaso && ngaySinh.trim() && gioiTinh !== UNSET) {
+      const birth_date = ngaySinhToBatTuBirthDate(ngaySinh.trim());
+      if (birth_date) {
+        const body: Record<string, unknown> = {
+          birth_date,
+          tz: "Asia/Ho_Chi_Minh",
+          first_la_so_free: true,
+        };
+        if (birthTimeCode !== UNSET) {
+          const bt = Number(birthTimeCode);
+          if (Number.isFinite(bt)) body.birth_time = bt;
+        }
+        const g = gioiTinhToBatTuGender(gioiTinh as "nam" | "nu");
+        if (g !== undefined) body.gender = g;
+
+        const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
+        if (res.ok) lasoBootstrapOk = true;
+        else lasoBootstrapError = res.message;
+      }
+    }
+
+    setSaving(false);
+    await refresh();
+
+    if (lasoBootstrapError) {
+      toast.success("Đã lưu thông tin sinh.");
+      toast.error(`Chưa tạo được lá số tự động: ${lasoBootstrapError}`);
+    } else if (lasoBootstrapOk) {
+      toast.success("Đã lưu và tạo lá số.");
+    } else {
+      toast.success("Đã lưu thông tin sinh.");
+    }
+  }
+
+  return (
+    <div className="pb-24">
+      <div className="px-4 pt-5 pb-4">
+        <h1
+          className="text-foreground"
+          style={{
+            fontFamily: "var(--font-lora)",
+            fontWeight: 700,
+            fontSize: "var(--text-xl)",
+          }}
+        >
+          Cài đặt
+        </h1>
+      </div>
+
+      <div className="px-4 flex flex-col gap-3">
+      <section className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
+        <p>
+          <span className="text-muted-foreground">Email</span>
+          <br />
+          <span className="break-all">{user?.email}</span>
+        </p>
+        {loading ? (
+          <p className="text-muted-foreground">Đang tải…</p>
+        ) : profile ? (
+          <>
+            <p>
+              <span className="text-muted-foreground">Lượng</span>
+              <br />
+              <strong>{profile.credits_balance}</strong>
+            </p>
+            {profile.subscription_expires_at ? (
+              <p>
+                <span className="text-muted-foreground">Gói đang dùng đến</span>
+                <br />
+                {new Date(profile.subscription_expires_at).toLocaleDateString(
+                  "vi-VN",
+                )}
+              </p>
+            ) : null}
+          </>
+        ) : null}
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-4 space-y-4 text-sm">
+        <p className="font-medium text-foreground">Thông tin Bát Tự</p>
+        {birthLocked ? (
+          <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+            Ngày giờ sinh đã khóa sau khi lập lá số — không chỉnh sửa được. Xem{" "}
+            <Link to="/app/la-so" className="underline underline-offset-4">
+              lá số
+            </Link>
+            .
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Giờ sinh dùng khung can chi (giá trị gửi API giống dropdown trong tài liệu
+            tu-tru-api).
+          </p>
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="ngay-sinh">Ngày sinh</Label>
+          <Input
+            id="ngay-sinh"
+            type="date"
+            value={ngaySinh}
+            onChange={(e) => setNgaySinh(e.target.value)}
+            disabled={loading || !profile || birthLocked}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="gio-sinh">Giờ sinh (khung giờ)</Label>
+          <Select
+            value={birthTimeCode}
+            onValueChange={setBirthTimeCode}
+            disabled={loading || !profile || birthLocked}
+          >
+            <SelectTrigger id="gio-sinh" className="w-full">
+              <SelectValue placeholder="Chọn khung giờ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNSET}>Chưa chọn</SelectItem>
+              {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={String(opt.value)}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="gioi-tinh">Giới tính</Label>
+          <Select
+            value={gioiTinh}
+            onValueChange={setGioiTinh}
+            disabled={loading || !profile || birthLocked}
+          >
+            <SelectTrigger id="gioi-tinh" className="w-full">
+              <SelectValue placeholder="Chọn" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNSET}>Chưa chọn</SelectItem>
+              <SelectItem value="nam">Nam</SelectItem>
+              <SelectItem value="nu">Nữ</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          type="button"
+          className="w-full"
+          disabled={saving || loading || !profile || birthLocked}
+          onClick={() => void saveBirth()}
+        >
+          {saving ? "Đang lưu…" : "Lưu thông tin sinh"}
+        </Button>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-4 space-y-3 text-sm">
+        <p className="font-medium text-foreground">Thông báo đẩy</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {pushCount === null
+            ? "Đang kiểm tra…"
+            : pushCount > 0
+              ? `Đã đăng ký ${pushCount} endpoint trên thiết bị này / các phiên bản đã bật.`
+              : "Chưa đăng ký web push — bạn có thể bật để nhận nhắc theo mùa (cron), không dùng ML cá nhân hoá."}
+        </p>
+        <Button variant="outline" asChild className="w-full">
+          <Link to="/app/thong-bao-quyen">Quản lý thông báo</Link>
+        </Button>
+      </section>
+
+      <section
+        className="rounded-xl border border-border bg-card text-sm overflow-hidden"
+        aria-label="Pháp lý và ứng dụng"
+      >
+        {(
+          [
+            { label: "Cài đặt ứng dụng", to: "/app/cai-dat-app" as const },
+            { label: "Chính sách bảo mật", to: "/chinh-sach-bao-mat" as const },
+            { label: "Điều khoản sử dụng", to: "/dieu-khoan" as const },
+          ] as const
+        ).map((item, i, arr) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={`flex items-center justify-between gap-3 px-4 py-3.5 text-foreground hover:bg-muted/50 transition-colors ${i < arr.length - 1 ? "border-b border-border" : ""}`}
+            style={{ minHeight: 48 }}
+          >
+            <span>{item.label}</span>
+            <ChevronRight
+              size={16}
+              className="text-muted-foreground shrink-0"
+              strokeWidth={1.5}
+            />
+          </Link>
+        ))}
+        <a
+          href="mailto:hotro@ngaylanhthangtot.vn"
+          className="flex items-center justify-between gap-3 px-4 py-3.5 text-foreground border-t border-border hover:bg-muted/50 transition-colors"
+          style={{ minHeight: 48 }}
+        >
+          <span>Liên hệ hỗ trợ</span>
+          <ExternalLink
+            size={14}
+            className="text-muted-foreground shrink-0"
+            strokeWidth={1.5}
+          />
+        </a>
+      </section>
+
+      <Button variant="outline" asChild className="w-full">
+        <Link to="/app/mua-luong">Mua lượng / gói</Link>
+      </Button>
+      <Button
+        type="button"
+        variant="secondary"
+        className="w-full"
+        onClick={() => void signOut()}
+      >
+        Đăng xuất
+      </Button>
+      </div>
+    </div>
+  );
+}

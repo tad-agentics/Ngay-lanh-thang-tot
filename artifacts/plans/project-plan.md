@@ -14,14 +14,16 @@
 
 ## Feature Workstreams
 
+**Dispatch:** use **`/feature <Feature>`** or **`/wave wN`** — see `artifacts/plans/build-plan.md` (orchestration table) and `.cursor/commands/wave.md`.
+
 | Feature | Wave | Backend | Frontend | QA | Commit |
 |---|---|---|---|---|---|
 | foundation | Foundation | complete | complete | — | `9fbdc8d`, `799dfa2` |
-| auth-profile-billing | W1 | pending | pending | — | — |
-| core-loop | W2 | pending | pending | — | — |
-| personalization | W3 | pending | pending | — | — |
-| social-specialty | W4 | pending | pending | — | — |
-| legal-settings | cross | — | pending | — | — |
+| auth-profile-billing | W1 | complete | complete | PASS (build + vitest) | `3e4ae95` + screens |
+| core-loop | W2 | complete | complete | PASS (build + vitest; E2E manual) | staging |
+| personalization | W3 | complete | complete | PASS (build + vitest) | `1b2d074` backend, `5e59150` screens |
+| social-specialty | W4 | complete | complete | PASS (build + vitest) | `6de2bd2`, `e913ae1` |
+| legal-settings | cross | complete (no DB scope) | complete | PASS (build + vitest) | `29252ea` backend, `1f8c6f6` screens |
 
 ## Post-Build
 

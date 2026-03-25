@@ -12,6 +12,9 @@
 # /.next/
 # /out/
 
+# supabase CLI (local link; do not commit)
+/supabase/.temp/
+
 # vite / react-router
 /.react-router/
 /dist/
