@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatGioTotArrayDisplayVi,
+  formatHourRangeForDayDetailFigmaVi,
   formatHourRangeForDisplayVi,
   formatHourRangeStringDisplayVi,
 } from "~/lib/format-gio-tot-display-vi";
@@ -43,5 +44,23 @@ describe("formatHourRangeForDisplayVi", () => {
       { range: "09:00-11:00" },
     ]);
     expect(s).toContain("9–11 giờ sáng");
+  });
+});
+
+describe("formatHourRangeForDayDetailFigmaVi", () => {
+  it("joins compact hour ranges with commas", () => {
+    const s = formatHourRangeForDayDetailFigmaVi("", [
+      { range: "07:00-09:00" },
+      { range: "13:00-15:00" },
+      { range: "19:00-21:00" },
+    ]);
+    expect(s).toBe("7–9h, 13–15h, 19–21h");
+  });
+
+  it("formats overnight as start–endh", () => {
+    const s = formatHourRangeForDayDetailFigmaVi("", [
+      { range: "23:00-01:00" },
+    ]);
+    expect(s).toBe("23–1h");
   });
 });

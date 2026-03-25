@@ -71,7 +71,7 @@ function extractSubline(data: unknown): string | null {
   if (!root) return null;
   const parts = mergeNested(root);
   if (parts.length === 0) return null;
-  return parts.join(" · ");
+  return parts.join(" • ");
 }
 
 export type DayDetailChip = {

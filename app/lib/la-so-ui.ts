@@ -57,18 +57,99 @@ function pickStrArr(obj: Record<string, unknown>, keys: string[]): string[] {
   return [];
 }
 
-function pickNguHanh(obj: Record<string, unknown>): Record<string, number> {
-  const keys = ["ngu_hanh", "nguHanh", "five_elements", "nguHinh"];
-  for (const k of keys) {
-    const v = obj[k];
+const NGU_HANH_FIELD_KEYS = [
+  "ngu_hanh",
+  "nguHanh",
+  "five_elements",
+  "fiveElements",
+  "nguHinh",
+  "element_balance",
+  "elementBalance",
+  "phan_tram_ngu_hanh",
+] as const;
+
+function stripViCombining(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+/** Map nhãn API (latin hoặc có dấu) → khóa cố định cho UI. */
+function canonNguHanhKey(raw: string): string {
+  const t = raw.trim();
+  const lower = t.toLowerCase();
+  if (["kim", "moc", "thuy", "hoa", "tho"].includes(lower)) return lower;
+  const a = stripViCombining(t);
+  if (a === "kim" || a === "metal") return "kim";
+  if (a === "moc" || a === "wood") return "moc";
+  if (a === "thuy" || a === "water") return "thuy";
+  if (a === "hoa" || a === "fire") return "hoa";
+  if (a === "tho" || a === "earth") return "tho";
+  return "";
+}
+
+function parseNguHanhNumber(nv: unknown): number | null {
+  if (typeof nv === "number" && Number.isFinite(nv)) return nv;
+  if (typeof nv === "string") {
+    const n = Number.parseFloat(nv.replace(/%/g, "").replace(",", ".").trim());
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function extractNguHanhFromLayer(
+  layer: Record<string, unknown>,
+): Record<string, number> | null {
+  for (const field of NGU_HANH_FIELD_KEYS) {
+    const v = layer[field];
     if (!v || typeof v !== "object" || Array.isArray(v)) continue;
     const out: Record<string, number> = {};
     for (const [nk, nv] of Object.entries(v as Record<string, unknown>)) {
-      if (typeof nv === "number" && Number.isFinite(nv)) out[nk] = nv;
+      const canon = canonNguHanhKey(nk);
+      if (!canon) continue;
+      const num = parseNguHanhNumber(nv);
+      if (num != null) out[canon] = num;
     }
-    if (Object.keys(out).length) return out;
+    if (Object.keys(out).length > 0) return out;
   }
-  return { kim: 20, moc: 20, thuy: 20, hoa: 20, tho: 20 };
+  return null;
+}
+
+/** Luôn trả đủ 5 cột; thiếu từ API → 0. */
+function padFiveElements(hit: Record<string, number>): Record<string, number> {
+  const base: Record<string, number> = {};
+  for (const k of ["kim", "moc", "thuy", "hoa", "tho"] as const) {
+    const v = hit[k];
+    base[k] = typeof v === "number" && Number.isFinite(v) ? v : 0;
+  }
+  return base;
+}
+
+const NGU_HANH_PLACEHOLDER: Record<string, number> = {
+  kim: 20,
+  moc: 20,
+  thuy: 20,
+  hoa: 20,
+  tho: 20,
+};
+
+/**
+ * Đọc phân bổ ngũ hành (%) từ JSON lá số.
+ * Nếu không có trường hợp lệ → placeholder đều 20% (không phải dữ liệu API).
+ */
+function pickNguHanh(root: Record<string, unknown>): Record<string, number> {
+  const layers: Record<string, unknown>[] = [root];
+  for (const k of ["data", "result", "tu_tru", "tu_tru_detail"] as const) {
+    const n = asRecord(root[k]);
+    if (n) layers.push(n);
+  }
+  for (const layer of layers) {
+    const hit = extractNguHanhFromLayer(layer);
+    if (hit) return padFiveElements(hit);
+  }
+  return { ...NGU_HANH_PLACEHOLDER };
 }
 
 function padTru(a: string[], n: number): string[] {

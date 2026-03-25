@@ -5,6 +5,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+import {
+  redisGetString,
+  redisRestConfigured,
+  redisSetExString,
+} from "./redis-cache.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -473,6 +479,39 @@ function buildUpstream(
   return { ok: true, url, init };
 }
 
+/** Upstream đôi khi trả HTTP 200 với body `{"status":"error","error_code":"RATE_LIMITED",...}`. */
+function extractUnixResetFromMessage(msg: string): number | undefined {
+  const m = msg.match(/\b(\d{10})\b/);
+  if (!m) return undefined;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n >= 1e9 ? n : undefined;
+}
+
+function parseUpstreamApplicationError(data: unknown): {
+  code: string;
+  message: string;
+  resetAt?: number;
+} | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const o = data as Record<string, unknown>;
+  if (o.status !== "error") return null;
+  const code =
+    typeof o.error_code === "string" && o.error_code.length > 0
+      ? o.error_code
+      : "UPSTREAM_ERROR";
+  const message =
+    typeof o.message === "string" && o.message.trim().length > 0
+      ? o.message.trim()
+      : "Máy chủ tính toán từ chối yêu cầu.";
+  let resetAt: number | undefined;
+  if (typeof o.reset_at === "number" && Number.isFinite(o.reset_at)) {
+    resetAt = o.reset_at;
+  } else {
+    resetAt = extractUnixResetFromMessage(message);
+  }
+  return { code, message, resetAt };
+}
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -557,6 +596,66 @@ async function persistTuTruToProfile(
     return "Không lưu lá số vào hồ sơ được.";
   }
   return null;
+}
+
+/** TTL tối đa 60 phút; BAT_TU_CACHE_TTL_SEC (giây), clamp 1…3600, mặc định 3600. */
+function cacheTtlSec(): number {
+  const raw = Deno.env.get("BAT_TU_CACHE_TTL_SEC");
+  const n = raw != null && raw !== "" ? Number.parseInt(raw, 10) : 3600;
+  if (!Number.isFinite(n) || n <= 0) return 3600;
+  return Math.min(3600, Math.max(1, n));
+}
+
+async function sha256Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(text),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Không cache: ghi hồ sơ upstream (POST profile), hoặc tu-tru (mỗi user cần persist lá số).
+ */
+function isUpstreamCacheable(op: string, init: RequestInit): boolean {
+  const m = (init.method ?? "GET").toUpperCase();
+  if (op === "profile" && m === "POST") return false;
+  if (op === "tu-tru") return false;
+  return true;
+}
+
+async function batTuCacheKey(
+  op: string,
+  upstreamUrl: string,
+  upstreamInit: RequestInit,
+): Promise<string> {
+  const method = upstreamInit.method ?? "GET";
+  const body =
+    typeof upstreamInit.body === "string" ? upstreamInit.body : "";
+  const raw = `${op}\n${method}\n${upstreamUrl}\n${body}`;
+  const hash = await sha256Hex(raw);
+  return `bat-tu:v1:${hash}`;
+}
+
+async function readBatTuCache(
+  op: string,
+  upstreamUrl: string,
+  upstreamInit: RequestInit,
+): Promise<Response | null> {
+  if (!isUpstreamCacheable(op, upstreamInit)) return null;
+  if (!redisRestConfigured()) return null;
+  try {
+    const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
+    const raw = await redisGetString(ck);
+    if (raw == null) return null;
+    const parsed = JSON.parse(raw) as { data?: unknown };
+    if (!("data" in parsed)) return null;
+    return json(parsed);
+  } catch {
+    return null;
+  }
 }
 
 async function refundCredits(
@@ -661,8 +760,15 @@ Deno.serve(async (req) => {
   const { url: upstreamUrl, init: upstreamInit } = upstream;
   (upstreamInit.headers as Record<string, string>)["X-API-Key"] = batKey;
 
+  const cacheTtl = cacheTtlSec();
+
   const admin = createClient(supabaseUrl, serviceKey);
   let userId: string | null = null;
+
+  if (ANONYMOUS_OPS.has(op)) {
+    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
+    if (cached) return cached;
+  }
 
   if (!ANONYMOUS_OPS.has(op)) {
     const authHeader = req.headers.get("Authorization");
@@ -714,6 +820,11 @@ Deno.serve(async (req) => {
         409,
       );
     }
+  }
+
+  if (!ANONYMOUS_OPS.has(op)) {
+    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
+    if (cached) return cached;
   }
 
   const featureKey = resolveFeatureKey(op, body);
@@ -831,28 +942,54 @@ Deno.serve(async (req) => {
 
   const rawText = await upstreamRes.text();
 
-  if (!upstreamRes.ok) {
-    console.error("bat-tu upstream", upstreamRes.status, rawText);
+  let parsedJson: unknown = null;
+  if (rawText) {
+    try {
+      parsedJson = JSON.parse(rawText);
+    } catch {
+      parsedJson = null;
+    }
+  }
+
+  const appErr = parseUpstreamApplicationError(parsedJson);
+  const upstreamFailed = !upstreamRes.ok || appErr != null;
+
+  if (upstreamFailed) {
+    console.error(
+      "bat-tu upstream",
+      upstreamRes.status,
+      appErr?.code ?? "",
+      rawText.slice(0, 400),
+    );
     if (userId && featureKey) {
       await refundCredits(admin, userId, featureKey, chargedAmount, op);
     }
+    if (appErr) {
+      const rateLimited = appErr.code === "RATE_LIMITED";
+      return json(
+        {
+          error: {
+            code: rateLimited ? "RATE_LIMITED" : "BAT_TU_ERROR",
+            message: appErr.message,
+            ...(appErr.resetAt != null ? { reset_at: appErr.resetAt } : {}),
+          },
+        },
+        rateLimited ? 429 : 502,
+      );
+    }
+    const http429 = upstreamRes.status === 429;
     return json(
       {
         error: {
-          code: "BAT_TU_ERROR",
+          code: http429 ? "RATE_LIMITED" : "BAT_TU_ERROR",
           message: rawText.slice(0, 500) || "Bát Tự từ chối yêu cầu.",
         },
       },
-      502,
+      http429 ? 429 : 502,
     );
   }
 
-  let data: unknown;
-  try {
-    data = rawText ? JSON.parse(rawText) : null;
-  } catch {
-    data = rawText;
-  }
+  const data = parsedJson;
 
   if (op === "tu-tru" && userId) {
     const persistMsg = await persistTuTruToProfile(
@@ -869,6 +1006,15 @@ Deno.serve(async (req) => {
         { error: { code: "DB_ERROR", message: persistMsg } },
         500,
       );
+    }
+  }
+
+  if (isUpstreamCacheable(op, upstreamInit) && redisRestConfigured()) {
+    try {
+      const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
+      await redisSetExString(ck, JSON.stringify({ data }), cacheTtl);
+    } catch (e) {
+      console.error("bat-tu cache set", e);
     }
   }
 

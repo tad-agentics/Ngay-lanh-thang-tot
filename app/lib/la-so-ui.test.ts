@@ -90,4 +90,40 @@ describe("laSoJsonToChiTiet", () => {
       true,
     );
   });
+
+  it("reads ngũ hành from nested data + Vietnamese keys", () => {
+    const d = laSoJsonToChiTiet({
+      data: {
+        ngu_hanh: {
+          Kim: 10,
+          Mộc: 35,
+          Thủy: 25,
+          Hỏa: 20,
+          Thổ: 10,
+        },
+      },
+    });
+    expect(d.nguHanh).toEqual({
+      kim: 10,
+      moc: 35,
+      thuy: 25,
+      hoa: 20,
+      tho: 10,
+    });
+  });
+
+  it("uses equal 20% placeholder when API omits ngũ hành", () => {
+    const d = laSoJsonToChiTiet({
+      pillars: {
+        day: { can: { name: "Tân" }, chi: { name: "Mùi" } },
+      },
+    });
+    expect(d.nguHanh).toEqual({
+      kim: 20,
+      moc: 20,
+      thuy: 20,
+      hoa: 20,
+      tho: 20,
+    });
+  });
 });

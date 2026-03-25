@@ -36,6 +36,26 @@ const GIOI_TINH_LABEL: Record<string, string> = { nam: "Nam", nu: "Nữ" };
 
 const UNSET = "__unset__";
 
+/** Mỗi phần Dụng Thần (sau dấu phẩy) giống Make: in đậm từng hành. */
+function IntroDungThanParts({ dungThan }: { dungThan: string }) {
+  const parts = dungThan
+    .split(/[,，]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length === 0) {
+    return <span className="text-foreground font-medium">—</span>;
+  }
+  if (parts.length === 1) {
+    return <span className="text-foreground font-medium">{parts[0]}</span>;
+  }
+  return parts.map((p, i) => (
+    <span key={`${p}-${i}`}>
+      {i > 0 ? ", " : null}
+      <span className="text-foreground font-medium">{p}</span>
+    </span>
+  ));
+}
+
 function labelForBirthTimeCode(code: string): string {
   if (code === UNSET) return "Không chọn";
   const opt = BAT_TU_BIRTH_TIME_OPTIONS.find((o) => String(o.value) === code);
@@ -126,7 +146,7 @@ export default function AppLaSo() {
 
   if (loading || costsLoading) {
     return (
-      <div className="px-4 pb-8 py-10">
+      <div className="min-h-[40vh] bg-background px-4 pb-8 py-10">
         <p className="text-sm text-muted-foreground">Đang tải…</p>
       </div>
     );
@@ -150,7 +170,7 @@ export default function AppLaSo() {
 
   if (phase === "loading") {
     return (
-      <div className="px-4 pb-8 py-24 text-center">
+      <div className="min-h-[40vh] bg-background px-4 pb-8 py-24 text-center">
         <p className="text-muted-foreground text-sm" style={{ fontFamily: "var(--font-ibm-mono)" }}>
           Đang lập lá số…
         </p>
@@ -162,20 +182,22 @@ export default function AppLaSo() {
     laSoJsonToRevealProps(profile?.la_so as never) ?? reveal;
 
   const core = (
-      <div className="px-4 pb-8">
-        <ScreenHeader title="Lá số tứ trụ" />
+      <div className="min-h-[60vh] bg-background px-4 pb-24">
+        <ScreenHeader title="Lá số tứ trụ" centerTitle />
 
         {phase === "done" && displaySummary ? (
           <div className="flex flex-col gap-4">
-            <p className="text-muted-foreground text-xs leading-relaxed mb-1">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               Lá số của bạn đã được lưu. Nhật Chủ{" "}
-              <span className="text-foreground font-medium">{displaySummary.nhatChu}</span>
+              <span className="text-foreground font-semibold">
+                {displaySummary.nhatChu}
+              </span>
               {" "}— Dụng Thần{" "}
-              <span className="text-foreground font-medium">{displaySummary.dungThan}</span>.
+              <IntroDungThanParts dungThan={displaySummary.dungThan} />.
             </p>
 
             <div
-              className="relative overflow-hidden bg-surface text-surface-foreground px-4 py-4"
+              className="relative overflow-hidden bg-forest text-forest-foreground px-4 py-4 shadow-sm"
               style={{ borderRadius: "var(--radius-lg)" }}
             >
               <GrainOverlay />
@@ -183,7 +205,7 @@ export default function AppLaSo() {
                 <div className="flex items-center gap-4 mb-4">
                   <div className="flex flex-col items-center">
                     <span
-                      className="text-accent leading-none"
+                      className="text-make-cta leading-none"
                       style={{
                         fontFamily: "var(--font-noto)",
                         fontSize: 52,
@@ -193,48 +215,60 @@ export default function AppLaSo() {
                       {displaySummary.nhatChuHan}
                     </span>
                     <span
-                      className="text-surface-foreground/60 text-xs mt-1"
+                      className="text-forest-foreground/55 text-xs mt-1 tracking-wide"
                       style={{ fontFamily: "var(--font-ibm-mono)" }}
                     >
                       Nhật Chủ
                     </span>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex flex-col gap-1.5">
                       <div>
-                        <p className="text-surface-foreground/60 text-xs">Nhật Chủ</p>
-                        <p className="text-surface-foreground text-sm font-medium">
+                        <p className="text-forest-foreground/55 text-xs">Nhật Chủ</p>
+                        <p className="text-forest-foreground text-sm font-semibold leading-snug">
                           {displaySummary.nhatChu} — {displaySummary.hanh}
                         </p>
                       </div>
                       <div>
-                        <p className="text-surface-foreground/60 text-xs">Mệnh</p>
-                        <p className="text-surface-foreground text-sm font-medium">{displaySummary.menh}</p>
+                        <p className="text-forest-foreground/55 text-xs">Mệnh</p>
+                        <p className="text-forest-foreground text-sm font-semibold leading-snug">
+                          {displaySummary.menh}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="h-px bg-surface-foreground/10 mb-3" />
+                <div className="h-px bg-forest-foreground/15 mb-3" />
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-surface-foreground/60 text-xs mb-0.5">Dụng Thần</p>
-                    <p className="text-accent text-sm font-medium">{displaySummary.dungThan}</p>
+                    <p className="text-forest-foreground/55 text-xs mb-0.5">Dụng Thần</p>
+                    <p className="text-make-cta text-sm font-semibold leading-snug">
+                      {displaySummary.dungThan}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-surface-foreground/60 text-xs mb-0.5">Kỵ Thần</p>
-                    <p className="text-surface-foreground/70 text-sm">{displaySummary.kyThan}</p>
+                    <p className="text-forest-foreground/55 text-xs mb-0.5">Kỵ Thần</p>
+                    <p className="text-make-cta text-sm font-semibold leading-snug">
+                      {displaySummary.kyThan}
+                    </p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-surface-foreground/60 text-xs mb-0.5">Đại Vận</p>
-                    <p className="text-surface-foreground text-sm">{displaySummary.daiVan}</p>
+                    <p className="text-forest-foreground/55 text-xs mb-0.5">Đại Vận</p>
+                    <p className="text-make-cta text-sm font-semibold leading-snug">
+                      {displaySummary.daiVan}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <Button size="default" asChild className="w-full sm:w-auto">
+            <Button
+              size="default"
+              asChild
+              className="w-full font-semibold bg-make-cta text-make-cta-foreground hover:bg-make-cta/90 shadow-sm"
+            >
               <Link to="/app/la-so/chi-tiet">Xem lá số đầy đủ</Link>
             </Button>
             <Button variant="outline" asChild>

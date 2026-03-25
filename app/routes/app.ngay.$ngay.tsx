@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
+import { Moon, Sun } from "lucide-react";
 
 import { Chip } from "~/components/Chip";
 import { CreditGate } from "~/components/CreditGate";
@@ -11,12 +12,20 @@ import {
   type DayDetailHeaderMeta,
   extractDayDetailHeaderMeta,
 } from "~/lib/day-detail-header";
-import { parseDayDetailForView } from "~/lib/day-detail-view";
+import {
+  parseDayDetailForView,
+  sortPurposeRowsForDisplay,
+  type DayDetailPurposeVerdict,
+} from "~/lib/day-detail-view";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
+
+import { Button } from "~/components/ui/button";
+import { cn } from "~/components/ui/utils";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -28,11 +37,75 @@ function gradeChipColor(grade: string): "success" | "warning" | "danger" | "defa
   return "default";
 }
 
-function breakdownTone(type: string): string {
+type BreakdownImpact = "thuan" | "can_luu_y" | "trung_tinh";
+
+function breakdownImpact(type: string, points: number): BreakdownImpact {
   const t = type.toLowerCase();
-  if (t.includes("bonus") || t.includes("cat")) return "text-success";
-  if (t.includes("penalty") || t.includes("hung")) return "text-danger";
-  return "text-muted-foreground";
+  if (t.includes("bonus") || t.includes("cat")) return "thuan";
+  if (t.includes("penalty") || t.includes("hung")) return "can_luu_y";
+  if (points > 0) return "thuan";
+  if (points < 0) return "can_luu_y";
+  return "trung_tinh";
+}
+
+function breakdownImpactLabel(impact: BreakdownImpact): string {
+  switch (impact) {
+    case "thuan":
+      return "Thuận";
+    case "can_luu_y":
+      return "Cần lưu ý";
+    case "trung_tinh":
+      return "Trung tính";
+    default: {
+      const _e: never = impact;
+      return _e;
+    }
+  }
+}
+
+function breakdownImpactPillClass(impact: BreakdownImpact): string {
+  switch (impact) {
+    case "thuan":
+      return "bg-success/15 text-success";
+    case "can_luu_y":
+      return "bg-destructive/12 text-destructive";
+    case "trung_tinh":
+      return "bg-muted text-muted-foreground";
+    default: {
+      const _e: never = impact;
+      return _e;
+    }
+  }
+}
+
+function purposeVerdictLabel(v: DayDetailPurposeVerdict): string {
+  switch (v) {
+    case "nen_lam":
+      return "Nên làm";
+    case "khong_nen":
+      return "Không nên";
+    case "trung_lap":
+      return "Cân nhắc";
+    default: {
+      const _x: never = v;
+      return _x;
+    }
+  }
+}
+
+function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
+  switch (v) {
+    case "nen_lam":
+      return "bg-success/15 text-success";
+    case "khong_nen":
+      return "bg-destructive/12 text-destructive";
+    case "trung_lap":
+      return "bg-muted text-muted-foreground";
+    default: {
+      const _x: never = v;
+      return _x;
+    }
+  }
 }
 
 function DayDetailFetched({
@@ -44,11 +117,17 @@ function DayDetailFetched({
   profile: ProfileRow;
   onPayload?: (data: unknown | null) => void;
 }) {
+  const { costs } = useFeatureCosts();
+  const [purposeExpanded, setPurposeExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payload, setPayload] = useState<unknown>(null);
   const onPayloadRef = useRef(onPayload);
   onPayloadRef.current = onPayload;
+
+  useEffect(() => {
+    setPurposeExpanded(false);
+  }, [iso]);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,153 +180,204 @@ function DayDetailFetched({
     );
   }
 
-  const reasons = view?.reasonLines?.length ? view.reasonLines : fallbackLines;
+  const dayDetailCost = costs.day_detail;
+  const showLuongCta =
+    dayDetailCost &&
+    !dayDetailCost.is_free &&
+    dayDetailCost.credit_cost > 0;
+
+  const purposeSorted =
+    view != null ? sortPurposeRowsForDisplay(view.purposeRows) : [];
+  const purposeVisible = purposeExpanded
+    ? purposeSorted
+    : purposeSorted.slice(0, 3);
 
   return (
     <div className="space-y-4">
       {view ? (
         <>
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {view.score != null ? (
-                <span
-                  className="text-lg font-semibold text-foreground"
-                  style={{ fontFamily: "var(--font-lora)" }}
-                >
-                  Điểm {view.score}
-                </span>
-              ) : null}
-              {view.grade && view.grade !== "—" ? (
-                <Chip
-                  color={gradeChipColor(view.grade)}
-                  variant="flat"
-                  size="sm"
-                  radius="sm"
-                >
-                  Hạng {view.grade}
-                </Chip>
-              ) : null}
-            </div>
-            <dl className="grid gap-2 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Âm lịch
-                </dt>
-                <dd className="text-foreground mt-0.5">{view.lunarDate}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Can Chi
-                </dt>
-                <dd className="text-foreground mt-0.5">{view.canChi}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Trực · Sao
-                </dt>
-                <dd className="text-foreground mt-0.5">
-                  {view.trucLine}
-                  {view.starLine && view.starLine !== "—" ? ` · ${view.starLine}` : ""}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          {reasons.length > 0 ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p
-                className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Nhận xét
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
+            <p className="text-xs text-muted-foreground">Trực</p>
+            <h2 className="text-base font-semibold text-foreground leading-snug">
+              {view.trucTitle}
+            </h2>
+            {view.trucDescription ? (
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {view.trucDescription}
               </p>
-              <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
-                {reasons.map((line, i) => (
-                  <li key={i}>{line}</li>
-                ))}
-              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">—</p>
+            )}
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
+            <div className="flex gap-3 items-start">
+              <Sun
+                className="shrink-0 text-success mt-0.5"
+                size={20}
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground mb-0.5">Giờ tốt</p>
+                <p className="text-sm font-medium text-success">{view.gioTot}</p>
+              </div>
             </div>
+            <div className="h-px bg-border" />
+            <div className="flex gap-3 items-start">
+              <Moon
+                className="shrink-0 text-destructive mt-0.5"
+                size={20}
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground mb-0.5">Giờ xấu</p>
+                <p className="text-sm font-medium text-destructive">{view.gioXau}</p>
+              </div>
+            </div>
+          </section>
+
+          {view.catThanLabels.length > 0 || view.hungSatLabels.length > 0 ? (
+            <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
+              <h2 className="text-base font-semibold text-foreground">Thần sát</h2>
+              {view.catThanLabels.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {view.catThanLabels.map((label) => (
+                    <span
+                      key={label}
+                      className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-success/15 text-success"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {view.hungSatLabels.length > 0 ? (
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Hung sát</p>
+                  <div className="flex flex-wrap gap-2">
+                    {view.hungSatLabels.map((label) => (
+                      <span
+                        key={label}
+                        className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-destructive/12 text-destructive"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
           ) : null}
 
-          {view.goodFor.length > 0 ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p
-                className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Nên làm
-              </p>
-              <ul className="list-disc pl-4 space-y-1 text-sm text-foreground">
-                {view.goodFor.map((x) => (
-                  <li key={x}>{x}</li>
+          {view.purposeRows.length > 0 ? (
+            <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-semibold text-foreground flex-1 min-w-[12rem]">
+                  Mục đích trong ngày
+                </h2>
+                {view.grade && view.grade !== "—" ? (
+                  <Chip color={gradeChipColor(view.grade)} variant="flat" size="sm">
+                    Hạng {view.grade}
+                  </Chip>
+                ) : null}
+              </div>
+              <ul className="space-y-2.5">
+                {purposeVisible.map((row, idx) => (
+                  <li
+                    key={`${row.label}-${idx}`}
+                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                  >
+                    <span className="text-foreground font-medium min-w-0 flex-1">
+                      {row.label}
+                    </span>
+                    <span
+                      className={cn(
+                        "shrink-0 inline-flex px-2.5 py-1 text-xs font-medium rounded-full",
+                        purposeVerdictClass(row.verdict),
+                      )}
+                    >
+                      {purposeVerdictLabel(row.verdict)}
+                    </span>
+                  </li>
                 ))}
               </ul>
-            </div>
+              {view.purposeRows.length > 3 ? (
+                <button
+                  type="button"
+                  onClick={() => setPurposeExpanded((e) => !e)}
+                  className="block w-full text-left text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                >
+                  {purposeExpanded
+                    ? "Thu gọn"
+                    : `Xem đầy đủ ${view.purposeRows.length} mục đích`}
+                </button>
+              ) : null}
+              {showLuongCta ? (
+                <Button
+                  asChild
+                  className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Link to="/app/mua-luong">
+                    +{dayDetailCost.credit_cost} lượng
+                  </Link>
+                </Button>
+              ) : null}
+            </section>
           ) : null}
 
           {view.avoidFor.length > 0 ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p
-                className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Nên tránh
-              </p>
+            <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <p className="text-xs text-muted-foreground mb-2">Nên tránh</p>
               <ul className="list-disc pl-4 space-y-1 text-sm text-foreground">
                 {view.avoidFor.map((x) => (
                   <li key={x}>{x}</li>
                 ))}
               </ul>
-            </div>
+            </section>
           ) : null}
 
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-            <div>
-              <p
-                className="text-xs text-muted-foreground uppercase tracking-wider mb-1"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Giờ Hoàng đạo
-              </p>
-              <p className="text-sm text-foreground">{view.gioTot}</p>
-            </div>
-            <div>
-              <p
-                className="text-xs text-muted-foreground uppercase tracking-wider mb-1"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Giờ Hắc đạo
-              </p>
-              <p className="text-sm text-foreground">{view.gioXau}</p>
-            </div>
-          </div>
-
           {view.breakdown.length > 0 ? (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <p
-                className="text-xs text-muted-foreground uppercase tracking-wider mb-3"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Chi tiết điểm
-              </p>
-              <ul className="space-y-2 text-sm">
-                {view.breakdown.map((row, i) => (
-                  <li
-                    key={`${row.source}-${i}`}
-                    className="flex flex-col gap-0.5 border-b border-border/60 pb-2 last:border-0 last:pb-0"
-                  >
-                    <span className="text-foreground font-medium">{row.source}</span>
-                    <span className={`font-mono text-xs ${breakdownTone(row.type)}`}>
-                      {row.points > 0 ? "+" : ""}
-                      {row.points}
-                    </span>
-                    <span className="text-muted-foreground text-xs leading-snug">
-                      {row.reasonVi}
-                    </span>
-                  </li>
-                ))}
+            <details className="rounded-xl border border-border bg-card p-4 shadow-sm group">
+              <summary className="text-sm font-medium text-foreground cursor-pointer list-none flex items-center justify-between gap-2">
+                Luận theo từng yếu tố
+                <span className="text-muted-foreground text-xs font-normal group-open:hidden">
+                  Xem thêm
+                </span>
+                <span className="text-muted-foreground text-xs font-normal hidden group-open:inline">
+                  Thu gọn
+                </span>
+              </summary>
+              <ul className="mt-3 space-y-3 text-sm border-t border-border pt-3">
+                {view.breakdown.map((row, i) => {
+                  const impact = breakdownImpact(row.type, row.points);
+                  return (
+                    <li
+                      key={`${row.source}-${i}`}
+                      className="border-b border-border/60 pb-3 last:border-0 last:pb-0"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-foreground font-medium min-w-0 flex-1">
+                          {row.source}
+                        </span>
+                        <span
+                          className={cn(
+                            "shrink-0 inline-flex px-2.5 py-1 text-xs font-medium rounded-full",
+                            breakdownImpactPillClass(impact),
+                          )}
+                        >
+                          {breakdownImpactLabel(impact)}
+                        </span>
+                      </div>
+                      <p className="text-muted-foreground text-sm leading-snug mt-1.5">
+                        {row.reasonVi}
+                      </p>
+                    </li>
+                  );
+                })}
               </ul>
-            </div>
+            </details>
           ) : null}
         </>
       ) : (
@@ -296,17 +426,19 @@ export default function AppNgayChiTiet() {
 
   return (
     <div className="pb-8">
-      <div className="relative overflow-hidden bg-surface text-surface-foreground px-4 pt-5 pb-5">
+      <div className="relative overflow-hidden bg-surface text-surface-foreground px-4 pt-3 pb-5">
         <GrainOverlay />
         <div className="relative">
-          <ScreenHeader title={dayTitle} dark className="pb-2" />
+          <ScreenHeader
+            title={dayTitle}
+            dark
+            className="pt-2 pb-2"
+            titleClassName="!text-primary"
+          />
           {headerMeta?.subline || headerMeta?.chip ? (
-            <div className="flex items-center justify-between gap-2 mt-1">
+            <div className="flex items-center justify-between gap-2 mt-1 pb-1">
               {headerMeta.subline ? (
-                <p
-                  className="text-surface-foreground/60 text-xs min-w-0 flex-1 pr-2"
-                  style={{ fontFamily: "var(--font-ibm-mono)" }}
-                >
+                <p className="text-surface-foreground/70 text-xs min-w-0 flex-1 pr-2 leading-snug">
                   {headerMeta.subline}
                 </p>
               ) : (
@@ -317,8 +449,16 @@ export default function AppNgayChiTiet() {
                   color={headerMeta.chip.color}
                   variant="flat"
                   size="sm"
-                  radius="sm"
-                  className="shrink-0"
+                  radius="pill"
+                  className={cn(
+                    "shrink-0 border-0",
+                    headerMeta.chip.color === "success" &&
+                      "bg-black/25 text-emerald-300",
+                    headerMeta.chip.color === "danger" &&
+                      "bg-black/25 text-red-300",
+                    headerMeta.chip.color === "default" &&
+                      "bg-black/20 text-surface-foreground/80",
+                  )}
                 >
                   {headerMeta.chip.label}
                 </Chip>
