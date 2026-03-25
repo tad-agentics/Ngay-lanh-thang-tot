@@ -81,6 +81,50 @@ function parseDdMmYyyy(s: string): Date | null {
   return dt;
 }
 
+/** True when profile already has a non-empty lá số JSON. */
+function profileHasStoredLaso(laSo: unknown): boolean {
+  if (laSo == null || typeof laSo !== "object" || Array.isArray(laSo)) {
+    return false;
+  }
+  return Object.keys(laSo as Record<string, unknown>).length > 0;
+}
+
+const BIRTH_TIME_CODE_TO_PG: Record<number, string> = {
+  0: "00:00:00",
+  2: "01:00:00",
+  4: "03:00:00",
+  6: "05:00:00",
+  8: "07:00:00",
+  10: "09:00:00",
+  11: "11:00:00",
+  14: "13:00:00",
+  16: "15:00:00",
+  18: "17:00:00",
+  20: "19:00:00",
+  22: "21:00:00",
+  23: "23:00:00",
+};
+
+function birthDdMmYyyyToIso(raw: string): string | null {
+  const m = raw.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const d = m[1]!.padStart(2, "0");
+  const mo = m[2]!.padStart(2, "0");
+  const y = m[3]!;
+  return `${y}-${mo}-${d}`;
+}
+
+function birthTimeToGioSinh(code: unknown): string | null {
+  if (typeof code !== "number" || !Number.isFinite(code)) return null;
+  return BIRTH_TIME_CODE_TO_PG[code] ?? null;
+}
+
+function genderToGioiTinh(g: unknown): string | null {
+  if (g === 1 || g === "1") return "nam";
+  if (g === -1 || g === "-1") return "nu";
+  return null;
+}
+
 function chonNgayRangeDays(body: Record<string, unknown>): number | null {
   const rs = body.range_start;
   const re = body.range_end;
@@ -466,6 +510,34 @@ function subscriptionActive(expires: string | null): boolean {
 
 type SupabaseAdmin = ReturnType<typeof createClient>;
 
+async function persistTuTruToProfile(
+  admin: SupabaseAdmin,
+  userId: string,
+  body: Record<string, unknown>,
+  laSoPayload: unknown,
+): Promise<string | null> {
+  const iso = typeof body.birth_date === "string"
+    ? birthDdMmYyyyToIso(body.birth_date)
+    : null;
+  const gio = birthTimeToGioSinh(body.birth_time);
+  const gt = genderToGioiTinh(body.gender);
+  const patch: Record<string, unknown> = {
+    la_so: laSoPayload,
+    birth_data_locked_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  if (iso) patch.ngay_sinh = iso;
+  if (gio) patch.gio_sinh = gio;
+  if (gt) patch.gioi_tinh = gt;
+
+  const { error } = await admin.from("profiles").update(patch).eq("id", userId);
+  if (error) {
+    console.error("persistTuTruToProfile", error);
+    return "Không lưu lá số vào hồ sơ được.";
+  }
+  return null;
+}
+
 async function refundCredits(
   admin: SupabaseAdmin,
   userId: string,
@@ -597,6 +669,31 @@ Deno.serve(async (req) => {
     userId = u.id;
   }
 
+  if (op === "tu-tru" && userId) {
+    const { data: lasoRow, error: lasoErr } = await admin
+      .from("profiles")
+      .select("la_so")
+      .eq("id", userId)
+      .maybeSingle();
+    if (lasoErr) {
+      return json(
+        { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } },
+        500,
+      );
+    }
+    if (profileHasStoredLaso(lasoRow?.la_so)) {
+      return json(
+        {
+          error: {
+            code: "LASO_ALREADY_EXISTS",
+            message: "Bạn đã có lá số. Mở Lá số tứ trụ để xem.",
+          },
+        },
+        409,
+      );
+    }
+  }
+
   const featureKey = resolveFeatureKey(op, body);
   let chargedAmount = 0;
 
@@ -726,6 +823,24 @@ Deno.serve(async (req) => {
     data = rawText ? JSON.parse(rawText) : null;
   } catch {
     data = rawText;
+  }
+
+  if (op === "tu-tru" && userId) {
+    const persistMsg = await persistTuTruToProfile(
+      admin,
+      userId,
+      body,
+      data,
+    );
+    if (persistMsg) {
+      if (featureKey) {
+        await refundCredits(admin, userId, featureKey, chargedAmount, op);
+      }
+      return json(
+        { error: { code: "DB_ERROR", message: persistMsg } },
+        500,
+      );
+    }
   }
 
   return json({ data });
