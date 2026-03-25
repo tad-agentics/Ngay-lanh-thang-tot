@@ -29,4 +29,21 @@ describe("mapChonNgayPayloadToResultDays", () => {
   it("returns empty when payload has no recognizable array", () => {
     expect(mapChonNgayPayloadToResultDays({ foo: 1 })).toEqual([]);
   });
+
+  it("grades by API row index, not count of successfully parsed rows", () => {
+    const rows = mapChonNgayPayloadToResultDays({
+      days: [
+        { date: "not-a-date", truc: "X" },
+        {
+          date: "06/04/2026",
+          truc: "Trực Khai",
+          lunar_label: "9/3 âm",
+          good_hours: "9h–11h",
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.isoDate).toBe("2026-04-06");
+    expect(rows[0]?.grade).toBe("B");
+  });
 });

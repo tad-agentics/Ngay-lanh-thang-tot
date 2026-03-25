@@ -110,13 +110,14 @@ function gradeFromIndex(i: number): ResultGrade {
   return "C";
 }
 
-function mapOneDay(raw: unknown, ordinal: number): ResultDay | null {
+/** `sourceIndex` = position in API array (0-based); drives default A/B/C when rank/score absent. */
+function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
   const obj = asRecord(raw);
   if (!obj) return null;
   const isoDate = pickIsoFromObject(obj);
   if (!isoDate) return null;
 
-  let grade = gradeFromIndex(ordinal);
+  let grade = gradeFromIndex(sourceIndex);
   const score = obj.score ?? obj.total_score ?? obj.rank_score;
   if (typeof score === "number") {
     if (score >= 85) grade = "A";
@@ -161,7 +162,7 @@ export function mapChonNgayPayloadToResultDays(
   const arr = extractCandidateArray(data);
   const out: ResultDay[] = [];
   for (let i = 0; i < arr.length && out.length < topN; i++) {
-    const row = mapOneDay(arr[i], out.length);
+    const row = mapOneDay(arr[i], i);
     if (row) out.push(row);
   }
   return out;
