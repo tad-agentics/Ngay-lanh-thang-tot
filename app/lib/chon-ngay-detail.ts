@@ -28,12 +28,31 @@ export function extractDetailReasonLines(data: unknown): string[] {
     }
   }
 
-  const text = root.detail ?? root.explanation ?? root.summary;
+  const text =
+    root.reason_vi ??
+    root.summary_vi ??
+    root.verdict_vi ??
+    root.detail ??
+    root.explanation ??
+    root.summary;
   if (typeof text === "string" && text.trim()) {
     return text
       .split(/\n+/)
       .map((s) => s.trim())
       .filter(Boolean);
+  }
+
+  const layer3 = asRecord(root.layer3);
+  const breakdown = layer3?.breakdown;
+  if (Array.isArray(breakdown)) {
+    const lines: string[] = [];
+    for (const item of breakdown) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const rv = o.reason_vi;
+      if (typeof rv === "string" && rv.trim()) lines.push(rv.trim());
+    }
+    if (lines.length) return lines;
   }
 
   const lines: string[] = [];
