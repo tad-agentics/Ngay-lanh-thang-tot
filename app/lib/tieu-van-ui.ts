@@ -41,10 +41,20 @@ const FALLBACK_GIAI = [
   },
 ];
 
+function pickStringTags(root: Record<string, unknown>): string[] {
+  const raw = root.tags ?? root.nhan_xet_tags;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    .map((s) => s.trim());
+}
+
 export interface TieuVanUi {
   tongQuan: string;
   canLuu: string;
   pillarHint: string;
+  /** tu-tru-api: gợi ý ngắn (Khá tốt, Chủ động, …) */
+  tags: string[];
   cacGiai: { label: string; value: number; note: string }[];
 }
 
@@ -57,31 +67,49 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
       canLuu:
         "Ngày Hắc Đạo trên lịch tháng giúp bạn chủ động lùi việc lớn nếu cần.",
       pillarHint: "—",
+      tags: [],
       cacGiai: FALLBACK_GIAI,
     };
   }
 
+  const tvp = asRecord(root.tieu_van_pillar) ?? asRecord(root.tieuVanPillar);
+  const pillarFromNested = tvp
+    ? pickStr(tvp, ["display", "can_chi", "label", "pillar"])
+    : "—";
+  const pillarHint = pillarFromNested !== "—"
+    ? pillarFromNested
+    : pickStr(root, [
+        "tru_thang",
+        "truThang",
+        "month_pillar",
+        "pilliar",
+        "thang_tru",
+      ]);
+
   const tongQuanRaw = pickStr(root, [
+    "reading",
     "tong_quan",
     "tongQuan",
     "overview",
     "summary",
+    "nhan_xet",
   ]);
   const tongQuan =
     tongQuanRaw === "—" ? TONG_QUAN_FALLBACK : tongQuanRaw;
+
   const canLuuRaw = pickStr(root, [
+    "dai_van_context",
+    "daiVanContext",
     "can_luu",
     "canLuu",
     "luu_y",
     "warnings",
+    "advice",
+    "caution",
   ]);
   const canLuu = canLuuRaw === "—" ? CAN_LUU_FALLBACK : canLuuRaw;
-  const pillarHint = pickStr(root, [
-    "tru_thang",
-    "truThang",
-    "month_pillar",
-    "pilliar",
-  ]);
+
+  const tags = pickStringTags(root);
 
   let cacGiai: { label: string; value: number; note: string }[] = [];
   const scores =
@@ -90,9 +118,9 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
     for (const item of scores) {
       const o = asRecord(item);
       if (!o) continue;
-      const label = pickStr(o, ["label", "ten", "name", "aspect"]);
+      const label = pickStr(o, ["label", "ten", "name", "aspect", "category"]);
       const value = typeof o.value === "number" ? o.value : Number(o.score);
-      const note = pickStr(o, ["note", "mo_ta", "desc", "hint"]);
+      const note = pickStr(o, ["note", "mo_ta", "desc", "hint", "description"]);
       if (label && label !== "—") {
         cacGiai.push({
           label,
@@ -102,7 +130,32 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
       }
     }
   }
-  if (!cacGiai.length) cacGiai = FALLBACK_GIAI;
 
-  return { tongQuan, canLuu, pillarHint, cacGiai };
+  const details = root.details ?? root.chi_tiet;
+  if (!cacGiai.length && Array.isArray(details)) {
+    for (const item of details) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const label = pickStr(o, ["category", "label", "ten", "name"]);
+      const value = typeof o.score === "number" ? o.score : Number(o.value);
+      const note = pickStr(o, ["description", "note", "mo_ta", "desc"]);
+      if (label && label !== "—") {
+        cacGiai.push({
+          label,
+          value: Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 70,
+          note,
+        });
+      }
+    }
+  }
+
+  if (!cacGiai.length) {
+    if (tags.length) {
+      cacGiai = [];
+    } else {
+      cacGiai = FALLBACK_GIAI;
+    }
+  }
+
+  return { tongQuan, canLuu, pillarHint: pillarHint === "—" ? "—" : pillarHint, tags, cacGiai };
 }

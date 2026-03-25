@@ -35,6 +35,23 @@ describe("hopTuoiPayloadToPanel", () => {
     expect(p?.naphAmRelation).toBe("OK");
   });
 
+  it("reads tu-tru-api person1/person2 + overall_score + grade", () => {
+    const p = hopTuoiPayloadToPanel({
+      status: "success",
+      overall_score: 88,
+      grade: "A",
+      person1: { menh: "Lộ Bàng Thổ", hanh: "Thổ" },
+      person2: { menh: "Kiếm Phong Kim", hanh: "Kim" },
+      summary: "Hai lá số rất tương hợp.",
+      ngu_hanh_relation: "Tương Sinh",
+    });
+    expect(p?.score).toBe(88);
+    expect(p?.gradLabel).toBe("Rất hợp");
+    expect(p?.naphAm1).toBe("Lộ Bàng Thổ");
+    expect(p?.naphAm2).toBe("Kiếm Phong Kim");
+    expect(p?.naphAmRelation).toContain("tương hợp");
+  });
+
   it("returns null for non-object", () => {
     expect(hopTuoiPayloadToPanel(null)).toBeNull();
   });

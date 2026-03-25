@@ -19,6 +19,7 @@ import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import type { ResultDay } from "~/lib/api-types";
+import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 
 function subscriptionActive(expires: string | null | undefined): boolean {
   if (!expires) return false;
@@ -130,6 +131,10 @@ export default function AppChonNgayKetQua() {
   }
 
   const bestDay = resultDays[0];
+  const menhLabel =
+    profile && profileHasLaso(profile.la_so)
+      ? (laSoJsonToRevealProps(profile.la_so)?.menh ?? null)
+      : null;
 
   return (
     <div className="px-4 pb-8">
@@ -142,8 +147,8 @@ export default function AppChonNgayKetQua() {
       {!showResults ? (
         <ChonNgayLoadingPanel
           dayCount={state.daysInclusive}
-          menh={null}
-          resultCount={3}
+          menh={menhLabel}
+          resultCount={Math.max(parsedDays.length, 3)}
           phase={phase}
         />
       ) : (
@@ -175,6 +180,7 @@ export default function AppChonNgayKetQua() {
                   reasons={unlockedDetail ? day.reasons : []}
                   animationIndex={i}
                   detailHref={`/app/ngay/${day.isoDate}`}
+                  menh={menhLabel ?? undefined}
                 />
               ))}
 

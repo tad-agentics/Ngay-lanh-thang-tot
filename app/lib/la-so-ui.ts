@@ -15,6 +15,38 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
   return "—";
 }
 
+/** If `fieldKeys` map to an object (tu-tru-api style), read string from `nestedKeys` inside it. */
+function pickStrOrFromNestedObject(
+  obj: Record<string, unknown>,
+  fieldKeys: string[],
+  nestedKeys: string[],
+): string {
+  for (const k of fieldKeys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+    const nested = asRecord(v);
+    if (nested) {
+      const inner = pickStr(nested, nestedKeys);
+      if (inner !== "—") return inner;
+    }
+  }
+  return "—";
+}
+
+function formatDaiVanField(daiVanRaw: unknown): string {
+  if (typeof daiVanRaw === "string" && daiVanRaw.trim()) return daiVanRaw.trim();
+  const o = asRecord(daiVanRaw);
+  if (!o) return "—";
+  const cur = asRecord(o.current);
+  if (cur) {
+    const display = pickStr(cur, ["display", "label", "name", "ten"]);
+    const range = pickStr(cur, ["age_range", "ageRange", "years", "nam"]);
+    if (display !== "—" && range !== "—") return `${display} (${range})`;
+    if (display !== "—") return display;
+  }
+  return pickStr(o, ["display", "label", "summary"]);
+}
+
 function pickStrArr(obj: Record<string, unknown>, keys: string[]): string[] {
   for (const k of keys) {
     const v = obj[k];
@@ -70,23 +102,88 @@ export function laSoJsonToRevealProps(raw: unknown): {
     asRecord(root.tu_tru) ??
     root;
 
+  const pillars = asRecord(nested.pillars);
+  const dayPillar = pillars ? asRecord(pillars.day) : null;
+  const dayCan = dayPillar ? asRecord(dayPillar.can) : null;
+  const dayChi = dayPillar ? asRecord(dayPillar.chi) : null;
+
+  const ncObj =
+    asRecord(nested.nhat_chu) ?? asRecord(nested.nhatChu) ?? null;
+  let nhatChu = pickStrOrFromNestedObject(nested, ["nhat_chu", "nhatChu"], [
+    "can_name",
+    "canName",
+    "stem",
+    "can",
+    "name",
+    "label",
+  ]);
+  if (nhatChu === "—" && dayCan) {
+    nhatChu = pickStr(dayCan, ["name", "can_name", "label"]);
+  }
+
+  let nhatChuHan = pickStr(ncObj ?? nested, [
+    "nhat_chu_han",
+    "nhatChuHan",
+    "chi_name",
+    "chiName",
+    "can_han",
+    "han_char",
+  ]);
+  if (nhatChuHan === "—" && ncObj) {
+    nhatChuHan = pickStr(ncObj, ["chi_name", "chi_han", "han"]);
+  }
+  // API không trả chữ Hán; hiển thị Địa Chi ngày làm glyph lớn (UX gần với tứ trụ).
+  if (nhatChuHan === "—" && dayChi) {
+    nhatChuHan = pickStr(dayChi, ["name", "label"]);
+  }
+
+  let hanh = pickStrOrFromNestedObject(nested, ["nhat_chu", "nhatChu"], [
+    "hanh",
+    "element",
+    "ngu_hanh",
+  ]);
+  if (hanh === "—") {
+    hanh = pickStr(nested, ["hanh", "element", "ngu_hanh_ngay"]);
+  }
+
+  let menh = pickStrOrFromNestedObject(nested, ["menh", "menh_chu"], [
+    "nap_am_name",
+    "napAmName",
+    "name",
+    "label",
+    "ten",
+  ]);
+  if (menh === "—") {
+    const y = pillars ? asRecord(pillars.year) : null;
+    const nap = y ? asRecord(y.nap_am) : null;
+    if (nap) menh = pickStr(nap, ["name", "nap_am_name", "label"]);
+  }
+
+  const dungThan = pickStrOrFromNestedObject(
+    nested,
+    ["dung_than", "dungThan", "dung_than_ban"],
+    ["element", "name", "label", "ten"],
+  );
+
+  const kyThan = pickStrOrFromNestedObject(
+    nested,
+    ["ky_than", "kyThan", "ky_than_ban"],
+    ["element", "name", "label", "ten"],
+  );
+
+  let daiVan = formatDaiVanField(nested.dai_van ?? nested.daiVan);
+  if (daiVan === "—") {
+    daiVan = pickStr(nested, ["dai_van", "daiVan", "dai_van_hien_tai"]);
+  }
+
   return {
-    nhatChu: pickStr(nested, [
-      "nhat_chu",
-      "nhatChu",
-      "can_ngay",
-      "nhat_chu_am",
-    ]),
-    nhatChuHan: pickStr(nested, [
-      "nhat_chu_han",
-      "nhatChuHan",
-      "han_can_ngay",
-    ]),
-    hanh: pickStr(nested, ["hanh", "element", "ngu_hanh_ngay"]),
-    menh: pickStr(nested, ["menh", "menh_chu", "nap_am", "menh_phu"]),
-    dungThan: pickStr(nested, ["dung_than", "dungThan", "dung_than_ban"]),
-    kyThan: pickStr(nested, ["ky_than", "kyThan", "ky_than_ban"]),
-    daiVan: pickStr(nested, ["dai_van", "daiVan", "dai_van_hien_tai"]),
+    nhatChu,
+    nhatChuHan,
+    hanh,
+    menh,
+    dungThan,
+    kyThan,
+    daiVan,
   };
 }
 
@@ -109,6 +206,26 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
       diaChi = pickStrArr(tu, ["dia_chi", "diaChi"]);
     }
   }
+  if (thienCan.length < 4) {
+    const pillars = asRecord(root.pillars);
+    if (pillars) {
+      /** UI: cột Giờ → Ngày → Tháng → Năm (trái sang phải) */
+      const order = ["hour", "day", "month", "year"] as const;
+      const cans: string[] = [];
+      const chis: string[] = [];
+      for (const key of order) {
+        const p = asRecord(pillars[key]);
+        const can = p ? asRecord(p.can) : null;
+        const chi = p ? asRecord(p.chi) : null;
+        const cn = can ? pickStr(can, ["name", "label"]) : "—";
+        const ch = chi ? pickStr(chi, ["name", "label"]) : "—";
+        if (cn !== "—") cans.push(cn);
+        if (ch !== "—") chis.push(ch);
+      }
+      if (cans.length) thienCan = cans;
+      if (chis.length) diaChi = chis;
+    }
+  }
   thienCan = padTru(thienCan, 4);
   diaChi = padTru(diaChi, 4);
 
@@ -121,6 +238,22 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
         .filter((x): x is string => typeof x === "string" && x.length > 0);
     }
   }
+  if (!thanSat.length) {
+    const thap = asRecord(root.thap_than) ?? asRecord(root.thapThan);
+    if (thap) {
+      const seen = new Set<string>();
+      const keys = ["dominant", "year", "month", "day", "hour"] as const;
+      for (const k of keys) {
+        const o = asRecord(thap[k]);
+        if (!o) continue;
+        const n = pickStr(o, ["name", "label"]);
+        if (n !== "—" && !seen.has(n)) {
+          seen.add(n);
+          thanSat.push(n);
+        }
+      }
+    }
+  }
   if (!thanSat.length) thanSat = ["—"];
 
   const dvRaw = root.dai_van_list ?? root.daiVanList;
@@ -129,11 +262,37 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
     daiVanList = dvRaw.map((item, i) => {
       const o = asRecord(item) ?? {};
       return {
-        label: pickStr(o, ["label", "ten", "name", "pillar"]),
-        years: pickStr(o, ["years", "nam", "range"]),
+        label: pickStr(o, ["label", "ten", "name", "pillar", "display"]),
+        years: pickStr(o, ["years", "nam", "range", "age_range"]),
         isActive: Boolean(o.active) || Boolean(o.isActive) || i === 0,
       };
     });
+  }
+  if (!daiVanList.length) {
+    const dvObj = asRecord(root.dai_van) ?? asRecord(root.daiVan);
+    const cycles = dvObj?.cycles;
+    const current = dvObj ? asRecord(dvObj.current) : null;
+    const curLabel = current ? pickStr(current, ["display", "label"]) : "—";
+    const curYears = current ? pickStr(current, ["age_range", "years"]) : "—";
+    if (Array.isArray(cycles)) {
+      daiVanList = cycles.map((item) => {
+        const o = asRecord(item) ?? {};
+        const label = pickStr(o, ["display", "label", "name"]);
+        const years = pickStr(o, ["age_range", "years", "range"]);
+        const isActive =
+          curLabel !== "—" && label !== "—" && label === curLabel;
+        return { label, years, isActive };
+      });
+    }
+    if (!daiVanList.length && (curLabel !== "—" || curYears !== "—")) {
+      daiVanList = [
+        {
+          label: curLabel !== "—" ? curLabel : "Đại Vận",
+          years: curYears !== "—" ? curYears : "—",
+          isActive: true,
+        },
+      ];
+    }
   }
   if (!daiVanList.length) {
     const dv = pickStr(root, ["dai_van", "daiVan"]);
