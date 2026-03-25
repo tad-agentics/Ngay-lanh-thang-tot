@@ -14,6 +14,8 @@
 
 ## Feature Workstreams
 
+**Dispatch:** use **`/feature <Feature>`** or **`/wave wN`** — see `artifacts/plans/build-plan.md` (orchestration table) and `.cursor/commands/wave.md`.
+
 | Feature | Wave | Backend | Frontend | QA | Commit |
 |---|---|---|---|---|---|
 | foundation | Foundation | complete | complete | — | `9fbdc8d`, `799dfa2` |

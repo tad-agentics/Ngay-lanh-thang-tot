@@ -5,6 +5,25 @@
 
 ---
 
+## Cursor orchestration (waves → commands)
+
+Waves are **sequential** (see Depends on). Each wave maps to one **RAD command**; do not skip gates.
+
+| Wave | Feature id (for `/feature`) | Command |
+|------|-----------------------------|---------|
+| **Foundation** | `foundation` | `/foundation` |
+| **W1** | `auth-profile-billing` | `/feature auth-profile-billing` |
+| **W2** | `core-loop` | `/feature core-loop` |
+| **W3** | `personalization` | `/feature personalization` |
+| **W4** | `social-specialty` | `/feature social-specialty` |
+| **Cross-cutting** | `legal-settings` | `/feature legal-settings` |
+
+Shorthand: **`/wave w1`** … **`/wave w4`** (see `.cursor/commands/wave.md`) — aliases the same dispatch text as the `/feature` row above.
+
+**Incremental slices:** If part of a wave already landed in `main`/`staging`, still run **`/feature <id>`** for the *remaining* Backend → Frontend → QA work; then update `artifacts/plans/project-plan.md`.
+
+---
+
 ## Feature Dependency Graph
 
 | Wave | Feature id | Backend scope | Frontend scope | Depends on |

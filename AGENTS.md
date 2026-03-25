@@ -64,7 +64,8 @@ All specialists are used proactively. When choosing which subagent to launch:
 | **Phase 4** | `/phase4` | Tech Lead | Human approves tech spec |
 | **Setup** | `/setup` | Tech Lead | Human approves build plan |
 | **Foundation** | `/foundation` | Backend (infra + SEO/PWA) → Frontend (Make import + component inventory + Tailwind config + landing + auth) | Auto-proceeds after commit |
-| **Features** | `/feature [name]` | Backend → Frontend → QA (per feature, parallel waves) | Human approves each QA PASS |
+| **Waves (W1–W4)** | `/wave w1` … `/wave w4` | Same as **`/feature`** for that wave’s `feature id` — see `artifacts/plans/build-plan.md` | Same as `/feature` |
+| **Features** | `/feature [name]` | Backend → Frontend → QA **per feature id** (`auth-profile-billing`, `core-loop`, …) **in dependency order** | Human approves each QA PASS |
 | **Visual audit** | `/visual-audit [url]` | Product Designer | Fix all BLOCKING findings |
 | **Pre-handoff** | `/pre-handoff` | QA Agent | Human approves |
 | **Deploy** | `/deploy [ref]` | DevOps Agent | — |
