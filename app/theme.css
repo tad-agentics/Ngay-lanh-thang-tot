@@ -92,8 +92,6 @@
   --ring: oklch(0.73 0.12 85);
 
   /* ─── NLTT Custom Tokens ─── */
-  --surface: oklch(0.22 0.06 155);
-  --surface-foreground: oklch(0.82 0.06 90);
   --success: oklch(0.52 0.10 155);
   --success-foreground: oklch(0.96 0.005 80);
   --danger: oklch(0.35 0.15 25);
@@ -101,6 +99,19 @@
   --warning: oklch(0.53 0.11 80);
   --warning-foreground: oklch(0.12 0.02 80);
   --nltt-default: oklch(0.76 0.03 80);
+
+  /** Figma Make — màn Chọn ngày (nút CTA tan, chữ nâu) */
+  --make-cta: oklch(0.84 0.032 88);
+  --make-cta-foreground: oklch(0.38 0.04 72);
+
+  /**
+   * Deep forest green — một màu chuẩn Figma Make cho mọi thẻ hero (Hôm nay, chi tiết ngày,
+   * kết quả chọn ngày, vận tháng, lá số, landing strip…). `surface` trỏ cùng token để bg-surface ≡ bg-forest.
+   */
+  --forest: oklch(0.255 0.092 150);
+  --forest-foreground: oklch(0.93 0.03 96);
+  --surface: var(--forest);
+  --surface-foreground: var(--forest-foreground);
 
   /* ─── Radius ─── */
   --radius-sm: 4px;
@@ -152,6 +163,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-make-cta: var(--make-cta);
+  --color-make-cta-foreground: var(--make-cta-foreground);
+  --color-forest: var(--forest);
+  --color-forest-foreground: var(--forest-foreground);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);

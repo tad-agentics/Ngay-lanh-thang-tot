@@ -53,6 +53,57 @@ function formatOneRange(
 const RANGE_RE = /(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/;
 const SIMPLE_H_RE = /(\d{1,2})\s*h\s*[–-]\s*(\d{1,2})\s*h/i;
 
+/** Một khoảng giờ kiểu FigmaMake: `7–9h`, `23–1h` (phẩy ngăn cách các slot). */
+function formatOneRangeCompact(
+  startH: number,
+  startM: number,
+  endH: number,
+  endM: number,
+): string {
+  const left =
+    startM === 0 ? String(startH) : `${startH}:${String(startM).padStart(2, "0")}`;
+  const right =
+    endM === 0 ? String(endH) : `${endH}:${String(endM).padStart(2, "0")}`;
+  return `${left}–${right}h`;
+}
+
+function parseSegmentToCompactFigma(segment: string): string | null {
+  const s = segment.trim();
+  if (!s) return null;
+
+  const m = RANGE_RE.exec(s);
+  if (m) {
+    const sh = Number.parseInt(m[1]!, 10);
+    const sm = Number.parseInt(m[2]!, 10);
+    const eh = Number.parseInt(m[3]!, 10);
+    const em = Number.parseInt(m[4]!, 10);
+    if (
+      [sh, sm, eh, em].every((n) => Number.isFinite(n)) &&
+      sm >= 0 &&
+      sm < 60 &&
+      em >= 0 &&
+      em < 60 &&
+      sh >= 0 &&
+      sh < 24 &&
+      eh >= 0 &&
+      eh < 24
+    ) {
+      return formatOneRangeCompact(sh, sm, eh, em);
+    }
+  }
+
+  const hOnly = SIMPLE_H_RE.exec(s);
+  if (hOnly) {
+    const a = Number.parseInt(hOnly[1]!, 10);
+    const b = Number.parseInt(hOnly[2]!, 10);
+    if (Number.isFinite(a) && Number.isFinite(b) && a >= 0 && a < 24 && b >= 0 && b < 24) {
+      return formatOneRangeCompact(a, 0, b, 0);
+    }
+  }
+
+  return null;
+}
+
 function parseSegmentToDisplay(segment: string): string | null {
   const s = segment.trim();
   if (!s) return null;
@@ -121,6 +172,33 @@ export function formatGioTotArrayDisplayVi(raw: unknown): string | null {
   return out.length ? out.join(" · ") : null;
 }
 
+/** Cùng nguồn mảng slot nhưng hiển thị ngắn theo mock chi tiết ngày: `7–9h, 13–15h`. */
+export function formatGioTotArrayCompactVi(raw: unknown): string | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const out: string[] = [];
+  for (const item of raw) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const range = pickStr(o, ["range", "gio", "time", "label_gio"]);
+    if (!range) continue;
+    const hit = parseSegmentToCompactFigma(range);
+    if (hit) out.push(hit);
+  }
+  return out.length ? out.join(", ") : null;
+}
+
+export function formatHourRangeStringCompactVi(text: string): string | null {
+  const raw = text.trim();
+  if (!raw || raw === "—") return null;
+  const parts = raw.split(/\s*;\s*/);
+  const out: string[] = [];
+  for (const p of parts) {
+    const hit = parseSegmentToCompactFigma(p);
+    if (hit) out.push(hit);
+  }
+  return out.length ? out.join(", ") : null;
+}
+
 export function formatHourRangeForDisplayVi(
   textFallback: string,
   slots?: unknown,
@@ -132,5 +210,20 @@ export function formatHourRangeForDisplayVi(
   const trimmed = textFallback.trim();
   if (!trimmed || trimmed === "—") return "—";
   const parsed = formatHourRangeStringDisplayVi(trimmed);
+  return parsed ?? trimmed;
+}
+
+/** Giờ Hoàng/Hắc trên màn chi tiết (FigmaMake): `a–bh, c–dh`. */
+export function formatHourRangeForDayDetailFigmaVi(
+  textFallback: string,
+  slots?: unknown,
+): string {
+  if (Array.isArray(slots) && slots.length > 0) {
+    const fromArr = formatGioTotArrayCompactVi(slots);
+    if (fromArr) return fromArr;
+  }
+  const trimmed = textFallback.trim();
+  if (!trimmed || trimmed === "—") return "—";
+  const parsed = formatHourRangeStringCompactVi(trimmed);
   return parsed ?? trimmed;
 }

@@ -39,9 +39,34 @@ describe("parseDayDetailForView", () => {
     expect(v!.grade).toBe("B");
     expect(v!.reasonLines.some((x) => x.includes("Hắc"))).toBe(true);
     expect(v!.goodFor).toContain("Khai trương");
-    expect(v!.gioTot).toContain("Dần");
-    expect(v!.gioXau).toContain("Tý");
+    expect(v!.gioTot).toContain("giờ");
+    expect(v!.gioTot).not.toContain("Dần");
+    expect(v!.gioXau).toContain("giờ");
+    expect(v!.gioXau).toContain("đêm");
+    expect(v!.gioXau).not.toContain("Tý");
+    expect(v!.trucTitle).toContain("Khai");
+    expect(v!.purposeRows.length).toBe(26);
+    const khai = v!.purposeRows.find((r) => r.label === "Khai trương");
+    expect(khai?.verdict).toBe("nen_lam");
     expect(v!.breakdown).toHaveLength(1);
     expect(v!.breakdown[0]?.points).toBe(50);
+    expect(v!.breakdown[0]?.reasonVi).toContain("nền cố định");
+    expect(v!.breakdown[0]?.reasonVi).not.toMatch(/\d+\s*điểm/);
+  });
+
+  it("marks avoid_for as khong_nen", () => {
+    const v = parseDayDetailForView({
+      lunar_date: "Ngày 1",
+      can_chi: "Giáp Tý",
+      score: 55,
+      grade: "C",
+      good_for: [],
+      avoid_for: ["Phẫu thuật"],
+      gio_tot: [{ range: "07:00-09:00" }],
+      breakdown: [],
+    });
+    expect(v).not.toBeNull();
+    const pt = v!.purposeRows.find((r) => r.label === "Phẫu thuật");
+    expect(pt?.verdict).toBe("khong_nen");
   });
 });

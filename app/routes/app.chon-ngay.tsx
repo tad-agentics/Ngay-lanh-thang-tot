@@ -4,9 +4,7 @@ import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
   Select,
@@ -26,19 +24,36 @@ import {
   localTodayIsoDate,
 } from "~/lib/tu-tru-dates";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
+
+import { cn } from "~/components/ui/utils";
+
+const RANGE_PRESETS = [30, 60, 90] as const;
+type RangePreset = (typeof RANGE_PRESETS)[number];
+
+/** Không hiển thị «Mặc định» — người dùng phải chọn sự kiện cụ thể. */
+const CHON_NGAY_INTENT_OPTIONS = TU_TRU_INTENT_OPTIONS.filter(
+  (o) => o.value !== "MAC_DINH",
+);
+
+/** Giá trị Select luôn là chuỗi — tránh `undefined` làm Radix chuyển uncontrolled. */
+const INTENT_UNSET = "__unset__";
 
 export default function AppChonNgay() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
-  const [rangeStart, setRangeStart] = useState(() => localTodayIsoDate());
-  const [rangeEnd, setRangeEnd] = useState(() => {
-    const t = localTodayIsoDate();
-    return addDaysIso(t, 29) ?? t;
-  });
-  const [intent, setIntent] = useState<TuTruIntent>("MAC_DINH");
+  const { costs } = useFeatureCosts();
+  const [rangePreset, setRangePreset] = useState<RangePreset>(30);
+  const [intent, setIntent] = useState<TuTruIntent | "">("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  const rangeStart = useMemo(() => localTodayIsoDate(), []);
+  const rangeEnd = useMemo(() => {
+    const end = addDaysIso(rangeStart, rangePreset - 1);
+    return end ?? rangeStart;
+  }, [rangeStart, rangePreset]);
 
   const days = useMemo(
     () => inclusiveDaysBetweenIsoDates(rangeStart, rangeEnd),
@@ -52,15 +67,26 @@ export default function AppChonNgay() {
     [days],
   );
 
+  const costRow = costs[featureKey];
+  const creditHint = costRow
+    ? costRow.is_free || costRow.credit_cost <= 0
+      ? "Không trừ lượng"
+      : `${costRow.credit_cost} lượng`
+    : null;
+
   async function runLookup() {
     if (!profile?.ngay_sinh) {
       toast.error("Cần ngày sinh trong hồ sơ.");
       return;
     }
+    if (!intent || intent === "MAC_DINH") {
+      toast.error("Chọn loại sự kiện.");
+      return;
+    }
     const rs = isoDateToDdMmYyyy(rangeStart);
     const re = isoDateToDdMmYyyy(rangeEnd);
     if (!rs || !re || days == null) {
-      toast.error("Khoảng ngày không hợp lệ (cần từ ngày ≤ đến ngày).");
+      toast.error("Khoảng ngày không hợp lệ.");
       return;
     }
     setBusy(true);
@@ -96,35 +122,55 @@ export default function AppChonNgay() {
     });
   }
 
+  const disabledForm = profileLoading || !profile;
+  const intentSelectValue =
+    intent && intent !== "MAC_DINH" ? intent : INTENT_UNSET;
+
   return (
-    <div className="px-4 pb-8">
-      <ScreenHeader title="Chọn Ngày Tốt" showBack={false} className="pb-5" />
+    <div className="min-h-[60vh] bg-background pb-8">
+      <div className="px-4 pt-6 pb-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-[family-name:var(--font-lora)]">
+          Chọn Ngày Tốt
+        </h1>
+      </div>
 
-      <div className="flex flex-col gap-5">
-      {!profileLoading && profile && !profile.ngay_sinh ? (
-        <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
-          <p className="text-muted-foreground">
-            Cần ngày sinh trong hồ sơ để chọn ngày Bát Tự.
-          </p>
-          <Button asChild variant="secondary" className="w-full sm:w-auto">
-            <Link to="/app/cai-dat">Mở Cài đặt</Link>
-          </Button>
-        </div>
-      ) : null}
+      <div className="px-4 flex flex-col gap-6">
+        {!profileLoading && profile && !profile.ngay_sinh ? (
+          <div className="rounded-[var(--radius-lg)] border border-border bg-card p-4 text-sm space-y-3">
+            <p className="text-muted-foreground leading-relaxed">
+              Thêm ngày sinh trong Cài đặt để tra chọn ngày theo Bát Tự.
+            </p>
+            <Button asChild variant="secondary" className="w-full font-medium">
+              <Link to="/app/cai-dat">Mở Cài đặt</Link>
+            </Button>
+          </div>
+        ) : null}
 
-      <section className="rounded-xl border border-border bg-card p-4 space-y-4 text-sm">
         <div className="space-y-2">
-          <Label htmlFor="chon-intent">Mục đích</Label>
-          <Select
-            value={intent}
-            onValueChange={(v) => setIntent(v as TuTruIntent)}
-            disabled={profileLoading || !profile}
+          <Label
+            htmlFor="chon-su-kien"
+            className="text-sm font-medium text-foreground"
           >
-            <SelectTrigger id="chon-intent" className="w-full">
-              <SelectValue />
+            Sự kiện
+          </Label>
+          <Select
+            value={intentSelectValue}
+            onValueChange={(v) =>
+              setIntent(v === INTENT_UNSET ? "" : (v as TuTruIntent))
+            }
+            disabled={disabledForm}
+          >
+            <SelectTrigger
+              id="chon-su-kien"
+              className="w-full min-h-12 rounded-[var(--radius-md)] border-border bg-card text-foreground shadow-none h-auto py-3"
+            >
+              <SelectValue placeholder="Chọn loại sự kiện…" />
             </SelectTrigger>
             <SelectContent>
-              {TU_TRU_INTENT_OPTIONS.map((opt) => (
+              <SelectItem value={INTENT_UNSET}>
+                Chọn loại sự kiện…
+              </SelectItem>
+              {CHON_NGAY_INTENT_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
@@ -132,55 +178,62 @@ export default function AppChonNgay() {
             </SelectContent>
           </Select>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="range-start">Từ ngày</Label>
-            <Input
-              id="range-start"
-              type="date"
-              value={rangeStart}
-              onChange={(e) => setRangeStart(e.target.value)}
-              disabled={profileLoading || !profile}
-            />
+
+        <div className="space-y-2">
+          <Label className="text-sm font-medium text-foreground">
+            Khoảng thời gian
+          </Label>
+          <div
+            className="flex rounded-[var(--radius-md)] border border-border bg-card p-1 gap-0"
+            role="group"
+            aria-label="Độ dài khoảng quét ngày"
+          >
+            {RANGE_PRESETS.map((preset, idx) => {
+              const selected = rangePreset === preset;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  disabled={disabledForm}
+                  aria-pressed={selected}
+                  onClick={() => setRangePreset(preset)}
+                  className={cn(
+                    "flex-1 py-2.5 text-sm font-medium transition-colors rounded-[calc(var(--radius-md)-2px)] border-0",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    "disabled:opacity-50 disabled:pointer-events-none",
+                    idx < RANGE_PRESETS.length - 1 &&
+                      "border-r border-border/80",
+                    selected
+                      ? "bg-forest text-forest-foreground shadow-sm"
+                      : "bg-transparent text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  {preset} ngày
+                </button>
+              );
+            })}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="range-end">Đến ngày</Label>
-            <Input
-              id="range-end"
-              type="date"
-              value={rangeEnd}
-              onChange={(e) => setRangeEnd(e.target.value)}
-              disabled={profileLoading || !profile}
-            />
-          </div>
+          {days != null && creditHint ? (
+            <p className="text-xs text-muted-foreground pt-1">
+              Từ hôm nay · {days} ngày · {creditHint}
+            </p>
+          ) : null}
         </div>
-        {days != null ? (
-          <p className="text-xs text-muted-foreground">
-            Khoảng: <strong className="text-foreground">{days}</strong> ngày
-            (tính cả hai đầu) — mức lượng:{" "}
-            <strong className="text-foreground">{featureKey}</strong>
-          </p>
-        ) : (
-          <p className="text-xs text-destructive">
-            Chọn từ ngày ≤ đến ngày.
-          </p>
-        )}
 
         <CreditGate featureKey={featureKey}>
           <Button
             type="button"
-            className="w-full sm:w-auto"
+            className="w-full min-h-12 rounded-[var(--radius-md)] font-semibold bg-make-cta text-make-cta-foreground hover:bg-make-cta/92 border-0 shadow-none"
             disabled={
               busy || profileLoading || !profile?.ngay_sinh || days == null
             }
             onClick={() => void runLookup()}
           >
-            {busy ? "Đang tra…" : "Tra cứu"}
+            {busy ? "Đang tra…" : "Tìm ngày phù hợp"}
           </Button>
         </CreditGate>
-      </section>
 
-      {err ? <ErrorBanner message={err} /> : null}
+        {err ? <ErrorBanner message={err} /> : null}
       </div>
     </div>
   );

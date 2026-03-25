@@ -1,14 +1,32 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { useMemo, useState, type FormEvent } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import type { Database } from "~/lib/database.types";
+import {
+  landingSignupPrefillHasAny,
+  parseLandingSignupPrefill,
+} from "~/lib/landing-cta-constants";
 import { supabase } from "~/lib/supabase";
+
+function formatDobVi(ymd: string): string {
+  const d = new Date(`${ymd}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return ymd;
+  return d.toLocaleDateString("vi-VN");
+}
 
 export default function DangKy() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const prefill = useMemo(
+    () => parseLandingSignupPrefill(searchParams),
+    [searchParams],
+  );
+  const showPrefillBanner = landingSignupPrefillHasAny(prefill);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -20,17 +38,34 @@ export default function DangKy() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          ...(prefill.displayName ? { full_name: prefill.displayName } : {}),
+        },
       },
     });
     setBusy(false);
     if (error) {
       toast.error(error.message);
       return;
+    }
+    const uid = data.user?.id;
+    if (uid && landingSignupPrefillHasAny(prefill)) {
+      const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
+      if (prefill.displayName) patch.display_name = prefill.displayName;
+      if (prefill.ngaySinh) patch.ngay_sinh = prefill.ngaySinh;
+      if (prefill.gioSinh) patch.gio_sinh = prefill.gioSinh;
+      if (prefill.gioiTinh) patch.gioi_tinh = prefill.gioiTinh;
+      const { error: pe } = await supabase.from("profiles").update(patch).eq("id", uid);
+      if (pe) {
+        toast.error(
+          "Tài khoản đã tạo nhưng chưa lưu được ngày sinh từ form — bạn có thể nhập lại trong Cài đặt.",
+        );
+      }
     }
     toast.success("Đã gửi email xác nhận (nếu bật). Kiểm tra hộp thư.");
     navigate("/app", { replace: true });
@@ -50,6 +85,53 @@ export default function DangKy() {
             Nhận 20 lượng starter sau khi xác nhận email (theo cấu hình dự án).
           </p>
         </div>
+        {showPrefillBanner ? (
+          <div
+            className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm text-foreground space-y-1.5"
+            role="status"
+          >
+            <p className="font-medium text-foreground">Thông tin từ form trang chủ</p>
+            <p className="text-muted-foreground leading-snug">
+              Sau khi đăng ký, hệ thống sẽ lưu vào hồ sơ để bạn lập lá số nhanh hơn.
+            </p>
+            <ul className="list-disc pl-5 text-muted-foreground space-y-0.5">
+              {prefill.displayName ? (
+                <li>
+                  <span className="text-foreground/90">Họ tên:</span>{" "}
+                  {prefill.displayName}
+                </li>
+              ) : null}
+              {prefill.ngaySinh ? (
+                <li>
+                  <span className="text-foreground/90">Ngày sinh:</span>{" "}
+                  {formatDobVi(prefill.ngaySinh)}
+                </li>
+              ) : null}
+              {prefill.rawGioLabel === "Chưa biết giờ sinh" ? (
+                <li>
+                  <span className="text-foreground/90">Giờ sinh:</span> chưa xác
+                  định
+                </li>
+              ) : prefill.gioSinh ? (
+                <li>
+                  <span className="text-foreground/90">Giờ sinh:</span> đã chọn
+                  (theo khung trên landing)
+                </li>
+              ) : prefill.rawGioLabel ? (
+                <li>
+                  <span className="text-foreground/90">Giờ sinh:</span> chưa nhận
+                  diện — chỉnh trong Cài đặt nếu cần
+                </li>
+              ) : null}
+              {prefill.gioiTinh ? (
+                <li>
+                  <span className="text-foreground/90">Giới tính:</span>{" "}
+                  {prefill.gioiTinh === "nam" ? "Nam" : "Nữ"}
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
