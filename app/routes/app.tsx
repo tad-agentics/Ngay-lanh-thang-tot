@@ -3,8 +3,9 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { AppMobileShell } from "~/components/AppMobileShell";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
-import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
+import { useAuth } from "~/lib/auth";
+import { ProfileProvider } from "~/lib/profile-context";
 import { profileHasLaso } from "~/lib/la-so-ui";
 
 /** Allowed while `onboarding_completed_at` is null (purchase path from welcome). */
@@ -18,13 +19,6 @@ function isOnboardingExemptPath(pathname: string): boolean {
 
 export default function AppShellLayout() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, error: profileError, reload } =
-    useProfile();
-  const location = useLocation();
-
-  async function retryProfile() {
-    await reload();
-  }
 
   if (authLoading) {
     return (
@@ -36,6 +30,26 @@ export default function AppShellLayout() {
 
   if (!user) {
     return <Navigate to="/dang-nhap" replace />;
+  }
+
+  return (
+    <ProfileProvider user={user}>
+      <AppShellWithProfile signOut={signOut} />
+    </ProfileProvider>
+  );
+}
+
+function AppShellWithProfile({
+  signOut,
+}: {
+  signOut: () => Promise<void>;
+}) {
+  const { profile, loading: profileLoading, error: profileError, reload } =
+    useProfile();
+  const location = useLocation();
+
+  async function retryProfile() {
+    await reload();
   }
 
   if (profileLoading) {
@@ -89,3 +103,4 @@ export default function AppShellLayout() {
     </AppMobileShell>
   );
 }
+
