@@ -403,3 +403,10 @@ verify_jwt = false
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
 [functions.bat-tu]
 verify_jwt = false
+
+# Public share preview + OG HTML (anon `apikey` only).
+[functions.share-resolve]
+verify_jwt = false
+
+[functions.share-og]
+verify_jwt = false
