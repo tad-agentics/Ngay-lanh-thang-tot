@@ -39,8 +39,10 @@ describe("parseDayDetailForView", () => {
     expect(v!.grade).toBe("B");
     expect(v!.reasonLines.some((x) => x.includes("Hắc"))).toBe(true);
     expect(v!.goodFor).toContain("Khai trương");
-    expect(v!.gioTot).toContain("Dần");
-    expect(v!.gioXau).toContain("Tý");
+    expect(v!.gioTot).toContain("giờ");
+    expect(v!.gioTot).not.toContain("Dần");
+    expect(v!.gioXau).toContain("giờ");
+    expect(v!.gioXau).not.toContain("Tý");
     expect(v!.breakdown).toHaveLength(1);
     expect(v!.breakdown[0]?.points).toBe(50);
   });

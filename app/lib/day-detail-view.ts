@@ -1,4 +1,5 @@
 import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
+import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -15,19 +16,26 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
   return "";
 }
 
-function formatChiRangeSlots(raw: unknown): string {
-  if (!Array.isArray(raw)) return "";
-  const parts: string[] = [];
-  for (const item of raw) {
-    const o = asRecord(item);
-    if (!o) continue;
-    const chi = pickStr(o, ["chi_name", "label", "name"]);
-    const range = pickStr(o, ["range", "gio", "time"]);
-    if (chi && range) parts.push(`${chi} ${range}`);
-    else if (range) parts.push(range);
-    else if (chi) parts.push(chi);
+function firstNonEmptySlotArray(
+  obj: Record<string, unknown>,
+  keys: string[],
+): unknown[] | null {
+  for (const k of keys) {
+    const v = obj[k];
+    if (Array.isArray(v) && v.length > 0) return v;
   }
-  return parts.join("; ");
+  return null;
+}
+
+/** Giờ Hoàng/Hắc đạo: cùng định dạng đọc được như thẻ Hôm nay (vd. 7–9 giờ sáng · …). */
+function formatGioSlotsHumanVi(
+  nested: Record<string, unknown>,
+  keys: string[],
+): string {
+  const arr = firstNonEmptySlotArray(nested, keys);
+  if (!arr) return "—";
+  const s = formatHourRangeForDisplayVi("", arr);
+  return s === "—" ? "—" : s;
 }
 
 export interface DayDetailBreakdownRow {
@@ -122,13 +130,19 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     }
   }
 
-  let gioTot = formatChiRangeSlots(nested.gio_tot ?? nested.gioTot);
-  if (!gioTot)
-    gioTot = formatChiRangeSlots(
-      nested.gio_hoang_dao ?? nested.gioHoangDao ?? nested.best_hours,
-    );
-  let gioXau = formatChiRangeSlots(nested.gio_xau ?? nested.gioXau);
-  if (!gioXau) gioXau = formatChiRangeSlots(nested.bad_hours ?? nested.gio_hung);
+  const gioTot = formatGioSlotsHumanVi(nested, [
+    "gio_tot",
+    "gioTot",
+    "gio_hoang_dao",
+    "gioHoangDao",
+    "best_hours",
+  ]);
+  const gioXau = formatGioSlotsHumanVi(nested, [
+    "gio_xau",
+    "gioXau",
+    "bad_hours",
+    "gio_hung",
+  ]);
 
   const breakdown: DayDetailBreakdownRow[] = [];
   const br = nested.breakdown;
