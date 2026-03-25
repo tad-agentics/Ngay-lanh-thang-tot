@@ -1,4 +1,10 @@
-# Changelog — [App Name]
+# Changelog — Ngày Lành Tháng Tốt
+
+## Planning notes
+
+| Area | Note | Blocking? |
+|------|------|----------|
+| Workflow | Figma Make prototype treated as **pre-delivered** for this test run — no in-Make build step; integrate via `src/make-import/` then Phase 4+. | No |
 
 ## How to use
 
