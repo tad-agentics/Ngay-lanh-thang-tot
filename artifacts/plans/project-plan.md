@@ -22,7 +22,7 @@
 | auth-profile-billing | W1 | complete | complete | PASS (build + vitest) | `3e4ae95` + screens |
 | core-loop | W2 | complete | complete | PASS (build + vitest; E2E manual) | staging |
 | personalization | W3 | complete | complete | PASS (build + vitest) | `1b2d074` backend, `5e59150` screens |
-| social-specialty | W4 | complete | complete | PASS (build + vitest) | `6de2bd2`, `892cd13` |
+| social-specialty | W4 | complete | complete | PASS (build + vitest) | `6de2bd2`, `e913ae1` |
 | legal-settings | cross | — | pending | — | — |
 
 ## Post-Build
