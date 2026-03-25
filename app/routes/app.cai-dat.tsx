@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
@@ -213,6 +214,45 @@ export default function AppCaiDat() {
         <Button variant="outline" asChild className="w-full">
           <Link to="/app/thong-bao-quyen">Quản lý thông báo</Link>
         </Button>
+      </section>
+
+      <section
+        className="rounded-xl border border-border bg-card text-sm overflow-hidden"
+        aria-label="Pháp lý và ứng dụng"
+      >
+        {(
+          [
+            { label: "Cài đặt ứng dụng", to: "/app/cai-dat-app" as const },
+            { label: "Chính sách bảo mật", to: "/chinh-sach-bao-mat" as const },
+            { label: "Điều khoản sử dụng", to: "/dieu-khoan" as const },
+          ] as const
+        ).map((item, i, arr) => (
+          <Link
+            key={item.to}
+            to={item.to}
+            className={`flex items-center justify-between gap-3 px-4 py-3.5 text-foreground hover:bg-muted/50 transition-colors ${i < arr.length - 1 ? "border-b border-border" : ""}`}
+            style={{ minHeight: 48 }}
+          >
+            <span>{item.label}</span>
+            <ChevronRight
+              size={16}
+              className="text-muted-foreground shrink-0"
+              strokeWidth={1.5}
+            />
+          </Link>
+        ))}
+        <a
+          href="mailto:hotro@ngaylanhthangtot.vn"
+          className="flex items-center justify-between gap-3 px-4 py-3.5 text-foreground border-t border-border hover:bg-muted/50 transition-colors"
+          style={{ minHeight: 48 }}
+        >
+          <span>Liên hệ hỗ trợ</span>
+          <ExternalLink
+            size={14}
+            className="text-muted-foreground shrink-0"
+            strokeWidth={1.5}
+          />
+        </a>
       </section>
 
       <Button variant="outline" asChild className="w-full">

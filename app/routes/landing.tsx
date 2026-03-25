@@ -315,6 +315,23 @@ export default function Landing() {
           </div>
         </div>
       ) : null}
+
+      <footer className="border-t border-border bg-muted/20">
+        <div className="mx-auto max-w-3xl px-4 py-8 flex flex-wrap gap-x-6 gap-y-2 justify-center text-xs text-muted-foreground">
+          <Link
+            to="/chinh-sach-bao-mat"
+            className="hover:text-foreground underline-offset-4 hover:underline"
+          >
+            Chính sách bảo mật
+          </Link>
+          <Link
+            to="/dieu-khoan"
+            className="hover:text-foreground underline-offset-4 hover:underline"
+          >
+            Điều khoản sử dụng
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -2,6 +2,10 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 
 export default [
   index("routes/landing.tsx"),
+  route("chinh-sach-bao-mat", "routes/chinh-sach-bao-mat.tsx"),
+  route("dieu-khoan", "routes/dieu-khoan.tsx"),
+  route("privacy", "routes/privacy.tsx"),
+  route("terms", "routes/terms.tsx"),
   route("x/:token", "routes/x.$token.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("dang-nhap", "routes/dang-nhap.tsx"),
@@ -23,6 +27,7 @@ export default [
     route("mua-luong", "routes/app.mua-luong.tsx"),
     route("mua-luong/thanh-cong", "routes/app.mua-luong.thanh-cong.tsx"),
     route("cai-dat", "routes/app.cai-dat.tsx"),
+    route("cai-dat-app", "routes/app.cai-dat-app.tsx"),
     route("hop-tuoi", "routes/app.hop-tuoi.tsx"),
     route("phong-thuy", "routes/app.phong-thuy.tsx"),
     route("chia-se", "routes/app.chia-se.tsx"),
