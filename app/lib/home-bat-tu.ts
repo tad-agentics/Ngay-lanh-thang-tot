@@ -1,4 +1,5 @@
 import type { CalendarDay, DayType } from "~/lib/api-types";
+import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -266,11 +267,15 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     if (fromNested) hourRange = fromNested;
   }
 
+  const slotSources =
+    nested.gio_tot ?? nested.gio_hoang_dao ?? root.gio_tot;
+  const hourDisplay = formatHourRangeForDisplayVi(hourRange, slotSources);
+
   return {
     dayType,
     solarDateVi,
     lunarLabel: lunarLabel || "—",
-    hourRange: hourRange || "—",
+    hourRange: hourDisplay || "—",
   };
 }
 

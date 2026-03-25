@@ -17,7 +17,7 @@ describe("parseNgayHomNayForHome", () => {
     });
     expect(v).not.toBeNull();
     expect(v!.dayType).toBe("hoang-dao");
-    expect(v!.hourRange).toBe("7h–9h");
+    expect(v!.hourRange).toBe("7–9 giờ sáng");
     expect(v!.lunarLabel).toBe("6 tháng 2");
     expect(v!.solarDateVi).toMatch(/2026/);
   });
@@ -36,8 +36,9 @@ describe("parseNgayHomNayForHome", () => {
     expect(v).not.toBeNull();
     expect(v!.dayType).toBe("hoang-dao");
     expect(v!.lunarLabel).toContain("Bính Ngọ");
-    expect(v!.hourRange).toContain("Tý");
-    expect(v!.hourRange).toContain("23:00");
+    expect(v!.hourRange).toContain("giờ");
+    expect(v!.hourRange).toMatch(/23|đêm/);
+    expect(v!.hourRange).not.toContain("Tý");
   });
 });
 
