@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
 
-import { LasoRevealSequence } from "~/components/la-so/LasoRevealSequence";
+const LasoRevealSequence = lazy(() =>
+  import("~/components/la-so/LasoRevealSequence").then((m) => ({
+    default: m.LasoRevealSequence,
+  })),
+);
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
@@ -437,10 +441,18 @@ function LasoRevealBridge({
   onCancel: () => void | Promise<void>;
 }) {
   return (
-    <LasoRevealSequence
-      {...reveal}
-      onComplete={() => void onComplete()}
-      onCancel={() => void onCancel()}
-    />
+    <Suspense
+      fallback={
+        <div className="min-h-svh flex items-center justify-center bg-background text-muted-foreground text-sm">
+          Đang tải hiệu ứng…
+        </div>
+      }
+    >
+      <LasoRevealSequence
+        {...reveal}
+        onComplete={() => void onComplete()}
+        onCancel={() => void onCancel()}
+      />
+    </Suspense>
   );
 }

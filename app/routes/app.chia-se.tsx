@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { ShareCardCanvas } from "~/components/chia-se/ShareCardCanvas";
+const ShareCardCanvas = lazy(() =>
+  import("~/components/chia-se/ShareCardCanvas").then((m) => ({
+    default: m.ShareCardCanvas,
+  })),
+);
 import { CreditGate } from "~/components/CreditGate";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
@@ -136,17 +140,23 @@ function ChiaSeCard({
 
   return (
     <>
-      <ShareCardCanvas
-        eventLabel={suKien}
-        date={dateLabel}
-        lunarDate={lunarLabel}
-        reasonShort={reasonShort}
-        menh={menh}
-        grade={grade}
-        shareUrl={shareUrl}
-        onShare={() => void handleShare()}
-        onSaveImage={handleSaveImage}
-      />
+      <Suspense
+        fallback={
+          <p className="text-muted-foreground text-sm py-8">Đang tải thẻ…</p>
+        }
+      >
+        <ShareCardCanvas
+          eventLabel={suKien}
+          date={dateLabel}
+          lunarDate={lunarLabel}
+          reasonShort={reasonShort}
+          menh={menh}
+          grade={grade}
+          shareUrl={shareUrl}
+          onShare={() => void handleShare()}
+          onSaveImage={handleSaveImage}
+        />
+      </Suspense>
       {sent ? (
         <p
           className="text-muted-foreground text-xs text-center mt-4"

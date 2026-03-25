@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
 import { GrainOverlay } from "~/components/GrainOverlay";
-import { HopTuoiResultPanel } from "~/components/hop-tuoi/HopTuoiResultPanel";
+
+const HopTuoiResultPanel = lazy(() =>
+  import("~/components/hop-tuoi/HopTuoiResultPanel").then((m) => ({
+    default: m.HopTuoiResultPanel,
+  })),
+);
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -229,7 +234,13 @@ export default function AppHopTuoi() {
         </CreditGate>
       ) : panel ? (
         <div className="flex flex-col gap-5">
-          <HopTuoiResultPanel {...panel} />
+          <Suspense
+            fallback={
+              <p className="text-muted-foreground text-sm py-4">Đang tải…</p>
+            }
+          >
+            <HopTuoiResultPanel {...panel} />
+          </Suspense>
 
           <div className="px-1">
             {isLowScore ? (

@@ -5,6 +5,18 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("motion")) return "motion";
+          if (id.includes("lucide-react")) return "lucide";
+        },
+      },
+    },
+  },
   plugins: [
     tailwindcss(),
     reactRouter(),
@@ -12,8 +24,12 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: false,
+      /** Allow intentional precache size cap; runtimeCaching still caches /assets after first load. */
+      showMaximumFileSizeToCacheInBytesWarning: true,
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        /** Skip large hashed bundles in precache; they load on demand and enter runtime cache below. */
+        maximumFileSizeToCacheInBytes: 160 * 1024,
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [
           /^\/api\//,
@@ -25,6 +41,21 @@ export default defineConfig({
           /^\/sitemap\.xml$/,
           /^\/sw\.js$/,
           /\.(?:ico|png|jpg|jpeg|gif|svg|webp|woff2|json)$/i,
+        ],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/assets/") &&
+              /\.(?:js|css)$/i.test(url.pathname),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "assets",
+              expiration: {
+                maxEntries: 96,
+                maxAgeSeconds: 60 * 60 * 24 * 35,
+              },
+            },
+          },
         ],
       },
     }),

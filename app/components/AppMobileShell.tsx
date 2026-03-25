@@ -1,9 +1,14 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { BottomNav } from "~/components/BottomNav";
-import { ExploreSheetModal } from "~/components/ExploreSheetModal";
 import { getActiveTab, shouldShowNav, type BottomNavTab } from "~/lib/nav-config";
+
+const ExploreSheetModal = lazy(() =>
+  import("~/components/ExploreSheetModal").then((m) => ({
+    default: m.ExploreSheetModal,
+  })),
+);
 
 const PWA_SESSION_KEY = "nltt_session_count";
 const PWA_DISMISSED_KEY = "pwa_install_dismissed";
@@ -69,11 +74,23 @@ export function AppMobileShell({
         </div>
       ) : null}
 
-      <ExploreSheetModal
-        isOpen={showExplore}
-        onClose={() => setShowExplore(false)}
-        hasLaso={hasLaso}
-      />
+      {showExplore ? (
+        <Suspense
+          fallback={
+            <div
+              className="fixed inset-0 z-50 bg-foreground/20"
+              aria-busy="true"
+              aria-label="Đang mở"
+            />
+          }
+        >
+          <ExploreSheetModal
+            isOpen
+            onClose={() => setShowExplore(false)}
+            hasLaso={hasLaso}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
