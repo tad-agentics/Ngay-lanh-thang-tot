@@ -59,6 +59,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       feature_credit_costs: {
         Row: {
@@ -78,6 +79,7 @@ export interface Database {
           is_free?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
       };
       app_config: {
         Row: {
@@ -94,6 +96,7 @@ export interface Database {
           value?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       credit_ledger: {
         Row: {
@@ -109,6 +112,7 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       payment_orders: {
         Row: {
@@ -129,6 +133,7 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       webhook_events: {
         Row: {
@@ -139,6 +144,7 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       share_tokens: {
         Row: {
@@ -152,6 +158,7 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       push_subscriptions: {
         Row: {
@@ -175,6 +182,7 @@ export interface Database {
           auth?: string;
           user_agent?: string | null;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

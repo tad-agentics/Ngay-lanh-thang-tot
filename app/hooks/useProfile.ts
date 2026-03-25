@@ -43,7 +43,7 @@ export function useProfile(): {
     if (seq !== loadSeqRef.current) return;
     if (qe) setError(qe.message);
     else setError(null);
-    setProfile(data ?? null);
+    setProfile((data ?? null) as Profile | null);
     setLoading(false);
   }, []);
 
