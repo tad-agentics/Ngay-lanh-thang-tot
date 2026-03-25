@@ -35,6 +35,9 @@ export default function AppHome() {
           <Link to="/app/hom-nay">Hôm nay (Bát Tự)</Link>
         </Button>
         <Button variant="secondary" asChild className="justify-start">
+          <Link to="/app/tuan-nay">Tuần này (Bát Tự)</Link>
+        </Button>
+        <Button variant="secondary" asChild className="justify-start">
           <Link to="/app/bat-dau">Bắt đầu / chào mừng</Link>
         </Button>
         <Button variant="secondary" asChild className="justify-start">
@@ -87,7 +90,7 @@ export default function AppHome() {
       </section>
 
       <p className="text-xs text-muted-foreground">
-        Tra cứu Hôm nay / Tuần này / Chọn ngày sẽ được nối ở Wave 2.
+        Chọn ngày / chi tiết ngày sẽ được nối tiếp trong Wave 2.
       </p>
 
       <Button variant="ghost" asChild className="w-full">

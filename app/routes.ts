@@ -10,6 +10,7 @@ export default [
   route("app", "routes/app.tsx", [
     index("routes/app.home.tsx"),
     route("hom-nay", "routes/app.hom-nay.tsx"),
+    route("tuan-nay", "routes/app.tuan-nay.tsx"),
     route("bat-dau", "routes/app.bat-dau.tsx"),
     route("mua-luong", "routes/app.mua-luong.tsx"),
     route("mua-luong/thanh-cong", "routes/app.mua-luong.thanh-cong.tsx"),
