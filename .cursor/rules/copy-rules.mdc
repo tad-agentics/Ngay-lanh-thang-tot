@@ -1,95 +1,156 @@
 ---
-description: Voice, tone, and copy rules — [App Name]. Auto-loads on all screen files.
+description: Brand voice and copy standards for Ngày Lành Tháng Tốt — auto-loads on all screen files
 globs:
   - src/**/*.tsx
 alwaysApply: false
 ---
 
-> This file is the operational extract of `artifacts/docs/emotional-design-system.md`.
-> Populated during Phase 1 or by `/init` Step 4 from the EDS.
-> When EDS and this file diverge, update both — this file must never drift from the EDS.
+> Operational extract of `artifacts/docs/emotional-design-system.md`. When EDS and this file diverge, update both.
 
 ## Copy Formula
 
-Formula: [Exact sequence — e.g. "[Result] + [Reason personalized to user] + [Specific guidance if needed]"]
-Length: [Max sentences for primary copy — e.g. "2 sentences. Reason: 1 sentence. Total ≤40 words per screen."]
-Structure:
-  - Sentence 1: [What goes first — e.g. "Specific result (date, time, direction, color)"]
-  - Sentence 2: [What goes second — e.g. "Reason tied to user's profile — must include at least 1 personalization token"]
-Tone: [adjective], [adjective] — never [anti-adjective], [anti-adjective]
-Person: [How to address user — e.g. "Use 'bạn'. Never 'bạn ấy' or 'người dùng'."]
+```
+FORMULA    [Kết quả hành động] + [Lý do cá nhân hóa theo lá số] + [Hướng dẫn cụ thể nếu cần]
+
+LENGTH     Tối đa 2 câu cho copy chính. Lý do: 1 câu ngắn. Tổng không quá 40 từ trên một màn hình.
+
+STRUCTURE  Câu 1: Kết quả cụ thể (ngày, giờ, hướng, màu sắc) — không có "của bạn" ở đây
+           Câu 2: Lý do ngắn gọn gắn với lá số — bắt buộc có ít nhất 1 từ cá nhân hóa:
+                  mệnh, Dụng Thần, tuổi, Can Chi
+
+PERSON     Xưng "bạn" với user. Không dùng "bạn ấy", "người dùng".
+           Khi nhắc đến lá số: "mệnh của bạn", "Dụng Thần của bạn" — không phải "theo lá số".
+
+TONE       Bình tĩnh và rõ ràng — không lo lắng, không hứa hẹn
+           Gần gũi nhưng đứng đắn — không suồng sã, không lạnh lùng
+           Cụ thể và có thể hành động — không mơ hồ, không triết lý
+```
 
 ## Forbidden Opening Words
 
-Never start any copy string with: [word], [word], [word], [word], [word]
+Never start copy with: `Chúc mừng`, `Xin chào`, `Lưu ý`, `Chú ý`, `Theo`, `Dựa trên`, `Vui lòng`, `Hãy`, `Bạn nên`, `Đây là`, `Kết quả cho thấy`
 
 ## Forbidden Words (anywhere in copy)
 
-Never use: [word], [word], [word], [word], [word]
+Never use: `Chúc mừng`, `Tuyệt vời`, `Hoàn hảo`, `Thần kỳ`, `Huyền bí`, `Vận mệnh`, `Nhất định`, `Đảm bảo`, `Chắc chắn thành công`, `Tham khảo thôi`, `Chỉ mang tính tham khảo`, `Upgrade ngay`, `Mua ngay`, `Đừng bỏ lỡ`, `Ưu đãi`, `Khuyến mãi`, `Thần số học`, `Vũ trụ`, `Năng lượng`, `Rung động`, `Tốt cho tất cả mọi người`
 
 ## Screen-Context Copy Rules
 
-Each context type has its own emotional objective. When context type and base formula conflict, context type wins.
-
 ### Decision / Choice Moment
-Emotional objective: [What feeling to create — e.g. "Reduce cognitive load. Help user choose, don't add things to consider."]
-Formula override: [How this differs from base — e.g. "Best result on top. Show only 1 reason. Don't list all factors."]
-Example: "[Real copy with {{variables}} — e.g. 'Thứ Ba {{result.date}} — Trực Thành, Hoàng Đạo, hợp mệnh {{user.menh}} của bạn.'"]
+**Layer:** 1 · Yên Tâm
+**Emotional objective:** Giảm cognitive load — user đang phải chọn, giúp cô ấy chọn, không thêm thứ để cân nhắc.
+**Rule:** Kết quả tốt nhất lên đầu. Chỉ show 1 lý do chính — lý do quan trọng nhất theo lá số. Không liệt kê tất cả yếu tố.
+**Example — chọn ngày:**
+```
+Thứ Ba {{result.date}} — Trực Thành, Hoàng Đạo, hợp mệnh {{user.menh}} của bạn.
+Giờ tốt nhất: {{result.best_hour}}.
+```
+✕ KHÔNG: "Đây là ngày tốt nhất vì..." — không cần "vì", kết quả đã tự nói lên.
 
 ### Confirmation / Completion
-Emotional objective: [e.g. "Close the decision loop. Confirm the result as settled, not still a suggestion."]
-Formula override: [e.g. "First sentence: result as fact. Second sentence (optional): next action."]
-Example: "[Real copy — e.g. 'Ngày {{result.date}} đã sẵn sàng — giờ {{result.best_hour}} là thời điểm tốt nhất theo mệnh của bạn.'"]
+**Layer:** 1 + 3 · Yên Tâm + Chia Sẻ
+**Emotional objective:** Đóng vòng quyết định — user đã có câu trả lời, xác nhận điều đó trước khi offer thêm.
+**Rule:** Câu đầu: xác nhận kết quả như đã được chốt (không còn gợi ý). Câu hai (optional): hành động tiếp theo nhẹ nhàng.
+**Example — sau khi chọn ngày:**
+```
+Ngày {{result.date}} đã sẵn sàng — giờ {{result.best_hour}} là thời điểm tốt nhất theo mệnh của bạn.
+Chia sẻ kết quả hoặc lưu vào lịch.
+```
+**Example — sau khi lập lá số:**
+```
+Lá số của bạn đã được lưu. Nhật Chủ {{user.nhat_chu}} — Dụng Thần {{user.dung_than}}.
+Từ giờ mọi kết quả chọn ngày đều cá nhân hóa theo lá số này.
+```
 
 ### Empty / Zero State
-Emotional objective: [e.g. "App is waiting to help, not empty and waiting to be filled."]
-Formula override: [e.g. "Positive invitation, specific about what app will do. Never 'Chưa có X. Hãy Y.'"]
-Example: "[Real copy — e.g. 'Cho biết ngày giờ sinh để mọi kết quả đều dành riêng cho bạn.'"]
+**Layer:** 2 · Được Hiểu
+**Emotional objective:** App đang chờ giúp user — không phải app đang trống và chờ user điền vào.
+**Rule:** Không dùng "Chưa có X. Hãy Y." — nghe như thông báo lỗi. Thay bằng câu mời tích cực, cụ thể vào việc app sẽ làm.
+**Example — chưa có lá số:**
+```
+Cho biết ngày giờ sinh để mọi kết quả đều dành riêng cho bạn.
+Chỉ mất 30 giây — lưu một lần, dùng mãi.
+```
+✕ KHÔNG: "Bạn chưa lập lá số. Hãy lập ngay." — lạnh và mang cảm giác thiếu sót.
+
+**Example — lịch tháng chưa có lá số:**
+```
+Lịch này đang hiển thị ngày tốt chung. Nhập tuổi để thấy ngày nào thực sự hợp với bạn.
+```
 
 ### Error State
-Emotional objective: [e.g. "Maintain trust. Technical errors must not make user doubt result accuracy."]
-Formula override: [e.g. "Acknowledge briefly. Specific action user can take. No excessive apology."]
-Example: "[Real copy — e.g. 'Không tải được kết quả lúc này. Thử lại sau vài giây.'"]
+**Layer:** 1 · Giữ Yên Tâm
+**Emotional objective:** Giữ trust — lỗi kỹ thuật không được làm user nghi ngờ độ chính xác của kết quả. Phân biệt: lỗi kỹ thuật vs. không tìm thấy ngày tốt.
+**Rule:** Câu đầu: thừa nhận vấn đề ngắn gọn. Câu hai: hành động cụ thể user có thể làm ngay. Không xin lỗi quá mức, không giải thích kỹ thuật.
+**Example — lỗi kết nối:**
+```
+Không tải được kết quả lúc này. Thử lại sau vài giây.
+```
+**Example — không tìm thấy ngày tốt:**
+```
+Không có ngày nào đủ điều kiện trong khoảng thời gian này.
+Thử mở rộng sang 90 ngày để có thêm lựa chọn.
+```
+✕ KHÔNG: "Xin lỗi, hệ thống..." và không dùng "Không tìm thấy" như lỗi 404.
 
 ### Onboarding
-Emotional objective: [e.g. "App is learning about user, not user filling out a form."]
-Formula override: [e.g. "Each input field has micro-copy explaining purpose in 1 sentence. Don't use placeholder as label."]
-Example: "[Real copy — e.g. 'Ngày sinh của bạn — dùng để tính Can Chi và tìm ngày hợp tuổi.'"]
+**Layer:** 2 · Xây Được Hiểu
+**Emotional objective:** App đang học về user — không phải user đang điền form. Mỗi bước nhập phải cho user thấy ngay nó dùng để làm gì.
+**Rule:** Mỗi input field phải có micro-copy giải thích mục đích trong 1 câu ngắn. Không dùng placeholder làm label. Không hỏi thông tin không dùng ngay.
+**Example — nhập ngày sinh:**
+```
+Ngày sinh của bạn
+[sub-label] Dùng để tính Can Chi và tìm ngày hợp tuổi — không lưu server nếu bạn không tạo profile
+```
+**Example — sau khi nhập xong:**
+```
+Xong rồi — bạn thuộc mệnh {{user.menh}}. Kết quả từ giờ sẽ dành riêng cho bạn.
+```
 
 ### Background / Ambient
-Emotional objective: [e.g. "Calm, familiar tone for everyday UI. No excitement, no urgency."]
-Nav labels: [Pattern — e.g. "Nouns only, no verbs. 'Lịch' not 'Xem Lịch'. 'Lá số' not 'Lập Lá Số Của Bạn'."]
-Section headers: [Pattern — e.g. "Descriptive, not CTA. 'Ngày tốt tuần này' not 'Chọn ngày tốt tuần này!'"]
-Credit balance: [Pattern — e.g. "{{user.credits}} tín dụng — no 'Bạn còn X! Mua thêm ngay!'"]
+**Layer:** 3 · Tone Nhất Quán
+**Emotional objective:** Duy trì tone bình tĩnh và đứng đắn ở mọi UI element — nav label, section header, badge, tooltip.
+**Rule:** Nav labels: ngắn gọn, danh từ, không dùng động từ mệnh lệnh. Section headers: mô tả nội dung, không CTA.
+**Nav labels:**
+```
+✓ Lịch · Lá số · Hôm nay
+✕ Xem Lịch · Lập Lá Số Của Bạn · Xem Hôm Nay
+```
+**Section headers:**
+```
+✓ "Ngày tốt tuần này"
+✕ "Chọn ngày tốt tuần này!"
+```
+**Credit balance:**
+```
+{{user.credits}} lượng
+```
+✕ Không thêm "!" hoặc CTA mua thêm inline.
 
 ### Paywall / Purchase Moment
-Emotional objective: [e.g. "User is at peak wanting-to-know. Don't interrupt that feeling. Paywall is a natural next step, not a gate."]
-Formula override: [e.g. "Show partial result first. Explain what is hidden, not why to buy. No urgency."]
-Example: "[Real copy — e.g. 'Xem lý do và giờ tốt cho ngày {{result.date}} — cần 5 tín dụng.'"]
-
-## Forbidden Patterns
-
-- [Pattern name]: [What it is and why it's forbidden — e.g. "FALSE CERTAINTY: Copy promising outcomes. App provides information, not guarantees."]
-- [Pattern name]: [Description]
-- [Pattern name]: [Description]
-- [Pattern name]: [Description]
+**Layer:** 1 + 2 · Không Phá Vỡ Flow
+**Emotional objective:** User đang ở đỉnh điểm muốn biết kết quả — không làm gián đoạn. Paywall xuất hiện như bước tiếp theo tự nhiên, không phải cửa chắn.
+**Rule:** Cho thấy trước một phần kết quả (ngày tốt nhất, không có lý do). Paywall copy giải thích cái gì đang bị ẩn, không giải thích tại sao nên mua. Không urgency language.
+**Example — credit không đủ:**
+```
+Xem lý do và giờ tốt cho ngày {{result.date}} — cần {{feature_cost}} lượng.
+Số dư hiện tại: {{user.credits}} lượng.
+```
+✕ KHÔNG: "Nâng cấp để xem đầy đủ!" — nghe như subscription upsell.
 
 ## Copy Quality Test
 
-A string passes only if ALL five answer YES. Any NO → rewrite before shipping.
+A string passes only if all five answer YES:
 
-1. [Binary question specific to this product — e.g. "Does this copy mention at least one personal element (mệnh, Dụng Thần, tuổi, Can Chi) — or is this an ambient/background screen that doesn't require personalization?"]
-2. [Binary question — e.g. "If read aloud, does it sound like a [age] year old [city] person talking to family — not like a translated text or system notification?"]
-3. [Binary question — e.g. "Does it end with an action or specific information the user can use immediately — not a sales pitch or open-ended question?"]
-4. [Binary question — e.g. "Is it free of every word in the Forbidden Words and Forbidden Opening Words lists?"]
-5. [Binary question — e.g. "If the user just paid credits to see this, does it feel like the question in their head has been answered — not explained at length or followed by more questions?"]
+1. Copy này có nhắc đến **ít nhất một yếu tố cá nhân** của user (mệnh, Dụng Thần, tuổi, Can Chi) không — hoặc đây có phải màn hình ambient/background không cần cá nhân hóa? → **YES = PASS**
+2. Nếu đọc copy này to lên, **có nghe như người Hà Nội 36 tuổi nói với chị gái** không — không phải như sách dịch, không phải như thông báo hệ thống? → **YES = PASS**
+3. Copy này có **kết thúc bằng một hành động hoặc thông tin cụ thể** mà user có thể làm hoặc dùng ngay không — không phải câu kêu gọi mua thêm hoặc câu kết mở? → **YES = PASS**
+4. Copy này **không chứa bất kỳ từ nào trong Forbidden Words** và không mở đầu bằng bất kỳ từ nào trong Forbidden Openings? → **YES = PASS**
+5. Nếu Minh đọc copy này lúc 10 giờ tối sau khi trả credit, **cô có cảm thấy câu hỏi trong đầu mình đã được trả lời** — không phải được giải thích dài dòng, không phải được hỏi thêm? → **YES = PASS**
 
 ## Hard Rules
 
-These apply regardless of the per-project voice and tone above.
-
-- All UI text uses real data variables — never lorem ipsum or placeholder strings
-- Copy slots defined in wireframe metadata must be populated before committing
-- Dynamic values use actual variable names: `{{user.display_name}}`, `{{item.title}}`
-- Error messages: state what failed + why + what to do next — three parts, one sentence
-- Copy written in [language] for [market] — follow locale conventions for punctuation, number formatting, and currency
+- All dynamic text uses real data variables (`{{user.menh}}`, `{{result.date}}`, `{{feature_cost}}`) — never lorem ipsum or placeholder strings
+- All copy slots defined in the screen spec metadata must be populated before committing
+- Copy written in **tiếng Việt** for **Vietnam B2C** market — follow Vietnamese punctuation and number formatting conventions (dấu chấm for thousands: 99.000đ, not 99,000đ)
+- `{{feature_cost}}` fetched from `feature_credit_costs` table — never hardcode credit amounts in UI copy

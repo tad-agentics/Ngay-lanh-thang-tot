@@ -13,6 +13,7 @@
 # /out/
 
 # vite / react-router
+/.react-router/
 /dist/
 
 # production

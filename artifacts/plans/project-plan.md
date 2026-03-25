@@ -1,22 +1,27 @@
-# Project Plan — [App Name]
+# Project Plan — Ngày Lành Tháng Tốt (ngaytot)
 
 ## Planning Phases
 
-- [ ] Phase 2 — Screen Specs + Figma Make Brief
-- [ ] Figma Make — Human builds prototype, copies code to `src/make-import/`
-- [ ] Phase 4 — Tech Spec (schema from Make mock data)
-- [ ] Setup
+- [ ] Phase 2 — Screen Specs + Figma Make Brief *(optional this run)*
+- [x] Figma Make — code in `src/make-import/`
+- [x] Phase 4 — Tech spec + schema + seed + `app/lib/api-types.ts`
+- [x] Setup — `build-plan.md`, `project.mdc`, UI deps
 
 ## Foundation
 
-- [ ] Backend foundation        commit: —
-- [ ] Frontend: Make import + component inventory + Tailwind config + landing page + auth screens commit: —
+- [x] Backend foundation        commit: `9fbdc8d`
+- [x] Frontend: Make import + landing + auth        commit: `799dfa2`
 
 ## Feature Workstreams
 
 | Feature | Wave | Backend | Frontend | QA | Commit |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| foundation | Foundation | complete | complete | — | `9fbdc8d`, `799dfa2` |
+| auth-profile-billing | W1 | pending | pending | — | — |
+| core-loop | W2 | pending | pending | — | — |
+| personalization | W3 | pending | pending | — | — |
+| social-specialty | W4 | pending | pending | — | — |
+| legal-settings | cross | — | pending | — | — |
 
 ## Post-Build
 
