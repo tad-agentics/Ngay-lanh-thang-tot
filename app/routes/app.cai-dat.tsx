@@ -39,8 +39,10 @@ export default function AppCaiDat() {
     setGioiTinh(profile.gioi_tinh ?? UNSET);
   }, [profile, loading]);
 
+  const birthLocked = Boolean(profile?.birth_data_locked_at);
+
   async function saveBirth() {
-    if (!user) return;
+    if (!user || birthLocked) return;
     setSaving(true);
     const gioSinh =
       birthTimeCode === UNSET
@@ -110,10 +112,20 @@ export default function AppCaiDat() {
 
       <section className="rounded-xl border border-border bg-card p-4 space-y-4 text-sm">
         <p className="font-medium text-foreground">Thông tin Bát Tự</p>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Giờ sinh dùng khung can chi (giá trị gửi API giống dropdown trong tài liệu
-          tu-tru-api).
-        </p>
+        {birthLocked ? (
+          <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
+            Ngày giờ sinh đã khóa sau khi lập lá số — không chỉnh sửa được. Xem{" "}
+            <Link to="/app/la-so" className="underline underline-offset-4">
+              lá số
+            </Link>
+            .
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Giờ sinh dùng khung can chi (giá trị gửi API giống dropdown trong tài liệu
+            tu-tru-api).
+          </p>
+        )}
         <div className="space-y-2">
           <Label htmlFor="ngay-sinh">Ngày sinh</Label>
           <Input
@@ -121,7 +133,7 @@ export default function AppCaiDat() {
             type="date"
             value={ngaySinh}
             onChange={(e) => setNgaySinh(e.target.value)}
-            disabled={loading || !profile}
+            disabled={loading || !profile || birthLocked}
           />
         </div>
         <div className="space-y-2">
@@ -129,7 +141,7 @@ export default function AppCaiDat() {
           <Select
             value={birthTimeCode}
             onValueChange={setBirthTimeCode}
-            disabled={loading || !profile}
+            disabled={loading || !profile || birthLocked}
           >
             <SelectTrigger id="gio-sinh" className="w-full">
               <SelectValue placeholder="Chọn khung giờ" />
@@ -149,7 +161,7 @@ export default function AppCaiDat() {
           <Select
             value={gioiTinh}
             onValueChange={setGioiTinh}
-            disabled={loading || !profile}
+            disabled={loading || !profile || birthLocked}
           >
             <SelectTrigger id="gioi-tinh" className="w-full">
               <SelectValue placeholder="Chọn" />
@@ -164,7 +176,7 @@ export default function AppCaiDat() {
         <Button
           type="button"
           className="w-full"
-          disabled={saving || loading || !profile}
+          disabled={saving || loading || !profile || birthLocked}
           onClick={() => void saveBirth()}
         >
           {saving ? "Đang lưu…" : "Lưu thông tin sinh"}

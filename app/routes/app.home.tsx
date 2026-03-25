@@ -43,6 +43,12 @@ export default function AppHome() {
           <Link to="/app/chon-ngay">Chọn ngày</Link>
         </Button>
         <Button variant="secondary" asChild className="justify-start">
+          <Link to="/app/la-so">Lá số tứ trụ</Link>
+        </Button>
+        <Button variant="secondary" asChild className="justify-start">
+          <Link to="/app/van-thang">Vận tháng</Link>
+        </Button>
+        <Button variant="secondary" asChild className="justify-start">
           <Link to="/app/bat-dau">Bắt đầu / chào mừng</Link>
         </Button>
         <Button variant="secondary" asChild className="justify-start">

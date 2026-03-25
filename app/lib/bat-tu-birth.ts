@@ -95,6 +95,13 @@ export function gioSinhToBatTuBirthTime(
   return clockHourToBatTuBirthTime(h);
 }
 
+/** HTML `<input type="time">` value (`HH:mm` / `HH:mm:ss`) → tu-tru-api `birth_time`. */
+export function timeInputToBatTuBirthTime(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+  const h = Number.parseInt(value.trim().split(":")[0] ?? "", 10);
+  return clockHourToBatTuBirthTime(h);
+}
+
 /** Query fields shared by many GET endpoints in https://tu-tru-api.fly.dev/openapi.json */
 export function profileToBatTuPersonQuery(profile: ProfileRow | null): {
   birth_date?: string;
