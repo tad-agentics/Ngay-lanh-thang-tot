@@ -647,10 +647,17 @@ export default function Landing() {
                   Cài ứng dụng
                 </button>
               ) : null}
-              <a href="#main-form" className="lp-nav-cta">
-                <span className="lp-nav-cta-long">Dựng lá số miễn phí</span>
-                <span className="lp-nav-cta-short">Thử ngay</span>
-              </a>
+              {install.isStandalone ? (
+                <Link to="/app" className="lp-nav-cta">
+                  <span className="lp-nav-cta-long">Mở ứng dụng</span>
+                  <span className="lp-nav-cta-short">Vào ngay</span>
+                </Link>
+              ) : (
+                <a href="#main-form" className="lp-nav-cta">
+                  <span className="lp-nav-cta-long">Dựng lá số miễn phí</span>
+                  <span className="lp-nav-cta-short">Thử ngay</span>
+                </a>
+              )}
             </div>
           </div>
         </div>
