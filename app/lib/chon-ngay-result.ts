@@ -2,6 +2,8 @@ import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import { scoreToLetterGrade } from "~/lib/score-grade";
 
 const ARRAY_KEYS = [
+  "recommended_dates",
+  "top_dates",
   "days",
   "results",
   "top_days",
@@ -93,6 +95,21 @@ function pickString(obj: Record<string, unknown>, keys: string[]): string {
   return "—";
 }
 
+function formatTimeSlots(arr: unknown): string {
+  if (!Array.isArray(arr)) return "—";
+  const parts: string[] = [];
+  for (const item of arr) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const chi = pickString(o, ["chi_name", "label", "name"]);
+    const range = pickString(o, ["range", "gio", "time"]);
+    if (chi !== "—" && range !== "—") parts.push(`${chi} ${range}`);
+    else if (range !== "—") parts.push(range);
+    else if (chi !== "—") parts.push(chi);
+  }
+  return parts.length ? parts.join("; ") : "—";
+}
+
 function pickHours(obj: Record<string, unknown>): string {
   const keys = ["good_hours", "gio_tot", "hours_tot", "hours", "best_hours"];
   for (const k of keys) {
@@ -102,6 +119,8 @@ function pickHours(obj: Record<string, unknown>): string {
       return (v as string[]).join(", ");
     }
   }
+  const slots = formatTimeSlots(obj.time_slots ?? obj.timeSlots ?? obj.gio_hoang_dao);
+  if (slots !== "—") return slots;
   return "—";
 }
 
@@ -130,10 +149,21 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
 
   const reasons: string[] = [];
   const r = obj.reasons ?? obj.ly_do ?? obj.giai_thich;
-  if (Array.isArray(r) && r.every((x) => typeof x === "string")) {
+  if (
+    Array.isArray(r) &&
+    r.length > 0 &&
+    r.every((x) => typeof x === "string")
+  ) {
     reasons.push(...(r as string[]));
-  } else if (typeof obj.summary === "string" && obj.summary.trim()) {
-    reasons.push(obj.summary.trim());
+  } else {
+    const prose = pickString(obj, [
+      "reason_vi",
+      "summary_vi",
+      "one_liner",
+      "summary",
+      "mo_ta",
+    ]);
+    if (prose !== "—") reasons.push(prose);
   }
 
   return {
@@ -141,6 +171,7 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
     isoDate,
     dateLabel: formatViDateLabel(isoDate),
     lunarLabel: pickString(obj, [
+      "lunar_date",
       "lunar_label",
       "am_lich",
       "lunar",

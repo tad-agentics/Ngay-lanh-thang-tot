@@ -26,6 +26,28 @@ describe("mapChonNgayPayloadToResultDays", () => {
     expect(rows[1]?.grade).toBe("B");
   });
 
+  it("reads recommended_dates[] (ISO date, lunar_date, time_slots)", () => {
+    const rows = mapChonNgayPayloadToResultDays({
+      status: "success",
+      recommended_dates: [
+        {
+          date: "2026-03-09",
+          lunar_date: "Ngày 21 tháng Giêng",
+          score: 73,
+          grade: "B",
+          truc: "Kiến",
+          reason_vi: "Trực Kiến — ngày tốt.",
+          time_slots: [{ chi_name: "Tý", range: "23:00-01:00" }],
+        },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.isoDate).toBe("2026-03-09");
+    expect(rows[0]?.lunarLabel).toContain("Giêng");
+    expect(rows[0]?.bestHour).toContain("Tý");
+    expect(rows[0]?.reasons[0]).toContain("Trực Kiến");
+  });
+
   it("returns empty when payload has no recognizable array", () => {
     expect(mapChonNgayPayloadToResultDays({ foo: 1 })).toEqual([]);
   });

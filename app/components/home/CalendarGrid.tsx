@@ -63,7 +63,7 @@ export function CalendarGrid({
             fontSize: "var(--text-base)",
           }}
         >
-          {MONTH_NAMES[month]} {year}
+          {MONTH_NAMES[month]} năm {year}
         </h3>
         <button
           type="button"

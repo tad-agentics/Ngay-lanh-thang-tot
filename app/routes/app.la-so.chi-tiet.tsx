@@ -6,6 +6,7 @@ import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { useProfile } from "~/hooks/useProfile";
+import type { LaSoJson } from "~/lib/api-types";
 import { laSoJsonToChiTiet, profileHasLaso } from "~/lib/la-so-ui";
 
 const NGU_HANH_COLORS: Record<string, string> = {
@@ -36,7 +37,7 @@ export default function AppLaSoChiTiet() {
     );
   }
 
-  const detail = laSoJsonToChiTiet(profile.la_so);
+  const detail = laSoJsonToChiTiet(profile.la_so as LaSoJson);
   const { nguHanh } = detail;
 
   return (
