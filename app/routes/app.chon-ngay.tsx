@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
@@ -28,6 +28,7 @@ import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 import { useProfile } from "~/hooks/useProfile";
 
 export default function AppChonNgay() {
+  const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
   const [rangeStart, setRangeStart] = useState(() => localTodayIsoDate());
   const [rangeEnd, setRangeEnd] = useState(() => {
@@ -37,7 +38,6 @@ export default function AppChonNgay() {
   const [intent, setIntent] = useState<TuTruIntent>("MAC_DINH");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [payload, setPayload] = useState<unknown>(null);
 
   const days = useMemo(
     () => inclusiveDaysBetweenIsoDates(rangeStart, rangeEnd),
@@ -78,10 +78,21 @@ export default function AppChonNgay() {
     setBusy(false);
     if (!res.ok) {
       setErr(res.message);
-      setPayload(null);
       return;
     }
-    setPayload(res.data);
+    setErr(null);
+    const intentLabel =
+      TU_TRU_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? intent;
+    navigate("/app/chon-ngay/ket-qua", {
+      state: {
+        intent,
+        intentLabel,
+        rangeStart,
+        rangeEnd,
+        daysInclusive: days,
+        payload: res.data,
+      },
+    });
   }
 
   return (
@@ -180,11 +191,6 @@ export default function AppChonNgay() {
       </section>
 
       {err ? <ErrorBanner message={err} /> : null}
-      {payload != null ? (
-        <pre className="text-xs bg-card border border-border rounded-xl p-4 overflow-x-auto whitespace-pre-wrap break-words">
-          {JSON.stringify(payload, null, 2)}
-        </pre>
-      ) : null}
     </main>
   );
 }

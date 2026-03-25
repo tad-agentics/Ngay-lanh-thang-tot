@@ -19,8 +19,8 @@
 | Feature | Wave | Backend | Frontend | QA | Commit |
 |---|---|---|---|---|---|
 | foundation | Foundation | complete | complete | — | `9fbdc8d`, `799dfa2` |
-| auth-profile-billing | W1 | pending | pending | — | — |
-| core-loop | W2 | partial (bat-tu Edge) | partial (chon-ngay, lịch tháng; UI JSON) | — | — |
+| auth-profile-billing | W1 | partial (PayOS + profile in tree) | partial | — | — |
+| core-loop | W2 | complete | complete | PASS (build + vitest; E2E manual) | staging |
 | personalization | W3 | pending | pending | — | — |
 | social-specialty | W4 | pending | pending | — | — |
 | legal-settings | cross | — | pending | — | — |

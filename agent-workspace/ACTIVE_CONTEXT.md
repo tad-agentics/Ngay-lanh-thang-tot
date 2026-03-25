@@ -2,13 +2,13 @@
 Updated: 2026-03-25
 
 ## Current focus
-**Foundation complete** — landing `/` pre-rendered, auth routes wired, `/app` shell guarded, PWA static files + Edge stubs on `staging`.
+**Wave 2 `core-loop`** — chọn ngày → kết quả (Make + D1 loading), chi tiết ngày `/app/ngay/:ngay`, `bat-tu` ops + credits on `staging`.
 
 ## Active workstreams
 - —
 
 ## Next up
-Wave 1 (`auth-profile-billing`): PayOS checkout + webhook, Welcome / billing screens per `artifacts/plans/build-plan.md`. Run parallel `/feature` workstreams as needed.
+Wave 3 (`personalization`): lá số / vận — see `artifacts/plans/build-plan.md`. Optionally formal **QA PASS** + project-plan update for `auth-profile-billing` (W1) if treating W1 as a gate.
 
 ## Blockers
 None
