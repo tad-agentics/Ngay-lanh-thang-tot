@@ -141,6 +141,37 @@ export interface CreditPackage {
   subMonths: number | null;
 }
 
+// ─── tu-tru-api ChonNgay `intent` (OpenAPI IntentEnum) ─────────────────────
+
+export type TuTruIntent =
+  | "KHAI_TRUONG"
+  | "KY_HOP_DONG"
+  | "CAU_TAI"
+  | "NHAM_CHUC"
+  | "AN_HOI"
+  | "CUOI_HOI"
+  | "DAM_CUOI"
+  | "CAU_TU"
+  | "DONG_THO"
+  | "NHAP_TRACH"
+  | "LAM_NHA"
+  | "MUA_NHA_DAT"
+  | "XAY_BEP"
+  | "LAM_GIUONG"
+  | "DAO_GIENG"
+  | "AN_TANG"
+  | "CAI_TANG"
+  | "XUAT_HANH"
+  | "DI_CHUYEN_NGOAI"
+  | "TE_TU"
+  | "GIAI_HAN"
+  | "KHAM_BENH"
+  | "PHAU_THUAT"
+  | "NHAP_HOC_THI_CU"
+  | "KIEN_TUNG"
+  | "TRONG_CAY"
+  | "MAC_DINH";
+
 // ─── Edge: Bát Tự proxy ───────────────────────────────────────────────────
 
 export type BatTuOperation =

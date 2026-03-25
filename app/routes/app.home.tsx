@@ -1,6 +1,5 @@
 import { Link } from "react-router";
 
-import { CreditGate } from "~/components/CreditGate";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
 import { Button } from "~/components/ui/button";
@@ -36,6 +35,12 @@ export default function AppHome() {
         </Button>
         <Button variant="secondary" asChild className="justify-start">
           <Link to="/app/tuan-nay">Tuần này (Bát Tự)</Link>
+        </Button>
+        <Button variant="secondary" asChild className="justify-start">
+          <Link to="/app/lich-thang">Lịch tháng</Link>
+        </Button>
+        <Button variant="default" asChild className="justify-start">
+          <Link to="/app/chon-ngay">Chọn ngày</Link>
         </Button>
         <Button variant="secondary" asChild className="justify-start">
           <Link to="/app/bat-dau">Bắt đầu / chào mừng</Link>
@@ -76,21 +81,8 @@ export default function AppHome() {
         )}
       </section>
 
-      <section className="rounded-xl border border-dashed border-border p-4 text-sm space-y-3">
-        <p className="font-medium text-foreground">Thử CreditGate (Wave 1)</p>
-        <p className="text-muted-foreground text-xs">
-          Ví dụ tính phí: chọn ngày 30 ngày (5 lượng trong seed). Khi không đủ
-          lượng sẽ hiện nút &quot;Mua lượng&quot;.
-        </p>
-        <CreditGate featureKey="chon_ngay_30">
-          <p className="text-success text-sm font-medium">
-            Đủ điều kiện dùng tính năng (placeholder — Wave 2 sẽ gắn màn hình).
-          </p>
-        </CreditGate>
-      </section>
-
       <p className="text-xs text-muted-foreground">
-        Chọn ngày / chi tiết ngày sẽ được nối tiếp trong Wave 2.
+        Chi tiết từng ngày (sau khi chọn ngày) sẽ bổ sung tiếp trong Wave 2.
       </p>
 
       <Button variant="ghost" asChild className="w-full">

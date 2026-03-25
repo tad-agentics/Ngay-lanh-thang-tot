@@ -11,6 +11,8 @@ export default [
     index("routes/app.home.tsx"),
     route("hom-nay", "routes/app.hom-nay.tsx"),
     route("tuan-nay", "routes/app.tuan-nay.tsx"),
+    route("chon-ngay", "routes/app.chon-ngay.tsx"),
+    route("lich-thang", "routes/app.lich-thang.tsx"),
     route("bat-dau", "routes/app.bat-dau.tsx"),
     route("mua-luong", "routes/app.mua-luong.tsx"),
     route("mua-luong/thanh-cong", "routes/app.mua-luong.thanh-cong.tsx"),
