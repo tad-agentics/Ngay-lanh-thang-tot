@@ -1,5 +1,8 @@
 -- Dev seed — Ngày Lành Tháng Tốt
 -- Apply after migrations. Does not create auth.users (use Supabase Auth UI or signup in app).
+--
+-- Feature keys here are canonical DB keys. Make mock uses ngay_chi_tiet, la_so, van_thang, chia_se —
+-- map to day_detail, tu_tru, tieu_van, share_card in app code (see tech-spec §4).
 
 -- App config
 insert into public.app_config (config_key, value) values

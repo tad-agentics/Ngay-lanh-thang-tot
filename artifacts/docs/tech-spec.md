@@ -114,6 +114,7 @@ Key types: `Profile`, `LaSoJson`, `FeatureCreditCost`, `CreditLedgerEntry`, `Pay
 ### PayOS
 
 - **Checkout creation:** `supabase/functions/payos-create-checkout` — validates `package_sku`, creates `payment_orders` row, returns PayOS URL.
+- **Allowed `package_sku` values (must match Make + `PACKAGES`):** `le` (credit pack), `goi_6thang`, `goi_12thang`. Reject unknown SKUs with `422`.
 - **Webhook:** `supabase/functions/payos-webhook` — verifies signature (`PAYOS_CHECKSUM_KEY`), idempotent `webhook_events`, updates order + credits + ledger.
 
 ---
@@ -147,7 +148,10 @@ Browser (VITE_ + JWT) ──► Supabase PostgREST / Auth
 
 ## 8. Database Schema
 
-**Migration:** `supabase/migrations/20260325120000_initial_schema.sql`  
+**Migrations:**  
+- `supabase/migrations/20260325120000_initial_schema.sql` — tables + RLS  
+- `supabase/migrations/20260325120100_auth_create_profile.sql` — after insert on `auth.users`, creates `public.profiles` and a `credit_ledger` row with reason `starter_grant`; reads `app_config.starter_credits` or defaults **20**
+
 **Seed:** `supabase/seed.sql`
 
 ### `profiles`
@@ -335,6 +339,8 @@ Copied from northstar §8 (summary — build agents must not implement):
 
 **Known shortcuts:** Dashboard admin; share OG server-side; seasonal-only push; temporary “other person” input without saving profile.
 
+**Northstar §12 W3 vs v1 scope:** The wave table mentions “Profile gia đình / lưu nhiều người”. **v1 does not** add a `family_profiles` (or equivalent) table. Behavior matches the **known shortcut**: another person’s birth data is **entered per session only** and is **not** persisted—see northstar §8 / shortcuts. Multi-person stored profiles are out of scope until a future version explicitly adds schema + spec.
+
 ---
 
 ## 18. SEO & PWA
@@ -359,3 +365,12 @@ Self-verified: Overview, FR, NFR, types file, integrations, stack, architecture,
 1. Human review + approve this spec.  
 2. Run **`/setup`** → build plan.  
 3. Regenerate `database.types.ts` after `supabase db push` / `gen types`.
+
+## 19. Foundation checklist (implemented vs deferred)
+
+| Item | Status |
+|---|---|
+| Auth → `profiles` + starter ledger | **Implemented** in `20260325120100_auth_create_profile.sql` |
+| Make → DB `feature_key` map in code | **Deferred** — add `FEATURE_KEY_MAP` in `app/lib/` during port |
+| Normalize `la_so` JSON from Bát Tự | **Deferred** — at Edge/API boundary |
+| PayOS Edge functions | **Deferred** — Foundation / feature wave |
