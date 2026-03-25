@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ngaylanhthangtot.vn — Northstar v3</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@600;700;800&family=Lora:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:         #e4dfd6;
+      --bg-dark:    #1d3129;
+      --ink:        #18150e;
+      --ink-soft:   #3a3220;
+      --gold:       #9a7c22;
+      --gold-light: #c9a84c;
+      --gold-faint: rgba(154,124,34,0.10);
+      --cream:      #ede7d3;
+      --cream-dim:  #c8bc98;
+      --border:     #c2b896;
+      --border-dk:  #2e4a3a;
+      --muted:      #7a7050;
+      --green-text: #d4c89a;
+      --green-muted:#7a9a80;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body { background-color: var(--bg); color: var(--ink); font-family: 'Lora', Georgia, serif; font-size: 16.5px; line-height: 1.75; min-height: 100vh; }
+
+    body::after { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.055'/%3E%3C/svg%3E"); pointer-events:none; z-index:1000; }
+
+    .wrapper { max-width: 820px; margin: 0 auto; padding: 0 2.5rem 6rem; }
+
+    /* ── HERO ── */
+    .hero { padding:3.5rem 0 0; border-bottom:1px solid var(--border); animation:fadeUp .6s ease both; }
+    .hero-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; }
+    .hero-domain { font-family:'IBM Plex Mono',monospace; font-size:.72rem; font-weight:500; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; }
+    .v-badge { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.1em; color:var(--gold); border:1px solid var(--gold); padding:.15rem .55rem; margin-top:.5rem; }
+    .hero-meta { font-family:'IBM Plex Mono',monospace; font-size:.68rem; color:var(--muted); text-align:right; line-height:1.8; }
+    .hero-title-row { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; }
+    .hero-word { font-family:'Barlow Condensed',sans-serif; font-weight:800; font-size:clamp(3rem,8vw,5.6rem); color:var(--ink); letter-spacing:-.02em; line-height:.9; text-transform:uppercase; }
+    .hero-word.right { text-align:right; }
+    .hero-center { display:flex; flex-direction:column; align-items:center; padding:0 1.5rem 1.2rem; }
+    .bracket-top,.bracket-bottom { font-family:'Noto Serif SC',serif; color:var(--gold); font-size:1.4rem; line-height:1; }
+    .bracket-top { align-self:flex-start; margin-left:.1rem; }
+    .bracket-bottom { align-self:flex-end; margin-right:.1rem; }
+    .kanji-stack { font-family:'Noto Serif SC',serif; color:var(--gold); font-size:clamp(1.3rem,3vw,2rem); line-height:1.25; text-align:center; writing-mode:vertical-rl; letter-spacing:.1em; padding:.3rem 0; font-weight:700; }
+
+    /* ── SECTIONS ── */
+    .section { padding:3rem 0; border-bottom:1px solid var(--border); animation:fadeUp .5s ease both; }
+    .section:last-child { border-bottom:none; }
+    .section:nth-child(1){animation-delay:.06s} .section:nth-child(2){animation-delay:.10s}
+    .section:nth-child(3){animation-delay:.14s} .section:nth-child(4){animation-delay:.18s}
+    .section:nth-child(5){animation-delay:.22s} .section:nth-child(6){animation-delay:.26s}
+    .section:nth-child(7){animation-delay:.30s} .section:nth-child(8){animation-delay:.34s}
+    .section:nth-child(9){animation-delay:.38s} .section:nth-child(10){animation-delay:.42s}
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+    .section-header { display:grid; grid-template-columns:auto 1fr; gap:1.5rem; align-items:baseline; margin-bottom:1.5rem; }
+    .sec-num { font-family:'Bebas Neue',sans-serif; font-size:4.5rem; line-height:.85; color:transparent; -webkit-text-stroke:1.5px var(--gold); letter-spacing:.02em; }
+    .sec-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.9rem; letter-spacing:.04em; text-transform:uppercase; color:var(--ink); line-height:1.1; padding-top:.3rem; border-top:2px solid var(--ink); }
+
+    p { color:var(--ink-soft); margin-bottom:.9rem; }
+    p:last-child { margin-bottom:0; }
+    strong { color:var(--ink); font-weight:500; }
+    em { color:var(--gold); font-style:italic; }
+
+    /* ── ARCHETYPE ── */
+    .archetype-card { background:var(--bg-dark); padding:2rem; display:grid; grid-template-columns:auto 1fr; gap:1.5rem; align-items:start; margin-top:1rem; position:relative; overflow:hidden; }
+    .archetype-card::before { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.07'/%3E%3C/svg%3E"); pointer-events:none; }
+    .a-br-tl,.a-br-br { position:absolute; font-family:'Noto Serif SC',serif; color:var(--gold); font-size:1.1rem; opacity:.45; line-height:1; z-index:1; }
+    .a-br-tl { top:.7rem; right:.9rem; }
+    .a-br-br { bottom:.7rem; left:.9rem; transform:rotate(180deg); }
+    .archetype-avatar { width:56px; height:56px; border:1px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:'Noto Serif SC',serif; font-size:1.6rem; color:var(--gold-light); flex-shrink:0; position:relative; z-index:1; }
+    .archetype-name { font-family:'Barlow Condensed',sans-serif; font-size:1.2rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--green-text); margin-bottom:.5rem; position:relative; z-index:1; }
+    .archetype-body { color:#9aaa90; font-size:.93rem; line-height:1.7; position:relative; z-index:1; }
+    .archetype-moment { margin-top:1rem; padding:.9rem 1.1rem; border-left:2px solid var(--gold); font-size:.88rem; color:var(--cream-dim); font-style:italic; line-height:1.65; position:relative; z-index:1; }
+
+    /* ── ARCHETYPE ATTRIBUTES ── */
+    .archetype-attrs { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; position:relative; z-index:1; }
+    .attr-tag { font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.08em; color:var(--gold-light); background:rgba(201,168,76,.08); border:1px solid rgba(201,168,76,.2); padding:.2rem .55rem; }
+
+    /* ── VALUE PROP ── */
+    .value-prop { background:var(--bg-dark); padding:2rem 2rem 2rem 2.25rem; margin-top:1rem; border-left:3px solid var(--gold); font-family:'Lora',serif; font-size:1.12rem; font-style:italic; color:var(--green-text); line-height:1.75; }
+    .value-prop .bracket-label { font-family:'IBM Plex Mono',monospace; font-style:normal; font-size:.65rem; letter-spacing:.15em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:.75rem; }
+
+    /* ── INSIGHT BOX ── */
+    .insight-box { background:var(--gold-faint); border:1px solid rgba(154,124,34,.25); padding:1rem 1.25rem; margin-top:1.25rem; font-size:.9rem; color:var(--ink-soft); line-height:1.65; }
+    .insight-box strong { color:var(--gold); }
+
+    /* ── FEATURE GRID ── */
+    .feature-grid { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); margin-top:1.25rem; }
+    .feature-cell { background:var(--bg); padding:1.1rem 1.25rem; }
+    .feature-cell.dark { background:var(--bg-dark); }
+    .fc-label { font-family:'IBM Plex Mono',monospace; font-size:.63rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:.4rem; }
+    .fc-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.05rem; letter-spacing:.03em; text-transform:uppercase; color:var(--ink); margin-bottom:.3rem; }
+    .feature-cell.dark .fc-title { color:var(--green-text); }
+    .fc-desc { font-size:.85rem; color:var(--muted); line-height:1.55; }
+    .feature-cell.dark .fc-desc { color:#7a9a80; }
+    .fc-free { font-family:'IBM Plex Mono',monospace; font-size:.6rem; color:#4a7a50; background:rgba(74,122,80,.1); border:1px solid rgba(74,122,80,.25); padding:.1rem .4rem; display:inline-block; margin-top:.4rem; }
+    .fc-cost { font-family:'IBM Plex Mono',monospace; font-size:.6rem; color:var(--gold); background:var(--gold-faint); border:1px solid rgba(154,124,34,.2); padding:.1rem .4rem; display:inline-block; margin-top:.4rem; }
+
+    /* ── SCREEN MAP ── */
+    .screen-map { margin-top:1.25rem; }
+    .screen-row { display:grid; grid-template-columns:160px 1fr; gap:0; border-bottom:1px solid var(--border); }
+    .screen-row:first-child { border-top:1px solid var(--border); }
+    .screen-name { padding:.75rem 1rem; background:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--cream-dim); display:flex; align-items:center; }
+    .screen-detail { padding:.75rem 1rem; font-size:.87rem; color:var(--ink-soft); display:flex; flex-direction:column; justify-content:center; gap:.2rem; }
+    .screen-api { font-family:'IBM Plex Mono',monospace; font-size:.65rem; color:var(--gold); opacity:.75; }
+
+    /* ── TABLES ── */
+    .rev-table { width:100%; border-collapse:collapse; margin:1.25rem 0; font-size:.91rem; }
+    .rev-table th { text-align:left; padding:.55rem .9rem; background:var(--ink); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase; font-weight:500; }
+    .rev-table td { padding:.75rem .9rem; border-bottom:1px solid var(--border); color:var(--ink-soft); vertical-align:top; line-height:1.55; }
+    .rev-table td:first-child { color:var(--ink); }
+    .rev-table tr.highlight { background:var(--gold-faint); }
+    .rev-table tr.highlight td:first-child { color:var(--gold); font-weight:500; }
+    .rev-table tr:last-child td { border-bottom:none; }
+    .badge { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.6rem; padding:.1rem .4rem; border:1px solid var(--gold); color:var(--gold); margin-left:.35rem; vertical-align:middle; }
+
+    /* ── MONO MATRIX ── */
+    .mono-matrix { margin-top:1.25rem; }
+    .mm-row { display:grid; grid-template-columns:160px 70px 90px 1fr; gap:0; border-bottom:1px solid var(--border); }
+    .mm-row.header { background:var(--ink); }
+    .mm-row.header .mm-cell { color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; }
+    .mm-cell { padding:.65rem .9rem; font-size:.88rem; color:var(--ink-soft); }
+    .mm-row.highlight .mm-cell:first-child { color:var(--gold); font-weight:500; }
+    .mm-row.highlight { background:var(--gold-faint); }
+    .mm-cell:first-child { color:var(--ink); }
+    .mm-row:last-child .mm-cell { border-bottom:none; }
+
+    /* ── MATH BOX ── */
+    .math-box { background:var(--bg-dark); padding:1.25rem 1.5rem; margin-top:1rem; font-family:'IBM Plex Mono',monospace; font-size:.82rem; color:var(--green-muted); line-height:2; }
+    .math-box strong { color:var(--gold-light); font-weight:500; }
+    .math-box .note { font-size:.75rem; color:#5a7a60; margin-top:.25rem; border-top:1px solid var(--border-dk); padding-top:.5rem; }
+
+    /* ── MOAT ── */
+    .moat-type { display:inline-flex; align-items:center; gap:.4rem; font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); border:1px solid var(--gold); padding:.35rem .85rem; margin-bottom:1.25rem; }
+    .moat-type::before { content:'「'; font-size:1rem; font-family:'Noto Serif SC',serif; }
+    .moat-type::after  { content:'」'; font-size:1rem; font-family:'Noto Serif SC',serif; }
+
+    /* ── TIMELINE ── */
+    .timeline { margin-top:1.25rem; }
+    .tl-row { display:grid; grid-template-columns:110px 1fr; gap:0; border-bottom:1px solid var(--border); }
+    .tl-row:first-child { border-top:1px solid var(--border); }
+    .tl-week { padding:.85rem 1rem; background:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--cream-dim); display:flex; align-items:flex-start; }
+    .tl-detail { padding:.85rem 1rem; font-size:.87rem; color:var(--ink-soft); line-height:1.55; }
+    .tl-gate { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.6rem; letter-spacing:.08em; text-transform:uppercase; background:rgba(154,124,34,.12); color:var(--gold); border:1px solid rgba(154,124,34,.3); padding:.15rem .45rem; margin-top:.4rem; }
+
+    /* ── KPI TABLE ── */
+    .kpi-table { width:100%; border-collapse:collapse; margin-top:1.25rem; font-size:.9rem; }
+    .kpi-table th { text-align:left; padding:.55rem .9rem; background:var(--ink); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; }
+    .kpi-table td { padding:.7rem .9rem; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; color:var(--ink-soft); }
+    .kpi-table tr:last-child td { border-bottom:none; }
+    .kpi-table td:first-child { color:var(--ink); font-weight:500; }
+    .kpi-table td:nth-child(2) { font-family:'IBM Plex Mono',monospace; color:var(--gold); font-size:.85rem; }
+    .kpi-crit td:first-child { color:#a02828; }
+    .kpi-crit { background:rgba(160,40,40,.04); }
+
+    /* ── RISK TABLE ── */
+    .risk-table { width:100%; border-collapse:collapse; margin-top:1.25rem; font-size:.88rem; }
+    .risk-table th { text-align:left; padding:.55rem .9rem; background:var(--ink); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; }
+    .risk-table td { padding:.7rem .9rem; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; color:var(--ink-soft); }
+    .risk-table tr:last-child td { border-bottom:none; }
+    .risk-table td:first-child { color:var(--ink); font-size:.85rem; }
+    .pill { display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.6rem; padding:.1rem .45rem; letter-spacing:.06em; border-radius:2px; white-space:nowrap; }
+    .pill.hi  { background:rgba(160,40,40,.12); color:#a02828; border:1px solid rgba(160,40,40,.25); }
+    .pill.med { background:rgba(154,124,34,.12); color:var(--gold); border:1px solid rgba(154,124,34,.25); }
+    .pill.lo  { background:rgba(45,80,50,.12); color:#2d5032; border:1px solid rgba(45,80,50,.25); }
+
+    /* ── SCENARIOS ── */
+    .scenario { margin-bottom:2rem; border:1px solid var(--border); }
+    .scenario:last-child { margin-bottom:0; }
+    .scenario-header { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:1rem; padding:1rem 1.25rem; background:var(--ink); }
+    .scenario-num { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; line-height:1; color:transparent; -webkit-text-stroke:1px var(--gold); }
+    .scenario-event { font-family:'IBM Plex Mono',monospace; font-size:.65rem; letter-spacing:.12em; text-transform:uppercase; color:var(--gold); margin-bottom:.2rem; }
+    .scenario-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1.2rem; letter-spacing:.03em; text-transform:uppercase; color:var(--cream); line-height:1.1; }
+    .scenario-credit { font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:var(--gold); text-align:right; line-height:1.7; white-space:nowrap; }
+    .scenario-credit span { display:block; font-size:.6rem; color:#5a7060; }
+    .scenario-body { padding:1.25rem; background:var(--bg); }
+    .scenario-steps { list-style:none; margin-bottom:1rem; }
+    .scenario-steps li { display:grid; grid-template-columns:28px 1fr; gap:.6rem; padding:.6rem 0; border-bottom:1px solid rgba(194,184,150,.4); font-size:.9rem; color:var(--ink-soft); line-height:1.55; align-items:start; }
+    .scenario-steps li:last-child { border-bottom:none; }
+    .step-n { font-family:'IBM Plex Mono',monospace; font-size:.65rem; color:var(--gold); padding-top:.15rem; font-weight:500; }
+    .step-feature { font-family:'IBM Plex Mono',monospace; font-size:.62rem; color:var(--gold); background:var(--gold-faint); border:1px solid rgba(154,124,34,.2); padding:.1rem .4rem; display:inline-block; margin-left:.4rem; vertical-align:middle; }
+    .scenario-outcome { background:var(--bg-dark); padding:.9rem 1.1rem; border-left:2px solid var(--gold); font-size:.88rem; color:var(--green-text); font-style:italic; line-height:1.65; }
+    .scenario-outcome strong { color:var(--gold-light); font-style:normal; }
+    .scenario-share { margin-top:.8rem; padding:.75rem 1rem; background:rgba(45,74,58,.3); border:1px solid var(--border-dk); font-size:.84rem; color:var(--green-muted); display:flex; align-items:flex-start; gap:.6rem; line-height:1.55; }
+    .scenario-share::before { content:'↗'; font-family:'IBM Plex Mono',monospace; color:var(--gold); flex-shrink:0; font-size:.9rem; }
+    .scenario-balance { font-family:'IBM Plex Mono',monospace; font-size:.68rem; color:var(--muted); margin-top:.75rem; padding:.5rem .75rem; border:1px solid var(--border); display:inline-block; }
+
+    /* ── FOOTER ── */
+    .footer { margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--border); font-family:'IBM Plex Mono',monospace; font-size:.68rem; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; letter-spacing:.05em; }
+
+
+    /* ── SPEC BLOCKS ── */
+    .spec-block { background:var(--bg-dark); padding:1.5rem; margin-top:1.25rem; position:relative; overflow:hidden; }
+    .spec-block::before { content:''; position:absolute; inset:0; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)' opacity='0.07'/%3E%3C/svg%3E"); pointer-events:none; }
+    .spec-row { display:grid; grid-template-columns:130px 1fr; gap:.6rem; margin-bottom:.55rem; position:relative; align-items:baseline; font-size:.88rem; }
+    .spec-row:last-child { margin-bottom:0; }
+    .s-key { font-family:'IBM Plex Mono',monospace; font-size:.63rem; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); }
+    .s-val { font-family:'IBM Plex Mono',monospace; font-size:.8rem; color:var(--green-text); line-height:1.65; }
+    .s-val em { color:var(--cream-dim); font-style:italic; font-family:'Lora',serif; font-size:.85rem; }
+    .s-val strong { color:var(--gold-light); font-weight:500; }
+    .s-divider { border:none; border-top:1px solid var(--border-dk); margin:.75rem 0; }
+
+    /* ── NOT-BUILDING LIST ── */
+    .not-building-list { list-style:none; margin-top:1rem; }
+    .nb-item { display:grid; grid-template-columns:16px 1fr; gap:.75rem; padding:.5rem 0; border-bottom:1px solid var(--border); font-size:.9rem; color:var(--ink-soft); align-items:start; }
+    .nb-item:last-child { border-bottom:none; }
+    .nb-x { font-family:'IBM Plex Mono',monospace; font-size:.7rem; color:#a02828; font-weight:500; }
+    .nb-scope { font-family:'IBM Plex Mono',monospace; font-size:.63rem; color:var(--muted); margin-top:.15rem; }
+
+    /* ── WAVE TABLE ── */
+    .wave-table { width:100%; border-collapse:collapse; margin-top:1.25rem; font-size:.88rem; }
+    .wave-table th { text-align:left; padding:.55rem .9rem; background:var(--ink); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; }
+    .wave-table td { padding:.7rem .9rem; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; color:var(--ink-soft); }
+    .wave-table tr:last-child td { border-bottom:none; }
+    .wave-table td:first-child { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1rem; letter-spacing:.04em; text-transform:uppercase; color:var(--gold); white-space:nowrap; }
+    .wave-features { display:flex; flex-wrap:wrap; gap:.3rem; margin-top:.35rem; }
+    .wf { font-family:'IBM Plex Mono',monospace; font-size:.6rem; color:var(--gold); background:var(--gold-faint); border:1px solid rgba(154,124,34,.2); padding:.1rem .35rem; }
+    .wf.free { color:#4a7a50; background:rgba(74,122,80,.1); border:1px solid rgba(74,122,80,.25); }
+
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-track { background:var(--bg); }
+    ::-webkit-scrollbar-thumb { background:var(--border); }
+
+    @media(max-width:640px){
+      .wrapper{padding:0 1.25rem 4rem;}
+      .hero-word{font-size:clamp(2rem,10vw,3.2rem);}
+      .kanji-stack{font-size:1.1rem;}
+      .archetype-card,.feature-grid{grid-template-columns:1fr;}
+      .sec-num{font-size:3rem;}
+      .sec-title{font-size:1.5rem;}
+      .screen-row,.tl-row{grid-template-columns:1fr;}
+      .screen-name,.tl-week{border-bottom:1px solid var(--border-dk);}
+      .mm-row{grid-template-columns:1fr 1fr;}
+      .mm-row .mm-cell:nth-child(3),.mm-row .mm-cell:nth-child(4){display:none;}
+      .mm-row.header .mm-cell:nth-child(3),.mm-row.header .mm-cell:nth-child(4){display:none;}
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-domain">ngaylanhthangtot.vn</div>
+        <div class="v-badge">NORTHSTAR v3.5 · FULL BUILD · SINGLE SHIP</div>
+      </div>
+      <div class="hero-meta">T3/2026<br>PWA · Mobile-first · Vietnam B2C<br>Engine: Bát Tự API · 13 endpoints</div>
+    </div>
+    <div class="hero-title-row">
+      <div class="hero-word">Ngày<br>Lành</div>
+      <div class="hero-center">
+        <div class="bracket-top">「</div>
+        <div class="kanji-stack">日<br>曆<br>吉</div>
+        <div class="bracket-bottom">」</div>
+      </div>
+      <div class="hero-word right">Tháng<br>Tốt</div>
+    </div>
+  </div>
+
+  <!-- ── 01 THE PROBLEM ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">01</div>
+      <div class="sec-title">The Problem</div>
+    </div>
+    <p>Chị Minh sắp khai trương tiệm nail. Cô tin vào ngày giờ — không phải vì mê tín mù quáng, mà vì đây là cách cô chuẩn bị nghiêm túc như bao thế hệ trước đã làm. Nhưng cô không có thầy quen để hỏi. Quyển lịch vạn niên trên kệ đầy ký hiệu viết tắt không ai giải thích. Nhờ người thân thì sợ bị coi là cổ hủ. Cô mở vài ứng dụng lịch — màn hình trả về bảng số và chữ viết tắt, không có gì liên quan đến tuổi của cô. Cuối cùng cô chọn một ngày cuối tuần trông có vẻ ổn rồi tiến hành — với nỗi lo âu thầm lặng rằng mình đã bỏ qua điều gì đó quan trọng. Và nhu cầu không chỉ có vậy: em gái sắp cưới cần hợp tuổi, kế hoạch mua nhà cần ngày nhập trạch và hướng hợp mệnh, mỗi tháng cô muốn biết vận khí kinh doanh — tất cả hiện nay đều cần một thầy khác nhau, một lần tra cứu khác nhau, và không có nơi nào trả lời trọn vẹn, cá nhân, tức thì.</p>
+    <div class="insight-box"><strong>Insight cốt lõi:</strong> Minh không mua "ứng dụng lịch". Cô mua <em>sự yên tâm trước một quyết định lớn</em>. Đó là lý do người Việt sẵn sàng trả 500K–2M VND để gặp thầy — nhưng sẽ trả ít hơn nhiều lần nếu có một công cụ đủ tin cậy, đủ nhanh, và trả lời đúng câu hỏi của họ.</div>
+  </div>
+
+  <!-- ── 02 PRIMARY USER ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">02</div>
+      <div class="sec-title">Primary User</div>
+    </div>
+    <div class="archetype-card">
+      <div class="a-br-tl">「</div>
+      <div class="a-br-br">」</div>
+      <div class="archetype-avatar">明</div>
+      <div>
+        <div class="archetype-name">Chị Minh — 36 tuổi, Hà Nội</div>
+        <div class="archetype-body">Chủ tiệm nail nhỏ, vừa ký hợp đồng mặt bằng mới sau ba tháng tìm kiếm. Không tự nhận là người mê tín — nhưng luôn xem ngày trước khi làm chuyện lớn, vì đó là thứ bà ngoại dạy và cô tin vào. Không dùng thầy vì không biết ai đáng tin, ngại chi phí, và không có thời gian đặt lịch. Dùng điện thoại Android, Zalo hàng ngày, TikTok buổi tối.</div>
+        <div class="archetype-moment">Thời điểm cô cần app nhất: 10 giờ tối, ngồi một mình sau khi chồng và con đã ngủ. Điện thoại trên tay. Đang nghĩ về lịch khai trương. Cảm xúc: lo lắng nhưng hào hứng — muốn một câu trả lời dứt khoát để có thể yên tâm đi ngủ và bắt đầu gọi thợ sáng hôm sau.</div>
+        <div class="archetype-attrs">
+          <span class="attr-tag">Sắp khai trương tiệm nail</span>
+          <span class="attr-tag">Em gái sắp cưới</span>
+          <span class="attr-tag">Kế hoạch mua nhà 2027</span>
+          <span class="attr-tag">Chồng năm nay Thái Tuế</span>
+          <span class="attr-tag">WTP: ~100K VND/lần cần thiết</span>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:1.25rem;">Minh không phải ngoại lệ. Cô là đại diện của một tầng lớp rộng lớn người Việt trưởng thành: bận rộn, có thu nhập, tin vào may mắn như một phần của cách sống — và hiện tại không có công cụ nào phục vụ họ xứng tầm.</p>
+  </div>
+
+  <!-- ── 03 THE SOLUTION ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">03</div>
+      <div class="sec-title">The Solution</div>
+    </div>
+    <p><strong>Ngày Lành Tháng Tốt</strong> là trợ lý tâm linh cá nhân của chị Minh — không phải lịch vạn niên số hóa, không phải chatbot. Đây là nơi duy nhất cô đến mỗi khi cần một quyết định gắn với ngày tháng: từ chọn ngày khai trương, hợp tuổi cho đám cưới em gái, xem vận tháng trước mỗi bước kinh doanh, đến biết hướng nhà và màu sơn hợp mệnh khi mua căn hộ mới.</p>
+    <p>Nền tảng của mọi trải nghiệm là <strong>lá số Tứ Trụ</strong> — được lập một lần từ ngày giờ sinh, lưu vĩnh viễn vào profile. Từ đó, engine ba tầng xử lý từng câu hỏi: lọc bỏ ngày xấu phổ quát theo lịch vạn niên, loại tiếp các ngày xung khắc với lá số cá nhân, rồi chấm điểm từng ngày còn lại theo đúng loại sự kiện — với 26 intent được mã hóa riêng biệt, từ khai trương đến giải hạn đến phẫu thuật. Kết quả trả về bằng tiếng Việt tự nhiên: đọc được, hiểu được, chia sẻ được ngay qua Zalo mà không cần giải thích thêm.</p>
+    <p>Mỗi lần dùng tính năng cá nhân hóa tiêu một lượng credit nhỏ — mua một lần, dùng khi nào cần. Không subscription, không phí hàng tháng. Phù hợp với hành vi của Minh: nhu cầu theo sự kiện, không đều đặn, nhưng sẵn sàng trả khi cần.</p>
+  </div>
+
+  <!-- ── 04 REVENUE MODEL ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">04</div>
+      <div class="sec-title">Revenue Model</div>
+    </div>
+    <p><strong>Mô hình:</strong> Credit + Bundle prepaid — mua một lần, không auto-renew, không subscription định kỳ. Hai loại sản phẩm: (1) <strong>Credit pack</strong> — mua lượng credit dùng cho từng tính năng theo giá lẻ, hiệu lực 12 tháng; (2) <strong>Credit bundle</strong> — trả một lần để dùng thoải mái tất cả tính năng trong 6 hoặc 12 tháng, không tính lượng. Cả hai đều prepaid, không tự trừ tiền lại. Credit system được chọn vì tính linh hoạt trong operation: admin config credit cost của từng feature bất kỳ lúc nào mà không cần deploy code — cho phép A/B test pricing và điều chỉnh chiến lược growth theo từng giai đoạn. <strong>Payment trigger:</strong> khi credit không đủ cho tính năng muốn dùng — hiển thị màn mua tại chỗ, không điều hướng ra ngoài.</p>
+    <p><strong>Starter bundle:</strong> Tạo account mới → tặng ngay <strong>20 credit miễn phí</strong> — đủ để lập lá số (15 cr) + 1 lần chọn ngày (5 cr). User trải nghiệm đủ giá trị trước khi mua thêm. Giá trị starter bundle configurable trong DB.</p>
+
+    <table class="rev-table">
+      <thead><tr><th>Sản phẩm</th><th>Credit / Thời hạn</th><th>Giá</th><th>Định vị &amp; Use case điển hình</th></tr></thead>
+      <tbody>
+        <tr><td>Credit pack</td><td>100 cr</td><td>99.000đ</td><td>Dùng cho từng tính năng riêng lẻ. Hiệu lực 12 tháng kể từ ngày mua.</td></tr>
+        <tr class="highlight"><td>Bundle 6 tháng <span class="badge">★</span></td><td>Unlimited</td><td>789.000đ</td><td>Dùng thoải mái tất cả tính năng trong 6 tháng — không tính lượng. Prepaid, không auto-renew.</td></tr>
+        <tr><td>Bundle 12 tháng</td><td>Unlimited</td><td>989.000đ</td><td>Dùng thoải mái tất cả tính năng trong 12 tháng — không tính lượng. Prepaid, không auto-renew.</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1.5rem;margin-bottom:.5rem;"><strong>Credit cost mặc định theo tính năng — tất cả configurable, không hardcode (xem §11 Payment Integration):</strong></p>
+    <div class="mono-matrix">
+      <div class="mm-row header"><div class="mm-cell">Tính năng</div><div class="mm-cell">Default cr</div><div class="mm-cell">~VND</div><div class="mm-cell">Ghi chú operation</div></div>
+      <div class="mm-row"><div class="mm-cell">Chọn ngày cơ bản (top 3, 30 ngày)</div><div class="mm-cell">5 cr</div><div class="mm-cell">~8.000đ</div><div class="mm-cell">Paywall chính — trigger mua credit lần đầu</div></div>
+      <div class="mm-row"><div class="mm-cell">Chọn ngày nâng cao (top 5, 90 ngày)</div><div class="mm-cell">10 cr</div><div class="mm-cell">~16.000đ</div><div class="mm-cell">Upsell tại màn kết quả cơ bản</div></div>
+      <div class="mm-row"><div class="mm-cell">Chi tiết "Tại sao ngày này?"</div><div class="mm-cell">2 cr</div><div class="mm-cell">~3.000đ</div><div class="mm-cell">Micro-purchase xây trust</div></div>
+      <div class="mm-row highlight"><div class="mm-cell">Lập lá số Tứ Trụ đầy đủ</div><div class="mm-cell">15 cr</div><div class="mm-cell">~24.000đ</div><div class="mm-cell">Covered bởi starter bundle 20 cr — kích hoạt switching cost</div></div>
+      <div class="mm-row"><div class="mm-cell">Hợp tuổi hai người</div><div class="mm-cell">8 cr</div><div class="mm-cell">~13.000đ</div><div class="mm-cell">Viral cao — kết quả hay được chia sẻ nhất</div></div>
+      <div class="mm-row"><div class="mm-cell">Vận tháng chi tiết</div><div class="mm-cell">3 cr</div><div class="mm-cell">~5.000đ</div><div class="mm-cell">Repeat purchase — 3–4 lần/năm/user</div></div>
+      <div class="mm-row"><div class="mm-cell">Phong thủy cá nhân</div><div class="mm-cell">5 cr</div><div class="mm-cell">~8.000đ</div><div class="mm-cell">Trigger: mua nhà, chuyển văn phòng</div></div>
+      <div class="mm-row"><div class="mm-cell">Thẻ chia sẻ branded</div><div class="mm-cell">1 cr</div><div class="mm-cell">~1.600đ</div><div class="mm-cell">Gần free — tối đa viral loop</div></div>
+    </div>
+
+    <div class="math-box" style="margin-top:1.25rem;">
+      <strong>Revenue math — 3 kịch bản (giả định ARPU 150.000đ/năm, churn 20%/năm):</strong><br>
+      Base &nbsp;: 5.000 paying users × 150.000đ = <strong>750 triệu VND/năm (~30K USD)</strong><br>
+      Mid &nbsp;&nbsp;: 20.000 paying users = <strong>~120K USD/năm</strong><br>
+      Scale: 100.000 paying users = <strong>~600K USD/năm</strong>
+      <div class="note">ARPU: starter 0đ + mix credit pack (99K) và bundle (789–989K); ước tính blended 150K/năm · Conversion: 8% từ free tier sau khi dùng hết starter 20 cr · Credit pack expiry: 12 tháng kể từ ngày mua · Bundle: hiệu lực tính từ ngày kích hoạt, không auto-renew</div>
+    </div>
+  </div>
+
+  <!-- ── 05 CORE VALUE PROPOSITION ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">05</div>
+      <div class="sec-title">Core Value Proposition</div>
+    </div>
+    <div class="value-prop">
+      <span class="bracket-label">「 Tuyên ngôn sản phẩm 」</span>
+      Ngày Lành Tháng Tốt giúp chị Minh có được câu trả lời cá nhân hóa — chọn ngày, hợp tuổi, xem vận, biết hướng — cho mọi quyết định quan trọng gắn với ngày tháng, trong vòng 30 giây, để cô yên tâm quyết định và hành động ngay — mà không cần thầy bói, không cần tra lịch thủ công, không cần hỏi ai.
+    </div>
+    <p style="margin-top:1.25rem;">Đây không phải app xem lịch. Đây là <strong>thầy bói cá nhân luôn sẵn sàng</strong> — biết đúng lá số của Minh, hiểu đúng việc cô đang làm, và trả lời bằng tiếng Việt mà cô có thể đọc to cho mẹ chồng nghe mà không cần giải thích thêm.</p>
+  </div>
+
+  <!-- ── 06 COMPETITIVE MOAT ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">06</div>
+      <div class="sec-title">Competitive Moat</div>
+    </div>
+    <div class="moat-type">Switching Cost · Brand · Viral Distribution</div>
+    <p><strong>Switching cost (primary — tích lũy theo thời gian):</strong> Sau khi Minh lập lá số Tứ Trụ và lưu profile, toàn bộ 8 tính năng cá nhân hóa theo đúng lá số đó. Lịch sử tra cứu, các ngày đã chọn, profile của chồng và em gái tích lũy thành một bản ghi cá nhân không thể chuyển sang app khác. Chi phí chuyển đổi không phải là mất tiền — mà là mất đi toàn bộ bối cảnh mà app đã hiểu về cuộc sống của cô. Mỗi tính năng thêm = switching cost tăng thêm một tầng.</p>
+    <p><strong>Brand moat (secondary — chiếm vị trí trong đầu):</strong> Trong category tâm linh, trust chính là thương hiệu. App đầu tiên giải thích đúng và đủ tự nhiên bằng tiếng Việt — không phải bảng số vô hồn — sẽ chiếm vị trí <em>"app lịch đáng tin"</em> trong tâm trí người dùng. Người Việt không thay đổi app tâm linh khi đã tin. Vị trí này, một khi được thiết lập, rất khó bị giành lại.</p>
+    <p><strong>Viral distribution (growth moat — CAC = 0):</strong> Mỗi thẻ kết quả chia sẻ qua Zalo là một quảng cáo có watermark và link. Người nhận thấy kết quả đẹp, bấm link, vào app — mà người gửi không mất gì ngoài 1 credit. Tính năng hợp tuổi và phong thủy (kết quả cụ thể, có giá trị thông tin) là hai loại nội dung được chia sẻ tự nguyện cao nhất. Càng nhiều user, càng nhiều thẻ được chia sẻ, CAC càng giảm.</p>
+    <p style="margin-top:.5rem;"><strong>Implication cho kiến trúc kỹ thuật:</strong> User profile schema phải lưu toàn bộ lá số Tứ Trụ cá nhân, lịch sử intent và kết quả tra cứu của chính user — không phải chỉ ngày sinh. Dữ liệu người khác (vợ/chồng/người thân) chỉ nhập tạm theo từng phiên và không lưu vào profile. Profile ID là asset trung tâm của toàn bộ product, không phải convenience feature.</p>
+  </div>
+
+
+  <!-- ── 07 BUILD SCOPE ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">07</div>
+      <div class="sec-title">Build Scope</div>
+    </div>
+    <p>Tất cả những gì ship trong v1 — không có tier, không có phase. Bảng tổ chức theo chức năng, không theo thứ tự build.</p>
+
+    <table class="rev-table">
+      <thead><tr><th>Function</th><th>What Ships</th><th>Business Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>Core loop</td><td>Chọn ngày theo tuổi (26 event intents, top N kết quả, lý do tiếng Việt, giờ hoàng đạo) · Lịch tháng cá nhân hóa · Chi tiết ngày theo 26 mục đích · Đổi lịch dương/âm</td><td>Proves core value: personalized date selection replaces thầy bói — user gets answer in 30 giây</td></tr>
+        <tr><td>Retention</td><td>Hôm nay + Tuần này (free daily habit, không cần credit) · Vận tháng theo lá số · Seasonal push notifications (cron-based: mùa cưới, Tết, đầu tháng)</td><td>Free daily usage → seasonal trigger → credit purchase. Target: mở app mỗi sáng như xem thời tiết</td></tr>
+        <tr><td>Monetization</td><td>Credit pack (100 cr / 99K) · Bundle 6 tháng unlimited (789K) · Bundle 12 tháng unlimited (989K) · PayOS checkout tại chỗ · Starter 20 cr miễn phí khi tạo account</td><td>Prepaid, không subscription, không auto-renew. Revenue from event-driven purchases 3–4 lần/năm</td></tr>
+        <tr><td>Personalization</td><td>Lá số Tứ Trụ (unlock 1 lần, lưu vĩnh viễn) · Hợp tuổi hai người · Phong thủy cá nhân (hướng, màu hex, số, vật phẩm)</td><td>Switching cost: lá số + lịch sử tra cứu không thể chuyển sang app khác</td></tr>
+        <tr><td>Distribution</td><td>Thẻ chia sẻ branded (Zalo/Facebook, HMAC token, OG image) · 1 credit per share — gần free</td><td>Viral loop: CAC = 1 credit = 1.600đ. Mỗi thẻ chia sẻ = quảng cáo có watermark + link</td></tr>
+        <tr class="highlight"><td>Landing page</td><td>Single conversion page: hero → features → social proof → FAQ → CTA → install PWA</td><td>Organic SEO + viral share link destination + paid ad landing surface</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:2.5rem;margin-bottom:0;"><strong style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;letter-spacing:.04em;text-transform:uppercase;">§7b · Landing Page Content</strong></p>
+    <p style="margin-top:.5rem;">Nội dung cho landing page — screen planning agent dùng section này cho Figma Make brief. Mọi copy string trên landing page phải lấy từ đây.</p>
+
+    <div class="spec-block">
+      <div class="spec-row"><div class="s-key">Headline</div><div class="s-val"><strong>Chọn ngày tốt theo đúng tuổi của bạn — trong 30 giây</strong></div></div>
+      <div class="spec-row"><div class="s-key">Subheadline</div><div class="s-val">Dành cho người Việt tin vào ngày giờ nhưng không có thầy để hỏi — khai trương, đám cưới, nhập trạch, ký hợp đồng.</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Target keywords</div><div class="s-val">
+        <strong>Có dấu:</strong> xem ngày tốt · chọn ngày khai trương · lịch vạn niên · hợp tuổi · ngày tốt theo tuổi · xem ngày cưới · phong thủy theo mệnh<br>
+        <strong>Không dấu (SEO):</strong> xem ngay tot · chon ngay khai truong · lich van nien · hop tuoi · ngay tot theo tuoi · xem ngay cuoi · phong thuy theo menh
+      </div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Trust signals</div><div class="s-val">
+        <strong>①</strong> "Dựa trên Bát Tự Tử Trụ — hệ thống hơn 1.000 năm" ·
+        <strong>②</strong> "Kết quả cá nhân hóa theo đúng lá số của bạn" ·
+        <strong>③</strong> Star rating + số người dùng (khi có data thực) ·
+        <strong>④</strong> "Không subscription · Mua lượng khi cần, dùng khi nào muốn"
+      </div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">CTA Primary</div><div class="s-val"><strong>"Lập lá số miễn phí"</strong> — inline form (ngày sinh, giờ sinh, giới tính) ngay trên landing page</div></div>
+      <div class="spec-row"><div class="s-key">CTA Microcopy</div><div class="s-val">"Không cần App Store · Chỉ mất 30 giây · Tặng 20 lượng dùng ngay"</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">FAQ #1</div><div class="s-val"><strong>App này có chính xác không?</strong><br><em>Dựa trên Bát Tự Tử Trụ — hệ thống được sử dụng hơn 1.000 năm. Engine xử lý 3 tầng: lọc theo lịch vạn niên, loại ngày xung khắc với lá số cá nhân, chấm điểm theo đúng loại sự kiện.</em></div></div>
+      <div class="spec-row"><div class="s-key">FAQ #2</div><div class="s-val"><strong>Có cần biết giờ sinh không?</strong><br><em>Có giờ sinh sẽ chính xác hơn — tính được Nhật Chủ đúng. Không biết giờ thì app vẫn tính được dựa trên ngày tháng năm sinh.</em></div></div>
+      <div class="spec-row"><div class="s-key">FAQ #3</div><div class="s-val"><strong>Khác gì với lịch vạn niên thường?</strong><br><em>Lịch vạn niên cho kết quả chung cho tất cả mọi người. App này lọc theo đúng mệnh và Dụng Thần của bạn — mỗi người một kết quả khác nhau.</em></div></div>
+      <div class="spec-row"><div class="s-key">FAQ #4</div><div class="s-val"><strong>Có phải trả tiền không?</strong><br><em>Xem lịch hôm nay và tuần này miễn phí. Tính năng cá nhân hóa dùng lượng — mua một lần, không subscription, không tự trừ tiền.</em></div></div>
+      <div class="spec-row"><div class="s-key">FAQ #5</div><div class="s-val"><strong>Thông tin cá nhân có an toàn không?</strong><br><em>Ngày sinh dùng để tính lá số, lưu trên server bảo mật. Không chia sẻ với bên thứ ba. Thẻ chia sẻ không chứa ngày sinh của bạn.</em></div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Social proof 1</div><div class="s-val"><em>"Lần đầu tiên hiểu lá số của mình bằng tiếng Việt — không phải bảng số khó hiểu."</em><br>— Chị Lan, 34 tuổi, chủ quán cà phê, TP.HCM</div></div>
+      <div class="spec-row"><div class="s-key">Social proof 2</div><div class="s-val"><em>"Gửi kết quả hợp tuổi cho mẹ chồng, bà hài lòng luôn. Không cần đi thầy."</em><br>— Chị Hương, 29 tuổi, nhân viên văn phòng, Hà Nội</div></div>
+      <div class="spec-row"><div class="s-key">Social proof 3</div><div class="s-val"><em>"Mã màu hex gửi thẳng cho thợ sơn. Không app nào cho kết quả cụ thể vậy."</em><br>— Anh Tuấn, 41 tuổi, chủ thầu xây dựng, Đà Nẵng</div></div>
+    </div>
+
+    <div class="insight-box" style="margin-top:1.25rem;"><strong>Extraction test:</strong> Figma Make brief có thể include mọi copy string trên landing page chỉ dùng section này không? FAQ items → JSON-LD structured data cho rich results. Social proof → testimonial component. Nếu có — đủ cụ thể.</div>
+  </div>
+  <!-- ── 08 NOT BUILDING ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">08</div>
+      <div class="sec-title">Not Building</div>
+    </div>
+    <p>Danh sách dưới đây là ranh giới rõ ràng của v1. Bất kỳ tính năng nào không có trong Section 07 (Build Scope) và không có trong danh sách này đều cần hỏi lại — không tự thêm vào scope.</p>
+
+    <ul class="not-building-list">
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Chatbot / hỏi đáp tự do</strong> — chỉ flow cố định theo 26 intent. Không AI generative.<div class="nb-scope">Out of scope vì: trust trong category tâm linh đến từ rule-based determinism, không phải AI uncertainty</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Raw data lịch vạn niên</strong> — app giải thích bằng tiếng Việt tự nhiên, không hiển thị bảng số hoặc ký hiệu viết tắt.<div class="nb-scope">Out of scope vì: đây là điểm khác biệt chính so với incumbent apps</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Marketplace thầy / đặt lịch tư vấn</strong> — không marketplace, không directory, không booking.<div class="nb-scope">Out of scope vì: khác product category, phức tạp trust/quality control</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Community / forum / bình luận</strong> — không social features, không UGC.<div class="nb-scope">Out of scope vì: moderation cost cao, không trong value proposition cốt lõi</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>AI personalized push</strong> — chỉ seasonal cron triggers cố định (xem Section 10).<div class="nb-scope">Out of scope vì: v1 cần predictability, không cần ML pipeline</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Đa ngôn ngữ</strong> — chỉ tiếng Việt. Không English, không tiếng Hoa.<div class="nb-scope">Out of scope vì: copy formula và tone hoàn toàn phụ thuộc vào tiếng Việt tự nhiên</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Admin dashboard</strong> — quản lý trực tiếp qua Supabase Dashboard và PayOS Portal.<div class="nb-scope">Out of scope vì: tốn dev time không tạo user value, tools có sẵn đủ dùng cho v1</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Tặng credit cho người khác</strong> — mua credit cho bản thân only. Gifting là v2.<div class="nb-scope">Out of scope vì: cần additional UX flow (recipient notification, redemption) — defer to v2</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Lịch sử tra cứu / timeline</strong> — v1 chỉ lưu profile + lá số, không lưu query history.<div class="nb-scope">Out of scope vì: storage và privacy complexity — profile là đủ để rebuild switching cost</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Offline mode</strong> — tất cả tính toán cần kết nối đến Bát Tự API.<div class="nb-scope">Out of scope vì: engine complexity — caching kết quả đã xem là v2</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Subscription / auto-recurring billing</strong> — không auto-renew, không recurring charge. Bundles (6/12 tháng) là prepaid một lần — không phải subscription.<div class="nb-scope">Out of scope: bất kỳ mô hình tự động trừ tiền định kỳ. Credit pack và bundle đều yêu cầu user chủ động mua mỗi lần.</div></div></li>
+      <li class="nb-item"><div class="nb-x">✕</div><div><strong>Self-serve birth data correction</strong> — phải liên hệ support để xóa account và tạo lại.<div class="nb-scope">Out of scope vì: birth data = core identity, tự sửa tạo ra abuse vector</div></div></li>
+    </ul>
+
+    <p style="margin-top:2rem;margin-bottom:.75rem;"><strong style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:.04em;text-transform:uppercase;">Known Shortcuts</strong></p>
+    <p>Các trade-off có chủ đích — không phải bug, chấp nhận cho v1:</p>
+    <ul class="not-building-list">
+      <li class="nb-item"><div class="nb-x">△</div><div><strong>Supabase Dashboard thay admin panel</strong> — đủ dùng cho v1 với &lt;5.000 DAU. Custom admin khi cần A/B test pricing phức tạp hơn.</div></li>
+      <li class="nb-item"><div class="nb-x">△</div><div><strong>Birth data sửa qua support ticket</strong> — không self-serve. Giảm abuse vector, acceptable vì tỷ lệ nhập sai thấp khi có confirm popup.</div></li>
+      <li class="nb-item"><div class="nb-x">△</div><div><strong>Push notification chỉ seasonal cron</strong> — không personalized ML. V1 cần predictability và audit trail rõ ràng.</div></li>
+      <li class="nb-item"><div class="nb-x">△</div><div><strong>Share card render server-side OG image</strong> — không client-side canvas. Đơn giản hơn, đủ chất lượng, consistent across devices.</div></li>
+      <li class="nb-item"><div class="nb-x">△</div><div><strong>Người khác (vợ/chồng/em) nhập tạm theo phiên</strong> — không lưu vào profile. Mỗi người cần account riêng để có lá số riêng.</div></li>
+    </ul>
+
+  </div>
+  <!-- ── 09 AUTH MODEL ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">09</div>
+      <div class="sec-title">Auth Model</div>
+    </div>
+    <p><strong>Anonymous-first</strong> với upgrade path tự nhiên tại điểm có giá trị cao nhất. User không cần đăng ký để thấy giá trị — nhưng bắt buộc tạo account khi cần lưu lá số cá nhân.</p>
+
+    <div class="spec-block">
+      <div class="spec-row"><div class="s-key">Provider</div><div class="s-val"><strong>Supabase Auth (native)</strong> — không custom auth, dùng Supabase built-in.</div></div>
+      <div class="spec-row"><div class="s-key">Methods</div><div class="s-val"><strong>Google OAuth</strong> (primary) · <strong>Email + Password</strong> (fallback). Không Phone OTP, không Zalo.</div></div>
+      <div class="spec-row"><div class="s-key">Why</div><div class="s-val"><em>Google OAuth vì 80%+ Android users ở Việt Nam đã đăng nhập Google sẵn — một tap, không cần nhập gì. Email fallback cho user không muốn liên kết Google.</em></div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Anonymous access</div><div class="s-val">User xem lịch hôm nay + weekly summary (không cá nhân hóa) mà không cần đăng nhập. Đây là daily free value — giữ DAU không tốn credit.</div></div>
+      <div class="spec-row"><div class="s-key">Account trigger</div><div class="s-val">Bắt buộc tạo account khi lập lá số Tứ Trụ (15 cr, covered bởi starter bundle 20 cr). Đây là natural upgrade point — user đã thấy giá trị từ free features.</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Birth data lock</div><div class="s-val">Ngày sinh + giờ sinh + giới tính <strong>không thể thay đổi sau khi tạo account</strong>. Bắt buộc confirm popup trước khi submit: <em>"Thông tin này không thể thay đổi sau khi tạo tài khoản. Bạn có chắc chắn không?"</em> Nhập sai: liên hệ support để xóa account và tạo lại.</div></div>
+      <div class="spec-row"><div class="s-key">Profile schema</div><div class="s-val"><code>user_id</code> (uuid, FK supabase.auth.users) · <code>email</code> · <code>ngay_sinh</code> · <code>gio_sinh</code> · <code>gioi_tinh</code> · <code>la_so</code> (JSON) · <code>credits_balance</code> · <code>subscription_expires_at</code> (timestamptz, null = credit mode) · <code>created_at</code></div></div>
+      <div class="spec-row"><div class="s-key">Session</div><div class="s-val">Persistent — Supabase session token, không expire trừ khi user đăng xuất chủ động.</div></div>
+    </div>
+
+    <div class="insight-box" style="margin-top:1.25rem;"><strong>Extraction test:</strong> Screen planning agent có thể build complete auth flow (login, signup, profile) mà không cần hỏi thêm không? Tech spec writer có thể viết auth contract trực tiếp từ section này không? Nếu có — đủ cụ thể.</div>
+  </div>
+
+  <!-- ── 10 EXTERNAL INTEGRATIONS ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">10</div>
+      <div class="sec-title">External Integrations</div>
+    </div>
+    <p>Mọi API, SDK, và dịch vụ bên ngoài mà app phụ thuộc vào. Section này ngăn tech-spec agent và research agent hallucinate API contracts.</p>
+
+    <table class="rev-table">
+      <thead><tr><th>Integration</th><th>Type</th><th>Used For</th><th>Auth</th><th>Env Vars</th></tr></thead>
+      <tbody>
+        <tr class="highlight"><td>Bát Tự API</td><td>Self-hosted</td><td>Toàn bộ 13 calculation endpoints: ngay-hom-nay, weekly-summary, chon-ngay, chon-ngay/detail, lich-thang, day-detail, convert-date, tu-tru, profile, tieu-van, hop-tuoi, phong-thuy, share/{token}</td><td>X-API-Key header</td><td><code>BAT_TU_API_URL</code> · <code>BAT_TU_API_KEY</code> <em>(server-only)</em></td></tr>
+        <tr><td>Supabase</td><td>SaaS (managed)</td><td>Auth, PostgreSQL DB, profile storage, Row Level Security</td><td>Service role key</td><td><code>NEXT_PUBLIC_SUPABASE_URL</code> · <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> · <code>SUPABASE_SERVICE_ROLE_KEY</code> <em>(server-only)</em></td></tr>
+        <tr><td>PayOS</td><td>SaaS (Vietnam)</td><td>Credit pack + bundle payments (MoMo, ZaloPay, bank transfer, VietQR)</td><td>Client ID + API key + checksum</td><td><code>PAYOS_CLIENT_ID</code> · <code>PAYOS_API_KEY</code> · <code>PAYOS_CHECKSUM_KEY</code> <em>(server-only)</em></td></tr>
+        <tr><td>@vercel/og (satori)</td><td>Library</td><td>Server-side OG image generation cho share cards</td><td>—</td><td>— <em>(bundled, no env)</em></td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1.5rem;margin-bottom:.75rem;"><strong>Bản đồ màn hình → Endpoint API:</strong></p>
+    <div class="screen-map">
+      <div class="screen-row"><div class="screen-name">Home</div><div class="screen-detail"><span>Hôm nay (Hoàng/Hắc Đạo, giờ tốt) + top ngày tuần này theo lá số</span><span class="screen-api">ngay-hom-nay · weekly-summary</span></div></div>
+      <div class="screen-row"><div class="screen-name">Chọn ngày</div><div class="screen-detail"><span>Chọn sự kiện (26 intent) → nhập tuổi → top N ngày + chi tiết từng ngày</span><span class="screen-api">chon-ngay · chon-ngay/detail</span></div></div>
+      <div class="screen-row"><div class="screen-name">Lịch tháng</div><div class="screen-detail"><span>Calendar view cá nhân hóa + bấm vào ngày → điểm theo 26 mục đích</span><span class="screen-api">lich-thang · day-detail · convert-date</span></div></div>
+      <div class="screen-row"><div class="screen-name">Lá số của tôi</div><div class="screen-detail"><span>Tứ Trụ đầy đủ, Dụng Thần, Đại Vận — unlock 1 lần, lưu vĩnh viễn vào profile</span><span class="screen-api">tu-tru · profile</span></div></div>
+      <div class="screen-row"><div class="screen-name">Vận tháng</div><div class="screen-detail"><span>Tháng hiện tại (tổng quan free) + tháng tới (3 credit) + 2 tháng tiếp</span><span class="screen-api">tieu-van</span></div></div>
+      <div class="screen-row"><div class="screen-name">Hợp tuổi</div><div class="screen-detail"><span>Nhập 2 người → phân tích đầy đủ → thẻ chia sẻ Zalo</span><span class="screen-api">hop-tuoi · share</span></div></div>
+      <div class="screen-row"><div class="screen-name">Phong thủy</div><div class="screen-detail"><span>Hướng, màu (hex), số, vật phẩm — theo Dụng Thần từ lá số đã lưu</span><span class="screen-api">phong-thuy</span></div></div>
+      <div class="screen-row"><div class="screen-name">Chia sẻ</div><div class="screen-detail"><span>Thẻ kết quả → Zalo → người nhận bấm link → thấy đủ kết quả → CTA tải app</span><span class="screen-api">share/{token}</span></div></div>
+    </div>
+
+    <div class="spec-block" style="margin-top:1.25rem;">
+      <div class="spec-row"><div class="s-key">Bát Tự API</div><div class="s-val">JSON request/response · Latency target &lt;500ms · Rate limit: không giới hạn (self-hosted) · Base URL: env var <code>BAT_TU_API_URL</code></div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Share card</div><div class="s-val"><strong>Server-side OG image:</strong> <code>/api/share/[token]/og</code> → PNG via @vercel/og / satori. Client share via Web Share API. HMAC token chứa <code>result_type + input_params + signature</code> — không chứa ngày sinh.</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Push provider</div><div class="s-val"><strong>Web Push API (PWA native)</strong> — không dùng FCM. Opt-in sau lần dùng thứ 3.</div></div>
+      <div class="spec-row"><div class="s-key">Push triggers</div><div class="s-val">Mùa cưới (T10–12 âm): 1×/tuần · Trước Tết (tháng Chạp): 1×/tuần · Đầu tháng (vận tháng): 1×/tháng · User có lá số chưa xem vận: 1×/tháng</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Scale target v1</div><div class="s-val">DAU tháng 3: 5.000 · Concurrent peak: ~500 (10PM) · DB rows năm 1: ~100K profiles, ~1M query results · API calls/day: ~50.000</div></div>
+      <div class="spec-row"><div class="s-key">UI variables</div><div class="s-val"><em>Các biến như result.date, user.menh, result.best_hour trong kịch bản là UI variables — directional, không phải tên cột schema. Schema chính thức định nghĩa trong Tech Spec.</em></div></div>
+    </div>
+
+    <div class="insight-box" style="margin-top:1.25rem;"><strong>Extraction test:</strong> Research agent có thể skip researching integrations đã fully documented ở đây không? Tech spec writer có thể viết API contracts trực tiếp từ env vars và endpoints listed? Nếu có — đủ cụ thể.</div>
+  </div>
+
+  <!-- ── 11 PAYMENT INTEGRATION ── -->
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">11</div>
+      <div class="sec-title">Payment Integration</div>
+    </div>
+    <p>Payment provider, webhook flow, và credit configuration. Section này ngăn template mặc định (Stripe) tạo ra sai webhook handlers.</p>
+
+    <div class="spec-block">
+      <div class="spec-row"><div class="s-key">Provider</div><div class="s-val"><strong>PayOS (payos.vn)</strong> — Vietnam domestic payment gateway.</div></div>
+      <div class="spec-row"><div class="s-key">Methods</div><div class="s-val">MoMo · ZaloPay · Bank transfer · VietQR — tất cả qua PayOS unified API.</div></div>
+      <div class="spec-row"><div class="s-key">Pattern</div><div class="s-val">Checkout redirect — PayOS API (server-side) → redirect to PayOS checkout page → webhook xác nhận → cộng credit.</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Webhook events</div><div class="s-val"><strong>payment.success</strong> → cộng credit vào <code>credits_balance</code> hoặc set <code>subscription_expires_at</code> cho bundle · <strong>payment.cancel</strong> → no-op, user quay lại app · Verify signature bằng <code>PAYOS_CHECKSUM_KEY</code> trước khi xử lý.</div></div>
+      <div class="spec-row"><div class="s-key">Env vars</div><div class="s-val"><code>PAYOS_CLIENT_ID</code> · <code>PAYOS_API_KEY</code> · <code>PAYOS_CHECKSUM_KEY</code> — <em>server-only, không expose client.</em></div></div>
+      <div class="spec-row"><div class="s-key">Test mode</div><div class="s-val">PayOS sandbox environment với test credentials riêng. Sandbox API URL khác production — cấu hình qua env var.</div></div>
+      <hr class="s-divider">
+      <div class="spec-row"><div class="s-key">Credit config</div><div class="s-val"><strong>feature_credit_costs</strong> table — lưu trong DB, không hardcode. Schema: <code>feature_key</code> (varchar) · <code>credit_cost</code> (int) · <code>is_free</code> (bool) · <code>updated_at</code>. Admin update qua Supabase Dashboard mà không cần deploy.</div></div>
+      <div class="spec-row"><div class="s-key">Feature keys</div><div class="s-val">Paid: <code>chon_ngay_basic</code> (5) · <code>chon_ngay_advanced</code> (10) · <code>chon_ngay_detail</code> (2) · <code>tu_tru</code> (15) · <code>hop_tuoi</code> (8) · <code>tieu_van</code> (3) · <code>phong_thuy</code> (5) · <code>share_card</code> (1) · <code>day_detail</code> (2)<br>Free: <code>ngay_hom_nay</code> · <code>weekly_summary</code> · <code>convert_date</code> · <code>lich_thang_overview</code></div></div>
+      <div class="spec-row"><div class="s-key">Starter bundle</div><div class="s-val">20 credit tặng khi tạo account. Config: <code>config_key='starter_credits', value='20'</code> — thay đổi bất kỳ lúc nào. Credit starter cùng pool, cùng expiry 12 tháng với credit mua.</div></div>
+    </div>
+
+    <div class="insight-box" style="margin-top:1.25rem;"><strong>Extraction test:</strong> Tech spec writer có thể tạo complete payment API contract (webhook handler, credit deduction logic, config schema) mà không cần research PayOS docs không? Nếu có — đủ cụ thể.</div>
+  </div>
+  <!-- ── 12 FEATURE GROUPING ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">12</div>
+      <div class="sec-title">Feature Grouping</div>
+    </div>
+    <p>Grouping cho build plan — các wave theo dependency logic, không theo business priority. Wave sau không thể bắt đầu khi wave trước chưa hoàn thành infrastructure của nó.</p>
+
+    <table class="wave-table">
+      <thead><tr><th style="width:110px">Wave</th><th>Features</th><th>Depends On</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>W1<br><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted);font-weight:400;">Foundation</span></td>
+          <td>
+            Anonymous browse · Phone OTP account creation · Credit purchase flow (PayOS) · Profile storage (Supabase) · Bát Tự API integration layer
+            <div class="wave-features">
+              <span class="wf">auth</span><span class="wf">payos</span><span class="wf">profile</span><span class="wf">api-layer</span>
+            </div>
+          </td>
+          <td style="font-size:.83rem;color:var(--muted);">— <em>(foundation — no dependencies)</em></td>
+        </tr>
+        <tr>
+          <td>W2<br><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted);font-weight:400;">Core Loop</span></td>
+          <td>
+            Hôm nay + Tuần này · Chọn ngày (cơ bản + chi tiết) · Lịch tháng · Chi tiết ngày · Đổi lịch dương/âm
+            <div class="wave-features">
+              <span class="wf free">ngay-hom-nay FREE</span><span class="wf free">weekly-summary FREE</span><span class="wf">chon-ngay</span><span class="wf">chon-ngay/detail</span><span class="wf free">lich-thang FREE</span><span class="wf">day-detail</span><span class="wf free">convert-date FREE</span>
+            </div>
+          </td>
+          <td style="font-size:.83rem;color:var(--muted);">Foundation</td>
+        </tr>
+        <tr>
+          <td>W3<br><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted);font-weight:400;">Personalization</span></td>
+          <td>
+            Lá số Tứ Trụ (unlock + lưu vĩnh viễn) · Vận tháng · Profile gia đình (lưu nhiều người)
+            <div class="wave-features">
+              <span class="wf">tu-tru</span><span class="wf">tieu-van</span><span class="wf">profile/family</span>
+            </div>
+          </td>
+          <td style="font-size:.83rem;color:var(--muted);">Core Loop (W2)</td>
+        </tr>
+        <tr>
+          <td>W4<br><span style="font-family:'IBM Plex Mono',monospace;font-size:.6rem;color:var(--muted);font-weight:400;">Social + Specialty</span></td>
+          <td>
+            Hợp tuổi · Phong thủy cá nhân · Share card (HMAC + OG image) · Web Push opt-in + seasonal cron
+            <div class="wave-features">
+              <span class="wf">hop-tuoi</span><span class="wf">phong-thuy</span><span class="wf">share/{token}</span><span class="wf">og-image</span><span class="wf">web-push</span>
+            </div>
+          </td>
+          <td style="font-size:.83rem;color:var(--muted);">Personalization (W3)</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin-top:1rem;font-size:.85rem;"><em>Chia sẻ kết quả (share/{token}) là cross-cutting — được build trong Wave 4 nhưng CTA chia sẻ xuất hiện trong tất cả các tính năng từ W2 trở đi (có thể placeholder trước).</em></p>
+  </div>  <!-- ── 13 USER SCENARIOS ── -->
+
+  <div class="section">
+    <div class="section-header">
+      <div class="sec-num">13</div>
+      <div class="sec-title">User Scenarios</div>
+    </div>
+    <p>Những kịch bản dưới đây không phải user journey giả định. Đây là các khoảnh khắc cụ thể mà chị Minh — và hàng triệu người giống cô — gặp phải trong vòng 18 tháng cuộc sống. Mỗi kịch bản là một lần app thực hiện đúng lời hứa trong value proposition: <em>câu trả lời cá nhân hóa, trong 30 giây, bất kỳ lúc nào.</em> Mỗi kịch bản cũng là một lần switching cost tích lũy thêm một tầng.</p>
+
+    <!-- Scenario 1 -->
+    <div class="scenario" style="margin-top:1.5rem;">
+      <div class="scenario-header">
+        <div class="scenario-num">01</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Kinh doanh · Khai trương · Tháng 4/2026</div>
+          <div class="scenario-name">Chọn ngày mở tiệm nail — lần đầu dùng app</div>
+        </div>
+        <div class="scenario-credit">−8 credit<span>mua gói 19K (10 cr)</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Minh lần đầu vào app. Không cần đăng ký. Màn Home hiển thị ngay lịch hôm nay: Hoàng Đạo, giờ tốt buổi sáng. Cô thấy app biết đúng thứ mình muốn — tiếp tục. <span class="step-feature">ngay-hom-nay · FREE</span></div></li>
+          <li><div class="step-n">02</div><div>Bấm <em>Chọn ngày</em> → chọn <strong>Khai trương</strong> → nhập ngày sinh → hệ thống yêu cầu 5 credit. Cô chưa có credit. Màn mua credit xuất hiện ngay tại chỗ — cô mua gói 19.000đ (10 credit). Barrier thấp nhất, không rời màn hình. <span class="step-feature">chon-ngay · 5 cr</span></div></li>
+          <li><div class="step-n">03</div><div>Nhận top 3 ngày trong 30 ngày tới. Ngày tốt nhất: <em>"Thứ Ba 15/4 — Trực Thành, Hoàng Đạo, hợp mệnh Thổ của chị. Khai trương tốt nhất vào 7–9 giờ sáng hoặc 13–15 giờ chiều."</em> Đúng format cô muốn: ngày cụ thể, giờ cụ thể, lý do rõ ràng.</div></li>
+          <li><div class="step-n">04</div><div>Bấm <em>"Tại sao ngày này tốt?"</em> — xem chi tiết các sao cát/hung, Layer 1/2/3. Tin hơn vì thấy lý do. Tiêu 2 credit. <span class="step-feature">chon-ngay/detail · 2 cr</span></div></li>
+          <li><div class="step-n">05</div><div>Tạo thẻ kết quả đẹp → chia sẻ Zalo cho chồng và chị gái. Tiêu 1 credit. Chị gái nhận được thẻ, thấy link, tải app. <span class="step-feature">share/{token} · 1 cr</span></div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Khai trương đúng ngày tốt. Minh cảm thấy đã chuẩn bị nghiêm túc — không phải chọn đại. App lưu ngày sinh vào profile, các lần sau không cần nhập lại.</div>
+        <div class="scenario-balance">Số dư sau scenario: 10 − 5 − 2 − 1 = <strong>2 credit còn lại</strong></div>
+        <div class="scenario-share">Viral loop: Chị gái của Minh tải app sau khi nhận thẻ kết quả trên Zalo. CAC = 1 credit = 1.600đ.</div>
+      </div>
+    </div>
+
+    <!-- Scenario 2 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">02</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Cá nhân hóa · Lá số · 2 tuần sau khai trương</div>
+          <div class="scenario-name">Unlock Tứ Trụ — nền tảng cho mọi thứ còn lại</div>
+        </div>
+        <div class="scenario-credit">−15 credit<span>mua gói 79K (50 cr)</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Tiệm nail hoạt động tốt. Minh mở app thấy banner: <em>"Lập lá số Tứ Trụ — kết quả chọn ngày chính xác hơn theo đúng mệnh của bạn."</em> Cô nhớ mẹ từng nói cô thiếu Hỏa. Muốn biết thật sự.</div></li>
+          <li><div class="step-n">02</div><div>Nhập ngày sinh + giờ sinh (chọn từ dropdown giờ) + giới tính. Chỉ còn 2 credit — cần 15. Mua gói 79.000đ (50 credit). <span class="step-feature">tu-tru · 15 cr</span></div></li>
+          <li><div class="step-n">03</div><div>Nhận lá số đầy đủ bằng tiếng Việt: <em>"Nhật Chủ Giáp Mộc — bản thân chị thuộc hành Mộc. Lá số nhược, cần hỗ trợ từ Hỏa và Mộc. Nên tránh các ngày mang hành Kim mạnh — đây là Kỵ Thần của chị. Đại Vận hiện tại: Bính Ngọ (Hỏa) đến 2031 — chu kỳ thuận lợi cho kinh doanh."</em></div></li>
+          <li><div class="step-n">04</div><div>Lá số lưu vĩnh viễn. Từ đây, mọi lần chọn ngày engine biết chính xác Dụng Thần và Kỵ Thần của Minh — kết quả cá nhân hóa sâu hơn, loại bỏ đúng hơn. <span class="step-feature">profile · lưu vĩnh viễn</span></div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Lần đầu tiên Minh hiểu lá số của mình bằng ngôn ngữ đời thường. Switching cost bắt đầu từ đây — profile này không thể chuyển sang app khác.</div>
+        <div class="scenario-balance">Số dư sau scenario: (2 + 50) − 15 = <strong>37 credit còn lại</strong></div>
+      </div>
+    </div>
+
+    <!-- Scenario 3 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">03</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Hôn nhân · Hợp tuổi &amp; Đám cưới · Tháng 7/2026</div>
+          <div class="scenario-name">Em gái sắp cưới — hợp tuổi và chọn ngày cưới</div>
+        </div>
+        <div class="scenario-credit">−14 credit<span>8 + 5 + 1 cr</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Em gái Minh có bạn trai. Mẹ hỏi ngay: <em>"Hai đứa có hợp tuổi không?"</em> Minh mở app thay vì đặt lịch đi thầy.</div></li>
+          <li><div class="step-n">02</div><div>Vào màn <em>Hợp tuổi</em>, nhập ngày sinh em gái và bạn trai. Tiêu 8 credit. Kết quả: 78/100 — <em>"Nạp Âm Thổ và Mộc tương sinh, Địa Chi Dần-Ngọ tam hợp cục Hỏa. Hai người hợp về tài chính và xây dựng gia đình. Lưu ý: Thiên Can có khắc nhẹ — nên chọn ngày hóa giải."</em> <span class="step-feature">hop-tuoi · 8 cr</span></div></li>
+          <li><div class="step-n">03</div><div>Tạo thẻ chia sẻ kết quả hợp tuổi — gửi vào group Zalo gia đình. Mẹ hài lòng, không cần đi thầy. 3 người trong group tải app. Tiêu 1 credit. <span class="step-feature">share/{token} · 1 cr</span></div></li>
+          <li><div class="step-n">04</div><div>Chọn ngày <strong>Đám cưới</strong> theo tuổi em gái, quét 90 ngày. Top 3 ngày kèm giờ đón dâu tốt nhất và lưu ý tháng Cô Hồn. Tiêu 5 credit. <span class="step-feature">chon-ngay · 5 cr</span></div></li>
+          <li><div class="step-n">05</div><div>Mở lịch tháng để xem 3 ngày gợi ý trong context cả tháng — tránh cuối tuần đã có sự kiện khác của gia đình. <span class="step-feature">lich-thang · FREE với lá số đã có</span></div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Cả gia đình thống nhất ngày cưới trong một buổi tối. Minh trở thành người "biết chuyện" trong nhà — vai trò xã hội này là động lực chia sẻ app mạnh nhất.</div>
+        <div class="scenario-balance">Số dư sau scenario: 37 − 14 = <strong>23 credit còn lại</strong></div>
+        <div class="scenario-share">Viral loop: 3 người trong group gia đình tải app sau thẻ hợp tuổi. Đây là kịch bản acquisition hiệu quả nhất — nội dung chia sẻ có giá trị thực với người nhận.</div>
+      </div>
+    </div>
+
+    <!-- Scenario 4 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">04</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Kinh doanh · Vận tháng · Tháng 8/2026</div>
+          <div class="scenario-name">Xem vận trước khi ký hợp đồng chuỗi spa</div>
+        </div>
+        <div class="scenario-credit">−8 credit<span>3 + 5 cr</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Minh được một chuỗi spa mời ký hợp đồng cung cấp dịch vụ nail. Số tiền lớn. Trước khi gặp đối tác, cô muốn biết tháng 8 dương lịch vận khí kinh doanh của mình có thuận không.</div></li>
+          <li><div class="step-n">02</div><div>Màn Vận tháng hiển thị tổng quan tháng 8 miễn phí: vận trung bình. Cô mua chi tiết (3 credit): <em>"Trụ tháng Canh Thân — Kim khắc Mộc, tháng có áp lực với Nhật Chủ Giáp của chị. Tuy nhiên Đại Vận Bính Ngọ đang hỗ trợ. Nên chốt hợp đồng trong 10 ngày đầu tháng khi còn ảnh hưởng tháng 7. Tránh ký sau ngày 20."</em> <span class="step-feature">tieu-van · 3 cr</span></div></li>
+          <li><div class="step-n">03</div><div>Đặt lịch gặp đối tác vào ngày 8/8. Kết hợp chọn ngày <strong>Ký hợp đồng</strong> để tìm ngày tốt nhất trong tuần đầu tháng 8. Tiêu 5 credit. <span class="step-feature">chon-ngay · 5 cr</span></div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Hợp đồng ký thành công. Dù không biết chắc vận tháng có tác động thực sự không — cảm giác đã chuẩn bị đúng cách giúp Minh tự tin hơn trong buổi gặp. Đây là giá trị cốt lõi sản phẩm cung cấp: <em>sự yên tâm có căn cứ.</em></div>
+        <div class="scenario-balance">Số dư sau scenario: 23 − 8 = <strong>15 credit còn lại</strong></div>
+      </div>
+    </div>
+
+    <!-- Scenario 5 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">05</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Xây dựng · Nhập trạch &amp; Phong thủy · Đầu 2027</div>
+          <div class="scenario-name">Mua nhà — chọn ngày dọn vào và bố trí không gian</div>
+        </div>
+        <div class="scenario-credit">−10 credit<span>5 + 5 cr</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Sau gần một năm dùng app, Minh và chồng mua được căn hộ. Hai việc cần làm ngay: chọn ngày nhập trạch và biết hướng/màu sắc hợp mệnh để sắp xếp nhà trước khi dọn vào.</div></li>
+          <li><div class="step-n">02</div><div>Chọn ngày <strong>Nhập trạch</strong>, quét 60 ngày, nhập ngày sinh chồng tạm thời (không lưu vào profile — mỗi người một account riêng). Engine lọc tháng Cô Hồn, loại ngày xung với cả hai lá số. Top 3 ngày. Tiêu 5 credit. <span class="step-feature">chon-ngay · 5 cr</span></div></li>
+          <li><div class="step-n">03</div><div>Mở màn <em>Phong thủy cá nhân</em>. Kết quả theo Dụng Thần Hỏa: <em>"Hướng Nam và Đông Nam tốt nhất cho bàn làm việc và bàn thờ. Màu chủ đạo: đỏ đô (#8B1A1A) và cam đất (#C67C3E). Số may mắn: 3, 7, 9. Tránh kê giường đầu hướng Tây — Kim khắc Mộc bất lợi ban đêm."</em> Tiêu 5 credit. <span class="step-feature">phong-thuy · 5 cr</span></div></li>
+          <li><div class="step-n">04</div><div>Minh screenshot mã màu hex gửi cho thợ sơn và gửi sơ đồ hướng cho chồng bố trí nội thất. Kết quả đủ cụ thể để thực thi ngay — không cần dịch thêm.</div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Nhập trạch đúng ngày, nhà được sắp xếp theo hướng hợp mệnh. Minh chia sẻ kết quả phong thủy vào nhóm Zalo hội chị em cùng chung cư — 5 người tải app.</div>
+        <div class="scenario-balance">Số dư sau scenario: mua thêm gói 50 cr (79K) → (15 + 50) − 10 = <strong>55 credit còn lại</strong></div>
+        <div class="scenario-share">Viral loop: kết quả phong thủy với mã màu hex cụ thể là nội dung đủ hữu ích để chia sẻ tự nguyện. Không cần incentive — thông tin đã có giá trị thực.</div>
+      </div>
+    </div>
+
+    <!-- Scenario 6 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">06</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Tâm linh · Giải hạn · Đầu năm 2027</div>
+          <div class="scenario-name">Chồng năm Thái Tuế — chọn ngày làm lễ giải hạn</div>
+        </div>
+        <div class="scenario-credit">−5 credit<span>chon-ngay</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Chồng Minh năm nay Thái Tuế. Mẹ chồng giục làm lễ giải hạn trước Rằm tháng Giêng. Minh mở app thay vì hỏi chùa xem ngày.</div></li>
+          <li><div class="step-n">02</div><div>Chọn sự kiện <strong>Giải hạn</strong>, nhập ngày sinh chồng tạm thời (không lưu vào profile — chồng có account riêng, mỗi người một lá số). Tiêu 5 credit. Kết quả: <em>"Ngày Đinh Mão, mùng 9 tháng Giêng — Thiên Xá tinh, cát tinh đặc biệt cho lễ tế tự và giải hạn, điểm +15. Làm lễ vào giờ Tý (23:00–1:00) hoặc giờ Thìn (7:00–9:00)."</em> <span class="step-feature">chon-ngay · 5 cr</span></div></li>
+          <li><div class="step-n">03</div><div>Minh in thẻ kết quả, đưa cho mẹ chồng xem. Mẹ chồng hài lòng — có giải thích rõ ràng, không phải "ngày này tốt" chung chung. App vừa giải quyết nhu cầu tâm linh vừa xử lý kỳ vọng của mẹ chồng. <span class="step-feature">share/{token} · 1 cr</span></div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Hai vấn đề trong một lần dùng: ngày giải hạn đúng và mẹ chồng thấy có căn cứ. Chồng không cần cài app — Minh nhập ngày sinh của chồng ngay lúc tra cứu, đơn giản như nhập số điện thoại, không lưu lại.</div>
+        <div class="scenario-balance">Số dư sau scenario: 55 − 6 = <strong>49 credit còn lại</strong></div>
+      </div>
+    </div>
+
+    <!-- Scenario 7 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">07</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Lịch &amp; So sánh · Tư vấn khách hàng · Bất kỳ lúc nào</div>
+          <div class="scenario-name">Khách hỏi "ngày nào tốt hơn?" — Minh trả lời trong 1 phút</div>
+        </div>
+        <div class="scenario-credit">−2 credit<span>day-detail</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Hai khách đặt làm nail tuần cuối tháng. Một người hỏi: <em>"Chị ơi cuối tháng ngày nào tốt để em khai trương không?"</em> Người kia hỏi: <em>"Ngày nào tốt để em làm hồ sơ nhà đất?"</em></div></li>
+          <li><div class="step-n">02</div><div>Minh mở màn Lịch tháng — thấy ngay toàn bộ tháng với màu Hoàng/Hắc Đạo. Xác định 2–3 ngày tiềm năng cuối tháng. <span class="step-feature">lich-thang · FREE</span></div></li>
+          <li><div class="step-n">03</div><div>Bấm vào ngày 28 — xem Chi tiết ngày: điểm theo tất cả 26 mục đích cùng lúc. Khai trương 72/100, Mua nhà đất 58/100. Bấm sang ngày 30: Khai trương 45, Mua nhà đất 81. Hai câu trả lời trong 30 giây. Tiêu 2 credit. <span class="step-feature">day-detail · 2 cr</span></div></li>
+          <li><div class="step-n">04</div><div>Cô tư vấn được hai khách cùng lúc, đúng intent, có số liệu. Uy tín tiệm nail tăng thêm một bậc không ngờ tới.</div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> Minh trở thành người tư vấn ngày giờ không chính thức cho khách hàng — thêm giá trị dịch vụ mà không mất chi phí đáng kể. 2 credit = 3.200đ cho kết quả mà khách hàng cảm nhận là "chuyên nghiệp".</div>
+        <div class="scenario-balance">Số dư sau scenario: 49 − 2 = <strong>47 credit còn lại</strong></div>
+      </div>
+    </div>
+
+    <!-- Scenario 8 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <div class="scenario-num">08</div>
+        <div class="scenario-title-block">
+          <div class="scenario-event">Daily habit · Vòng lặp dài hạn · Hàng ngày</div>
+          <div class="scenario-name">Mở app mỗi sáng — và mua credit vào Tết</div>
+        </div>
+        <div class="scenario-credit">Free → Tết: −50 credit<span>mua gói 79K</span></div>
+      </div>
+      <div class="scenario-body">
+        <ul class="scenario-steps">
+          <li><div class="step-n">01</div><div>Sau 6 tháng dùng app, Minh mở app mỗi sáng như xem thời tiết. Màn Home: hôm nay Hoàng Đạo, giờ tốt cho công việc. Không tốn credit. Đây là thói quen — không phải nhu cầu. <span class="step-feature">ngay-hom-nay · FREE</span></div></li>
+          <li><div class="step-n">02</div><div>Thứ Hai hàng tuần: Widget "Tuần này" hiển thị top 2 ngày tốt theo lá số và gợi ý dùng cho mục đích gì. Thứ Tư tốt cho ký kết, thứ Sáu tốt cho xuất hành. Cô điều chỉnh lịch họp và lịch gặp nhà cung cấp theo đó. <span class="step-feature">weekly-summary · FREE</span></div></li>
+          <li><div class="step-n">03</div><div>Tháng Chạp. Push notification: <em>"Còn 18 ngày đến Tết — chọn ngày mở hàng đầu năm tốt nhất theo tuổi bạn. Năm Đinh Mùi đặc biệt hợp với mệnh Thổ."</em> Minh bấm vào, credit còn 47 — đủ, không cần mua thêm. Chọn ngày mở hàng ngay trong app. <span class="step-feature">chon-ngay · 5 cr</span></div></li>
+          <li><div class="step-n">04</div><div>Cô mua thêm gói 79K (50 credit) vào tháng 1 để có credit cho đầu năm mới — đám giỗ, dọn nhà kho, lên kế hoạch kinh doanh Q1. Đây là lần mua credit thứ 3 trong 12 tháng.</div></li>
+        </ul>
+        <div class="scenario-outcome"><strong>Kết quả:</strong> App từ công cụ tra cứu sự kiện trở thành companion hàng ngày. Free daily habit → seasonal trigger → credit purchase → repeat. Đây là vòng lặp LTV: không ép buộc, không subscription — nhưng Minh luôn quay lại vì app luôn có lý do để mở.</div>
+        <div class="scenario-share">Retention loop: daily free usage (ngay-hom-nay + weekly-summary) duy trì DAU không tốn credit → seasonal push notification trigger credit purchase → tổng 3–4 lần mua/năm → ARPU thực tế 160–240K VND/năm, cao hơn assumption trong revenue model.</div>
+      </div>
+    </div>
+
+    <!-- Closing summary -->
+    <div class="insight-box" style="margin-top:2rem;">
+      <strong>Tổng kết hành trình 12 tháng của Minh:</strong> 3 lần mua (99K credit pack + bundle 789K / 989K = blended ≈ 177K), 8 tính năng đã sử dụng, 6 thẻ kết quả đã chia sẻ → kéo về ít nhất 9 người dùng mới. Chi phí chuyển sang app khác: mất lá số đã lập, kết quả đã xem, và cảm giác app đã "hiểu" đúng mệnh mình — switching cost đến từ lá số cá nhân, không cần family profiles.
+    </div>
+  </div>
+
+
+
+
+  <div class="footer">
+    <span>ngaylanhthangtot.vn &nbsp;·&nbsp; NORTHSTAR v3.5 &nbsp;·&nbsp; T3/2026</span>
+    <span>ENGINE: BÁT TỰ API · 13 ENDPOINTS &nbsp;·&nbsp; PWA MOBILE-FIRST &nbsp;·&nbsp; VIETNAM B2C</span>
+  </div>
+
+</div>
+</body>
+</html>

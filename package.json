@@ -1,0 +1,42 @@
+{
+  "name": "ngaytot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "preview": "npx serve build/client",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@react-router/node": "7.13.2",
+    "@react-router/serve": "7.13.2",
+    "@supabase/supabase-js": "^2.49.1",
+    "isbot": "^5.1.36",
+    "motion": "^12.4.7",
+    "react": "^19.2.4",
+    "react-countup": "^6.5.3",
+    "react-dom": "^19.2.4",
+    "react-router": "7.13.2",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@react-router/dev": "7.13.2",
+    "@tailwindcss/vite": "^4.2.2",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/react": "^16.2.0",
+    "@types/node": "^22",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^26.0.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.7",
+    "vite-plugin-pwa": "^0.21.1",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.0.6"
+  }
+}
