@@ -241,7 +241,26 @@ export default function AppChonNgayKetQua() {
               {showShare && bestDay ? (
                 <div className="mt-1">
                   <Button variant="outline" size="cta_sm" asChild>
-                    <Link to="/app">Chia sẻ (sắp có ở Wave 4)</Link>
+                    <Link
+                      to="/app/chia-se"
+                      state={{
+                        resultType: "day_pick",
+                        suKien: state.intentLabel,
+                        day: {
+                          dateLabel: bestDay.dateLabel,
+                          lunarLabel: bestDay.lunarLabel,
+                          reasons:
+                            bestDay.reasons.length > 0
+                              ? bestDay.reasons
+                              : [
+                                  `${bestDay.truc} · giờ tốt ${bestDay.bestHour}`,
+                                ],
+                        },
+                        grade: bestDay.grade,
+                      }}
+                    >
+                      Chia sẻ ngày tốt
+                    </Link>
                   </Button>
                 </div>
               ) : null}

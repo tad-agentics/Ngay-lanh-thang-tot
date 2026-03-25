@@ -2,13 +2,13 @@
 Updated: 2026-03-25
 
 ## Current focus
-**W3 `personalization`** closed on `staging`: `/app/la-so` + D2 reveal, `tu-tru` persists `profiles.la_so` + lock; `/app/van-thang` + `tieu-van`; Cài đặt blocks birth when locked; DB trigger protects lá số from client writes.
+**W4 `social-specialty`** shipped on `staging`: `/app/hop-tuoi` (D3 count-up), `/app/phong-thuy`, `/app/chia-se` + public `/x/:token`; Edge `create-share-token` / `share-resolve` / `share-og`; `/app/thong-bao-quyen` + Cài đặt push summary.
 
 ## Active wave
-**Wave 4 `social-specialty`** — hợp tuổi, chia sẻ — see `artifacts/plans/build-plan.md`.
+**Cross-cutting `legal-settings`** — dispatch per `artifacts/plans/build-plan.md`.
 
 ## Next up
-Wave 4 / cross-cutting legal — dispatch per build-plan.
+`/feature legal-settings` (hoặc `/wave legal`); deploy Edge secrets `SITE_URL` cho `share-og`.
 
 ## Blockers
 None

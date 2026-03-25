@@ -30,6 +30,7 @@ export default function AppCaiDat() {
   const [birthTimeCode, setBirthTimeCode] = useState<string>(UNSET);
   const [gioiTinh, setGioiTinh] = useState<string>(UNSET);
   const [saving, setSaving] = useState(false);
+  const [pushCount, setPushCount] = useState<number | null>(null);
 
   useEffect(() => {
     if (!profile || loading) return;
@@ -38,6 +39,23 @@ export default function AppCaiDat() {
     setBirthTimeCode(code !== undefined ? String(code) : UNSET);
     setGioiTinh(profile.gioi_tinh ?? UNSET);
   }, [profile, loading]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("push_subscriptions")
+        .select("id")
+        .eq("user_id", user.id);
+      if (cancelled) return;
+      if (error) setPushCount(0);
+      else setPushCount(data?.length ?? 0);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const birthLocked = Boolean(profile?.birth_data_locked_at);
 
@@ -180,6 +198,20 @@ export default function AppCaiDat() {
           onClick={() => void saveBirth()}
         >
           {saving ? "Đang lưu…" : "Lưu thông tin sinh"}
+        </Button>
+      </section>
+
+      <section className="rounded-xl border border-border bg-card p-4 space-y-3 text-sm">
+        <p className="font-medium text-foreground">Thông báo đẩy</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {pushCount === null
+            ? "Đang kiểm tra…"
+            : pushCount > 0
+              ? `Đã đăng ký ${pushCount} endpoint trên thiết bị này / các phiên bản đã bật.`
+              : "Chưa đăng ký web push — bạn có thể bật để nhận nhắc theo mùa (cron), không dùng ML cá nhân hoá."}
+        </p>
+        <Button variant="outline" asChild className="w-full">
+          <Link to="/app/thong-bao-quyen">Quản lý thông báo</Link>
         </Button>
       </section>
 

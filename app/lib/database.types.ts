@@ -163,8 +163,18 @@ export interface Database {
           user_agent: string | null;
           created_at: string;
         };
-        Insert: never;
-        Update: never;
+        Insert: {
+          user_id: string;
+          endpoint: string;
+          p256dh: string;
+          auth: string;
+          user_agent?: string | null;
+        };
+        Update: {
+          p256dh?: string;
+          auth?: string;
+          user_agent?: string | null;
+        };
       };
     };
     Views: Record<string, never>;
