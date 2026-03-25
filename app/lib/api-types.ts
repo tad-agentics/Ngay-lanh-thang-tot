@@ -158,6 +158,7 @@ export type BatTuOperation =
   | "phong-thuy"
   | "share";
 
+/** `body` fields match tu-tru-api query/body names — see https://tu-tru-api.fly.dev/openapi.json */
 export interface BatTuRequest {
   op: BatTuOperation;
   body: Record<string, unknown>;
