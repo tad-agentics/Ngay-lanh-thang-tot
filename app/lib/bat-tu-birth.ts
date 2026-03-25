@@ -2,6 +2,48 @@ import type { Database } from "~/lib/database.types";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
+/** tu-tru-api `birth_time` codes — labels match the in-app birth-time dropdown. */
+export const BAT_TU_BIRTH_TIME_OPTIONS: readonly { value: number; label: string }[] =
+  [
+    { value: 0, label: "Giờ Tý sớm (0h – 0h59)" },
+    { value: 2, label: "Giờ Sửu (1h – 2h59)" },
+    { value: 4, label: "Giờ Dần (3h – 4h59)" },
+    { value: 6, label: "Giờ Mão (5h – 6h59)" },
+    { value: 8, label: "Giờ Thìn (7h – 8h59)" },
+    { value: 10, label: "Giờ Tỵ (9h – 10h59)" },
+    { value: 11, label: "Giờ Ngọ (11h – 12h59)" },
+    { value: 14, label: "Giờ Mùi (13h – 14h59)" },
+    { value: 16, label: "Giờ Thân (15h – 16h59)" },
+    { value: 18, label: "Giờ Dậu (17h – 18h59)" },
+    { value: 20, label: "Giờ Tuất (19h – 20h59)" },
+    { value: 22, label: "Giờ Hợi (21h – 22h59)" },
+    { value: 23, label: "Giờ Tý muộn (23h – 23h59)" },
+  ] as const;
+
+/**
+ * Representative `time` for Postgres `profiles.gio_sinh` per API code (start of slot).
+ * Round-trip: `gioSinhToBatTuBirthTime(batTuBirthTimeCodeToGioSinh(code)) === code`.
+ */
+const BIRTH_TIME_CODE_TO_PG_TIME: Record<number, string> = {
+  0: "00:00:00",
+  2: "01:00:00",
+  4: "03:00:00",
+  6: "05:00:00",
+  8: "07:00:00",
+  10: "09:00:00",
+  11: "11:00:00",
+  14: "13:00:00",
+  16: "15:00:00",
+  18: "17:00:00",
+  20: "19:00:00",
+  22: "21:00:00",
+  23: "23:00:00",
+};
+
+export function batTuBirthTimeCodeToGioSinh(code: number): string | null {
+  return BIRTH_TIME_CODE_TO_PG_TIME[code] ?? null;
+}
+
 /**
  * Maps wall-clock hour (0–23) to `birth_time` for tu-tru-api (can chi giờ).
  * Giờ Tý sớm 0h–0h59 → 0; Tý muộn 23h–23h59 → 23; Giờ Ngọ 11h–12h59 → 11; …
