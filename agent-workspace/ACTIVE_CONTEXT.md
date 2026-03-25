@@ -14,5 +14,5 @@ Wave 1 (`auth-profile-billing`): PayOS checkout + webhook, Welcome / billing scr
 None
 
 ## Key decisions since last session
-- Foundation backend commit `9fbdc8d` (SEO/PWA, Edge stubs, Supabase PKCE client). Frontend commit adds Make UI under `app/components/ui`, northstar §7b landing, Google + email auth, hooks (`useAuth`, `useProfile`, `useInstallPrompt`, `useFeatureCosts`).
+- Foundation commits `9fbdc8d` (SEO/PWA, Edge stubs, Supabase PKCE client) and `799dfa2` (Make UI under `app/components/ui`, northstar §7b landing, Google + email auth, hooks `useAuth` / `useProfile` / `useInstallPrompt` / `useFeatureCosts`).
 - `tsconfig.json` excludes `supabase/functions/**` (Deno) and `src/make-import/**` until Make routes are fully merged into the app tree.
