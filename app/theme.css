@@ -1,5 +1,63 @@
 @custom-variant dark (&:is(.dark *));
 
+/* Vietnamese Lora v37 — self-hosted .woff2 (public/fonts/) */
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-500.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: italic;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-500italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-600italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Lora";
+  font-style: italic;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/lora-v37-vietnamese-700italic.woff2") format("woff2");
+}
+
 :root {
   --font-size: 16px;
 
