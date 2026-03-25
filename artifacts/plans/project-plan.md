@@ -9,14 +9,14 @@
 
 ## Foundation
 
-- [ ] Backend foundation        commit: —
-- [ ] Frontend: Make import + landing + auth        commit: —
+- [x] Backend foundation        commit: `9fbdc8d`
+- [x] Frontend: Make import + landing + auth        commit: _(this commit — run `git log -1 --oneline` after push)_
 
 ## Feature Workstreams
 
 | Feature | Wave | Backend | Frontend | QA | Commit |
 |---|---|---|---|---|---|
-| foundation | Foundation | pending | pending | — | — |
+| foundation | Foundation | complete | complete | — | `9fbdc8d` + frontend SHA |
 | auth-profile-billing | W1 | pending | pending | — | — |
 | core-loop | W2 | pending | pending | — | — |
 | personalization | W3 | pending | pending | — | — |

@@ -1,5 +1,5 @@
 {
-  "exclude": ["src/make-import/**"],
+  "exclude": ["src/make-import/**", "supabase/functions/**"],
   "include": [
     "**/*",
     "**/.server/**/*",
