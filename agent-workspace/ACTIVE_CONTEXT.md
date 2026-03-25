@@ -2,13 +2,13 @@
 Updated: 2026-03-25
 
 ## Current focus
-**Wave 2 `core-loop`** — chọn ngày → kết quả (Make + D1 loading), chi tiết ngày `/app/ngay/:ngay`, `bat-tu` ops + credits on `staging`.
+**W1 `auth-profile-billing`** closed on `staging`: onboarding gate → `/app/bat-dau`, PayOS + `CreditGate` + Cài đặt / Mua lượng; `FEATURE_KEY_MAP` aligned with seed.
 
-## Active workstreams
-- —
+## Active wave
+**Wave 2 `core-loop`** — chọn ngày flow, `bat-tu`, etc.
 
 ## Next up
-Wave 3 (`personalization`): lá số / vận — see `artifacts/plans/build-plan.md`. Optionally formal **QA PASS** + project-plan update for `auth-profile-billing` (W1) if treating W1 as a gate.
+Wave 3 (`personalization`): lá số / vận — see `artifacts/plans/build-plan.md`.
 
 ## Blockers
 None
