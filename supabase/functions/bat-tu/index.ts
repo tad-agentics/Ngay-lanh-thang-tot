@@ -11,6 +11,27 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Expect API origin only (e.g. `https://tu-tru-api.fly.dev`). Paths already include `/v1/...`.
+ * Fixes common misconfigurations:
+ * - Trailing `/v1` → would become `/v1/v1/...` (404).
+ * - Swagger paste `.../docs#...` → `#` is not sent on HTTP; request hits `/docs` instead of `/v1/tu-tru`.
+ * - `.../docs` only → strip so we use the API host root.
+ */
+function normalizeBatTuApiBaseUrl(raw: string): string {
+  let s = raw.trim();
+  const hash = s.indexOf("#");
+  if (hash >= 0) s = s.slice(0, hash);
+  s = s.replace(/\/+$/, "");
+  if (s.endsWith("/v1")) {
+    s = s.slice(0, -3).replace(/\/+$/, "");
+  }
+  if (s.endsWith("/docs")) {
+    s = s.slice(0, -5).replace(/\/+$/, "");
+  }
+  return s;
+}
+
 /** Ops callable without Supabase session (caller may still send birth_* in `body`). */
 const ANONYMOUS_OPS = new Set([
   "ngay-hom-nay",
@@ -580,8 +601,9 @@ Deno.serve(async (req) => {
     );
   }
 
-  const batUrl = Deno.env.get("BAT_TU_API_URL");
+  const batUrlRaw = Deno.env.get("BAT_TU_API_URL");
   const batKey = Deno.env.get("BAT_TU_API_KEY");
+  const batUrl = batUrlRaw ? normalizeBatTuApiBaseUrl(batUrlRaw) : "";
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -695,13 +717,20 @@ Deno.serve(async (req) => {
   }
 
   const featureKey = resolveFeatureKey(op, body);
+  /** Client hint: bootstrap first chart from Settings — no credits (only when profile has no lá số yet). */
+  const firstLaSoFree =
+    op === "tu-tru" &&
+    Boolean(userId) &&
+    body.first_la_so_free === true;
+  const featureKeyForBilling =
+    firstLaSoFree && featureKey === "tu_tru" ? null : featureKey;
   let chargedAmount = 0;
 
-  if (featureKey && userId) {
+  if (featureKeyForBilling && userId) {
     const { data: costRow } = await admin
       .from("feature_credit_costs")
       .select("credit_cost, is_free")
-      .eq("feature_key", featureKey)
+      .eq("feature_key", featureKeyForBilling)
       .maybeSingle();
 
     if (
@@ -759,7 +788,7 @@ Deno.serve(async (req) => {
           delta: -cost,
           balance_after: newBal,
           reason: "bat_tu",
-          feature_key: featureKey,
+          feature_key: featureKeyForBilling,
           metadata: { op },
         });
 

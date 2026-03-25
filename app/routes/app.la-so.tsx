@@ -9,13 +9,21 @@ import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { CreditGate } from "~/components/CreditGate";
 import { useProfile } from "~/hooks/useProfile";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import {
+  BAT_TU_BIRTH_TIME_OPTIONS,
   gioiTinhToBatTuGender,
+  gioSinhToBatTuBirthTime,
   ngaySinhToBatTuBirthDate,
-  timeInputToBatTuBirthTime,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { toDbFeatureKey } from "~/lib/constants";
@@ -26,6 +34,14 @@ type Phase = "form" | "confirm" | "loading" | "revealing" | "done";
 
 const GIOI_TINH_LABEL: Record<string, string> = { nam: "Nam", nu: "Nữ" };
 
+const UNSET = "__unset__";
+
+function labelForBirthTimeCode(code: string): string {
+  if (code === UNSET) return "Không chọn";
+  const opt = BAT_TU_BIRTH_TIME_OPTIONS.find((o) => String(o.value) === code);
+  return opt?.label ?? code;
+}
+
 const LA_SO_FEATURE = toDbFeatureKey("la_so");
 
 export default function AppLaSo() {
@@ -35,7 +51,7 @@ export default function AppLaSo() {
   const [phase, setPhase] = useState<Phase>("form");
   const [form, setForm] = useState({
     ngaySinh: "",
-    gioSinh: "",
+    birthTimeCode: UNSET,
     gioiTinh: "" as "nam" | "nu" | "",
   });
   const [reveal, setReveal] = useState<ReturnType<
@@ -52,11 +68,10 @@ export default function AppLaSo() {
       setPhase("done");
       return;
     }
+    const code = gioSinhToBatTuBirthTime(profile.gio_sinh);
     setForm({
       ngaySinh: profile.ngay_sinh?.slice(0, 10) ?? "",
-      gioSinh: profile.gio_sinh
-        ? profile.gio_sinh.slice(0, 5)
-        : "",
+      birthTimeCode: code !== undefined ? String(code) : UNSET,
       gioiTinh: profile.gioi_tinh ?? "",
     });
   }, [profile, loading, hasLaso]);
@@ -78,8 +93,10 @@ export default function AppLaSo() {
       birth_date,
       tz: "Asia/Ho_Chi_Minh",
     };
-    const bt = timeInputToBatTuBirthTime(form.gioSinh);
-    if (bt !== undefined) body.birth_time = bt;
+    if (form.birthTimeCode !== UNSET) {
+      const bt = Number(form.birthTimeCode);
+      if (Number.isFinite(bt)) body.birth_time = bt;
+    }
     const g = gioiTinhToBatTuGender(form.gioiTinh || null);
     if (g !== undefined) body.gender = g;
 
@@ -109,7 +126,7 @@ export default function AppLaSo() {
 
   if (loading || costsLoading) {
     return (
-      <div className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto">
+      <div className="px-4 pb-8 py-10">
         <p className="text-sm text-muted-foreground">Đang tải…</p>
       </div>
     );
@@ -133,7 +150,7 @@ export default function AppLaSo() {
 
   if (phase === "loading") {
     return (
-      <div className="min-h-svh bg-background px-4 py-24 max-w-lg mx-auto text-center">
+      <div className="px-4 pb-8 py-24 text-center">
         <p className="text-muted-foreground text-sm" style={{ fontFamily: "var(--font-ibm-mono)" }}>
           Đang lập lá số…
         </p>
@@ -145,7 +162,7 @@ export default function AppLaSo() {
     laSoJsonToRevealProps(profile?.la_so as never) ?? reveal;
 
   const core = (
-      <div className="min-h-svh bg-background px-4 pb-8 max-w-lg mx-auto">
+      <div className="px-4 pb-8">
         <ScreenHeader title="Lá số tứ trụ" />
 
         {phase === "done" && displaySummary ? (
@@ -250,10 +267,10 @@ export default function AppLaSo() {
                     {form.ngaySinh}
                   </span>
                 </div>
-                <div className="flex items-center justify-between py-2 border-b border-border">
-                  <span className="text-muted-foreground text-xs">Giờ sinh</span>
-                  <span className="text-foreground text-xs font-medium" style={{ fontFamily: "var(--font-ibm-mono)" }}>
-                    {form.gioSinh || "Không rõ"}
+                <div className="flex items-center justify-between py-2 border-b border-border gap-3">
+                  <span className="text-muted-foreground text-xs shrink-0">Giờ sinh</span>
+                  <span className="text-foreground text-xs font-medium text-right">
+                    {labelForBirthTimeCode(form.birthTimeCode)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-2">
@@ -269,7 +286,7 @@ export default function AppLaSo() {
                 <span className="text-foreground" style={{ fontFamily: "var(--font-ibm-mono)" }}>
                   {cost} lượng
                 </span>
-                . Gói đăng ký hoặc đủ lượng sẽ được tính ở bước gọi máy chủ.
+                . Gói đăng ký hoặc số lượng đủ sẽ được kiểm tra khi bạn xác nhận.
               </p>
             </div>
 
@@ -302,16 +319,28 @@ export default function AppLaSo() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="la-gio">Giờ sinh (tuỳ chọn)</Label>
+              <Label htmlFor="la-gio">Giờ sinh (khung giờ)</Label>
               <p className="text-xs text-muted-foreground">
-                Giờ sinh giúp tính Giờ Chủ chính xác hơn — để trống nếu không nhớ
+                Cùng danh mục với Cài đặt — chọn khung can chi (gửi API như tu-tru-api).
               </p>
-              <Input
-                id="la-gio"
-                type="time"
-                value={form.gioSinh}
-                onChange={(e) => setForm((f) => ({ ...f, gioSinh: e.target.value }))}
-              />
+              <Select
+                value={form.birthTimeCode}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, birthTimeCode: v }))
+                }
+              >
+                <SelectTrigger id="la-gio" className="w-full">
+                  <SelectValue placeholder="Chọn khung giờ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>Chưa chọn / không rõ</SelectItem>
+                  {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={String(opt.value)}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -353,12 +382,6 @@ export default function AppLaSo() {
             </Button>
           </div>
         ) : null}
-
-        <p className="mt-6 text-sm">
-          <Link to="/app" className="text-primary underline underline-offset-4">
-            ← Trang chủ app
-          </Link>
-        </p>
       </div>
   );
 

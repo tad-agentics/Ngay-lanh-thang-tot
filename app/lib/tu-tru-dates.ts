@@ -1,5 +1,27 @@
 /** Helpers for tu-tru-api date fields (dd/mm/yyyy) and chọn ngày credit tiers. */
 
+/** Same weekday labels as Make `LichDetail` (`src/make-import/.../LichDetail.tsx`). */
+const LICH_DETAIL_WEEKDAYS_VI = [
+  "Chủ Nhật",
+  "Thứ Hai",
+  "Thứ Ba",
+  "Thứ Tư",
+  "Thứ Năm",
+  "Thứ Sáu",
+  "Thứ Bảy",
+] as const;
+
+/** `YYYY-MM-DD` → `Chủ Nhật, 15 tháng 3, 2026` (Make-style calendar row title). */
+export function formatIsoDateLichHeader(iso: string): string {
+  const dt = parseLocalYmd(iso);
+  if (!dt) return iso.trim().slice(0, 10);
+  const wd = LICH_DETAIL_WEEKDAYS_VI[dt.getDay()];
+  const d = dt.getDate();
+  const mo = dt.getMonth() + 1;
+  const y = dt.getFullYear();
+  return `${wd}, ${d} tháng ${mo}, ${y}`;
+}
+
 /** `YYYY-MM-DD` (HTML date input) → `dd/mm/yyyy` for API body. */
 export function isoDateToDdMmYyyy(iso: string): string | null {
   const raw = iso.trim().slice(0, 10);

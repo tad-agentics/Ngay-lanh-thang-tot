@@ -136,7 +136,7 @@ export default function AppCaiDatApp() {
   }
 
   return (
-    <main className="min-h-svh bg-background px-4 pb-8 max-w-lg mx-auto">
+    <div className="px-4 pb-8">
       <ScreenHeader title="Cài đặt ứng dụng" />
 
       <div className="flex flex-col gap-4">
@@ -262,6 +262,6 @@ export default function AppCaiDatApp() {
           </Link>
         </p>
       </div>
-    </main>
+    </div>
   );
 }

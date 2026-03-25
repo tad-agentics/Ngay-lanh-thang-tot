@@ -1,9 +1,11 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 
+import { AppMobileShell } from "~/components/AppMobileShell";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
+import { profileHasLaso } from "~/lib/la-so-ui";
 
 /** Allowed while `onboarding_completed_at` is null (purchase path from welcome). */
 function isOnboardingExemptPath(pathname: string): boolean {
@@ -16,9 +18,13 @@ function isOnboardingExemptPath(pathname: string): boolean {
 
 export default function AppShellLayout() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { profile, loading: profileLoading, error: profileError, refresh } =
+  const { profile, loading: profileLoading, error: profileError, reload } =
     useProfile();
   const location = useLocation();
+
+  async function retryProfile() {
+    await reload();
+  }
 
   if (authLoading) {
     return (
@@ -46,13 +52,13 @@ export default function AppShellLayout() {
       profileError ??
       "Không tìm thấy hồ sơ tài khoản. Thử tải lại hoặc đăng xuất và đăng nhập lại.";
     return (
-      <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-6">
+      <main className="px-4 pb-8 py-10 space-y-6">
         <ErrorBanner message={message} />
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             type="button"
             className="w-full sm:w-auto"
-            onClick={() => void refresh()}
+            onClick={() => void retryProfile()}
           >
             Thử tải lại
           </Button>
@@ -75,5 +81,11 @@ export default function AppShellLayout() {
     return <Navigate to="/app/bat-dau" replace />;
   }
 
-  return <Outlet />;
+  const hasLaso = profileHasLaso(profile.la_so);
+
+  return (
+    <AppMobileShell hasLaso={hasLaso}>
+      <Outlet />
+    </AppMobileShell>
+  );
 }

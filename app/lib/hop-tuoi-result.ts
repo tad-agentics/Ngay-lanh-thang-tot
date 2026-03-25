@@ -11,9 +11,10 @@ export type HopTuoiGradLabel =
   | "Trung bình"
   | "Cần lưu ý";
 
+/** Top two bands align with app-wide letter grades (A/B at 85 / 70). */
 export function scoreToGradLabel(score: number): HopTuoiGradLabel {
-  if (score >= 80) return "Rất hợp";
-  if (score >= 60) return "Hợp";
+  if (score >= 85) return "Rất hợp";
+  if (score >= 70) return "Hợp";
   if (score >= 40) return "Trung bình";
   return "Cần lưu ý";
 }

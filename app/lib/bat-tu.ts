@@ -1,3 +1,5 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
+
 import type { BatTuRequest } from "~/lib/api-types";
 import { supabase } from "~/lib/supabase";
 
@@ -19,10 +21,34 @@ export async function invokeBatTu<T = unknown>(
   );
 
   if (error) {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = (await error.context.json()) as unknown;
+        if (
+          body &&
+          typeof body === "object" &&
+          "error" in body &&
+          (body as EdgeErrorBody).error != null
+        ) {
+          const e = (body as EdgeErrorBody).error!;
+          return {
+            ok: false,
+            code: typeof e.code === "string" ? e.code : "BAT_TU",
+            message:
+              typeof e.message === "string" && e.message.length
+                ? e.message
+                : (error.message ??
+                  "Edge Function trả lỗi (không có chi tiết)."),
+          };
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
     return {
       ok: false,
       code: "INVOKE",
-      message: error.message ?? "Không gọi được máy chủ Bát Tự.",
+      message: error.message ?? "Không kết nối được dịch vụ Bát Tự lúc này.",
     };
   }
 

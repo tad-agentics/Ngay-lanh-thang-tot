@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -55,25 +56,20 @@ export default function AppLichThang() {
   }, [profileLoading, profile, month]);
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-6">
+    <div className="px-4 pb-8 space-y-6">
+      <ScreenHeader title="Lịch tháng" />
+
       <div>
-        <p className="text-sm text-muted-foreground mb-1">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-          Lịch tháng
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          GET /v1/lich-thang — tổng quan tháng (miễn phí).
+        <p className="text-sm text-muted-foreground">
+          Tổng quan các ngày trong tháng từ hồ sơ của bạn — miễn phí khi đã có
+          ngày sinh.
         </p>
       </div>
 
       {!profileLoading && profile && !profile.ngay_sinh ? (
         <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
           <p className="text-muted-foreground">
-            Cần ngày sinh trong hồ sơ.
+            Thêm ngày sinh trong Cài đặt để xem lịch cá nhân hóa.
           </p>
           <Button asChild variant="secondary" className="w-full sm:w-auto">
             <Link to="/app/cai-dat">Mở Cài đặt</Link>
@@ -103,6 +99,6 @@ export default function AppLichThang() {
           {JSON.stringify(payload, null, 2)}
         </pre>
       ) : null}
-    </main>
+    </div>
   );
 }

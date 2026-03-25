@@ -39,7 +39,7 @@ export default function PublicShareCardPage() {
   const grade = payload?.grade as "A" | "B" | "C" | undefined;
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto">
+    <main className="min-h-svh bg-background px-4 pb-8 py-10">
       {err ? (
         <p className="text-sm text-muted-foreground">{err}</p>
       ) : !payload ? (

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -96,21 +97,10 @@ export default function AppChonNgay() {
   }
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-6">
-      <div>
-        <p className="text-sm text-muted-foreground mb-1">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-          Chọn ngày
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Tra trong khoảng — lượng phụ thuộc độ dài khoảng (30 / 60 / 90 ngày).
-        </p>
-      </div>
+    <div className="px-4 pb-8">
+      <ScreenHeader title="Chọn Ngày Tốt" showBack={false} className="pb-5" />
 
+      <div className="flex flex-col gap-5">
       {!profileLoading && profile && !profile.ngay_sinh ? (
         <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
           <p className="text-muted-foreground">
@@ -191,6 +181,7 @@ export default function AppChonNgay() {
       </section>
 
       {err ? <ErrorBanner message={err} /> : null}
-    </main>
+      </div>
+    </div>
   );
 }

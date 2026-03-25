@@ -174,17 +174,12 @@ export default function AppChiaSe() {
   if (!state) return null;
 
   return (
-    <main className="min-h-svh bg-background px-4 pb-10 max-w-lg mx-auto">
-      <p className="text-sm text-muted-foreground pt-4 mb-1">
-        <Link to="/app" className="underline-offset-4 hover:underline">
-          ← Trang chủ app
-        </Link>
-      </p>
+    <div className="px-4 pb-8">
       <ScreenHeader title="Chia sẻ ngày tốt" />
 
       <CreditGate featureKey="share_card">
         <ChiaSeCard state={state} />
       </CreditGate>
-    </main>
+    </div>
   );
 }

@@ -19,7 +19,11 @@ import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   batTuBirthTimeCodeToGioSinh,
   gioSinhToBatTuBirthTime,
+  gioiTinhToBatTuGender,
+  ngaySinhToBatTuBirthDate,
 } from "~/lib/bat-tu-birth";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { profileHasLaso } from "~/lib/la-so-ui";
 import { supabase } from "~/lib/supabase";
 
 const UNSET = "__unset__";
@@ -63,6 +67,7 @@ export default function AppCaiDat() {
   async function saveBirth() {
     if (!user || birthLocked) return;
     setSaving(true);
+    const hadLaso = profile ? profileHasLaso(profile.la_so) : true;
     const gioSinh =
       birthTimeCode === UNSET
         ? null
@@ -80,27 +85,64 @@ export default function AppCaiDat() {
         gioi_tinh: gioiTinh === UNSET ? null : (gioiTinh as "nam" | "nu"),
       })
       .eq("id", user.id);
-    setSaving(false);
     if (error) {
+      setSaving(false);
       toast.error(error.message);
       return;
     }
-    toast.success("Đã lưu thông tin sinh.");
+
+    let lasoBootstrapError: string | null = null;
+    let lasoBootstrapOk = false;
+    if (!hadLaso && ngaySinh.trim() && gioiTinh !== UNSET) {
+      const birth_date = ngaySinhToBatTuBirthDate(ngaySinh.trim());
+      if (birth_date) {
+        const body: Record<string, unknown> = {
+          birth_date,
+          tz: "Asia/Ho_Chi_Minh",
+          first_la_so_free: true,
+        };
+        if (birthTimeCode !== UNSET) {
+          const bt = Number(birthTimeCode);
+          if (Number.isFinite(bt)) body.birth_time = bt;
+        }
+        const g = gioiTinhToBatTuGender(gioiTinh as "nam" | "nu");
+        if (g !== undefined) body.gender = g;
+
+        const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
+        if (res.ok) lasoBootstrapOk = true;
+        else lasoBootstrapError = res.message;
+      }
+    }
+
+    setSaving(false);
     await refresh();
+
+    if (lasoBootstrapError) {
+      toast.success("Đã lưu thông tin sinh.");
+      toast.error(`Chưa tạo được lá số tự động: ${lasoBootstrapError}`);
+    } else if (lasoBootstrapOk) {
+      toast.success("Đã lưu và tạo lá số.");
+    } else {
+      toast.success("Đã lưu thông tin sinh.");
+    }
   }
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-8">
-      <div>
-        <p className="text-sm text-muted-foreground mb-1">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
+    <div className="pb-24">
+      <div className="px-4 pt-5 pb-4">
+        <h1
+          className="text-foreground"
+          style={{
+            fontFamily: "var(--font-lora)",
+            fontWeight: 700,
+            fontSize: "var(--text-xl)",
+          }}
+        >
           Cài đặt
         </h1>
       </div>
+
+      <div className="px-4 flex flex-col gap-3">
       <section className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
         <p>
           <span className="text-muted-foreground">Email</span>
@@ -266,6 +308,7 @@ export default function AppCaiDat() {
       >
         Đăng xuất
       </Button>
-    </main>
+      </div>
+    </div>
   );
 }

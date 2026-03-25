@@ -19,8 +19,8 @@ interface HopTuoiResultPanelProps {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 70) return "oklch(0.52 0.10 155)";
-  if (score >= 50) return "oklch(0.53 0.11 80)";
+  if (score >= 85) return "oklch(0.52 0.10 155)";
+  if (score >= 70) return "oklch(0.53 0.11 80)";
   return "oklch(0.48 0.04 80)";
 }
 

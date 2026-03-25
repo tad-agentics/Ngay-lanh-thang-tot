@@ -1,4 +1,5 @@
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
+import { scoreToLetterGrade } from "~/lib/score-grade";
 
 const ARRAY_KEYS = [
   "days",
@@ -120,9 +121,7 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
   let grade = gradeFromIndex(sourceIndex);
   const score = obj.score ?? obj.total_score ?? obj.rank_score;
   if (typeof score === "number") {
-    if (score >= 85) grade = "A";
-    else if (score >= 70) grade = "B";
-    else grade = "C";
+    grade = scoreToLetterGrade(score);
   }
   const rk = obj.rank;
   if (typeof rk === "number" && rk >= 1 && rk <= 3) {

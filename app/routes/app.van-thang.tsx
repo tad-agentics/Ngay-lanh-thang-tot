@@ -116,7 +116,7 @@ export default function AppVanThang() {
 
   if (loading || costsLoading) {
     return (
-      <div className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto">
+      <div className="px-4 pb-8 py-10">
         <p className="text-sm text-muted-foreground">Đang tải…</p>
       </div>
     );
@@ -124,7 +124,7 @@ export default function AppVanThang() {
 
   if (!hasLaso) {
     return (
-      <div className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-4">
+      <div className="px-4 pb-8 py-10 space-y-4">
         <ScreenHeader title="Vận tháng" />
         <p className="text-muted-foreground text-sm leading-relaxed">
           Cần lá số tứ trụ trước khi xem vận tháng cá nhân hoá.
@@ -138,7 +138,7 @@ export default function AppVanThang() {
 
   if (!q.birth_date) {
     return (
-      <div className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-4">
+      <div className="px-4 pb-8 py-10 space-y-4">
         <ScreenHeader title="Vận tháng" />
         <p className="text-muted-foreground text-sm">
           Thiếu ngày sinh trên hồ sơ — bổ sung trong Cài đặt hoặc lập lại lá số.
@@ -156,7 +156,7 @@ export default function AppVanThang() {
     new Date(profile.subscription_expires_at) > new Date();
 
   return (
-    <div className="px-4 pb-8 min-h-svh bg-background max-w-lg mx-auto">
+    <div className="px-4 pb-8">
       <ScreenHeader title="Vận tháng" />
 
       <div className="flex items-center justify-between mb-5" style={{ minHeight: 44 }}>
@@ -202,8 +202,8 @@ export default function AppVanThang() {
               {current.label}
               {detail?.pillarHint ? ` — trụ tháng ${detail.pillarHint}.` : "."}
               {nhatChu
-                ? ` Tương tác với Nhật Chủ ${nhatChu}: ${detail?.tongQuan ?? "Theo dõi nhịp tháng và các sao tốt trong lịch."}`
-                : ` ${detail?.tongQuan ?? "Theo dõi nhịp tháng và các sao tốt trong lịch."}`}
+                ? ` Tương tác với Nhật Chủ ${nhatChu}: ${detail?.tongQuan ?? "Giữ nhịp tháng và các sao tốt trong lịch."}`
+                : ` ${detail?.tongQuan ?? "Giữ nhịp tháng và các sao tốt trong lịch."}`}
             </p>
           </div>
         </div>
@@ -226,7 +226,7 @@ export default function AppVanThang() {
               className="bg-card border border-border px-4 py-3"
               style={{ borderRadius: "var(--radius-lg)" }}
             >
-              <p className="text-muted-foreground text-xs mb-1">Lưu ý</p>
+              <p className="text-muted-foreground text-xs mb-1">Trong tháng</p>
               <p className="text-foreground text-sm leading-relaxed">{detail.canLuu}</p>
             </div>
           </>
@@ -267,12 +267,6 @@ export default function AppVanThang() {
           </div>
         )}
       </div>
-
-      <p className="mt-8 text-sm">
-        <Link to="/app" className="text-primary underline underline-offset-4">
-          ← Trang chủ app
-        </Link>
-      </p>
     </div>
   );
 }

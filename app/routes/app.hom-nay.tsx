@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -43,34 +44,29 @@ export default function AppHomNay() {
   }, [profileLoading, profile]);
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-6">
+    <div className="px-4 pb-8 space-y-6">
+      <ScreenHeader title="Hôm nay" />
+
       <div>
-        <p className="text-sm text-muted-foreground mb-1">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-          Hôm nay
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Gọi{" "}
+        <p className="text-sm text-muted-foreground">
+          Tóm tắt một ngày từ hồ sơ của bạn — bản xem thô cho kỹ thuật viên; giao
+          diện đầy đủ sẽ thay thế sau.{" "}
           <a
             href="https://tu-tru-api.fly.dev/docs"
             className="underline underline-offset-4"
             target="_blank"
             rel="noreferrer"
           >
-            GET /v1/ngay-hom-nay
-          </a>{" "}
-          qua Edge (UI đầy đủ sau).
+            Tài liệu API
+          </a>
         </p>
       </div>
 
       {!profileLoading && profile && !profile.ngay_sinh ? (
         <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
           <p className="text-muted-foreground">
-            Cần ngày sinh (và nên có giờ / giới tính) để tra Bát Tự theo đúng OpenAPI.
+            Cho biết ngày sinh trong Cài đặt — nên có thêm giờ và giới tính để Nhật
+            Chủ khớp hơn.
           </p>
           <Button asChild variant="secondary" className="w-full sm:w-auto">
             <Link to="/app/cai-dat">Mở Cài đặt</Link>
@@ -87,6 +83,6 @@ export default function AppHomNay() {
           {JSON.stringify(payload, null, 2)}
         </pre>
       ) : null}
-    </main>
+    </div>
   );
 }

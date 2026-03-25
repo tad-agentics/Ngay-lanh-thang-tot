@@ -189,7 +189,10 @@ export type BatTuOperation =
   | "phong-thuy"
   | "share";
 
-/** `body` fields match tu-tru-api query/body names — see https://tu-tru-api.fly.dev/openapi.json */
+/**
+ * `body` fields match tu-tru-api where applicable — see https://tu-tru-api.fly.dev/openapi.json
+ * Edge-only: `first_la_so_free` (boolean) skips credit charge for `op: "tu-tru"` when the profile has no lá số yet; it is not forwarded upstream.
+ */
 export interface BatTuRequest {
   op: BatTuOperation;
   body: Record<string, unknown>;

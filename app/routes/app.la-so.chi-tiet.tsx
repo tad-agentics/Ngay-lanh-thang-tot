@@ -30,7 +30,7 @@ export default function AppLaSoChiTiet() {
 
   if (loading || !profile?.la_so || !hasLaso) {
     return (
-      <div className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto">
+      <div className="px-4 pb-8 py-10">
         <p className="text-sm text-muted-foreground">Đang tải…</p>
       </div>
     );
@@ -40,12 +40,10 @@ export default function AppLaSoChiTiet() {
   const { nguHanh } = detail;
 
   return (
-    <div className="pb-8 min-h-svh bg-background max-w-lg mx-auto">
-      <div className="px-4">
-        <ScreenHeader title="Chi tiết lá số" />
-      </div>
+    <div className="px-4 pb-8">
+      <ScreenHeader title="Chi tiết lá số" />
 
-      <div className="px-4 flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
         <div
           className="relative overflow-hidden bg-surface text-surface-foreground px-4 py-4"
           style={{ borderRadius: "var(--radius-lg)" }}

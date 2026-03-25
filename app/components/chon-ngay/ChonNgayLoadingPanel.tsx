@@ -35,7 +35,7 @@ export function ChonNgayLoadingPanel({
           <AnimatePresence key={i} mode="wait">
             {phase >= i ? (
               <motion.p
-                key={`phase-${i}-${phase}`}
+                key={`chon-ngay-loading-line-${i}`}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: phase === i ? 1 : 0.35 }}
                 className="text-muted-foreground text-sm"

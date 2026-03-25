@@ -79,7 +79,7 @@ export default function AppThongBaoQuyen() {
   };
 
   return (
-    <main className="min-h-svh bg-background px-4 pb-10 max-w-lg mx-auto">
+    <div className="px-4 pb-8">
       <ScreenHeader title="Thông báo" />
 
       <div className="flex flex-col gap-6">
@@ -147,6 +147,6 @@ export default function AppThongBaoQuyen() {
           </Button>
         )}
       </div>
-    </main>
+    </div>
   );
 }

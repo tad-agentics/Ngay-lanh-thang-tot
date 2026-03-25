@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import { hopTuoiPayloadToPanel, scoreToGradLabel } from "./hop-tuoi-result";
 
 describe("scoreToGradLabel", () => {
-  it("maps bands", () => {
+  it("maps bands (top two align with letter grades at 85 / 70)", () => {
     expect(scoreToGradLabel(85)).toBe("Rất hợp");
-    expect(scoreToGradLabel(65)).toBe("Hợp");
+    expect(scoreToGradLabel(84)).toBe("Hợp");
+    expect(scoreToGradLabel(70)).toBe("Hợp");
+    expect(scoreToGradLabel(69)).toBe("Trung bình");
     expect(scoreToGradLabel(45)).toBe("Trung bình");
     expect(scoreToGradLabel(30)).toBe("Cần lưu ý");
   });

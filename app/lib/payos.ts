@@ -22,7 +22,7 @@ export async function createPayosCheckout(
     return {
       ok: false,
       code: "INVOKE",
-      message: error.message ?? "Không gọi được máy chủ thanh toán.",
+      message: error.message ?? "Không mở được cổng thanh toán lúc này.",
     };
   }
 

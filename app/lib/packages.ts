@@ -15,7 +15,7 @@ export const UI_PACKAGES: {
   {
     sku: "goi_6thang",
     title: "Gói 6 tháng không giới hạn lượng",
-    subtitle: "Ưu đãi cho mùa cưới / khai trương nhiều việc.",
+    subtitle: "Phù hợp mùa cưới hoặc khai trương nhiều việc trong 6 tháng.",
     priceLabel: "789.000₫",
   },
   {

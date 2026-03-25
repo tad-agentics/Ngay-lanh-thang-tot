@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Compass } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,7 +58,9 @@ export default function AppPhongThuy() {
     }
     const v = phongThuyPayloadToView(res.data);
     if (!v) {
-      toast.error("Không đọc được phong thủy từ máy chủ.");
+      toast.error(
+        "Không tải được kết quả phong thủy lúc này. Thử lại sau vài giây.",
+      );
       return;
     }
     setView(v);
@@ -67,9 +69,9 @@ export default function AppPhongThuy() {
 
   if (profileLoading || !profile || !hasLaso) {
     return (
-      <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto text-sm text-muted-foreground">
+      <div className="px-4 pb-8 py-10 text-sm text-muted-foreground">
         Đang tải…
-      </main>
+      </div>
     );
   }
 
@@ -85,12 +87,7 @@ export default function AppPhongThuy() {
         };
 
   return (
-    <main className="min-h-svh bg-background px-4 pb-10 max-w-lg mx-auto">
-      <p className="text-sm text-muted-foreground pt-4 mb-1">
-        <Link to="/app" className="underline-offset-4 hover:underline">
-          ← Trang chủ app
-        </Link>
-      </p>
+    <div className="px-4 pb-8">
       <ScreenHeader title="Phong thủy" />
 
       <div className="flex flex-col gap-4">
@@ -217,6 +214,6 @@ export default function AppPhongThuy() {
           </CreditGate>
         ) : null}
       </div>
-    </main>
+    </div>
   );
 }

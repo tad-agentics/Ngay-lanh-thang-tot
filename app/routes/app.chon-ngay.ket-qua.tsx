@@ -132,16 +132,10 @@ export default function AppChonNgayKetQua() {
   const bestDay = resultDays[0];
 
   return (
-    <main className="min-h-svh bg-background px-4 pb-10 max-w-lg mx-auto">
-      <p className="text-sm text-muted-foreground pt-4 mb-1">
-        <Link to="/app/chon-ngay" className="underline-offset-4 hover:underline">
-          ← Chọn ngày
-        </Link>
-      </p>
+    <div className="px-4 pb-8">
       <ScreenHeader
         title={state.intentLabel}
         subtitle={`${state.daysInclusive} ngày trong khoảng`}
-        showBack={false}
         className="pb-2"
       />
 
@@ -277,6 +271,6 @@ export default function AppChonNgayKetQua() {
           )}
         </div>
       )}
-    </main>
+    </div>
   );
 }

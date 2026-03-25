@@ -18,6 +18,7 @@ import {
   timeInputToBatTuBirthTime,
 } from "~/lib/bat-tu-birth";
 import { hopTuoiPayloadToPanel } from "~/lib/hop-tuoi-result";
+import { scoreToLetterGrade } from "~/lib/score-grade";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 
 const GIOI_TINH_LABEL: Record<string, string> = { nam: "Nam", nu: "Nữ" };
@@ -85,7 +86,9 @@ export default function AppHopTuoi() {
 
     const mapped = hopTuoiPayloadToPanel(res.data);
     if (!mapped) {
-      toast.error("Không đọc được kết quả hợp tuổi từ máy chủ.");
+      toast.error(
+        "Không tải được kết quả hợp tuổi lúc này. Thử lại sau vài giây.",
+      );
       return;
     }
     setPanel(mapped);
@@ -102,21 +105,16 @@ export default function AppHopTuoi() {
 
   if (profileLoading || !profile || !hasLaso) {
     return (
-      <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto text-sm text-muted-foreground">
+      <div className="px-4 pb-8 py-10 text-sm text-muted-foreground">
         Đang tải…
-      </main>
+      </div>
     );
   }
 
   const isLowScore = panel ? panel.score < 50 : false;
 
   return (
-    <main className="min-h-svh bg-background px-4 pb-10 max-w-lg mx-auto">
-      <p className="text-sm text-muted-foreground pt-4 mb-1">
-        <Link to="/app" className="underline-offset-4 hover:underline">
-          ← Trang chủ app
-        </Link>
-      </p>
+    <div className="px-4 pb-8">
       <ScreenHeader title="Hợp tuổi" />
 
       {!showResult ? (
@@ -272,12 +270,7 @@ export default function AppHopTuoi() {
                       `${panel.gradLabel} — điểm ${panel.score}/100`,
                     ],
                   },
-                  grade:
-                    panel.score >= 80
-                      ? "A"
-                      : panel.score >= 55
-                        ? "B"
-                        : "C",
+                  grade: scoreToLetterGrade(panel.score),
                 }}
               >
                 Chia sẻ kết quả
@@ -296,6 +289,6 @@ export default function AppHopTuoi() {
           </Button>
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }

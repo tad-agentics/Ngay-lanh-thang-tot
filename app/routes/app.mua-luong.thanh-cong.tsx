@@ -7,7 +7,7 @@ export default function AppMuaLuongThanhCong() {
   const { profile, loading } = useProfile();
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-8 text-center">
+    <div className="px-4 pb-8 py-10 space-y-8 text-center">
       <div>
         <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
           Cảm ơn bạn
@@ -43,6 +43,6 @@ export default function AppMuaLuongThanhCong() {
           <Link to="/app/mua-luong">Mua thêm</Link>
         </Button>
       </div>
-    </main>
+    </div>
   );
 }

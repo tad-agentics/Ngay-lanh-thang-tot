@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -46,34 +47,28 @@ export default function AppTuanNay() {
   }, [profileLoading, profile]);
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-6">
+    <div className="px-4 pb-8 space-y-6">
+      <ScreenHeader title="Tuần này" />
+
       <div>
-        <p className="text-sm text-muted-foreground mb-1">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-          Tuần này
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Gọi{" "}
+        <p className="text-sm text-muted-foreground">
+          Gợi ý các ngày đáng chú ý trong tuần từ hồ sơ của bạn — bản xem thô; giao
+          diện đầy đủ sẽ bổ sung sau.{" "}
           <a
             href="https://tu-tru-api.fly.dev/docs"
             className="underline underline-offset-4"
             target="_blank"
             rel="noreferrer"
           >
-            GET /v1/weekly-summary
-          </a>{" "}
-          qua Edge.
+            Tài liệu API
+          </a>
         </p>
       </div>
 
       {!profileLoading && profile && !profile.ngay_sinh ? (
         <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
           <p className="text-muted-foreground">
-            Cần ngày sinh trong hồ sơ để xem tuần này (birth_date bắt buộc trên API).
+            Thêm ngày sinh trong Cài đặt để xem gợi ý tuần này.
           </p>
           <Button asChild variant="secondary" className="w-full sm:w-auto">
             <Link to="/app/cai-dat">Mở Cài đặt</Link>
@@ -90,6 +85,6 @@ export default function AppTuanNay() {
           {JSON.stringify(payload, null, 2)}
         </pre>
       ) : null}
-    </main>
+    </div>
   );
 }

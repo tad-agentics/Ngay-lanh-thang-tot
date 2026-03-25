@@ -10,14 +10,35 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
     const v = obj[k];
     if (typeof v === "string" && v.trim()) return v.trim();
   }
-  return "";
+  return "—";
 }
 
+const TONG_QUAN_FALLBACK =
+  "Tháng này có biến động nhẹ — nên chủ động quan sát từng tuần.";
+const CAN_LUU_FALLBACK =
+  "Tránh quyết định vội vàng vào giữa tháng nếu trụ tháng xung.";
+
 const FALLBACK_GIAI = [
-  { label: "Tài vận", value: 65, note: "Theo lá số cá nhân — xem thêm khi mở khóa." },
-  { label: "Sự nghiệp", value: 68, note: "Theo lá số cá nhân — xem thêm khi mở khóa." },
-  { label: "Tình duyên", value: 62, note: "Theo lá số cá nhân — xem thêm khi mở khóa." },
-  { label: "Sức khoẻ", value: 70, note: "Theo lá số cá nhân — xem thêm khi mở khóa." },
+  {
+    label: "Tài vận",
+    value: 65,
+    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
+  },
+  {
+    label: "Sự nghiệp",
+    value: 68,
+    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
+  },
+  {
+    label: "Tình duyên",
+    value: 62,
+    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
+  },
+  {
+    label: "Sức khoẻ",
+    value: 70,
+    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
+  },
 ];
 
 export interface TieuVanUi {
@@ -33,18 +54,28 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
     return {
       tongQuan:
         "Tháng này nên giữ nhịp ổn định; chi tiết từng lĩnh vực có sau khi mở khóa.",
-      canLuu: "Theo dõi ngày Hắc Đạo trong lịch tháng để lùi việc lớn nếu cần.",
-      pillarHint: "",
+      canLuu:
+        "Ngày Hắc Đạo trên lịch tháng giúp bạn chủ động lùi việc lớn nếu cần.",
+      pillarHint: "—",
       cacGiai: FALLBACK_GIAI,
     };
   }
 
+  const tongQuanRaw = pickStr(root, [
+    "tong_quan",
+    "tongQuan",
+    "overview",
+    "summary",
+  ]);
   const tongQuan =
-    pickStr(root, ["tong_quan", "tongQuan", "overview", "summary"]) ||
-    "Tháng này có biến động nhẹ — nên chủ động quan sát từng tuần.";
-  const canLuu =
-    pickStr(root, ["can_luu", "canLuu", "luu_y", "warnings"]) ||
-    "Tránh quyết định vội vàng vào giữa tháng nếu trụ tháng xung.";
+    tongQuanRaw === "—" ? TONG_QUAN_FALLBACK : tongQuanRaw;
+  const canLuuRaw = pickStr(root, [
+    "can_luu",
+    "canLuu",
+    "luu_y",
+    "warnings",
+  ]);
+  const canLuu = canLuuRaw === "—" ? CAN_LUU_FALLBACK : canLuuRaw;
   const pillarHint = pickStr(root, [
     "tru_thang",
     "truThang",
@@ -62,11 +93,11 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
       const label = pickStr(o, ["label", "ten", "name", "aspect"]);
       const value = typeof o.value === "number" ? o.value : Number(o.score);
       const note = pickStr(o, ["note", "mo_ta", "desc", "hint"]);
-      if (label) {
+      if (label && label !== "—") {
         cacGiai.push({
           label,
           value: Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 65,
-          note: note || "—",
+          note,
         });
       }
     }

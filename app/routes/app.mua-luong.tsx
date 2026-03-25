@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { toast } from "sonner";
 
+import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import type { PackageSku } from "~/lib/api-types";
 import { createPayosCheckout } from "~/lib/payos";
@@ -29,17 +29,11 @@ export default function AppMuaLuong() {
   }
 
   return (
-    <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-8">
+    <div className="px-4 pb-8 space-y-8">
+      <ScreenHeader title="Mua lượng" />
+
       <div>
-        <p className="text-sm text-muted-foreground mb-1">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-          Mua lượng / gói
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Thanh toán qua PayOS (MoMo, VietQR, ngân hàng…). Không tự gia hạn.
         </p>
         {loading ? (
@@ -88,6 +82,6 @@ export default function AppMuaLuong() {
           </li>
         ))}
       </ul>
-    </main>
+    </div>
   );
 }

@@ -32,7 +32,7 @@ export default function AppBatDau() {
   const credits = profile?.credits_balance ?? null;
 
   return (
-    <main className="flex flex-col min-h-svh bg-background px-4 max-w-lg mx-auto">
+    <main className="flex flex-col min-h-svh bg-background px-4 pb-8">
       <div className="flex flex-col items-center justify-center flex-1 pb-4 pt-10">
         <div className="mb-8 flex flex-col items-center">
           <div
@@ -68,7 +68,7 @@ export default function AppBatDau() {
             className="text-muted-foreground text-sm text-center leading-relaxed"
             style={{ maxWidth: 280 }}
           >
-            Chọn ngày, hợp tuổi, xem vận — theo lá số của bạn, bằng tiếng Việt rõ
+            Chọn ngày, hợp tuổi, xem vận — gắn với bản mệnh của bạn, tiếng Việt rõ
             ràng.
           </p>
         </div>

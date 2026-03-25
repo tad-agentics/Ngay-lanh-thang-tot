@@ -1,14 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 
+import { Chip } from "~/components/Chip";
 import { CreditGate } from "~/components/CreditGate";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
+import {
+  type DayDetailHeaderMeta,
+  extractDayDetailHeaderMeta,
+} from "~/lib/day-detail-header";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
-import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
+import { formatIsoDateLichHeader, isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { useProfile } from "~/hooks/useProfile";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -16,13 +21,17 @@ type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 function DayDetailFetched({
   iso,
   profile,
+  onPayload,
 }: {
   iso: string;
   profile: ProfileRow;
+  onPayload?: (data: unknown | null) => void;
 }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payload, setPayload] = useState<unknown>(null);
+  const onPayloadRef = useRef(onPayload);
+  onPayloadRef.current = onPayload;
 
   useEffect(() => {
     let cancelled = false;
@@ -31,10 +40,12 @@ function DayDetailFetched({
     if (!dateDm || !q.birth_date) {
       setLoading(false);
       setErr("Thiếu ngày dương lịch hoặc ngày sinh.");
+      onPayloadRef.current?.(null);
       return;
     }
     setLoading(true);
     setErr(null);
+    onPayloadRef.current?.(null);
     void (async () => {
       const res = await invokeBatTu({
         op: "day-detail",
@@ -45,9 +56,11 @@ function DayDetailFetched({
       if (!res.ok) {
         setErr(res.message);
         setPayload(null);
+        onPayloadRef.current?.(null);
         return;
       }
       setPayload(res.data);
+      onPayloadRef.current?.(res.data);
     })();
     return () => {
       cancelled = true;
@@ -71,34 +84,62 @@ export default function AppNgayChiTiet() {
   const { ngay } = useParams();
   const { profile, loading } = useProfile();
   const iso = ngay && /^\d{4}-\d{2}-\d{2}$/.test(ngay) ? ngay : null;
+  const [headerMeta, setHeaderMeta] = useState<DayDetailHeaderMeta | null>(
+    null,
+  );
+
+  useEffect(() => {
+    setHeaderMeta(null);
+  }, [iso]);
 
   if (!iso) {
     return (
-      <main className="min-h-svh bg-background px-4 py-10 max-w-lg mx-auto space-y-4">
+      <div className="px-4 pb-8 pt-6 space-y-4">
         <ErrorBanner message="Đường dẫn ngày không hợp lệ (cần YYYY-MM-DD)." />
         <Link to="/app" className="text-sm text-primary underline">
           Về trang chủ app
         </Link>
-      </main>
+      </div>
     );
   }
 
+  const dayTitle = formatIsoDateLichHeader(iso);
+
   return (
-    <main className="min-h-svh bg-background pb-10 max-w-lg mx-auto">
-      <div className="relative overflow-hidden bg-surface text-surface-foreground px-4">
+    <div className="pb-8">
+      <div className="relative overflow-hidden bg-surface text-surface-foreground px-4 pt-5 pb-5">
         <GrainOverlay />
         <div className="relative">
-          <ScreenHeader title={`Chi tiết ngày ${iso}`} dark />
+          <ScreenHeader title={dayTitle} dark className="pb-2" />
+          {headerMeta?.subline || headerMeta?.chip ? (
+            <div className="flex items-center justify-between gap-2 mt-1">
+              {headerMeta.subline ? (
+                <p
+                  className="text-surface-foreground/60 text-xs min-w-0 flex-1 pr-2"
+                  style={{ fontFamily: "var(--font-ibm-mono)" }}
+                >
+                  {headerMeta.subline}
+                </p>
+              ) : (
+                <span className="flex-1 min-w-0" />
+              )}
+              {headerMeta.chip ? (
+                <Chip
+                  color={headerMeta.chip.color}
+                  variant="flat"
+                  size="sm"
+                  radius="sm"
+                  className="shrink-0"
+                >
+                  {headerMeta.chip.label}
+                </Chip>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <div className="px-4 pt-6 space-y-4">
-        <p className="text-sm text-muted-foreground">
-          <Link to="/app" className="underline-offset-4 hover:underline">
-            ← Trang chủ app
-          </Link>
-        </p>
-
+      <div className="px-4 pt-4 space-y-4">
         {loading ? (
           <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
         ) : !profile?.ngay_sinh ? (
@@ -113,10 +154,18 @@ export default function AppNgayChiTiet() {
           </div>
         ) : (
           <CreditGate featureKey="day_detail">
-            <DayDetailFetched iso={iso} profile={profile} />
+            <DayDetailFetched
+              iso={iso}
+              profile={profile}
+              onPayload={(data) =>
+                setHeaderMeta(
+                  data == null ? null : extractDayDetailHeaderMeta(data),
+                )
+              }
+            />
           </CreditGate>
         )}
       </div>
-    </main>
+    </div>
   );
 }
