@@ -1,6 +1,7 @@
 /* Marketing landing — scoped to #lp (Figma/Make-style, from landing-page.jsx) */
 
 #lp {
+  --lp-nav-sticky-offset: 58px;
   --lp-bg: #e4dfd6;
   --lp-bg-dk: #1d3129;
   --lp-ink: #18150e;
@@ -79,15 +80,16 @@
   animation-delay: 0.5s;
 }
 
-#lp nav {
+#lp .lp-nav {
   position: sticky;
   top: 0;
   z-index: 100;
-  height: 58px;
-  padding: 0 1.75rem;
+  min-height: var(--lp-nav-sticky-offset);
+  padding: 0 clamp(0.65rem, 3.5vw, 1.75rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   background: rgba(228, 223, 214, 0.92);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--lp-border);
@@ -96,37 +98,84 @@
 #lp .lp-nav-logo {
   font-family: "Montserrat", system-ui, sans-serif;
   font-weight: 800;
-  font-size: 1.05rem;
+  font-size: clamp(0.58rem, 2.35vw, 1.05rem);
   letter-spacing: 0.01em;
   text-transform: uppercase;
   color: var(--lp-ink);
   text-decoration: none;
+  line-height: 1.15;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 #lp .lp-nav-logo span {
   color: var(--lp-gold);
 }
 
+#lp .lp-nav-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: clamp(0.3rem, 1.8vw, 0.75rem);
+  flex-shrink: 0;
+}
+
+#lp .lp-nav-login {
+  color: var(--lp-ink);
+  opacity: 0.88;
+  font-size: clamp(0.72rem, 2.8vw, 0.875rem);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 0.2rem 0.1rem;
+  border-bottom: 1px solid transparent;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+#lp .lp-nav-login:hover {
+  opacity: 1;
+  border-bottom-color: color-mix(in oklch, var(--lp-ink) 28%, transparent);
+}
+
 #lp .lp-nav-cta {
   font-family: var(--font-ibm-mono), "IBM Plex Mono", monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
+  font-size: clamp(0.52rem, 2vw, 0.7rem);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   background: var(--lp-bg-dk);
   color: var(--lp-green-txt);
-  padding: 0.45rem 1.1rem;
+  padding: clamp(0.32rem, 1.5vw, 0.45rem) clamp(0.45rem, 2.2vw, 1.05rem);
   border: none;
   cursor: pointer;
   text-decoration: none;
   transition: opacity 0.2s;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
 }
 #lp .lp-nav-cta:hover {
   opacity: 0.82;
 }
 
+#lp .lp-nav-cta-short {
+  display: none;
+}
+
+@media (max-width: 560px) {
+  #lp .lp-nav-cta-long {
+    display: none;
+  }
+  #lp .lp-nav-cta-short {
+    display: inline;
+  }
+  #lp .lp-nav-cta {
+    letter-spacing: 0.05em;
+  }
+}
+
 #lp .lp-hero {
-  min-height: calc(100vh - 58px);
+  min-height: calc(100vh - var(--lp-nav-sticky-offset));
   display: grid;
   grid-template-columns: 1fr 1fr;
   max-width: 1140px;
@@ -258,6 +307,13 @@
 
 #lp .lp-form-row {
   margin-bottom: 1rem;
+}
+
+#lp .lp-form-hint {
+  font-size: 0.78rem;
+  color: var(--lp-green-muted);
+  line-height: 1.5;
+  margin: -0.2rem 0 0.6rem;
 }
 
 #lp .lp-form-label {
