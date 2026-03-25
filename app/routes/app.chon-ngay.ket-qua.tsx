@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { ChonNgayLoadingPanel } from "~/components/chon-ngay/ChonNgayLoadingPanel";
-import { ResultDayCard } from "~/components/chon-ngay/ResultDayCard";
+const ChonNgayLoadingPanel = lazy(() =>
+  import("~/components/chon-ngay/ChonNgayLoadingPanel").then((m) => ({
+    default: m.ChonNgayLoadingPanel,
+  })),
+);
+const ResultDayCard = lazy(() =>
+  import("~/components/chon-ngay/ResultDayCard").then((m) => ({
+    default: m.ResultDayCard,
+  })),
+);
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
@@ -169,20 +177,28 @@ export default function AppChonNgayKetQua() {
                 {resultDays.length} ngày phù hợp — sắp theo độ ưu tiên
               </p>
 
-              {resultDays.map((day, i) => (
-                <ResultDayCard
-                  key={day.isoDate}
-                  grade={day.grade}
-                  dateLabel={day.dateLabel}
-                  lunarLabel={day.lunarLabel}
-                  truc={day.truc}
-                  bestHour={day.bestHour}
-                  reasons={unlockedDetail ? day.reasons : []}
-                  animationIndex={i}
-                  detailHref={`/app/ngay/${day.isoDate}`}
-                  menh={menhLabel ?? undefined}
-                />
-              ))}
+              <Suspense
+                fallback={
+                  <p className="text-muted-foreground text-sm py-4">
+                    Đang tải kết quả…
+                  </p>
+                }
+              >
+                {resultDays.map((day, i) => (
+                  <ResultDayCard
+                    key={day.isoDate}
+                    grade={day.grade}
+                    dateLabel={day.dateLabel}
+                    lunarLabel={day.lunarLabel}
+                    truc={day.truc}
+                    bestHour={day.bestHour}
+                    reasons={unlockedDetail ? day.reasons : []}
+                    animationIndex={i}
+                    detailHref={`/app/ngay/${day.isoDate}`}
+                    menh={menhLabel ?? undefined}
+                  />
+                ))}
+              </Suspense>
 
               {!unlockedDetail && anyNeedsDetail ? (
                 <div
