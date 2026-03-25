@@ -37,6 +37,9 @@ const CHON_NGAY_INTENT_OPTIONS = TU_TRU_INTENT_OPTIONS.filter(
   (o) => o.value !== "MAC_DINH",
 );
 
+/** Giá trị Select luôn là chuỗi — tránh `undefined` làm Radix chuyển uncontrolled. */
+const INTENT_UNSET = "__unset__";
+
 export default function AppChonNgay() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
@@ -120,6 +123,8 @@ export default function AppChonNgay() {
   }
 
   const disabledForm = profileLoading || !profile;
+  const intentSelectValue =
+    intent && intent !== "MAC_DINH" ? intent : INTENT_UNSET;
 
   return (
     <div className="min-h-[60vh] bg-background pb-8">
@@ -149,10 +154,10 @@ export default function AppChonNgay() {
             Sự kiện
           </Label>
           <Select
-            value={
-              intent && intent !== "MAC_DINH" ? intent : undefined
+            value={intentSelectValue}
+            onValueChange={(v) =>
+              setIntent(v === INTENT_UNSET ? "" : (v as TuTruIntent))
             }
-            onValueChange={(v) => setIntent(v as TuTruIntent)}
             disabled={disabledForm}
           >
             <SelectTrigger
@@ -162,6 +167,9 @@ export default function AppChonNgay() {
               <SelectValue placeholder="Chọn loại sự kiện…" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value={INTENT_UNSET}>
+                Chọn loại sự kiện…
+              </SelectItem>
               {CHON_NGAY_INTENT_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
