@@ -16,7 +16,7 @@ function currentMonthYyyyMm(): string {
 
 export default function AppLichThang() {
   const { profile, loading: profileLoading } = useProfile();
-  const [month, setMonth] = useState(currentMonthYyyyMm);
+  const [month, setMonth] = useState(() => currentMonthYyyyMm());
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payload, setPayload] = useState<unknown>(null);
