@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+supabase/migrations/
+supabase/seed.sql
+artifacts/templates/
+agent-workspace/memory/
+src/lib/database.types.ts

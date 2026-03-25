@@ -1,0 +1,171 @@
+---
+description: Backend, database, auth, and Edge Function rules — Supabase API-only backend
+globs:
+  - supabase/**/*
+  - src/lib/supabase.ts
+  - src/lib/auth.tsx
+  - src/lib/data/**/*
+  - src/hooks/useAuth.ts
+alwaysApply: false
+---
+
+## Architecture — Supabase API-Only Backend
+
+There is no Node.js server. No API routes in the frontend. No Server Actions. No middleware.ts.
+
+- **Frontend:** React SPA communicates directly with Supabase via `@supabase/supabase-js` (publishable key + JWT)
+- **Authorization:** RLS on every table — the JWT scopes all queries to the current user. RLS is the single authorization boundary.
+- **Server-side logic:** Supabase Edge Functions only — for webhooks, cron, transactional email, service_role operations, and any logic that must not run in the browser.
+
+## Supabase Client
+
+- One client in `src/lib/supabase.ts` using `createClient()` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+- All frontend code (routes, components, hooks) uses this single client instance
+- Never import `@supabase/supabase-js` directly in route or component files — always import the pre-initialized client from `src/lib/supabase`
+- The client automatically attaches the user's JWT to every request — RLS handles authorization
+
+```typescript
+// src/lib/supabase.ts
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/database.types";
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY in .env.local");
+}
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+```
+
+## Auth
+
+- Use Supabase Auth exclusively — no custom JWT, no custom session management
+- Auth state managed by `AuthProvider` in `src/lib/auth.tsx` wrapping the app
+- `useAuth()` hook provides: `user`, `session`, `loading`, `signIn()`, `signOut()`
+- **AuthProvider must subscribe to `supabase.auth.onAuthStateChange()`** to handle token refresh, session expiry, and sign-out events. Redirect to `/login` on `SIGNED_OUT` event. Without this, expired tokens cause silent query failures.
+- Auth guard is a React Router layout route at `src/routes/_app/layout.tsx` — checks session, redirects to `/login` if absent
+- OAuth callback handled at `src/routes/_auth/callback/route.tsx`
+
+```typescript
+// src/routes/_app/layout.tsx — Auth guard pattern
+import { Outlet, Navigate } from "react-router";
+import { useAuth } from "@/lib/auth";
+
+export default function AppLayout() {
+  const { session, loading } = useAuth();
+  if (loading) return <LoadingSkeleton />;
+  if (!session) return <Navigate to="/login" replace />;
+  return <Outlet />;
+}
+```
+
+## Data Access
+
+- Typed query functions in `src/lib/data/*.ts` — one file per domain entity (optional organizational layer)
+- Routes and hooks call these functions or use Supabase client directly
+- All entity interfaces live in `src/lib/api-types.ts` — single source of truth
+- Generated types from `supabase gen types typescript` go to `src/lib/database.types.ts` — api-types.ts re-exports or extends these
+
+## Database
+
+- **RLS required on every table — no exceptions.** Never create a table without RLS policies.
+- Common RLS pattern: `auth.uid() = user_id` for row-level ownership
+- After every MCP `apply_migration` call, write the same SQL to a local file in `supabase/migrations/` named `YYYYMMDDHHmmss_short_description.sql` — remote and local must never drift
+- Use `supabase gen types typescript --project-id <ref> > src/lib/database.types.ts` after schema changes
+- Default to SQL for deterministic queries — no LLM for structured data
+- Add indexes on columns used in WHERE clauses and JOIN conditions — especially `user_id` foreign keys
+
+### RLS Policy Patterns
+
+```sql
+-- Standard ownership policy
+ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users read own goals"
+  ON goals FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users insert own goals"
+  ON goals FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users update own goals"
+  ON goals FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users delete own goals"
+  ON goals FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+## Edge Functions
+
+All server-side logic lives in `supabase/functions/`. Each function is a Deno module with a single `index.ts`.
+
+| Use case | Example | Why Edge Function |
+|---|---|---|
+| Payment webhooks | `supabase/functions/payment-webhook/` | Verify signatures, use service_role to update credits |
+| Transactional email | `supabase/functions/send-email/` | Resend API key is server-only |
+| Scheduled jobs | `supabase/functions/cron-*/` | Push notifications, cleanup, digests |
+| Admin operations | `supabase/functions/admin-*/` | Service role operations outside user context |
+
+### Edge Function Rules
+
+- Verify webhook signatures before processing — use the provider's verification method
+- Check idempotency before writes — skip duplicate event IDs
+- Use `createClient()` with `SUPABASE_SERVICE_ROLE_KEY` from `Deno.env` — webhooks have no user session
+- Edge Functions have a 2-second CPU limit and 150-second wall clock limit — keep them lean
+- Never import frontend code into Edge Functions — they are separate Deno modules
+- Deploy via `supabase functions deploy [name]` in the devops-agent deploy flow
+
+```typescript
+// supabase/functions/payment-webhook/index.ts — pattern
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+Deno.serve(async (req) => {
+  // 1. Verify signature
+  const signature = req.headers.get("x-webhook-signature");
+  if (!verifySignature(signature, await req.text())) {
+    return new Response("Invalid signature", { status: 401 });
+  }
+
+  // 2. Parse event
+  const event = JSON.parse(await req.text());
+
+  // 3. Idempotency check
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  const { data: existing } = await supabase
+    .from("webhook_events")
+    .select("id")
+    .eq("event_id", event.id)
+    .single();
+
+  if (existing) return new Response("Already processed", { status: 200 });
+
+  // 4. Process event + record
+  // ...
+
+  return new Response("OK", { status: 200 });
+});
+```
+
+## Webhooks
+
+- Verify signatures before processing
+- Check idempotency before writes — skip duplicate event IDs
+- Use service_role client — webhooks have no user session
+- Return 200 quickly — defer heavy processing if needed
+- Log webhook event ID + status for debugging
+
+## Validation
+
+- Use `zod` schemas for validating user input in Edge Functions
+- Frontend forms validate with the same zod schemas (shared types in `src/lib/api-types.ts`)
+- Never expose raw database errors to the client — transform to `{ error: { code, message } }`

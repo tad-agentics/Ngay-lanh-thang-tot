@@ -1,0 +1,307 @@
+---
+description: Frontend code structure, naming, reuse, data fetching, performance, accessibility, and composition rules — React Router v7 SPA
+globs:
+  - src/**/*.tsx
+  - src/**/*.ts
+alwaysApply: false
+---
+
+## Architecture — React Router v7 SPA
+
+This is a client-side SPA. There are no Server Components, no Server Actions, no `middleware.ts`, no `'use client'` directives. Every component is a client component.
+
+- **Routing:** React Router v7 with file-based routes in `src/routes/`
+- **Data:** All data flows through Supabase client (`@supabase/supabase-js`) via hooks and query functions
+- **Auth:** Supabase Auth on the client. Auth guard is a layout route that checks session before rendering children.
+- **Server logic:** Zero server logic in the frontend. Webhooks, cron, email = Supabase Edge Functions (separate codebase in `supabase/functions/`)
+- **Pre-rendering:** Only the landing page (`/`) is pre-rendered at build time for SEO. All `/app/*` routes are SPA.
+
+## Figma Make Porting
+
+Make produces a complete working React app with mock data — every button works, every form submits, every list renders, just with hardcoded data. The frontend agent's role is **integrator**, not builder: keep everything Make generated, replace data sources.
+
+Human copies all Make code files into `src/make-import/`. Agent decomposes into route files.
+
+1. **Install Make's dependencies** — **scan import statements across Make's files**, not just `package.json` (Make often includes phantom deps like `@emotion/*`, `@mui/*` that are never imported). Install only packages that are actually imported (`@radix-ui/react-*`, `lucide-react`, `clsx`, `tailwind-merge`, `motion`, `react-countup`, `date-fns`, `vaul`, `sonner`, `cmdk`, `embla-carousel-react`, etc.). Run `npm install [packages]` and verify `npm run build` passes before proceeding.
+
+2. **Read `src/make-import/App.tsx` and `src/make-import/**/routes.tsx` (or similar router config) as a reference map** — `App.tsx` may be a thin bootstrap; the actual screen-to-route mapping often lives in a separate `routes.tsx`. Read both to understand the full component tree. **Do not port App.tsx or routes.tsx themselves.** Make generates its own router, provider tree, and layout wrappers that conflict with the template's React Router setup. Extract individual screen components and port each into `src/routes/` independently. Discard Make's routing, ThemeProvider, and top-level providers.
+
+3. **Move `src/make-import/components/ui/` → `src/components/ui/`** — keep Make's UI primitives as-is. These ARE the component library (Radix UI + Tailwind primitives). Do not add shadcn/ui, HeroUI, or any other library.
+
+4. **If Make output is `.jsx`, rename to `.tsx`** and add type annotations during porting. Make typically outputs `.tsx` but may output `.jsx` — check the file extensions.
+
+5. **For each screen in `build-plan.md`:**
+   a. Find the corresponding Make component in `src/make-import/`
+   b. Create `src/routes/_app/[feature]/route.tsx`
+   c. Port the JSX + Tailwind styling — **keep Make's layout, animations, interactions**
+   d. Apply the mock-to-real replacements below
+   e. Add loading/error/empty states where Make used hardcoded success states
+   f. Add `errorElement` on the route for crash recovery (see Error Boundaries below)
+   g. Verify copy against `copy-rules.mdc` quality test
+
+6. **Delete `src/make-import/`** when all screens are ported
+
+### Mock-to-Real Replacement Patterns
+
+**Key instruction: Keep everything Make generated — layout, styling, animations, component structure. Only replace data sources, auth, navigation, and payment checks.**
+
+| Make pattern (mock) | Real replacement |
+|---|---|
+| `const items = [{id: 1, ...}]` | `const { data: items } = await supabase.from('items').select('*')` |
+| `const [user] = useState({name: "Lan"})` | `const { user } = useAuth()` + real profile query |
+| `if (!loggedIn) return <LoginPrompt />` | Real auth guard layout with `Navigate` redirect |
+| `onClick={() => setShowResult(true)}` | `onClick={() => navigate('/app/results/123')}` |
+| `fetch('/api/submit', {...})` | `await supabase.from('table').insert({...})` |
+| `const [credits] = useState(50)` | `const { data: balance } = await supabase.from('credit_balances').select('balance').single()` |
+| `if (credits >= cost) { ... }` | Real credit check query + paywall gate from screen spec |
+| `<Link href="/about">` | `<Link to="/app/about">` (React Router) |
+| `useRouter().push('/results')` | `useNavigate()('/app/results')` |
+| Make's `<Router>` / `<BrowserRouter>` | Discard — template's `routes.ts` handles routing |
+| Make's `<ThemeProvider>` / `<AuthProvider>` / `<UserProvider>` | Discard — template provides its own in `root.tsx` |
+| `localStorage.getItem('user')` / `useUser()` context | `useAuth()` hook + Supabase profile query |
+| `localStorage.setItem(...)` for preferences | Supabase `profiles` or `user_preferences` table |
+
+### What NOT to change
+
+- Layout and visual hierarchy — Make's spacing, grid, flex decisions
+- Tailwind classes — Make's color, typography, spacing choices
+- Animations and transitions — Make's hover states, transitions, micro-interactions
+- Component structure — Make's component decomposition and prop passing
+- UI copy that passes the copy quality test — only replace if it fails
+
+### Error Boundaries
+
+Every route group must have an `errorElement` so crashes render a user-friendly page, not a white screen.
+
+```typescript
+// src/routes/_app/layout.tsx — auth guard layout with error boundary
+export function ErrorBoundary() {
+  return <ErrorPage message="Something went wrong. Please try again." />;
+}
+```
+
+The root layout in `src/root.tsx` must also include a top-level `errorElement` as the final fallback.
+
+**Do not** call Figma MCP tools (`get_design_context`, `get_screenshot`, etc.). Make's code output is the source of truth, not the Figma file. Figma MCP does not work with Make files and will waste tokens on retries.
+
+### Known Make Issues (fix during Foundation)
+
+These patterns appear in every Make output and must be fixed during porting:
+
+| Issue | Fix |
+|---|---|
+| **`next-themes` import in `sonner.tsx`** — Make's toast component imports `useTheme` from `next-themes`, which requires Next.js and will crash at runtime. | Remove the `next-themes` import. Replace `useTheme()` with a static theme value (e.g., `const theme = "light"`) or remove the theme logic entirely. |
+| **`localStorage`/`sessionStorage` for user state** — Make persists user data (auth, credits, preferences) in localStorage. This is mock persistence. | Replace all localStorage-based state with real Supabase Auth (`useAuth()`) and Supabase queries. The `UserProvider`/`UserContext` from Make is discarded — the template's `AuthProvider` replaces it. |
+| **Google Fonts via CDN import** — Make uses `@import url('https://fonts.googleapis.com/...')` in CSS. This adds a render-blocking request. | Replace with self-hosted `.woff2` files in `public/fonts/` and `@font-face` declarations in `src/app.css`. Download the fonts from Google Fonts during Foundation. |
+| **CSS-based tokens via `@theme inline`** — Make defines design tokens in a `theme.css` file using CSS custom properties + Tailwind v4's `@theme inline` syntax, not in `tailwind.config.ts`. | **Keep Make's CSS-based approach** — this is the correct Tailwind v4 pattern. Copy Make's `theme.css` into `src/app.css` (or import it). Do not migrate tokens to `tailwind.config.ts` unless the project specifically needs config-based tokens. |
+| **Make's `src/app/` prefix** — all code lives under `src/app/screens/`, `src/app/components/`. | Remap during porting: `src/app/screens/` → `src/routes/`, `src/app/components/` → `src/components/`. The `src/app/` directory itself is not ported. |
+| **`tw-animate-css` (Magic Animator)** — Make uses this for all Radix UI component transitions (`animate-in`, `fade-in-0`, `zoom-in-95`, `slide-in-from-top-2` classes). Imported via `@import 'tw-animate-css'` in CSS. | Install as a dep during Foundation Step 0 (picked up by import scanning). No action needed beyond installation — the Tailwind classes work automatically. This is separate from `motion`, which handles dopamine moments only. |
+
+
+## Component Reuse
+
+- **First choice: Make's UI components.** Check `src/components/ui/` (ported from Make) for existing components.
+- **Second choice: Build from Tailwind primitives.**
+- Only create a new shared component in `src/components/` when it's used by 2+ screens
+- Never duplicate logic that already exists in a shared component or hook
+
+## Naming
+
+- Components: PascalCase, one per file, named export only, filename matches component name — `PrimaryButton.tsx` exports `PrimaryButton`
+- Hooks: camelCase prefixed with `use` — `useAuth.ts`, `useProfile.ts`
+- Utility functions: camelCase in `src/lib/` — `formatCurrency.ts`, `validateInput.ts`
+- Route files: `src/routes/[name]/route.tsx` — name matches URL segment
+
+## File Structure
+
+- Route files: `src/routes/` — React Router v7 file convention
+- Shared components: `src/components/` — imported across multiple screens
+- Route-specific components: colocated in `src/routes/[name]/components/` — used only on that screen
+- If a route-specific component is imported by a second route, move it to `src/components/`
+- Hooks: `src/hooks/` — no business logic in components that can be extracted to a hook
+- Constants and config: `src/lib/constants.ts` — never hardcode magic numbers or strings in components
+
+## Data Fetching
+
+- All data fetches use `@supabase/supabase-js` via hooks in `src/hooks/` or query functions in `src/lib/data/`
+- The Supabase client is initialized once in `src/lib/supabase.ts` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+- Auth state is managed by `AuthProvider` in `src/lib/auth.tsx` — use `useAuth()` hook in components
+- All entity types: import from `src/lib/api-types.ts` — single source of truth
+- RLS handles all authorization — the JWT in the Supabase client scopes every query to the current user automatically
+- Never fetch the same data in two components on the same page — fetch once at the route level, pass as props or use context
+- For real-time data: use Supabase Realtime subscriptions via `supabase.channel()` in a custom hook
+
+### Data Fetching Pattern
+
+```typescript
+// src/hooks/useGoals.ts
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { Goal } from "@/lib/api-types";
+
+export function useGoals() {
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetch() {
+      const { data, error } = await supabase
+        .from("goals")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) setError(error.message);
+      else setGoals(data ?? []);
+      setLoading(false);
+    }
+    fetch();
+  }, []);
+
+  return { goals, loading, error };
+}
+```
+
+### Mutations
+
+```typescript
+// Mutations use supabase client directly in event handlers or custom hooks
+async function handleCreate(title: string) {
+  const { error } = await supabase
+    .from("goals")
+    .insert({ title, user_id: session.user.id });
+
+  if (error) toast.error("Failed to create goal");
+  else refresh(); // re-fetch or optimistic update
+}
+```
+
+## Imports
+
+- Absolute imports from `@/` via tsconfig paths — never relative imports that go up more than one level (no `../../..`)
+- Group imports: React → third-party libs → project components → project utils → types
+
+---
+
+## Performance
+
+### Critical — Prevent Waterfalls
+
+- Never chain sequential `await` calls when the data is independent — use `Promise.all()` or `Promise.allSettled()` instead
+- Move `await` into the branch where data is actually used
+- Deduplicate identical requests with a shared hook or React Context
+
+### Critical — Bundle Size
+
+- Import only what you use: `import { Camera } from "lucide-react"` not `import * as Icons from "lucide-react"`
+- Use `React.lazy()` + `Suspense` for heavy components not needed on initial render (modals, charts, rich editors)
+- Libraries commonly affected by barrel imports: lucide-react, @radix-ui/react-*, date-fns, lodash
+
+### High — Key Management
+
+- Never use array index as `key` in lists that can reorder, filter, or insert — use a stable unique ID (database `id` field)
+- When rendering a list from Supabase, always key on the row's `id` column
+
+### Medium — Memoization
+
+- Don't wrap every component in `React.memo()` — only memoize components that receive the same props across re-renders and are expensive to render
+- Use `useMemo` for expensive computations (sorting, filtering large arrays), not for simple object creation
+- Use `useCallback` for functions passed as props to memoized child components
+- Never memoize components that receive children as props — children are a new object every render
+
+### Medium — Image and Font Optimization
+
+- Use standard `<img>` with explicit `width` and `height` to prevent layout shifts — or CSS `aspect-ratio`
+- For responsive images, use `srcset` and `sizes` attributes
+- Self-host fonts in `public/fonts/` and load via `@font-face` in `src/app.css` with `font-display: swap`
+- For icons: use a single icon library (lucide-react recommended), tree-shake unused icons
+
+---
+
+## Accessibility
+
+### Non-Negotiable
+
+- Every interactive element must be keyboard-accessible: buttons, links, form inputs, modals, dropdowns
+- Every `<img>` must have an `alt` attribute — decorative images use `alt=""`
+- Color contrast: text must meet WCAG AA (4.5:1 for body text, 3:1 for large text). Use design system tokens — they are pre-checked.
+- Never use color alone to convey information — add an icon, label, or pattern
+- Focus indicators must be visible — never `outline: none` without a replacement focus style
+- Modals must trap focus inside and return focus to the trigger on close
+- Forms: every input must have an associated `<label>` (visible or `sr-only`). Placeholder text is not a label.
+
+### Semantic HTML
+
+- Use `<button>` for actions, `<a>` (or React Router `<Link>`) for navigation — never `<div onClick>`
+- Use heading hierarchy (`h1` → `h2` → `h3`) — don't skip levels for styling
+- Use `<nav>`, `<main>`, `<aside>`, `<footer>` landmark elements
+- Lists of items: use `<ul>` or `<ol>`, not a series of `<div>` elements
+
+---
+
+## Mobile UX
+
+### Touch Targets
+
+- Minimum touch target size: 44×44px (Apple HIG) / 48×48dp (Material). Enforce via padding, not font size.
+- Space between adjacent touch targets: at least 8px
+- Bottom navigation items: minimum 48px tall, label below icon, active state visually distinct
+- Avoid hover-dependent interactions on mobile
+
+### Responsive Patterns
+
+- Mobile-first: write base styles for 375px width, then add `sm:`, `md:`, `lg:` breakpoints to scale up
+- Test every screen at 375px viewport width — this is the build's mobile baseline
+- Never use fixed widths on containers — use `max-w-*` with auto margins or `w-full`
+- Scroll: prefer vertical scroll. Horizontal scroll only for carousels or image galleries.
+
+### Forms — Validation and Error States
+
+- Validate on blur (per field) + on submit (entire form). Don't validate on every keystroke.
+- Error messages appear directly below the errored field, in `text-destructive text-sm`
+- Error message text states what's wrong and how to fix it: "Email is required" not "Invalid input"
+- Disable submit button while submitting — show loading spinner inside the button
+- After successful submission: show confirmation state, then navigate.
+
+### Performance — Layout Stability
+
+- Set explicit `width` and `height` (or `aspect-ratio`) on images, videos, and embeds
+- Reserve space for dynamic content with skeleton loaders
+- Font loading: use `font-display: swap` in `@font-face`
+- Animations: prefer `transform` and `opacity` over `width`, `height`, `top`, `left`
+
+---
+
+## Composition Patterns
+
+### Avoid Boolean Prop Proliferation
+
+When a component accumulates boolean props (`isLoading`, `isError`, `isEmpty`, `isCompact`, `isDark`), it becomes untestable. Refactor:
+
+**Pattern 1 — Variant prop:**
+```typescript
+// WRONG: boolean sprawl
+<Card isCompact={true} isHighlighted={true} isDark={false} />
+
+// RIGHT: variant enum
+<Card variant="compact-highlighted" />
+```
+
+**Pattern 2 — Compound components:**
+```typescript
+// WRONG: config object
+<DataDisplay showHeader={true} headerTitle="Results" showFooter={false} data={items} />
+
+// RIGHT: compound
+<DataDisplay data={items}>
+  <DataDisplay.Header title="Results" />
+  <DataDisplay.Body />
+</DataDisplay>
+```
+
+### State Lifting
+
+- Lift state to the nearest common ancestor — not to the route level
+- If two sibling components need the same state, lift to their parent
+- If state is used across many unrelated components, use React Context (low-frequency) or a state manager (high-frequency)
+- Never store derived data in state — compute it during render

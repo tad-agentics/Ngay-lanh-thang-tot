@@ -1,0 +1,35 @@
+---
+description: Design system token and component rules — enforced on all component and route files
+globs:
+  - src/components/**/*
+  - src/routes/**/*.tsx
+alwaysApply: false
+---
+
+## Design Tokens (Make → Tailwind)
+
+- Make's code output defines the visual design. Make uses CSS custom properties with Tailwind v4's `@theme inline` syntax for design tokens — keep this CSS-based approach during Foundation. Do not migrate tokens to `tailwind.config.ts`. Copy Make's theme CSS into `src/app.css`.
+- All components use Tailwind utility classes referencing semantic tokens (`bg-primary`, `text-foreground`, `border-default`) — never raw hex codes, pixel sizes, or raw font sizes
+- Never use `style={{}}` for token values — only `className` with Tailwind classes
+- `style={{}}` is only permitted for genuinely dynamic values that can't be expressed as a token (e.g. `style={{ width: dynamicWidth + 'px' }}`)
+
+## Component Rules
+
+- Make's UI components (`src/components/ui/`) are the app's component library — do not add shadcn/ui, Radix, HeroUI, or any other library
+- Additional shared components (EmptyState, ErrorBanner, SkeletonCard) built during Foundation live in `src/components/`
+- Every component must implement all applicable states: default / loading / error / empty
+- Custom component interfaces must match the spec in `artifacts/docs/design-system-spec.md`
+- Import shared components from `src/components/` — never recreate one that already exists there
+- When porting Figma Make TSX, preserve the visual structure — don't restructure unless it violates accessibility rules
+
+## AI Slop Guard — Never ship these patterns
+
+- No gradient backgrounds using purple, violet, or indigo
+- No 3-column icon-in-circle feature grids
+- No global `text-align: center` on headings or card content
+- No uniform border-radius across all components — use the radius scale from design tokens
+- No decorative blobs, wavy dividers, or floating shapes
+- No generic hero copy: "Unlock the power of...", "Your all-in-one solution for...", "Revolutionize your..."
+- No emoji as visual design elements
+- No colored left-border accent cards as a default pattern
+- No identical spacing between all elements — use the spacing scale intentionally
