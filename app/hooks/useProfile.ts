@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "~/lib/auth";
 import type { Database } from "~/lib/database.types";
@@ -16,8 +16,11 @@ export function useProfile(): {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  /** Bumped on every load(); ignore await results from stale passes (logout, user switch, newer refresh). */
+  const loadSeqRef = useRef(0);
 
   const load = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     if (!user) {
       setProfile(null);
       setError(null);
@@ -30,6 +33,7 @@ export function useProfile(): {
       .select("*")
       .eq("id", user.id)
       .maybeSingle();
+    if (seq !== loadSeqRef.current) return;
     if (qe) setError(qe.message);
     else setError(null);
     setProfile(data ?? null);
