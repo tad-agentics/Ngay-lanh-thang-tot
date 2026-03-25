@@ -2,13 +2,13 @@
 Updated: 2026-03-25
 
 ## Current focus
-**W4 `social-specialty`** shipped on `staging`: `/app/hop-tuoi` (D3 count-up), `/app/phong-thuy`, `/app/chia-se` + public `/x/:token`; Edge `create-share-token` / `share-resolve` / `share-og`; `/app/thong-bao-quyen` + Cài đặt push summary.
+**Cross-cutting `legal-settings`** complete: public `/chinh-sach-bao-mat`, `/dieu-khoan`; aliases `/privacy`, `/terms`; `/app/cai-dat-app` (PWA + data-request mailto); Cài đặt + landing footer legal links.
 
 ## Active wave
-**Cross-cutting `legal-settings`** — dispatch per `artifacts/plans/build-plan.md`.
+**Post-wave** — visual audit, pre-handoff QA, deploy polish.
 
 ## Next up
-`/feature legal-settings` (hoặc `/wave legal`); deploy Edge secrets `SITE_URL` cho `share-og`.
+Visual audit (staging vs Make); pre-handoff `/review`; deploy Edge `SITE_URL` cho `share-og` if not set.
 
 ## Blockers
 None
