@@ -44,6 +44,9 @@ $$;
 comment on function public.handle_new_user() is
   'Creates public.profiles + initial credit_ledger row when auth.users row is inserted. Starter amount from app_config.starter_credits or 20.';
 
+-- Idempotent: safe if migration was partially applied or trigger exists from earlier deploy
+drop trigger if exists on_auth_user_created on auth.users;
+
 -- Supabase: trigger lives on auth schema
 create trigger on_auth_user_created
   after insert on auth.users

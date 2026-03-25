@@ -40,14 +40,22 @@ export async function createPayosCheckout(
     };
   }
 
-  if (
-    data &&
-    typeof data === "object" &&
-    "checkout_url" in data &&
-    "order_id" in data &&
-    typeof (data as CreatePayosCheckoutResponse).checkout_url === "string"
-  ) {
-    return { ok: true, data: data as CreatePayosCheckoutResponse };
+  if (data && typeof data === "object") {
+    const d = data as Record<string, unknown>;
+    if (
+      typeof d.checkout_url === "string" &&
+      typeof d.order_id === "string" &&
+      d.checkout_url.length > 0 &&
+      d.order_id.length > 0
+    ) {
+      return {
+        ok: true,
+        data: {
+          order_id: d.order_id,
+          checkout_url: d.checkout_url,
+        },
+      };
+    }
   }
 
   return {
