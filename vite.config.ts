@@ -5,6 +5,18 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("@supabase")) return "supabase";
+          if (id.includes("motion")) return "motion";
+          if (id.includes("lucide-react")) return "lucide";
+        },
+      },
+    },
+  },
   plugins: [
     tailwindcss(),
     reactRouter(),

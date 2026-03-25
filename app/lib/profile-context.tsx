@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -50,13 +51,13 @@ function useProfileState(user: User): ProfileContextValue {
     void load("full");
   }, [load, userId]);
 
-  return {
-    profile,
-    loading,
-    error,
-    refresh: () => load("silent"),
-    reload: () => load("full"),
-  };
+  const refresh = useCallback(() => load("silent"), [load]);
+  const reload = useCallback(() => load("full"), [load]);
+
+  return useMemo(
+    () => ({ profile, loading, error, refresh, reload }),
+    [profile, loading, error, refresh, reload],
+  );
 }
 
 export function ProfileProvider({
