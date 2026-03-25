@@ -8,6 +8,7 @@
 | Make import | Exported **`Ngaylanhthangtot.vn.zip`** into **`src/make-import/`** (~112 files): screens, `app/components/ui`, mock data, styles. TSX animation imports use **`motion/react`** (not `framer-motion` dependency). | No |
 | Phase 4 | **`tech-spec.md`** + **`supabase/migrations/20260325120000_initial_schema.sql`** + **`seed.sql`** + **`app/lib/api-types.ts`**. Screen-specs file absent — documented deviation; Make routes/mock-data are stand-in. | No |
 | Auth bootstrap | Migration **`20260325120100_auth_create_profile.sql`** — `handle_new_user` on `auth.users` inserts **`profiles`** + **`credit_ledger`** (`starter_grant`); starter from **`app_config.starter_credits`** or **20**. Spec §17 W3 vs v1 clarified; PayOS **`package_sku`** allowlist documented (`le`, `goi_6thang`, `goi_12thang`). | No |
+| Setup | **`build-plan.md`**, **`project.mdc`**, Radix/lucide/Make UI deps in root **`package.json`**. No `screen-specs-*` — graph uses Make + tech-spec. PayOS: Edge HTTP only (no PayOS MCP). | No |
 
 ## How to use
 

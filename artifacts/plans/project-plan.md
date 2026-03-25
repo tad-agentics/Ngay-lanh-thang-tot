@@ -2,21 +2,26 @@
 
 ## Planning Phases
 
-- [ ] Phase 2 — Screen Specs + Figma Make Brief *(optional this run — Make already complete; skip brief-driven Make work)*
-- [x] Figma Make — **Skipped for this project:** prototype already complete. Still copy Make output → `src/make-import/` before Phase 4.
-- [x] Phase 4 — Tech Spec → `artifacts/docs/tech-spec.md`, migration `20260325120000_initial_schema.sql`, `supabase/seed.sql`, `app/lib/api-types.ts`
-- [ ] Setup
+- [ ] Phase 2 — Screen Specs + Figma Make Brief *(optional this run)*
+- [x] Figma Make — code in `src/make-import/`
+- [x] Phase 4 — Tech spec + schema + seed + `app/lib/api-types.ts`
+- [x] Setup — `build-plan.md`, `project.mdc`, UI deps
 
 ## Foundation
 
 - [ ] Backend foundation        commit: —
-- [ ] Frontend: Make import + component inventory + Tailwind config + landing page + auth screens commit: —
+- [ ] Frontend: Make import + landing + auth        commit: —
 
 ## Feature Workstreams
 
 | Feature | Wave | Backend | Frontend | QA | Commit |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| foundation | Foundation | pending | pending | — | — |
+| auth-profile-billing | W1 | pending | pending | — | — |
+| core-loop | W2 | pending | pending | — | — |
+| personalization | W3 | pending | pending | — | — |
+| social-specialty | W4 | pending | pending | — | — |
+| legal-settings | cross | — | pending | — | — |
 
 ## Post-Build
 
