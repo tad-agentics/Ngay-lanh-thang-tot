@@ -21,7 +21,7 @@
 | foundation | Foundation | complete | complete | — | `9fbdc8d`, `799dfa2` |
 | auth-profile-billing | W1 | complete | complete | PASS (build + vitest) | `3e4ae95` + screens |
 | core-loop | W2 | complete | complete | PASS (build + vitest; E2E manual) | staging |
-| personalization | W3 | pending | pending | — | — |
+| personalization | W3 | complete | complete | PASS (build + vitest) | `1b2d074` backend, `5e59150` screens |
 | social-specialty | W4 | pending | pending | — | — |
 | legal-settings | cross | — | pending | — | — |
 

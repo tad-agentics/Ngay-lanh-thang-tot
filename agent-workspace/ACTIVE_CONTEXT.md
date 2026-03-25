@@ -2,13 +2,13 @@
 Updated: 2026-03-25
 
 ## Current focus
-**W1 `auth-profile-billing`** closed on `staging`: onboarding gate → `/app/bat-dau`, PayOS + `CreditGate` + Cài đặt / Mua lượng; `FEATURE_KEY_MAP` aligned with seed.
+**W3 `personalization`** closed on `staging`: `/app/la-so` + D2 reveal, `tu-tru` persists `profiles.la_so` + lock; `/app/van-thang` + `tieu-van`; Cài đặt blocks birth when locked; DB trigger protects lá số from client writes.
 
 ## Active wave
-**Wave 2 `core-loop`** — chọn ngày flow, `bat-tu`, etc.
+**Wave 4 `social-specialty`** — hợp tuổi, chia sẻ — see `artifacts/plans/build-plan.md`.
 
 ## Next up
-Wave 3 (`personalization`): lá số / vận — see `artifacts/plans/build-plan.md`.
+Wave 4 / cross-cutting legal — dispatch per build-plan.
 
 ## Blockers
 None
