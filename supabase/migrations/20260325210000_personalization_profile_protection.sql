@@ -8,7 +8,9 @@ security invoker
 set search_path = public
 as $$
 begin
-  if coalesce(auth.role(), '') = 'service_role' then
+  -- PostgREST requests with the service role JWT (Edge Functions) must persist la_so / lock.
+  if coalesce((select auth.jwt() ->> 'role'), '') = 'service_role'
+     or coalesce(auth.role(), '') = 'service_role' then
     return NEW;
   end if;
 
