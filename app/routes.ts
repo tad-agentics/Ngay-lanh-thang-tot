@@ -7,5 +7,11 @@ export default [
   route("dang-nhap/email", "routes/dang-nhap.email.tsx"),
   route("dang-ky", "routes/dang-ky.tsx"),
   route("quen-mat-khau", "routes/quen-mat-khau.tsx"),
-  route("app", "routes/app.tsx", [index("routes/app.home.tsx")]),
+  route("app", "routes/app.tsx", [
+    index("routes/app.home.tsx"),
+    route("bat-dau", "routes/app.bat-dau.tsx"),
+    route("mua-luong", "routes/app.mua-luong.tsx"),
+    route("mua-luong/thanh-cong", "routes/app.mua-luong.thanh-cong.tsx"),
+    route("cai-dat", "routes/app.cai-dat.tsx"),
+  ]),
 ] satisfies RouteConfig;
