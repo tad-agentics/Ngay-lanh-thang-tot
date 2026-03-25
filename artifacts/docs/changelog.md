@@ -6,6 +6,7 @@
 |------|------|----------|
 | Workflow | Figma Make prototype treated as **pre-delivered** for this test run — no in-Make build step; integrate via `src/make-import/` then Phase 4+. | No |
 | Make import | Exported **`Ngaylanhthangtot.vn.zip`** into **`src/make-import/`** (~112 files): screens, `app/components/ui`, mock data, styles. TSX animation imports use **`motion/react`** (not `framer-motion` dependency). | No |
+| Phase 4 | **`tech-spec.md`** + **`supabase/migrations/20260325120000_initial_schema.sql`** + **`seed.sql`** + **`app/lib/api-types.ts`**. Screen-specs file absent — documented deviation; Make routes/mock-data are stand-in. | No |
 
 ## How to use
 

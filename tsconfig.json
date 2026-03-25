@@ -1,4 +1,5 @@
 {
+  "exclude": ["src/make-import/**"],
   "include": [
     "**/*",
     "**/.server/**/*",

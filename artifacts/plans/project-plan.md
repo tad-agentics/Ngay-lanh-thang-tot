@@ -4,7 +4,7 @@
 
 - [ ] Phase 2 — Screen Specs + Figma Make Brief *(optional this run — Make already complete; skip brief-driven Make work)*
 - [x] Figma Make — **Skipped for this project:** prototype already complete. Still copy Make output → `src/make-import/` before Phase 4.
-- [ ] Phase 4 — Tech Spec (schema from Make mock data)
+- [x] Phase 4 — Tech Spec → `artifacts/docs/tech-spec.md`, migration `20260325120000_initial_schema.sql`, `supabase/seed.sql`, `app/lib/api-types.ts`
 - [ ] Setup
 
 ## Foundation
