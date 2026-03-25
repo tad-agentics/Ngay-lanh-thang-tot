@@ -210,17 +210,40 @@ export default function AppVanThang() {
 
         {isUnlocked && detail ? (
           <>
-            <div
-              className="bg-card border border-border px-4 py-4"
-              style={{ borderRadius: "var(--radius-lg)" }}
-            >
-              <p className="text-foreground text-sm font-medium mb-4">Các lĩnh vực</p>
-              <div className="flex flex-col gap-4">
-                {detail.cacGiai.map((g) => (
-                  <ScoreBar key={g.label} {...g} />
-                ))}
+            {detail.cacGiai.length > 0 ? (
+              <div
+                className="bg-card border border-border px-4 py-4"
+                style={{ borderRadius: "var(--radius-lg)" }}
+              >
+                <p className="text-foreground text-sm font-medium mb-4">Các lĩnh vực</p>
+                <div className="flex flex-col gap-4">
+                  {detail.cacGiai.map((g) => (
+                    <ScoreBar key={g.label} {...g} />
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : detail.tags.length > 0 ? (
+              <div
+                className="bg-card border border-border px-4 py-4"
+                style={{ borderRadius: "var(--radius-lg)" }}
+              >
+                <p className="text-foreground text-sm font-medium mb-3">Nhịp tháng</p>
+                <div className="flex flex-wrap gap-2">
+                  {detail.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="text-xs px-2.5 py-1 rounded-full border border-border bg-muted/40 text-foreground"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-muted-foreground text-xs mt-3 leading-relaxed">
+                  Tháng này được tóm tắt bằng các nhãn trên; nếu có bảng điểm chi tiết từ dịch
+                  vụ, chúng sẽ hiển thị thay cho phần này.
+                </p>
+              </div>
+            ) : null}
 
             <div
               className="bg-card border border-border px-4 py-3"
