@@ -17,6 +17,10 @@ import { Switch } from "~/components/ui/switch";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
 import {
+  creditsBalanceFootnote,
+  creditsBalanceHeadline,
+} from "~/lib/subscription";
+import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   batTuBirthTimeCodeToGioSinh,
   gioSinhToBatTuBirthTime,
@@ -89,6 +93,7 @@ export default function AppCaiDat() {
   }, [user]);
 
   const birthLocked = Boolean(profile?.birth_data_locked_at);
+  const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const provider = authProviderBadge(user);
 
@@ -257,9 +262,14 @@ export default function AppCaiDat() {
             <p className="text-sm text-muted-foreground">Đang tải…</p>
           ) : profile ? (
             <>
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {profile.credits_balance} lượng
+              <p className="text-2xl font-bold text-foreground tabular-nums leading-snug">
+                {creditsBalanceHeadline(profile)}
               </p>
+              {creditsFootnote ? (
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  {creditsFootnote}
+                </p>
+              ) : null}
               <Button variant="outline" asChild className="w-full font-medium">
                 <Link to="/app/mua-luong">Mua thêm lượng</Link>
               </Button>

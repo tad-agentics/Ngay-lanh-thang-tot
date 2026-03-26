@@ -13,6 +13,7 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { mapTieuVanPayload, type TieuVanUi } from "~/lib/tieu-van-ui";
+import { subscriptionActive } from "~/lib/subscription";
 
 const VAN_FEATURE = toDbFeatureKey("van_thang");
 
@@ -151,9 +152,7 @@ export default function AppVanThang() {
   }
 
   const detail = unlocked[ym];
-  const subActive =
-    profile?.subscription_expires_at != null &&
-    new Date(profile.subscription_expires_at) > new Date();
+  const subActive = subscriptionActive(profile?.subscription_expires_at);
 
   return (
     <div className="px-4 pb-8">
@@ -276,7 +275,9 @@ export default function AppVanThang() {
                   </span>
                   . Số dư hiện tại:{" "}
                   <span className="text-foreground" style={{ fontFamily: "var(--font-ibm-mono)" }}>
-                    {profile?.credits_balance ?? 0} lượng
+                    {subscriptionActive(profile?.subscription_expires_at)
+                      ? "Không giới hạn lượng"
+                      : `${profile?.credits_balance ?? 0} lượng`}
                   </span>
                   .
                 </p>

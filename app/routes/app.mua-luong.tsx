@@ -8,9 +8,14 @@ import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { createPayosCheckout } from "~/lib/payos";
 import { UI_PACKAGES } from "~/lib/packages";
 import { useProfile } from "~/hooks/useProfile";
+import {
+  creditsBalanceFootnote,
+  creditsBalanceHeadline,
+} from "~/lib/subscription";
 
 export default function AppMuaLuong() {
   const { profile, loading } = useProfile();
+  const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
   const [busySku, setBusySku] = useState<PackageSku | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] =
@@ -51,20 +56,19 @@ export default function AppMuaLuong() {
         {loading ? (
           <p className="mt-4 text-sm text-muted-foreground">Đang tải…</p>
         ) : profile ? (
-          <p className="mt-4 text-sm">
-            Số dư hiện tại:{" "}
-            <strong className="text-foreground">{profile.credits_balance}</strong>{" "}
-            lượng
-            {profile.subscription_expires_at &&
-            new Date(profile.subscription_expires_at) > new Date() ? (
-              <span className="block mt-1 text-muted-foreground">
-                Gói không giới hạn đến{" "}
-                {new Date(profile.subscription_expires_at).toLocaleDateString(
-                  "vi-VN",
-                )}
-              </span>
+          <div className="mt-4 text-sm space-y-1">
+            <p>
+              Số dư hiện tại:{" "}
+              <strong className="text-foreground">
+                {creditsBalanceHeadline(profile)}
+              </strong>
+            </p>
+            {creditsFootnote ? (
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                {creditsFootnote}
+              </p>
             ) : null}
-          </p>
+          </div>
         ) : null}
       </div>
 

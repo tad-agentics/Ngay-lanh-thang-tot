@@ -28,11 +28,7 @@ import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import type { ResultDay } from "~/lib/api-types";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
-
-function subscriptionActive(expires: string | null | undefined): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
-}
+import { subscriptionActive } from "~/lib/subscription";
 
 type Phase = 0 | 1 | 2;
 
@@ -242,7 +238,9 @@ export default function AppChonNgayKetQua() {
                           className="text-foreground"
                           style={{ fontFamily: "var(--font-ibm-mono)" }}
                         >
-                          {profile?.credits_balance ?? 0} lượng
+                          {subscriptionActive(profile?.subscription_expires_at)
+                            ? "Không giới hạn lượng"
+                            : `${profile?.credits_balance ?? 0} lượng`}
                         </span>
                         .
                       </p>

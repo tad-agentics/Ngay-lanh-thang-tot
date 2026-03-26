@@ -5,12 +5,17 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
+import {
+  creditsBalanceFootnote,
+  creditsBalanceHeadline,
+} from "~/lib/subscription";
 
 export default function AppMuaLuongThanhCong() {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("order_id");
   const { profile, loading, reload } = useProfile();
   const [longWaitHint, setLongWaitHint] = useState(false);
+  const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
 
   usePollPaymentOrderPaid(orderId, Boolean(orderId), {
     onPaid: async () => {
@@ -63,15 +68,12 @@ export default function AppMuaLuongThanhCong() {
       ) : profile ? (
         <div className="rounded-xl border border-border bg-card p-4 text-sm">
           <p className="text-muted-foreground">Số dư hiện tại</p>
-          <p className="text-2xl font-semibold text-foreground mt-1">
-            {profile.credits_balance} lượng
+          <p className="text-2xl font-semibold text-foreground mt-1 leading-snug">
+            {creditsBalanceHeadline(profile)}
           </p>
-          {profile.subscription_expires_at ? (
-            <p className="text-muted-foreground mt-2">
-              Gói: đến{" "}
-              {new Date(profile.subscription_expires_at).toLocaleDateString(
-                "vi-VN",
-              )}
+          {creditsFootnote ? (
+            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
+              {creditsFootnote}
             </p>
           ) : null}
         </div>

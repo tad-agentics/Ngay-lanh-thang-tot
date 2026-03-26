@@ -18,6 +18,10 @@ import {
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import {
+  creditsBalanceChipLabel,
+  creditsBalanceFootnote,
+} from "~/lib/subscription";
 
 function monthYyyyMm(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
@@ -203,6 +207,7 @@ export default function AppHome() {
             onClick={() => void navigate("/app/mua-luong")}
             className="flex items-center gap-1.5 border border-border px-2.5 py-1.5 text-foreground shrink-0"
             style={{ borderRadius: "var(--radius-pill)", minHeight: 36 }}
+            title={creditsBalanceFootnote(profile) ?? undefined}
           >
             <Coins size={13} className="text-accent" strokeWidth={1.5} />
             <span
@@ -212,7 +217,8 @@ export default function AppHome() {
                 fontWeight: 500,
               }}
             >
-              {profile?.credits_balance ?? 0} lượng
+              {creditsBalanceChipLabel(profile)}
+              {creditsBalanceFootnote(profile) ? "" : " lượng"}
             </span>
           </button>
         </div>

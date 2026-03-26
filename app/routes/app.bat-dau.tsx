@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
+import { subscriptionActive } from "~/lib/subscription";
 import { supabase } from "~/lib/supabase";
 
 export default function AppBatDau() {
@@ -30,6 +31,7 @@ export default function AppBatDau() {
   }
 
   const credits = profile?.credits_balance ?? null;
+  const subOn = subscriptionActive(profile?.subscription_expires_at);
 
   return (
     <main className="flex flex-col min-h-svh bg-background px-4 pb-8">
@@ -80,6 +82,12 @@ export default function AppBatDau() {
           <p className="text-foreground text-xs leading-relaxed text-center">
             {loading ? (
               "Đang tải số dư…"
+            ) : subOn ? (
+              <>
+                Gói của bạn đang{" "}
+                <strong className="text-foreground">không giới hạn lượng</strong>
+                — dùng tra cứu và chọn ngày thoải mái trong thời hạn gói.
+              </>
             ) : credits != null ? (
               <>
                 Tài khoản của bạn có{" "}
