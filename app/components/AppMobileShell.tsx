@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 
+import { AppShellViewport } from "~/components/AppShellViewport";
 import { BottomNav } from "~/components/BottomNav";
 import { getActiveTab, shouldShowNav, type BottomNavTab } from "~/lib/nav-config";
 
@@ -31,21 +32,23 @@ export function AppMobileShell({
   };
 
   return (
-    <div className="flex flex-col bg-background w-full" style={{ height: "100dvh" }}>
+    <AppShellViewport>
       <div
-        className="flex-1 overflow-y-auto min-h-0"
+        className="min-h-0 flex-1 overflow-y-auto"
         style={{ paddingBottom: showNav ? 72 : 0 }}
       >
         {children}
       </div>
 
       {showNav ? (
-        <div className="fixed bottom-0 left-0 right-0 z-40">
-          <BottomNav
-            activeTab={activeTab}
-            onTabChange={handleTabChange}
-            onExploreOpen={() => setShowExplore(true)}
-          />
+        <div className="pointer-events-none fixed bottom-0 left-1/2 z-40 w-full max-w-[var(--app-shell-max-width)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
+          <div className="pointer-events-auto">
+            <BottomNav
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              onExploreOpen={() => setShowExplore(true)}
+            />
+          </div>
         </div>
       ) : null}
 
@@ -66,6 +69,6 @@ export function AppMobileShell({
           />
         </Suspense>
       ) : null}
-    </div>
+    </AppShellViewport>
   );
 }
