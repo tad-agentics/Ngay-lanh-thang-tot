@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router";
 import { Moon, Sun } from "lucide-react";
 
 import { Chip } from "~/components/Chip";
-import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { GrainOverlay } from "~/components/GrainOverlay";
@@ -22,7 +21,6 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
-import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 
 import { Button } from "~/components/ui/button";
@@ -98,6 +96,28 @@ function purposeVerdictLabel(v: DayDetailPurposeVerdict): string {
 const HAC_DAO_LASO_EXPLAINER_COPY =
   "Ngày hắc đạo cũng có thể là ngày đẹp nhất cho một lá số. Theo thuật phong thủy truyền thống, đây là một quyết định có chủ ý — vì Bát Tự cá nhân (mệnh, dụng thần, kỵ thần) được coi là quan trọng hơn Hoàng Đạo/Hắc Đạo chung.";
 
+/** Một khối paywall: chỉ rào khi thiếu hồ sơ; không trừ lượng từng ngày. */
+function NgayChiTietProfilePaywall() {
+  return (
+    <div
+      className="border border-border bg-card px-4 py-5 space-y-4"
+      style={{ borderRadius: "var(--radius-lg)" }}
+    >
+      <div>
+        <p className="text-foreground text-sm font-medium mb-1">
+          Cần ngày sinh trên hồ sơ
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Chi tiết ngày theo lá số cần ít nhất ngày sinh — mỗi lần xem không tốn lượng. Bổ sung trong Cài đặt rồi chọn lại ngày trên lịch.
+        </p>
+      </div>
+      <Button asChild className="w-full sm:w-auto">
+        <Link to="/app/cai-dat">Mở Cài đặt</Link>
+      </Button>
+    </div>
+  );
+}
+
 function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
   switch (v) {
     case "nen_lam":
@@ -122,7 +142,6 @@ function DayDetailFetched({
   profile: ProfileRow;
   onPayload?: (data: unknown | null) => void;
 }) {
-  const { costs } = useFeatureCosts();
   const [purposeExpanded, setPurposeExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -184,12 +203,6 @@ function DayDetailFetched({
       </p>
     );
   }
-
-  const dayDetailCost = costs.day_detail;
-  const showLuongCta =
-    dayDetailCost &&
-    !dayDetailCost.is_free &&
-    dayDetailCost.credit_cost > 0;
 
   const purposeSorted =
     view != null ? sortPurposeRowsForDisplay(view.purposeRows) : [];
@@ -318,16 +331,6 @@ function DayDetailFetched({
                     ? "Thu gọn"
                     : `Xem đầy đủ ${view.purposeRows.length} mục đích`}
                 </button>
-              ) : null}
-              {showLuongCta ? (
-                <Button
-                  asChild
-                  className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Link to="/app/mua-luong">
-                    +{dayDetailCost.credit_cost} lượng
-                  </Link>
-                </Button>
               ) : null}
             </section>
           ) : null}
@@ -488,27 +491,17 @@ export default function AppNgayChiTiet() {
         {loading ? (
           <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
         ) : !profile?.ngay_sinh ? (
-          <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
-            <p className="text-muted-foreground">Cần ngày sinh trong hồ sơ.</p>
-            <Link
-              to="/app/cai-dat"
-              className="text-primary text-sm font-medium underline"
-            >
-              Mở Cài đặt
-            </Link>
-          </div>
+          <NgayChiTietProfilePaywall />
         ) : (
-          <CreditGate featureKey="day_detail">
-            <DayDetailFetched
-              iso={iso}
-              profile={profile}
-              onPayload={(data) =>
-                setHeaderMeta(
-                  data == null ? null : extractDayDetailHeaderMeta(data),
-                )
-              }
-            />
-          </CreditGate>
+          <DayDetailFetched
+            iso={iso}
+            profile={profile}
+            onPayload={(data) =>
+              setHeaderMeta(
+                data == null ? null : extractDayDetailHeaderMeta(data),
+              )
+            }
+          />
         )}
       </div>
     </div>
