@@ -187,7 +187,7 @@ export default function AppChiaSe() {
   return (
     <div className="px-4 pb-8">
       <ScreenHeader
-        title="Chia sẻ ngày tốt"
+        title="Chia sẻ ngày lành"
         endAdornment={<CreditsHeaderChip />}
       />
 

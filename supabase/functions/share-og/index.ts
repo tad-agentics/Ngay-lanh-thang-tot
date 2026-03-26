@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
   let title = "Ngày Lành Tháng Tốt";
   let desc =
-    "Xem gợi ý ngày tốt theo Bát Tự — dùng thử miễn phí.";
+    "Xem gợi ý ngày lành theo Bát Tự — dùng thử miễn phí.";
 
   if (row) {
     const exp = row.expires_at as string | null;

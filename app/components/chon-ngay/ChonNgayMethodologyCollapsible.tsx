@@ -47,9 +47,9 @@ export function ChonNgayMethodologyCollapsible({
           id={`${METHODOLOGY_HASH}-trigger`}
         >
           <span className="min-w-0 pr-2">
-            Chọn ngày hoạt động thế nào?
+            Ngày lành tháng tốt hoạt động như thế nào?
             <span className="block text-xs font-normal text-muted-foreground mt-0.5">
-              Cá nhân hóa theo Bát Tự — không phải lịch chung
+              Cá nhân hoá theo lá số Bát Tự (Tứ Trụ) của bạn - không phải lịch vạn niên chung chung
             </span>
           </span>
           <ChevronDown className="size-4 shrink-0 transition-transform duration-200" />
@@ -62,16 +62,16 @@ export function ChonNgayMethodologyCollapsible({
         >
           <div className="rounded-[calc(var(--radius-lg)-4px)] border border-border/80 bg-muted/25 px-3 py-3 space-y-3 text-sm text-muted-foreground leading-relaxed">
             <h2 className="text-foreground text-sm font-semibold font-[family-name:var(--font-lora)]">
-              Chọn Ngày Tốt — Cá Nhân Hóa Theo Bát Tự
+              Chọn Ngày Lành - Cá Nhân Hoá Theo Bản Mệnh
             </h2>
-            <p>Không phải ngày tốt của người này là ngày tốt của người kia.</p>
+            <p>Không phải ngày lành của người này là ngày lành của người kia.</p>
             <p className="font-medium text-foreground/90">
               Hệ thống chọn ngày của chúng tôi hoạt động qua 3 bước:
             </p>
             <ol className="list-decimal pl-4 space-y-2.5 marker:text-foreground marker:font-medium">
               <li>
                 <span className="text-foreground font-medium">
-                  Bước 1: Loại ngày xấu
+                  Bước 1: Loại ngày dữ
                 </span>
                 {" — "}
                 Tự động loại các ngày Nguyệt Kỵ, Tam Nương, Dương Công Kỵ mà ai
@@ -82,8 +82,8 @@ export function ChonNgayMethodologyCollapsible({
                   Bước 2: Đối chiếu lá số
                 </span>
                 {" — "}
-                So ngày với mệnh, Dụng Thần, Kỵ Thần riêng của bạn. Ngày tốt
-                với người mệnh Kim có thể là ngày xấu với người mệnh Mộc.
+                So ngày với mệnh, Dụng Thần, Kỵ Thần riêng của bạn. Ngày lành
+                với người mệnh Kim có thể là ngày dữ với người mệnh Mộc.
               </li>
               <li>
                 <span className="text-foreground font-medium">
@@ -97,7 +97,7 @@ export function ChonNgayMethodologyCollapsible({
             </ol>
             <p className="pt-1 border-t border-border/60 text-foreground/95">
               <span className="font-medium">Kết quả:</span> Những ngày được
-              chọn không chỉ &quot;không xấu&quot; — mà thực sự hợp mệnh với
+              chọn không chỉ &quot;không dữ&quot; — mà thực sự hợp mệnh với
               riêng bạn.
             </p>
           </div>

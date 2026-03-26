@@ -179,7 +179,7 @@ export default function AppChonNgayKetQua() {
                   Cách chúng tôi chọn ngày cho bạn
                 </Link>
                 {" "}
-                — lọc ngày xấu chung, đối chiếu lá số, rồi xếp hạng theo mệnh.
+                — lọc ngày dữ chung, đối chiếu lá số, rồi xếp hạng theo mệnh.
               </p>
 
               <Suspense
@@ -281,7 +281,7 @@ export default function AppChonNgayKetQua() {
                         grade: bestDay.grade,
                       }}
                     >
-                      Chia sẻ ngày tốt
+                      Chia sẻ ngày lành
                     </Link>
                   </Button>
                 </div>

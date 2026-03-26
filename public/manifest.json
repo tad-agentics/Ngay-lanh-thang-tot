@@ -1,7 +1,7 @@
 {
   "name": "Ngày Lành Tháng Tốt",
   "short_name": "Ngày Lành",
-  "description": "Chọn ngày tốt theo Bát Tự Tử Trụ — kết quả cá nhân hóa.",
+  "description": "Chọn ngày lành theo Bát Tự Tử Trụ — kết quả cá nhân hóa.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

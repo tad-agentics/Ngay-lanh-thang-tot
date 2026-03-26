@@ -134,7 +134,7 @@ export default function AppChonNgay() {
     <div className="min-h-[60vh] bg-background pb-8">
       <div className="px-4 pt-6 pb-2 flex items-start justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground font-[family-name:var(--font-lora)] min-w-0 flex-1">
-          Chọn Ngày Tốt
+          Chọn Ngày Lành
         </h1>
         <CreditsHeaderChip className="mt-1" />
       </div>

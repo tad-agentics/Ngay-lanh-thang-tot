@@ -36,11 +36,11 @@ const PAINS = [
   },
   {
     title: "Kết quả không cá nhân hóa",
-    desc: '"Ngày này tốt" — tốt cho ai? Chẳng rõ bạn sinh năm nào, đang lo chuyện gì. Một câu dùng chung cho mọi tuổi không phải câu cho riêng bạn.',
+    desc: '"Ngày này lành" — lành cho ai? Chẳng rõ bạn sinh năm nào, đang lo chuyện gì. Một câu dùng chung cho mọi tuổi không phải câu cho riêng bạn.',
   },
   {
     title: "Không giải thích lý do",
-    desc: "Biết là ngày \"tốt\" mà không hiểu vì sao — chưa đủ để chốt việc, cũng khó kể cho người nhà nghe cho ra lẽ.",
+    desc: "Biết là ngày \"lành\" mà không hiểu vì sao — chưa đủ để chốt việc, cũng khó kể cho người nhà nghe cho ra lẽ.",
   },
   {
     title: "Tìm thầy vừa tốn thời gian, vừa đắt",
@@ -127,7 +127,7 @@ const FAQS = [
   },
   {
     q: "Chọn ngày trong ứng dụng hoạt động ra sao?",
-    a: "Không phải ngày tốt của người này là ngày tốt của người kia. Ba bước: một — loại các ngày Nguyệt Kỵ, Tam Nương, Dương Công Kỵ mà ai cũng nên tránh; hai — so từng ngày với mệnh, Dụng Thần và Kỵ Thần trong lá số của bạn (ví dụ ngày hợp mệnh Kim có thể không hợp mệnh Mộc); ba — chấm điểm theo Trực, sao cát hung và ngũ hành thuận mệnh rồi chọn những ngày đẹp nhất, thường là ba ngày đứng đầu. Sau khi đăng nhập, mở mục Chọn ngày để xem giải thích đầy đủ trước khi tra.",
+    a: "Không phải ngày lành của người này là ngày lành của người kia. Ba bước: một — loại các ngày Nguyệt Kỵ, Tam Nương, Dương Công Kỵ mà ai cũng nên tránh; hai — so từng ngày với mệnh, Dụng Thần và Kỵ Thần trong lá số của bạn (ví dụ ngày hợp mệnh Kim có thể không hợp mệnh Mộc); ba — chấm điểm theo Trực, sao cát hung và ngũ hành thuận mệnh rồi chọn những ngày đẹp nhất, thường là ba ngày đứng đầu. Sau khi đăng nhập, mở mục Chọn ngày để xem giải thích đầy đủ trước khi tra.",
   },
   {
     q: "Tứ trụ là gì, có cần không?",
@@ -156,7 +156,7 @@ function landingJsonLd() {
         name: "Ngày Lành Tháng Tốt",
         url: SITE_ORIGIN,
         description:
-          "Ứng dụng chọn ngày tốt bám theo lá số tứ trụ của bạn. Khai trương, cưới hỏi, nhập trạch — tra theo đúng mệnh, không theo lịch chung.",
+          "Ứng dụng chọn ngày lành bám theo lá số tứ trụ của bạn. Khai trương, cưới hỏi, nhập trạch — tra theo đúng mệnh, không theo lịch chung.",
         applicationCategory: "LifestyleApplication",
         inLanguage: "vi",
         offers: {
@@ -180,7 +180,7 @@ function landingJsonLd() {
 export function meta({}: Route.MetaArgs) {
   return [
     {
-      title: "Ngày Lành Tháng Tốt — chọn ngày tốt theo lá số tứ trụ",
+      title: "Ngày Lành Tháng Tốt — chọn ngày lành theo lá số tứ trụ",
     },
     {
       name: "description",
@@ -644,7 +644,7 @@ export default function Landing() {
                 <span>chọn ngày cho chắc.</span>
               </h2>
               <p>
-                Dựng lá số tứ trụ không mất phí — từ đó mỗi ngày tốt đều bám theo mệnh của
+                Dựng lá số tứ trụ không mất phí — từ đó mỗi ngày lành đều bám theo mệnh của
                 bạn.
               </p>
             </div>
