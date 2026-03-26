@@ -141,10 +141,11 @@ export default function AppChonNgayKetQua() {
       : null;
 
   return (
-    <div className="px-4 pb-8">
+    <div className="min-h-[50vh] px-4 pb-10 bg-[#E9E5DE]">
       <ScreenHeader
         title={state.intentLabel}
-        subtitle={`${state.daysInclusive} ngày trong khoảng`}
+        subtitle={`${state.daysInclusive} ngày tới`}
+        centerTitle
         className="pb-2"
       />
 
@@ -156,7 +157,7 @@ export default function AppChonNgayKetQua() {
           phase={phase}
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           {parsedDays.length === 0 ? (
             <div className="space-y-3">
               <ErrorBanner message="Chưa đọc được danh sách ngày từ API — xem JSON gốc bên dưới để chỉnh mapper." />
@@ -166,10 +167,7 @@ export default function AppChonNgayKetQua() {
             </div>
           ) : (
             <>
-              <p
-                className="text-muted-foreground text-xs pb-1"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
+              <p className="text-[#6b6558] text-[13px] leading-relaxed pb-0.5">
                 {resultDays.length} ngày phù hợp — sắp theo độ ưu tiên
               </p>
 
@@ -198,53 +196,51 @@ export default function AppChonNgayKetQua() {
 
               {!unlockedDetail && anyNeedsDetail ? (
                 <div
-                  className="border border-border bg-card px-4 py-4"
-                  style={{ borderRadius: "var(--radius-lg)" }}
+                  className="border border-[#D8D4CC] bg-white px-4 py-5 rounded-[18px] shadow-sm"
                 >
                   {profileLoading ? (
-                    <p className="text-muted-foreground text-sm">Đang tải hồ sơ…</p>
+                    <p className="text-muted-foreground text-sm text-center">
+                      Đang tải hồ sơ…
+                    </p>
                   ) : canBulkDetail ? (
                     <>
-                      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                        Xem lý do chi tiết cho các ngày trên —{" "}
-                        <span
-                          className="text-foreground"
-                          style={{ fontFamily: "var(--font-ibm-mono)" }}
-                        >
-                          {detailTotal} lượng
-                        </span>{" "}
-                        ({perDetail} lượng × {resultDays.length} ngày).
+                      <p className="text-foreground text-sm leading-relaxed text-center mb-4 px-1">
+                        Xem lý do chi tiết cho {resultDays.length} ngày trên
                       </p>
                       <Button
-                        size="cta_sm"
+                        type="button"
                         disabled={detailBusy}
                         onClick={() => void runDetailUnlock()}
+                        className="w-full min-h-12 rounded-2xl border-0 bg-[#C9A64A] font-bold text-black shadow-none hover:bg-[#B8943F] disabled:opacity-60"
                       >
-                        {detailBusy ? "Đang tải…" : `Mở lý do (${detailTotal} lượng)`}
+                        {detailBusy
+                          ? "Đang tải…"
+                          : `+${detailTotal} lượng`}
                       </Button>
+                      <p className="text-[11px] text-muted-foreground text-center mt-2.5">
+                        {perDetail} lượng × {resultDays.length} ngày
+                      </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                      <p className="text-muted-foreground text-sm leading-relaxed text-center mb-4">
                         Cần{" "}
-                        <span
-                          className="text-foreground"
-                          style={{ fontFamily: "var(--font-ibm-mono)" }}
-                        >
+                        <span className="text-foreground font-medium tabular-nums">
                           {detailTotal} lượng
                         </span>{" "}
-                        để xem lý do cho {resultDays.length} ngày. Số dư:{" "}
-                        <span
-                          className="text-foreground"
-                          style={{ fontFamily: "var(--font-ibm-mono)" }}
-                        >
+                        để xem lý do. Số dư:{" "}
+                        <span className="text-foreground font-medium">
                           {subscriptionActive(profile?.subscription_expires_at)
                             ? "Không giới hạn lượng"
                             : `${profile?.credits_balance ?? 0} lượng`}
                         </span>
                         .
                       </p>
-                      <Button size="cta_sm" asChild>
+                      <Button
+                        size="cta_sm"
+                        asChild
+                        className="w-full rounded-2xl border-0 bg-[#C9A64A] font-bold text-black shadow-none hover:bg-[#B8943F]"
+                      >
                         <Link to="/app/mua-luong">Mua thêm lượng</Link>
                       </Button>
                     </>
