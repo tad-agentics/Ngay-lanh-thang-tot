@@ -202,6 +202,7 @@ export default function AppLaSo() {
         <ScreenHeader
           title="Lá số tứ trụ"
           centerTitle
+          showBack={false}
           endAdornment={<CreditsHeaderChip />}
         />
 

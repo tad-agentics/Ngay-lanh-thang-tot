@@ -180,6 +180,7 @@ export default function AppVanThang() {
       <div className="px-4 pb-8">
         <ScreenHeader
           title="Vận tháng"
+          showBack={false}
           endAdornment={<CreditsHeaderChip />}
         />
         <p className="text-sm text-muted-foreground py-6">Đang tải…</p>
@@ -192,6 +193,7 @@ export default function AppVanThang() {
       <div className="px-4 pb-8 py-10 space-y-4">
         <ScreenHeader
           title="Vận tháng"
+          showBack={false}
           endAdornment={<CreditsHeaderChip />}
         />
         <p className="text-muted-foreground text-sm leading-relaxed">
@@ -209,6 +211,7 @@ export default function AppVanThang() {
       <div className="px-4 pb-8 py-10 space-y-4">
         <ScreenHeader
           title="Vận tháng"
+          showBack={false}
           endAdornment={<CreditsHeaderChip />}
         />
         <p className="text-muted-foreground text-sm">
@@ -245,6 +248,7 @@ export default function AppVanThang() {
     <div className="px-4 pb-8">
       <ScreenHeader
         title="Vận tháng"
+        showBack={false}
         endAdornment={<CreditsHeaderChip />}
       />
 

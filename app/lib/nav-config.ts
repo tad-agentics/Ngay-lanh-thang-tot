@@ -6,6 +6,9 @@ const NAV_PATHS = new Set([
   "/app/cai-dat",
   "/app/hop-tuoi",
   "/app/phong-thuy",
+  "/app/van-thang",
+  "/app/la-so",
+  "/app/la-so/chi-tiet",
 ]);
 
 function normalizePath(pathname: string): string {
