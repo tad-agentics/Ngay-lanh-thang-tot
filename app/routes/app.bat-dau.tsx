@@ -110,10 +110,24 @@ export default function AppBatDau() {
 
       <div className="pb-8 pt-4 text-center">
         <p className="text-muted-foreground text-xs leading-relaxed">
-          Điều khoản và chính sách sẽ có trong mục pháp lý (Wave cross-cutting).
-          Trang chủ công khai:{" "}
+          Điều khoản và chính sách:{" "}
+          <Link to="/dieu-khoan" className="text-accent underline-offset-2 underline">
+            Điều khoản sử dụng
+          </Link>
+          {" · "}
+          <Link
+            to="/chinh-sach-bao-mat"
+            className="text-accent underline-offset-2 underline"
+          >
+            Chính sách bảo mật
+          </Link>
+          . Trong app:{" "}
+          <Link to="/app/cai-dat" className="text-accent underline-offset-2 underline">
+            Cài đặt
+          </Link>
+          . Trang giới thiệu:{" "}
           <Link to="/" className="text-accent underline-offset-2 underline">
-            /
+            ngaylanhthangtot.vn
           </Link>
         </p>
       </div>
