@@ -15,14 +15,21 @@ import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import {
+  BAT_TU_BIRTH_TIME_OPTIONS,
   gioiTinhToBatTuGender,
   ngaySinhToBatTuBirthDate,
   profileToBatTuPersonQuery,
-  timeInputToBatTuBirthTime,
 } from "~/lib/bat-tu-birth";
 import {
   HOP_TUOI_RELATIONSHIP_OPTIONS,
@@ -33,13 +40,17 @@ import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 
 const GIOI_TINH_LABEL: Record<string, string> = { nam: "Nam", nu: "Nữ" };
 
+/** Không chọn giờ cụ thể → cùng mặc định trước đây (`person2_birth_time` = 11, Giờ Ngọ). */
+const HOP_OTHER_BIRTH_TIME_DEFAULT = "__default__";
+
 export default function AppHopTuoi() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
   const { costs, loading: costsLoading } = useFeatureCosts();
   const [form, setForm] = useState({
     ngaySinh: "",
-    gioSinh: "",
+    /** Mã `birth_time` tu-tru-api hoặc `HOP_OTHER_BIRTH_TIME_DEFAULT`. */
+    otherBirthTime: HOP_OTHER_BIRTH_TIME_DEFAULT,
     gioiTinh: "" as "nam" | "nu" | "",
     relationshipType: "",
   });
@@ -79,6 +90,10 @@ export default function AppHopTuoi() {
 
     setBusy(true);
     try {
+      const p2BirthTime =
+        form.otherBirthTime === HOP_OTHER_BIRTH_TIME_DEFAULT
+          ? 11
+          : Number.parseInt(form.otherBirthTime, 10);
       const res = await invokeBatTu({
         op: "hop-tuoi",
         body: {
@@ -86,7 +101,8 @@ export default function AppHopTuoi() {
           person1_birth_time: p1.birth_time ?? 11,
           person1_gender: p1.gender ?? 1,
           person2_birth_date: p2Date,
-          person2_birth_time: timeInputToBatTuBirthTime(form.gioSinh) ?? 11,
+          person2_birth_time:
+            Number.isFinite(p2BirthTime) && p2BirthTime >= 0 ? p2BirthTime : 11,
           person2_gender: p2Gender,
           ...(form.relationshipType.trim()
             ? { relationship_type: form.relationshipType.trim() }
@@ -120,7 +136,7 @@ export default function AppHopTuoi() {
     setPanel(null);
     setForm({
       ngaySinh: "",
-      gioSinh: "",
+      otherBirthTime: HOP_OTHER_BIRTH_TIME_DEFAULT,
       gioiTinh: "",
       relationshipType: "",
     });
@@ -191,7 +207,7 @@ export default function AppHopTuoi() {
                 className="text-muted-foreground text-[10px] mb-4"
                 style={{ fontFamily: "var(--font-ibm-mono)" }}
               >
-                NGƯỜI KIA — không lưu sau khi rời màn
+                Thông tin chỉ dùng cho lần xem này — không lưu
               </p>
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">
@@ -219,7 +235,7 @@ export default function AppHopTuoi() {
 
                 <div className="space-y-2">
                   <Label htmlFor="hop-other-date" className="text-xs">
-                    Ngày sinh dương lịch
+                    Ngày sinh
                   </Label>
                   <Input
                     id="hop-other-date"
@@ -233,16 +249,31 @@ export default function AppHopTuoi() {
 
                 <div className="space-y-2">
                   <Label htmlFor="hop-other-time" className="text-xs">
-                    Giờ sinh (tuỳ chọn)
+                    Giờ sinh
                   </Label>
-                  <Input
-                    id="hop-other-time"
-                    type="time"
-                    value={form.gioSinh}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, gioSinh: e.target.value }))
+                  <Select
+                    value={form.otherBirthTime}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, otherBirthTime: v }))
                     }
-                  />
+                  >
+                    <SelectTrigger
+                      id="hop-other-time"
+                      className="w-full h-[50px] text-base md:text-sm"
+                    >
+                      <SelectValue placeholder="Chọn khung giờ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={HOP_OTHER_BIRTH_TIME_DEFAULT}>
+                        Chưa rõ — mặc định Giờ Ngọ (11h–12h59)
+                      </SelectItem>
+                      {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
