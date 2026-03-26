@@ -8,6 +8,7 @@ import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -20,6 +21,7 @@ import {
 export default function AppPhongThuy() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
+  const { costs, loading: costsLoading } = useFeatureCosts();
   const [unlocked, setUnlocked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<PhongThuyView | null>(null);
@@ -68,7 +70,15 @@ export default function AppPhongThuy() {
     setUnlocked(true);
   }
 
-  if (profileLoading || !profile || !hasLaso) {
+  const phongRow = costs.phong_thuy;
+  const phongUnlockLabel =
+    busy
+      ? "Đang tải…"
+      : phongRow?.is_free || (phongRow?.credit_cost ?? 0) <= 0
+        ? "Mở khóa xem đầy đủ"
+        : `Mở khóa — ${phongRow?.credit_cost ?? 5} lượng`;
+
+  if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
       <div className="px-4 pb-8 py-10 text-sm text-muted-foreground">
         Đang tải…
@@ -80,12 +90,35 @@ export default function AppPhongThuy() {
     unlocked && view
       ? view
       : {
+          userMenhLabel: null,
+          dungThanApi: null,
+          kyThanApi: null,
           huongTot: "—",
+          huongXau: "—",
           mauTot: "—",
+          mauKy: "—",
           soTot: "—",
-          canKy: "Mở khóa để xem chi tiết.",
+          soKy: "—",
           goiY: [],
         };
+
+  const dungThanDisplay =
+    unlocked && display.dungThanApi
+      ? display.dungThanApi
+      : dungThan;
+
+  const kyLines: { label: string; value: string }[] = [];
+  if (unlocked) {
+    if (display.huongXau !== "—") {
+      kyLines.push({ label: "Hướng nên tránh", value: display.huongXau });
+    }
+    if (display.mauKy !== "—") {
+      kyLines.push({ label: "Màu nên tránh", value: display.mauKy });
+    }
+    if (display.soKy !== "—") {
+      kyLines.push({ label: "Số nên tránh", value: display.soKy });
+    }
+  }
 
   return (
     <div className="px-4 pb-8">
@@ -105,16 +138,22 @@ export default function AppPhongThuy() {
               className="text-surface-foreground/50 text-[10px] mb-3"
               style={{ fontFamily: "var(--font-ibm-mono)" }}
             >
-              {menh ? `MỆNH ${menh.toUpperCase()}` : "PHONG THỦY"}
+              {unlocked && display.userMenhLabel
+                ? `NẠP ÂM · ${display.userMenhLabel}`
+                : menh
+                  ? `MỆNH ${menh.toUpperCase()}`
+                  : "PHONG THỦY"}
             </p>
 
             {!unlocked ? (
               <p className="text-surface-foreground/80 text-sm leading-relaxed mb-4">
                 Gợi ý hướng, màu, số và bài trí theo Dụng Thần từ lá số đã lưu.
-                {dungThan ? (
+                {dungThanDisplay ? (
                   <>
                     {" "}
-                    <span className="text-accent font-medium">{dungThan}</span>
+                    <span className="text-accent font-medium">
+                      {dungThanDisplay}
+                    </span>
                   </>
                 ) : null}
               </p>
@@ -161,19 +200,52 @@ export default function AppPhongThuy() {
               </div>
             </div>
 
-            <div className="border-t border-surface-foreground/10 pt-3">
-              <p className="text-surface-foreground/60 text-xs mb-1">Cần kỵ</p>
-              <p className="text-surface-foreground/80 text-sm">
-                {display.canKy}
+            <div className="border-t border-surface-foreground/10 pt-3 space-y-2">
+              <p className="text-surface-foreground/60 text-xs mb-1 font-medium">
+                Kỵ Thần — nên tránh
               </p>
+              {!unlocked ? (
+                <p className="text-surface-foreground/80 text-sm">
+                  Mở khóa để xem hướng, màu và số nên tránh theo lá số.
+                </p>
+              ) : kyLines.length ? (
+                kyLines.map((row) => (
+                  <div key={row.label}>
+                    <p className="text-surface-foreground/50 text-[10px] mb-0.5">
+                      {row.label}
+                    </p>
+                    <p className="text-surface-foreground/80 text-sm leading-relaxed">
+                      {row.value}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-surface-foreground/80 text-sm">—</p>
+              )}
             </div>
 
-            {dungThan ? (
-              <div className="mt-3 border-t border-surface-foreground/10 pt-3">
-                <p className="text-surface-foreground/60 text-xs mb-0.5">
-                  Dụng Thần
-                </p>
-                <p className="text-accent text-sm font-medium">{dungThan}</p>
+            {(dungThanDisplay || (unlocked && display.kyThanApi)) ? (
+              <div className="mt-3 border-t border-surface-foreground/10 pt-3 space-y-2">
+                {dungThanDisplay ? (
+                  <div>
+                    <p className="text-surface-foreground/60 text-xs mb-0.5">
+                      Dụng Thần
+                    </p>
+                    <p className="text-accent text-sm font-medium">
+                      {dungThanDisplay}
+                    </p>
+                  </div>
+                ) : null}
+                {unlocked && display.kyThanApi ? (
+                  <div>
+                    <p className="text-surface-foreground/60 text-xs mb-0.5">
+                      Kỵ Thần (hành)
+                    </p>
+                    <p className="text-surface-foreground text-sm font-medium">
+                      {display.kyThanApi}
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -212,7 +284,7 @@ export default function AppPhongThuy() {
                 disabled={busy}
                 onClick={() => void runPhongThuy()}
               >
-                {busy ? "Đang tải…" : "Mở khóa (trừ lượng)"}
+                {phongUnlockLabel}
               </Button>
             </div>
           </CreditGate>

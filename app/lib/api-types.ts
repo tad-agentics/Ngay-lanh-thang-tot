@@ -194,7 +194,7 @@ export type BatTuOperation =
 
 /**
  * `body` fields match tu-tru-api where applicable — see https://tu-tru-api.fly.dev/openapi.json
- * Edge-only: `first_la_so_free` (boolean) skips credit charge for `op: "tu-tru"` when the profile has no lá số yet; it is not forwarded upstream.
+ * Edge-only flag: `first_la_so_free` (boolean) skips credit charge for `op: "tu-tru"` when the profile has no lá số yet; not forwarded to Bát Tự API. Use from Lá số / Cài đặt when dựng lá lần đầu.
  */
 export interface BatTuRequest {
   op: BatTuOperation;

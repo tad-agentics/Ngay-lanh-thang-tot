@@ -60,8 +60,8 @@ const OFFERS = [
     tag: "Nền tảng",
     title: "Lá số Tứ Trụ cá nhân",
     desc: "Nhật Chủ, Dụng Thần, Kỵ Thần, Đại Vận — làm một lần, các kết quả sau bám theo đúng mệnh của bạn.",
-    cr: "15 lượng · lưu vĩnh viễn",
-    free: false,
+    cr: "",
+    free: true,
   },
   {
     tag: "Hàng ngày",
@@ -135,7 +135,7 @@ const FAQS = [
   },
   {
     q: "Lượng có hết hạn không?",
-    a: "Mỗi lần mua lượng, dùng trong mười hai tháng kể từ ngày mua. Mở tài khoản mới được hai mươi lượng — đủ làm lá số tứ trụ (mười lăm lượng) và thử chọn ngày lần đầu (năm lượng).",
+    a: "Mỗi lần mua lượng, dùng trong mười hai tháng kể từ ngày mua. Dựng lá số tứ trụ lần đầu không trừ lượng. Mở tài khoản mới được hai mươi lượng — dùng cho chọn ngày, hợp tuổi, vận tháng và các tính năng trả phí khác.",
   },
   {
     q: "Một tài khoản dùng cho cả nhà được không?",
@@ -607,9 +607,9 @@ export default function Landing() {
             ))}
           </div>
           <div className="lp-khoi-dau-box">
-            <strong>Mở tài khoản — được hai mươi lượng tặng.</strong> Đủ dựng lá số (mười
-            lăm lượng) và thử chọn ngày một lần (năm lượng). Gói theo tháng thì không trừ
-            lượng từng việc — dùng trong thời hạn gói.
+            <strong>Mở tài khoản — được hai mươi lượng tặng.</strong> Dựng lá số không trừ
+            lượng; hai mươi lượng dùng cho chọn ngày và các tính năng trả phí. Gói theo tháng
+            thì không trừ lượng từng việc — dùng trong thời hạn gói.
           </div>
         </section>
 

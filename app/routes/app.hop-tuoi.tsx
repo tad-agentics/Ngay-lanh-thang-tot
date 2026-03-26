@@ -15,6 +15,7 @@ import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import {
@@ -32,6 +33,7 @@ const GIOI_TINH_LABEL: Record<string, string> = { nam: "Nam", nu: "Nữ" };
 export default function AppHopTuoi() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
+  const { costs, loading: costsLoading } = useFeatureCosts();
   const [form, setForm] = useState({
     ngaySinh: "",
     gioSinh: "",
@@ -109,7 +111,15 @@ export default function AppHopTuoi() {
     setForm({ ngaySinh: "", gioSinh: "", gioiTinh: "" });
   }
 
-  if (profileLoading || !profile || !hasLaso) {
+  const hopRow = costs.hop_tuoi;
+  const hopSubmitLabel =
+    busy
+      ? "Đang phân tích…"
+      : hopRow?.is_free || (hopRow?.credit_cost ?? 0) <= 0
+        ? "Kiểm tra hợp tuổi"
+        : `Kiểm tra hợp tuổi — ${hopRow?.credit_cost ?? 8} lượng`;
+
+  if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
       <div className="px-4 pb-8 py-10 text-sm text-muted-foreground">
         Đang tải…
@@ -232,7 +242,7 @@ export default function AppHopTuoi() {
               className="w-full"
               onClick={() => void handleSubmit()}
             >
-              {busy ? "Đang phân tích…" : "Kiểm tra hợp tuổi"}
+              {hopSubmitLabel}
             </Button>
           </div>
         </CreditGate>

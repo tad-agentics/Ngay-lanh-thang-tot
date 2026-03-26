@@ -25,6 +25,25 @@ function joinDirections(arr: unknown): string {
   return parts.length ? parts.join(", ") : "—";
 }
 
+/** Hướng + lý do / hành (GET /v1/phong-thuy). */
+function joinDirectionsRich(arr: unknown): string {
+  if (!Array.isArray(arr)) return "—";
+  const parts: string[] = [];
+  for (const item of arr) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const d = pickStr(o, ["direction", "huong", "name", "label"]);
+    if (d === "—") continue;
+    const reason = pickStr(o, ["reason", "ly_do", "giai_thich", "mo_ta"]);
+    const el = pickStr(o, ["element", "hanh"]);
+    let s = d;
+    if (reason !== "—") s += ` — ${reason}`;
+    else if (el !== "—") s += ` (${el})`;
+    parts.push(s);
+  }
+  return parts.length ? parts.join(" · ") : "—";
+}
+
 function joinColorLabels(arr: unknown): string {
   if (!Array.isArray(arr)) return "—";
   const parts: string[] = [];
@@ -35,6 +54,30 @@ function joinColorLabels(arr: unknown): string {
     if (c !== "—") parts.push(c);
   }
   return parts.length ? parts.join(", ") : "—";
+}
+
+/** Tên màu + mã hex khi API có (đưa tay thợ). */
+function joinColorLabelsRich(arr: unknown): string {
+  if (!Array.isArray(arr)) return "—";
+  const parts: string[] = [];
+  for (const item of arr) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const c = pickStr(o, ["color", "mau", "name", "label"]);
+    const hexRaw = pickStr(o, ["hex", "mau_hex", "color_hex"]);
+    let hex: string | null = null;
+    if (hexRaw !== "—") {
+      const t = hexRaw.trim();
+      if (/^#[0-9A-Fa-f]{3,8}$/.test(t)) hex = t;
+      else if (/^[0-9A-Fa-f]{6}$/.test(t)) hex = `#${t}`;
+    }
+    if (c !== "—") {
+      parts.push(hex ? `${c} ${hex}` : c);
+    } else if (hex) {
+      parts.push(hex);
+    }
+  }
+  return parts.length ? parts.join(" · ") : "—";
 }
 
 function joinNumbers(arr: unknown): string {
@@ -76,10 +119,17 @@ export interface PhongThuyGoiY {
 }
 
 export interface PhongThuyView {
+  /** Nạp Âm từ API ({ name, hanh }) — ưu tiên hiển thị khi có. */
+  userMenhLabel: string | null;
+  /** Dụng / Kỵ từ response (có thể khác snapshot lá số nếu API tính lại theo giờ sinh). */
+  dungThanApi: string | null;
+  kyThanApi: string | null;
   huongTot: string;
+  huongXau: string;
   mauTot: string;
+  mauKy: string;
   soTot: string;
-  canKy: string;
+  soKy: string;
   goiY: PhongThuyGoiY[];
 }
 
@@ -98,17 +148,16 @@ function normalizeGoiY(raw: unknown): PhongThuyGoiY[] {
   return out;
 }
 
-function buildCanKyFromArrays(nested: Record<string, unknown>): string {
-  const badDir = joinDirections(nested.huong_xau ?? nested.huongXau);
-  const badCol = joinColorLabels(nested.mau_ky ?? nested.mauKy);
-  const badNum = joinNumbers(nested.so_ky ?? nested.soKy);
-  const parts: string[] = [];
-  if (badDir !== "—") parts.push(`Tránh hướng: ${badDir}`);
-  if (badCol !== "—") parts.push(`Màu kỵ: ${badCol}`);
-  if (badNum !== "—") parts.push(`Số kỵ: ${badNum}`);
-  const merged = parts.length ? parts.join(". ") : "—";
-  if (merged !== "—") return merged;
-  return pickStr(nested, ["can_ky", "canKy", "avoid", "kieng_ky"]);
+function formatUserMenh(raw: unknown): string | null {
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  const o = asRecord(raw);
+  if (!o) return null;
+  const name = pickStr(o, ["name", "ten", "label", "nap_am"]);
+  const hanh = pickStr(o, ["hanh", "element", "han"]);
+  if (name !== "—" && hanh !== "—") return `${name} · ${hanh}`;
+  if (name !== "—") return name;
+  if (hanh !== "—") return hanh;
+  return null;
 }
 
 /** Map GET /v1/phong-thuy JSON → màn hình (tu-tru-api: mảng hướng/màu/số). */
@@ -118,7 +167,19 @@ export function phongThuyPayloadToView(data: unknown): PhongThuyView | null {
   const nested =
     asRecord(root.data) ?? asRecord(root.result) ?? asRecord(root.phong_thuy) ?? root;
 
-  let huongTot = joinDirections(nested.huong_tot ?? nested.huongTot);
+  const userMenhLabel =
+    formatUserMenh(nested.user_menh ?? nested.userMenh) ??
+    (pickStr(nested, ["user_menh_label", "menh_label"]) !== "—"
+      ? pickStr(nested, ["user_menh_label", "menh_label"])
+      : null);
+  const dungThanRaw = pickStr(nested, ["dung_than", "dungThan"]);
+  const kyThanRaw = pickStr(nested, ["ky_than", "kyThan"]);
+  const dungThanApi = dungThanRaw !== "—" ? dungThanRaw : null;
+  const kyThanApi = kyThanRaw !== "—" ? kyThanRaw : null;
+
+  const huArr = nested.huong_tot ?? nested.huongTot;
+  let huongTot = joinDirectionsRich(huArr);
+  if (huongTot === "—") huongTot = joinDirections(huArr);
   if (huongTot === "—") {
     huongTot = pickStr(nested, [
       "huong_tot",
@@ -129,7 +190,9 @@ export function phongThuyPayloadToView(data: unknown): PhongThuyView | null {
     ]);
   }
 
-  let mauTot = joinColorLabels(nested.mau_may_man ?? nested.mauMayMan);
+  const mauArr = nested.mau_may_man ?? nested.mauMayMan;
+  let mauTot = joinColorLabelsRich(mauArr);
+  if (mauTot === "—") mauTot = joinColorLabels(mauArr);
   if (mauTot === "—") {
     mauTot = pickStr(nested, [
       "mau_tot",
@@ -149,7 +212,42 @@ export function phongThuyPayloadToView(data: unknown): PhongThuyView | null {
     ]);
   }
 
-  let canKy = buildCanKyFromArrays(nested);
+  const hxArr = nested.huong_xau ?? nested.huongXau;
+  let huongXau = joinDirectionsRich(hxArr);
+  if (huongXau === "—") huongXau = joinDirections(hxArr);
+  if (huongXau === "—") {
+    huongXau = pickStr(nested, ["huong_xau_text", "bad_directions"]);
+  }
+
+  const mkRaw = nested.mau_ky ?? nested.mauKy;
+  let mauKy = "—";
+  if (typeof mkRaw === "string" && mkRaw.trim()) {
+    mauKy = mkRaw.trim();
+  } else {
+    mauKy = joinColorLabelsRich(mkRaw);
+    if (mauKy === "—") mauKy = joinColorLabels(mkRaw);
+  }
+  if (mauKy === "—") {
+    mauKy = pickStr(nested, [
+      "mau_ky_text",
+      "mauKyText",
+      "bad_colors",
+      "colors_to_avoid",
+      "avoid_colors",
+    ]);
+  }
+
+  let soKy = joinNumbers(nested.so_ky ?? nested.soKy);
+  if (soKy === "—") {
+    soKy = pickStr(nested, ["so_ky_text", "unlucky_numbers"]);
+  }
+
+  if (huongXau === "—" && mauKy === "—" && soKy === "—") {
+    const fallback = pickStr(nested, ["can_ky", "canKy", "avoid", "kieng_ky"]);
+    if (fallback !== "—") {
+      huongXau = fallback;
+    }
+  }
 
   let goiY = normalizeGoiY(nested.goi_y ?? nested.goiY ?? nested.suggestions);
   const fromVatPham = mapVatPhamToGoiY(nested.vat_pham ?? nested.vatPham);
@@ -165,10 +263,15 @@ export function phongThuyPayloadToView(data: unknown): PhongThuyView | null {
   }
 
   return {
+    userMenhLabel,
+    dungThanApi,
+    kyThanApi,
     huongTot,
+    huongXau,
     mauTot,
+    mauKy,
     soTot,
-    canKy,
+    soKy,
     goiY,
   };
 }

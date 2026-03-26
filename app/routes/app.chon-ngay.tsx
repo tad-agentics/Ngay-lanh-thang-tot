@@ -237,7 +237,11 @@ export default function AppChonNgay() {
             }
             onClick={() => void runLookup()}
           >
-            {busy ? "Đang tra…" : "Tìm ngày phù hợp"}
+            {busy
+              ? "Đang tra…"
+              : costRow?.is_free || (costRow?.credit_cost ?? 0) <= 0
+                ? "Tìm ngày phù hợp"
+                : `Tìm ngày phù hợp — ${costRow?.credit_cost ?? 5} lượng`}
           </Button>
         </CreditGate>
 

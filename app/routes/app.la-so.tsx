@@ -20,10 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { useProfile } from "~/hooks/useProfile";
-import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   gioiTinhToBatTuGender,
@@ -31,7 +29,6 @@ import {
   ngaySinhToBatTuBirthDate,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { cn } from "~/components/ui/utils";
 
@@ -67,11 +64,8 @@ function labelForBirthTimeCode(code: string): string {
   return opt?.label ?? code;
 }
 
-const LA_SO_FEATURE = toDbFeatureKey("la_so");
-
 export default function AppLaSo() {
   const { profile, loading, refresh } = useProfile();
-  const { costs, loading: costsLoading } = useFeatureCosts();
 
   const [phase, setPhase] = useState<Phase>("form");
   const [form, setForm] = useState({
@@ -84,8 +78,6 @@ export default function AppLaSo() {
   > | null>(null);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
-  const costRow = costs[LA_SO_FEATURE];
-  const cost = costRow?.credit_cost ?? 15;
 
   useEffect(() => {
     if (!profile || loading) return;
@@ -117,6 +109,7 @@ export default function AppLaSo() {
     const body: Record<string, unknown> = {
       birth_date,
       tz: "Asia/Ho_Chi_Minh",
+      first_la_so_free: true,
     };
     if (form.birthTimeCode !== UNSET) {
       const bt = Number(form.birthTimeCode);
@@ -149,7 +142,7 @@ export default function AppLaSo() {
     setPhase("revealing");
   }
 
-  if (loading || costsLoading) {
+  if (loading) {
     return (
       <div className="min-h-[40vh] bg-background px-4 pb-8 py-10">
         <p className="text-sm text-muted-foreground">Đang tải…</p>
@@ -325,16 +318,13 @@ export default function AppLaSo() {
               </div>
 
               <p className="text-muted-foreground text-xs mb-4">
-                Lập lá số cần{" "}
-                <span className="text-foreground" style={{ fontFamily: "var(--font-ibm-mono)" }}>
-                  {cost} lượng
-                </span>
-                . Gói đăng ký hoặc số lượng đủ sẽ được kiểm tra khi bạn xác nhận.
+                Dựng lá số lần đầu không trừ lượng — giống một phần của việc có tài khoản. Sau
+                khi xác nhận, thông tin sinh sẽ khóa theo quy định ứng dụng.
               </p>
             </div>
 
             <Button type="button" className="w-full" onClick={() => void runTuTru()}>
-              Xác nhận — lập lá số ({cost} lượng)
+              Xác nhận — lập lá số
             </Button>
             <Button type="button" variant="secondary" className="w-full" onClick={() => setPhase("form")}>
               Xem lại thông tin
@@ -428,12 +418,7 @@ export default function AppLaSo() {
       </div>
   );
 
-  const gateForm = !hasLaso && (phase === "form" || phase === "confirm");
-  return gateForm ? (
-    <CreditGate featureKey={LA_SO_FEATURE}>{core}</CreditGate>
-  ) : (
-    core
-  );
+  return core;
 }
 
 function LasoRevealBridge({
