@@ -85,6 +85,14 @@ function verdictToGradLabel(verdict: string, score: number): HopTuoiGradLabel {
   if (lower.includes("không") && lower.includes("hợp")) {
     return "Cần lưu ý";
   }
+  // Cảnh báo trước từ khẳng định mạnh ("rất", VERY) — vd. "Rất cần lưu ý" không được thành "Rất hợp".
+  if (
+    lower.includes("lưu ý") ||
+    lower.includes("rủi ro") ||
+    lower.includes("cẩn trọng")
+  ) {
+    return "Cần lưu ý";
+  }
   if (
     u.includes("RAT") ||
     lower.includes("rất") ||
@@ -92,9 +100,6 @@ function verdictToGradLabel(verdict: string, score: number): HopTuoiGradLabel {
     u.includes("VERY")
   ) {
     return "Rất hợp";
-  }
-  if (lower.includes("lưu ý") || lower.includes("rủi ro") || lower.includes("cẩn trọng")) {
-    return "Cần lưu ý";
   }
   if (lower.includes("trung bình") || lower.includes("trung tính")) {
     return "Trung bình";

@@ -76,6 +76,39 @@ describe("hopTuoiPayloadToPanel", () => {
     expect(p?.advice).toContain("văn bản");
   });
 
+  it("v2: verdict with rất + lưu ý grades as caution, not Rất hợp", () => {
+    const p = hopTuoiPayloadToPanel({
+      version: 2,
+      overall_score: 72,
+      verdict: "Rất cần lưu ý khi hợp tác",
+      nap_am_1: "A",
+      nap_am_2: "B",
+    });
+    expect(p?.gradLabel).toBe("Cần lưu ý");
+  });
+
+  it("v2: verdict rất rủi ro grades as caution", () => {
+    const p = hopTuoiPayloadToPanel({
+      version: 2,
+      overall_score: 55,
+      verdict: "Rất rủi ro về cam kết",
+      nap_am_1: "A",
+      nap_am_2: "B",
+    });
+    expect(p?.gradLabel).toBe("Cần lưu ý");
+  });
+
+  it("v2: plain Rất hợp in verdict stays top positive band", () => {
+    const p = hopTuoiPayloadToPanel({
+      version: 2,
+      overall_score: 90,
+      verdict: "Rất hợp trong công việc",
+      nap_am_1: "A",
+      nap_am_2: "B",
+    });
+    expect(p?.gradLabel).toBe("Rất hợp");
+  });
+
   it("returns null for non-object", () => {
     expect(hopTuoiPayloadToPanel(null)).toBeNull();
   });
