@@ -192,6 +192,7 @@ export default function AppHopTuoi() {
     <div className="px-4 pb-8">
       <ScreenHeader
         title="Hợp tuổi"
+        showBack={false}
         endAdornment={<CreditsHeaderChip />}
       />
 

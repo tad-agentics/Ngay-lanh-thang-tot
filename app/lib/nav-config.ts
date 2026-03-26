@@ -1,9 +1,11 @@
-/** Routes where BottomNav is visible (tab roots + chọn ngày flow) — parity with Make `nav-config.ts`. */
+/** Routes where BottomNav is visible (tab roots + chọn ngày flow + khám phá màn chọn) — parity with Make `nav-config.ts`. */
 const NAV_PATHS = new Set([
   "/app",
   "/app/chon-ngay",
   "/app/chon-ngay/ket-qua",
   "/app/cai-dat",
+  "/app/hop-tuoi",
+  "/app/phong-thuy",
 ]);
 
 function normalizePath(pathname: string): string {

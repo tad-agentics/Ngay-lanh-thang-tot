@@ -1,3 +1,14 @@
+/** Query `purpose` — GET /v1/phong-thuy (OpenAPI). */
+export const PHONG_THUY_PURPOSE_OPTIONS = [
+  { value: "NHA_O", label: "Nhà ở" },
+  { value: "VAN_PHONG", label: "Văn phòng" },
+  { value: "CUA_HANG", label: "Cửa hàng" },
+  { value: "PHONG_KHACH", label: "Phòng khách" },
+] as const;
+
+export type PhongThuyPurposeValue =
+  (typeof PHONG_THUY_PURPOSE_OPTIONS)[number]["value"];
+
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
     return x as Record<string, unknown>;

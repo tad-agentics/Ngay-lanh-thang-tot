@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import { getActiveTab, shouldShowNav } from "~/lib/nav-config";
 
 describe("nav-config", () => {
-  it("shows BottomNav only on calendar, chọn ngày, settings roots", () => {
+  it("shows BottomNav on tab roots, chọn ngày flow, hợp tuổi, phong thủy", () => {
     expect(shouldShowNav("/app")).toBe(true);
     expect(shouldShowNav("/app/chon-ngay")).toBe(true);
     expect(shouldShowNav("/app/chon-ngay/ket-qua")).toBe(true);
     expect(shouldShowNav("/app/cai-dat")).toBe(true);
+    expect(shouldShowNav("/app/hop-tuoi")).toBe(true);
+    expect(shouldShowNav("/app/phong-thuy")).toBe(true);
     expect(shouldShowNav("/app/mua-luong")).toBe(false);
     expect(shouldShowNav("/app/bat-dau")).toBe(false);
     expect(shouldShowNav("/app/la-so")).toBe(false);
@@ -18,5 +20,7 @@ describe("nav-config", () => {
     expect(getActiveTab("/app/chon-ngay/ket-qua")).toBe("chon-ngay");
     expect(getActiveTab("/app/cai-dat")).toBe("cai-dat");
     expect(getActiveTab("/app/van-thang")).toBe("kham-pha");
+    expect(getActiveTab("/app/hop-tuoi")).toBe("kham-pha");
+    expect(getActiveTab("/app/phong-thuy")).toBe("kham-pha");
   });
 });

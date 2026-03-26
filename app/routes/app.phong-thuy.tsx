@@ -9,13 +9,27 @@ import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
-import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import {
+  ngaySinhToBatTuBirthDate,
+  profileToBatTuPersonQuery,
+} from "~/lib/bat-tu-birth";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import {
+  PHONG_THUY_PURPOSE_OPTIONS,
+  type PhongThuyPurposeValue,
   phongThuyPayloadToView,
   type PhongThuyView,
 } from "~/lib/phong-thuy-ui";
@@ -30,6 +44,11 @@ export default function AppPhongThuy() {
   const [phongAiReading, setPhongAiReading] = useState<string | null>(null);
   const [phongAiLoading, setPhongAiLoading] = useState(false);
   const phongAiGenRef = useRef(0);
+  const [purpose, setPurpose] = useState<PhongThuyPurposeValue>("NHA_O");
+  const [phongYearInput, setPhongYearInput] = useState(() =>
+    String(new Date().getFullYear()),
+  );
+  const [partnerNgayIso, setPartnerNgayIso] = useState("");
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
@@ -49,6 +68,21 @@ export default function AppPhongThuy() {
       toast.error("Hồ sơ thiếu ngày sinh — cập nhật trong Cài đặt.");
       return;
     }
+    const yearN = Number.parseInt(phongYearInput.trim(), 10);
+    if (!Number.isFinite(yearN) || yearN < 1900 || yearN > 2100) {
+      toast.error("Năm Phi Tinh cần trong khoảng 1900–2100.");
+      return;
+    }
+
+    const partnerBirth =
+      partnerNgayIso.trim().length > 0
+        ? ngaySinhToBatTuBirthDate(partnerNgayIso.trim())
+        : null;
+    if (partnerNgayIso.trim().length > 0 && !partnerBirth) {
+      toast.error("Ngày sinh người cùng không gian không hợp lệ.");
+      return;
+    }
+
     setBusy(true);
     const res = await invokeBatTu({
       op: "phong-thuy",
@@ -57,6 +91,9 @@ export default function AppPhongThuy() {
         birth_time: q.birth_time,
         gender: q.gender,
         tz: q.tz ?? "Asia/Ho_Chi_Minh",
+        purpose,
+        year: yearN,
+        ...(partnerBirth ? { partner_birth_date: partnerBirth } : {}),
       },
     });
     setBusy(false);
@@ -140,6 +177,7 @@ export default function AppPhongThuy() {
     <div className="px-4 pb-8">
       <ScreenHeader
         title="Phong thủy"
+        showBack={false}
         endAdornment={<CreditsHeaderChip />}
       />
 
@@ -302,8 +340,62 @@ export default function AppPhongThuy() {
               style={{ borderRadius: "var(--radius-lg)" }}
             >
               <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                Gợi ý phong thủy đầy đủ — bàn làm việc, phòng ngủ, cây xanh.
+                Theo Dụng Thần lá số. Chọn mục đích không gian, năm tính Phi
+                Tinh (Cửu cung lưu niên) và tùy chọn ngày sinh người cùng nhà để
+                cân Nạp Âm.
               </p>
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phong-purpose" className="text-xs">
+                    Mục đích không gian
+                  </Label>
+                  <Select
+                    value={purpose}
+                    onValueChange={(v) =>
+                      setPurpose(v as PhongThuyPurposeValue)
+                    }
+                  >
+                    <SelectTrigger id="phong-purpose" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PHONG_THUY_PURPOSE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phong-year" className="text-xs">
+                    Năm dương lịch (Phi Tinh)
+                  </Label>
+                  <Input
+                    id="phong-year"
+                    type="number"
+                    min={1900}
+                    max={2100}
+                    value={phongYearInput}
+                    onChange={(e) => setPhongYearInput(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phong-partner" className="text-xs">
+                    Người cùng không gian (tùy chọn)
+                  </Label>
+                  <Input
+                    id="phong-partner"
+                    type="date"
+                    value={partnerNgayIso}
+                    onChange={(e) => setPartnerNgayIso(e.target.value)}
+                  />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Hóa giải xung Nạp Âm khi có sinh nhật hợp lệ — để trống nếu
+                    không cần.
+                  </p>
+                </div>
+              </div>
               <Button
                 size="sm"
                 disabled={busy}

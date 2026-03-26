@@ -367,7 +367,15 @@ function buildUpstream(
       spec = {
         method: "GET",
         path: "/v1/phong-thuy",
-        queryKeys: ["birth_date", "birth_time", "gender", "tz"],
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "tz",
+          "purpose",
+          "year",
+          "partner_birth_date",
+        ],
       };
       break;
 
