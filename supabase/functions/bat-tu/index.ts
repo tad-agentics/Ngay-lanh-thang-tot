@@ -18,6 +18,51 @@ const corsHeaders = {
 };
 
 /**
+ * GET /v1/phong-thuy + `detail=teaser`: bỏ các key paywall khỏi JSON trả client
+ * (upstream có thể vẫn trả full — không dựa vào UI để giữ bí mật).
+ */
+const PHONG_THUY_TEASER_STRIP_KEYS = [
+  "huong_xau",
+  "mau_ky",
+  "so_ky",
+  "vat_pham",
+  "purpose_specific",
+  "personalization",
+  "phi_tinh_year",
+  "phi_tinh",
+  "huong_tot_nam_nay",
+  "huong_xau_nam_nay",
+  "hoa_giai",
+  "phi_tinh_note_vi",
+  "couple_harmony",
+  "huongXau",
+  "mauKy",
+  "soKy",
+  "vatPham",
+  "purposeSpecific",
+  "phiTinhYear",
+  "phiTinh",
+  "huongTotNamNay",
+  "huongXauNamNay",
+  "hoaGiai",
+  "phiTinhNoteVi",
+  "coupleHarmony",
+] as const;
+
+function stripPhongThuyTeaserPayload(body: unknown): unknown {
+  if (
+    body == null || typeof body !== "object" || Array.isArray(body)
+  ) {
+    return body;
+  }
+  const o = { ...(body as Record<string, unknown>) };
+  for (const k of PHONG_THUY_TEASER_STRIP_KEYS) {
+    delete o[k];
+  }
+  return o;
+}
+
+/**
  * Expect API origin only (e.g. `https://tu-tru-api.fly.dev`). Paths already include `/v1/...`.
  * Fixes common misconfigurations:
  * - Trailing `/v1` → would become `/v1/v1/...` (404).
@@ -375,6 +420,8 @@ function buildUpstream(
           "purpose",
           "year",
           "partner_birth_date",
+          /** `teaser` | `full` — upstream may trim payload; teaser không trừ lượng. */
+          "detail",
         ],
       };
       break;
@@ -842,8 +889,12 @@ Deno.serve(async (req) => {
     op === "tu-tru" &&
     Boolean(userId) &&
     body.first_la_so_free === true;
-  const featureKeyForBilling =
+  const phongThuyTeaser =
+    op === "phong-thuy" &&
+    String(body.detail ?? "").toLowerCase() === "teaser";
+  let featureKeyForBilling =
     firstLaSoFree && featureKey === "tu_tru" ? null : featureKey;
+  if (phongThuyTeaser) featureKeyForBilling = null;
   let chargedAmount = 0;
 
   if (featureKeyForBilling && userId) {
@@ -1031,5 +1082,14 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ data });
+  const outData =
+    op === "phong-thuy" &&
+    phongThuyTeaser &&
+    data != null &&
+    typeof data === "object" &&
+    !Array.isArray(data)
+      ? stripPhongThuyTeaserPayload(data)
+      : data;
+
+  return json({ data: outData });
 });
