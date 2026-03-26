@@ -405,6 +405,10 @@ verify_jwt = false
 [functions.payos-create-checkout]
 verify_jwt = false
 
+# Same as payos-create-checkout: Bearer + getUser() inside handler.
+[functions.create-share-token]
+verify_jwt = false
+
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
 # Optional Redis cache (Upstash REST): set secrets UPSTASH_REDIS_REST_URL,
 # UPSTASH_REDIS_REST_TOKEN. TTL default 3600s; max 3600 via BAT_TU_CACHE_TTL_SEC.
