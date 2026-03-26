@@ -6,7 +6,7 @@ import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import type { Database } from "~/lib/database.types";
+import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
@@ -59,12 +59,7 @@ export default function DangKy() {
     const uid = data.user?.id;
 
     if (session && uid && landingSignupPrefillHasAny(prefill)) {
-      const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
-      if (prefill.displayName) patch.display_name = prefill.displayName;
-      if (prefill.ngaySinh) patch.ngay_sinh = prefill.ngaySinh;
-      if (prefill.gioSinh) patch.gio_sinh = prefill.gioSinh;
-      if (prefill.gioiTinh) patch.gioi_tinh = prefill.gioiTinh;
-      const { error: pe } = await supabase.from("profiles").update(patch).eq("id", uid);
+      const pe = await applyLandingPrefillToProfile(uid, prefill);
       if (pe) {
         toast.error(
           "Tài khoản đã tạo nhưng chưa lưu được ngày sinh từ form — bạn có thể nhập lại trong Cài đặt.",

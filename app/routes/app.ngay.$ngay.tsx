@@ -94,6 +94,10 @@ function purposeVerdictLabel(v: DayDetailPurposeVerdict): string {
   }
 }
 
+/** Hiển thị khi chi tiết ngày gắn nhãn Hắc Đạo — giải thích lớp lịch chung vs Bát Tự cá nhân. */
+const HAC_DAO_LASO_EXPLAINER_COPY =
+  "Ngày hắc đạo cũng có thể là ngày đẹp nhất cho một lá số. Theo thuật phong thủy truyền thống, đây là một quyết định có chủ ý — vì Bát Tự cá nhân (mệnh, dụng thần, kỵ thần) được coi là quan trọng hơn Hoàng Đạo/Hắc Đạo chung.";
+
 function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
   switch (v) {
     case "nen_lam":
@@ -471,6 +475,16 @@ export default function AppNgayChiTiet() {
       </div>
 
       <div className="px-4 pt-4 space-y-4">
+        {headerMeta?.chip?.color === "danger" ? (
+          <aside
+            className="rounded-xl border border-border/80 bg-card/90 px-3.5 py-3 shadow-sm"
+            aria-label="Vì sao ngày Hắc Đạo vẫn có thể phù hợp lá số"
+          >
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {HAC_DAO_LASO_EXPLAINER_COPY}
+            </p>
+          </aside>
+        ) : null}
         {loading ? (
           <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
         ) : !profile?.ngay_sinh ? (

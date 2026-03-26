@@ -4,15 +4,20 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import type { Route } from "./+types/landing";
 
 import "~/styles/landing-marketing.css";
 
+import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
+import { useAuth } from "~/lib/auth";
 import {
   LANDING_GIO_SINH as GIO_SINH,
+  landingSignupPrefillHasAny,
   parseLandingDobDdMmYyyy,
+  parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
 
 const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
@@ -121,6 +126,10 @@ const FAQS = [
     a: "Chúng tôi bám theo Ngọc Hạp Thông Thư — sách lịch pháp người Việt dùng quen từ lâu. Hơn năm mươi công thức sao ngày, mười hai Trực, hai mươi tám Tú được cài cố định — không kiểu đoán bừa khiến lần này khác lần khác. Kết quả nhất quán và kể được từng bước cho bạn nghe.",
   },
   {
+    q: "Chọn ngày trong ứng dụng hoạt động ra sao?",
+    a: "Không phải ngày tốt của người này là ngày tốt của người kia. Ba bước: một — loại các ngày Nguyệt Kỵ, Tam Nương, Dương Công Kỵ mà ai cũng nên tránh; hai — so từng ngày với mệnh, Dụng Thần và Kỵ Thần trong lá số của bạn (ví dụ ngày hợp mệnh Kim có thể không hợp mệnh Mộc); ba — chấm điểm theo Trực, sao cát hung và ngũ hành thuận mệnh rồi chọn những ngày đẹp nhất, thường là ba ngày đứng đầu. Sau khi đăng nhập, mở mục Chọn ngày để xem giải thích đầy đủ trước khi tra.",
+  },
+  {
     q: "Tứ trụ là gì, có cần không?",
     a: "Tứ trụ còn gọi bát tự — lấy từ ngày, tháng, năm, giờ sinh, ra hành gốc của bạn (Nhật Chủ), hành nên bổ sung (Dụng Thần), hành nên tránh (Kỵ Thần). Có lá số rồi thì bộ tính toán ưu tiên những ngày Can Chi thuận với Dụng Thần của bạn — sâu hơn hẳn chỉ tra theo năm tuổi.",
   },
@@ -193,15 +202,10 @@ export function meta({}: Route.MetaArgs) {
 
 type CTAFormFields = { name: string; dob: string; gio: string; gender: string };
 
-type CTACommitted = {
-  name: string;
-  dobIso: string;
-  gio: string;
-  gender: string;
-};
-
 function CTAForm({ id }: { id: string }) {
-  const [committed, setCommitted] = useState<CTACommitted | null>(null);
+  const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
+  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<CTAFormFields>({
     name: "",
     dob: "",
@@ -210,7 +214,7 @@ function CTAForm({ id }: { id: string }) {
   });
   const [dobError, setDobError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setDobError(null);
     const dobParsed = parseLandingDobDdMmYyyy(form.dob);
@@ -219,12 +223,33 @@ function CTAForm({ id }: { id: string }) {
       return;
     }
     if (!form.name.trim() || !form.gender) return;
-    setCommitted({
+    if (authLoading) return;
+
+    const params = new URLSearchParams({
       name: form.name.trim(),
-      dobIso: dobParsed.iso,
+      dob: dobParsed.iso,
       gio: form.gio,
       gender: form.gender,
     });
+    const prefill = parseLandingSignupPrefill(params);
+
+    const uid = session?.user?.id;
+    if (uid && landingSignupPrefillHasAny(prefill)) {
+      setBusy(true);
+      const err = await applyLandingPrefillToProfile(uid, prefill);
+      setBusy(false);
+      if (err) {
+        toast.error(
+          "Chưa lưu được hồ sơ từ form — mở Cài đặt trong app để nhập lại.",
+        );
+        return;
+      }
+      toast.success("Đã cập nhật hồ sơ.");
+      void navigate("/app/la-so");
+      return;
+    }
+
+    void navigate({ pathname: "/dang-ky", search: `?${params.toString()}` });
   }
 
   const set =
@@ -232,50 +257,14 @@ function CTAForm({ id }: { id: string }) {
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const signupSearch = committed
-    ? new URLSearchParams({
-        name: committed.name,
-        dob: committed.dobIso,
-        gio: committed.gio,
-        gender: committed.gender,
-      }).toString()
-    : "";
-
-  if (committed) {
-    return (
-      <div className="lp-cta-card">
-        <div className="lp-cta-card-inner" style={{ textAlign: "center", padding: "1rem 0" }}>
-          <div
-            style={{
-              fontFamily: "var(--font-noto), 'Noto Serif SC', serif",
-              fontSize: "2rem",
-              color: "var(--lp-gold)",
-              marginBottom: "1rem",
-            }}
-          >
-            吉
-          </div>
-          <h2 className="lp-cta-heading" style={{ marginBottom: "0.75rem" }}>
-            Lá số cho {committed.name} đã dựng xong
-          </h2>
-          <p className="lp-cta-sub" style={{ marginBottom: "1.5rem" }}>
-            Mở tài khoản để xem Nhật Chủ, Dụng Thần và các ngày tốt bám theo mệnh của
-            bạn.
-          </p>
-          <Link
-            to={{ pathname: "/dang-ky", search: `?${signupSearch}` }}
-            className="lp-btn-submit"
-          >
-            Đăng ký và xem lá số →
-          </Link>
-          <div className="lp-form-note">Hai mươi lượng tặng khi mở tài khoản</div>
-        </div>
-        <div className="lp-kanji-bg" aria-hidden>
-          吉
-        </div>
-      </div>
-    );
-  }
+  const submitBusy = authLoading || busy;
+  const submitLabel = submitBusy
+    ? busy
+      ? "Đang lưu…"
+      : "Đang tải…"
+    : session
+      ? "Lưu hồ sơ & vào lá số →"
+      : "Tiếp tục — tạo tài khoản →";
 
   return (
     <div className="lp-cta-card" id={id === "hero-form" ? "main-form" : undefined}>
@@ -290,7 +279,10 @@ function CTAForm({ id }: { id: string }) {
           Cho biết ngày giờ sinh — dựng lá số một lần, rồi mỗi lần chọn ngày đều bám
           theo đó.
         </p>
-        <form onSubmit={handleSubmit} aria-label="Nhập thông tin để dựng lá số tứ trụ">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          aria-label="Nhập thông tin để dựng lá số tứ trụ"
+        >
           <div className="lp-form-row">
             <label className="lp-form-label" htmlFor={`${id}-name`}>
               Họ tên
@@ -372,8 +364,8 @@ function CTAForm({ id }: { id: string }) {
               </select>
             </div>
           </div>
-          <button type="submit" className="lp-btn-submit">
-            Xem ngày lành cho tôi →
+          <button type="submit" className="lp-btn-submit" disabled={submitBusy}>
+            {submitLabel}
           </button>
         </form>
         <div className="lp-form-note">

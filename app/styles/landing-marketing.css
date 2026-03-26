@@ -425,8 +425,12 @@
   text-decoration: none;
   display: block;
 }
-#lp .lp-btn-submit:hover {
+#lp .lp-btn-submit:hover:not(:disabled) {
   opacity: 0.9;
+}
+#lp .lp-btn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 #lp .lp-form-note {

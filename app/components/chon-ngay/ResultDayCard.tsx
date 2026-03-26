@@ -3,6 +3,7 @@ import { Clock, Star } from "lucide-react";
 import { Link } from "react-router";
 
 import { cn } from "~/components/ui/utils";
+import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
 
 /** Figma Make — kết quả chọn ngày (thẻ A xanh đậm, B/C nền sáng). */
 const MK = {
@@ -26,6 +27,7 @@ export interface ResultDayCardProps {
   lunarLabel: string;
   truc: string;
   bestHour: string;
+  bestHourSlots?: unknown;
   reasons: string[];
   animationIndex: number;
   menh?: string;
@@ -39,6 +41,7 @@ export function ResultDayCard({
   lunarLabel,
   truc,
   bestHour,
+  bestHourSlots,
   reasons,
   animationIndex,
   menh,
@@ -46,6 +49,14 @@ export function ResultDayCard({
 }: ResultDayCardProps) {
   const isGradeA = grade === "A";
   const isB = grade === "B";
+  const bestHourFmtRaw = formatHourRangeForDisplayVi(
+    bestHour,
+    bestHourSlots,
+  );
+  const bestHourDisplay =
+    bestHourFmtRaw === "—" || !bestHourFmtRaw.trim()
+      ? bestHour.trim() || "—"
+      : bestHourFmtRaw;
 
   return (
     <motion.div
@@ -111,7 +122,7 @@ export function ResultDayCard({
           {dateLabel}
         </h3>
         <p
-          className={cn("text-[13px] mb-3", !isGradeA && "text-muted-foreground")}
+          className={cn("text-[13px]", !isGradeA && "text-muted-foreground")}
           style={{
             fontFamily: "system-ui, sans-serif",
             color: isGradeA ? MK.aSub : undefined,
@@ -120,57 +131,89 @@ export function ResultDayCard({
           {lunarLabel}
         </p>
 
-        <div
-          className={cn(
-            "flex flex-wrap items-center gap-1.5 mb-1 text-[12px] leading-snug",
-            !isGradeA && "text-muted-foreground",
-          )}
-          style={{
-            fontFamily: "system-ui, sans-serif",
-            color: isGradeA ? MK.aSub : undefined,
-          }}
-        >
-          <Clock size={13} strokeWidth={1.5} className="shrink-0 opacity-90" />
-          <span>
-            Giờ tốt: {bestHour}
-            {menh ? (
-              <>
-                {" "}
-                · mệnh {menh}
-              </>
-            ) : null}
-          </span>
-        </div>
+        {isGradeA ? (
+          <>
+            <div
+              className="flex flex-wrap items-center gap-1.5 mt-3 mb-1 text-[12px] leading-snug"
+              style={{
+                fontFamily: "system-ui, sans-serif",
+                color: MK.aSub,
+              }}
+            >
+              <Clock
+                size={13}
+                strokeWidth={1.5}
+                className="shrink-0 opacity-90"
+              />
+              <span>
+                Giờ tốt: {bestHourDisplay}
+                {menh ? (
+                  <>
+                    {" "}
+                    · mệnh {menh}
+                  </>
+                ) : null}
+              </span>
+            </div>
 
-        {reasons.length > 0 ? (
-          <div
-            className={cn(
-              "flex flex-col gap-1.5 mt-3 pt-3 border-t",
-              isGradeA ? "border-white/15" : "border-border",
-            )}
-          >
-            {reasons.map((r, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <Star
-                  size={10}
-                  className={cn(
-                    "shrink-0 mt-0.5",
-                    isGradeA ? "text-[#E8D48A]" : "text-muted-foreground",
-                  )}
-                  fill="currentColor"
-                />
-                <span
-                  className={cn(
-                    "text-xs leading-relaxed",
-                    isGradeA ? "text-[#E5E0D0]" : "text-muted-foreground",
-                  )}
-                >
-                  {r}
-                </span>
+            {reasons.length > 0 ? (
+              <div className="flex flex-col gap-1.5 mt-3 pt-3 border-t border-white/15">
+                {reasons.map((r, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <Star
+                      size={10}
+                      className="shrink-0 mt-0.5 text-[#E8D48A]"
+                      fill="currentColor"
+                    />
+                    <span className="text-xs leading-relaxed text-[#E5E0D0]">
+                      {r}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : null}
+          </>
+        ) : (
+          <div className="flex flex-col gap-2.5 mt-4">
+            <div
+              className={cn(
+                "flex items-start gap-2.5 text-[13px] leading-snug text-muted-foreground",
+              )}
+              style={{ fontFamily: "system-ui, sans-serif" }}
+            >
+              <Clock
+                size={14}
+                strokeWidth={1.5}
+                className="shrink-0 mt-0.5 text-muted-foreground/80"
+              />
+              <span>
+                Giờ tốt: {bestHourDisplay}
+                {menh ? (
+                  <>
+                    {" "}
+                    · mệnh {menh}
+                  </>
+                ) : null}
+              </span>
+            </div>
+            {reasons.length > 0
+              ? reasons.map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-start gap-2.5 text-[13px] leading-relaxed text-muted-foreground"
+                    style={{ fontFamily: "system-ui, sans-serif" }}
+                  >
+                    <Star
+                      size={12}
+                      className="shrink-0 mt-0.5 text-muted-foreground/70"
+                      fill="currentColor"
+                    />
+                    <span>{r}</span>
+                  </div>
+                ))
+              : null}
           </div>
-        ) : null}
+        )}
 
         {detailHref ? (
           <p className="mt-3 text-xs">

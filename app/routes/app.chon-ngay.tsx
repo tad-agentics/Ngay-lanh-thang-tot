@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { ChonNgayMethodologyCollapsible } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -223,6 +224,8 @@ export default function AppChonNgay() {
             </p>
           ) : null}
         </div>
+
+        <ChonNgayMethodologyCollapsible />
 
         <CreditGate featureKey={featureKey}>
           <Button

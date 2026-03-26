@@ -12,6 +12,7 @@ const ResultDayCard = lazy(() =>
     default: m.ResultDayCard,
   })),
 );
+import { chonNgayMethodologyHash } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
@@ -170,6 +171,16 @@ export default function AppChonNgayKetQua() {
               <p className="text-[#6b6558] text-[13px] leading-relaxed pb-0.5">
                 {resultDays.length} ngày phù hợp — sắp theo độ ưu tiên
               </p>
+              <p className="text-[#6b6558] text-[12px] leading-relaxed pb-0.5 -mt-0.5">
+                <Link
+                  to={`/app/chon-ngay#${chonNgayMethodologyHash()}`}
+                  className="underline font-medium text-[#5c574a] hover:text-foreground"
+                >
+                  Cách chúng tôi chọn ngày cho bạn
+                </Link>
+                {" "}
+                — lọc ngày xấu chung, đối chiếu lá số, rồi xếp hạng theo mệnh.
+              </p>
 
               <Suspense
                 fallback={
@@ -186,6 +197,7 @@ export default function AppChonNgayKetQua() {
                     lunarLabel={day.lunarLabel}
                     truc={day.truc}
                     bestHour={day.bestHour}
+                    bestHourSlots={day.bestHourSlots}
                     reasons={unlockedDetail ? day.reasons : []}
                     animationIndex={i}
                     detailHref={`/app/ngay/${day.isoDate}`}

@@ -129,6 +129,8 @@ export interface ResultDay {
   lunarLabel: string;
   truc: string;
   bestHour: string;
+  /** `gio_tot`-style slots từ API — ưu tiên khi format giờ tốt đọc được. */
+  bestHourSlots?: unknown;
   reasons: string[];
 }
 
