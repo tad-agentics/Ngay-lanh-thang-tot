@@ -63,8 +63,8 @@ export default function AppBatDau() {
             className="text-muted-foreground text-sm text-center leading-relaxed"
             style={{ maxWidth: 280 }}
           >
-            Chọn ngày, hợp tuổi, xem vận — gắn với bản mệnh của bạn, tiếng Việt rõ
-            ràng.
+            Chọn ngày lành, hợp tuổi, xem vận — cá nhân hoá hoàn toàn theo bản mệnh của
+            bạn.
           </p>
         </div>
 

@@ -209,11 +209,11 @@ export default function AppHome() {
             className="mb-3 rounded-xl border border-border bg-card px-4 py-4 text-sm space-y-3"
           >
             <p className="text-muted-foreground leading-relaxed">
-              Thêm ngày sinh (và nên có giờ sinh / giới tính) trong Cài đặt để xem Hôm nay,
-              tuần này và lịch tháng theo Bát Tự.
+              Lá số Bát Tự chưa có. Lập ngay để xem lịch Hôm nay, tuần này và tháng này theo đúng
+              mệnh và Dụng Thần của bạn — không phải kết quả chung.
             </p>
             <Button asChild variant="secondary" className="w-full sm:w-auto">
-              <Link to="/app/cai-dat">Mở Cài đặt</Link>
+              <Link to="/app/la-so">Lập lá số ngay</Link>
             </Button>
           </div>
         ) : (
