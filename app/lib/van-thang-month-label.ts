@@ -16,12 +16,57 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
 }
 
 function pickLunarMonthNum(obj: Record<string, unknown>): number | null {
-  for (const k of ["lunar_month", "month", "thang_am", "thang_am_lich"]) {
+  for (const k of [
+    "lunar_month",
+    "lunarMonth",
+    "month",
+    "thang_am",
+    "thang_am_lich",
+    "thangAm",
+  ]) {
     const v = obj[k];
     if (typeof v === "number" && v >= 1 && v <= 13) return Math.floor(v);
     if (typeof v === "string" && /^\d+$/.test(v)) {
       const n = Number.parseInt(v, 10);
       if (n >= 1 && n <= 13) return n;
+    }
+  }
+  return null;
+}
+
+const YEAR_CAN_CHI_KEYS = [
+  "year_can_chi",
+  "yearCanChi",
+  "can_chi_nam",
+  "lunar_year_name",
+  "nam_can_chi",
+  "can_chi_year",
+  "year_label",
+  "year_name",
+  "lunar_year_can_chi",
+  "nam_am_lich",
+] as const;
+
+function pickYearCanChi(obj: Record<string, unknown>): string {
+  return pickStr(obj, [...YEAR_CAN_CHI_KEYS]);
+}
+
+/** Tìm chuỗi có mẫu "tháng … năm …" ở bất kỳ chuỗi nào trong payload (tối đa vài cấp). */
+function scanObjectsForLunarProse(obj: unknown, depth: number): string | null {
+  if (depth < 0 || obj == null) return null;
+  if (typeof obj === "string" && obj.length > 8) {
+    const p = lunarTucFromProse(obj);
+    return p;
+  }
+  const r = asRecord(obj);
+  if (!r) return null;
+  for (const v of Object.values(r)) {
+    if (typeof v === "string" && v.length > 8) {
+      const p = lunarTucFromProse(v);
+      if (p) return p;
+    } else if (v && typeof v === "object") {
+      const p = scanObjectsForLunarProse(v, depth - 1);
+      if (p) return p;
     }
   }
   return null;
@@ -86,40 +131,47 @@ export function parseConvertDateLunarTucLine(raw: unknown): string | null {
     asRecord(root.data) ?? asRecord(root.result) ?? asRecord(root.payload) ?? root;
 
   const lunar = asRecord(nested.lunar);
-  const base = lunar ?? nested;
-
-  const month = pickLunarMonthNum(base);
+  const month =
+    (lunar ? pickLunarMonthNum(lunar) : null) ?? pickLunarMonthNum(nested);
   const yearName =
-    pickStr(base, [
-      "year_can_chi",
-      "yearCanChi",
-      "can_chi_nam",
-      "lunar_year_name",
-      "nam_can_chi",
-      "can_chi_year",
-      "year_label",
-    ]) ||
-    pickStr(nested, [
-      "lunar_year_can_chi",
-      "lunarYearCanChi",
-      "nam_am_lich",
-    ]);
+    pickYearCanChi(lunar ?? {}) || pickYearCanChi(nested);
 
   if (month != null && yearName) {
     return `Tháng ${month} Năm ${yearName}`;
   }
 
-  const prose = pickStr(nested, [
+  const prose = pickStr(lunar ?? nested, [
     "lunar_date",
     "lunar_label",
     "am_lich",
     "lunar_text",
     "label_am",
+    "display",
+    "text",
+    "label",
+    "formatted",
+    "full",
+    "description",
   ]);
-  if (prose) {
+  if (!prose) {
+    const proseNested = pickStr(nested, [
+      "lunar_date",
+      "lunar_label",
+      "am_lich",
+      "lunar_text",
+      "label_am",
+    ]);
+    if (proseNested) {
+      const fromProse = lunarTucFromProse(proseNested);
+      if (fromProse) return fromProse;
+    }
+  } else {
     const fromProse = lunarTucFromProse(prose);
     if (fromProse) return fromProse;
   }
+
+  const scanned = scanObjectsForLunarProse(nested, 4);
+  if (scanned) return scanned;
 
   return null;
 }

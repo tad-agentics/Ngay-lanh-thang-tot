@@ -60,6 +60,15 @@ describe("parseConvertDateLunarTucLine", () => {
     expect(s).toBe("Tháng 2 Năm Bính Ngọ");
   });
 
+  it("gộp month trong lunar với year_can_chi ở root (API tách cấp)", () => {
+    expect(
+      parseConvertDateLunarTucLine({
+        lunar: { month: 2, day: 12 },
+        year_can_chi: "Bính Ngọ",
+      }),
+    ).toBe("Tháng 2 Năm Bính Ngọ");
+  });
+
   it("reads lunar_date prose (tháng Hai)", () => {
     const s = parseConvertDateLunarTucLine({
       lunar_date: "Ngày 2 tháng Hai năm Bính Ngọ",

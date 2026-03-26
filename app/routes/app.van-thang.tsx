@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
@@ -76,6 +77,9 @@ export default function AppVanThang() {
   const [lunarTucByYm, setLunarTucByYm] = useState<
     Record<string, string | null>
   >({});
+  const [lunarPrefetch, setLunarPrefetch] = useState<
+    "idle" | "loading" | "done"
+  >("idle");
 
   const costRow = costs[VAN_FEATURE];
   const cost = costRow?.credit_cost ?? 3;
@@ -86,8 +90,12 @@ export default function AppVanThang() {
     !loading && !costsLoading && hasLaso && Boolean(q.birth_date);
 
   useEffect(() => {
-    if (!prefetchLunarLabels) return;
+    if (!prefetchLunarLabels) {
+      setLunarPrefetch("idle");
+      return;
+    }
     let cancelled = false;
+    setLunarPrefetch("loading");
     void (async () => {
       const entries = await Promise.all(
         months.map(async ({ ym }) => {
@@ -102,6 +110,7 @@ export default function AppVanThang() {
       );
       if (!cancelled) {
         setLunarTucByYm(Object.fromEntries(entries));
+        setLunarPrefetch("done");
       }
     })();
     return () => {
@@ -114,9 +123,10 @@ export default function AppVanThang() {
 
   const current = months[monthIdx] ?? months[0]!;
   const ym = current.ym;
+  const lunarLine = lunarTucByYm[ym];
   const monthHeading = buildVanThangMonthHeading(
     current.solarLabel,
-    lunarTucByYm[ym],
+    lunarLine,
   );
   const isUnlocked = Boolean(unlocked[ym]);
 
@@ -145,8 +155,12 @@ export default function AppVanThang() {
 
   if (loading || costsLoading) {
     return (
-      <div className="px-4 pb-8 py-10">
-        <p className="text-sm text-muted-foreground">Đang tải…</p>
+      <div className="px-4 pb-8">
+        <ScreenHeader
+          title="Vận tháng"
+          endAdornment={<CreditsHeaderChip />}
+        />
+        <p className="text-sm text-muted-foreground py-6">Đang tải…</p>
       </div>
     );
   }
@@ -154,7 +168,10 @@ export default function AppVanThang() {
   if (!hasLaso) {
     return (
       <div className="px-4 pb-8 py-10 space-y-4">
-        <ScreenHeader title="Vận tháng" />
+        <ScreenHeader
+          title="Vận tháng"
+          endAdornment={<CreditsHeaderChip />}
+        />
         <p className="text-muted-foreground text-sm leading-relaxed">
           Cần lá số tứ trụ trước khi xem vận tháng cá nhân hoá.
         </p>
@@ -168,7 +185,10 @@ export default function AppVanThang() {
   if (!q.birth_date) {
     return (
       <div className="px-4 pb-8 py-10 space-y-4">
-        <ScreenHeader title="Vận tháng" />
+        <ScreenHeader
+          title="Vận tháng"
+          endAdornment={<CreditsHeaderChip />}
+        />
         <p className="text-muted-foreground text-sm">
           Thiếu ngày sinh trên hồ sơ — bổ sung trong Cài đặt hoặc lập lại lá số.
         </p>
@@ -199,7 +219,10 @@ export default function AppVanThang() {
 
   return (
     <div className="px-4 pb-8">
-      <ScreenHeader title="Vận tháng" />
+      <ScreenHeader
+        title="Vận tháng"
+        endAdornment={<CreditsHeaderChip />}
+      />
 
       <div className="flex items-center justify-between mb-5" style={{ minHeight: 44 }}>
         <button
@@ -213,10 +236,19 @@ export default function AppVanThang() {
           <ChevronLeft size={18} strokeWidth={1.5} aria-hidden />
         </button>
 
-        <div className="text-center flex-1">
-          <p className="text-foreground text-sm font-medium text-pretty break-words px-1">
-            {monthHeading}
+        <div className="text-center flex-1 min-w-0 px-1">
+          <p className="text-foreground text-sm font-medium text-pretty break-words">
+            {current.solarLabel}
           </p>
+          {lunarLine ? (
+            <p className="text-muted-foreground text-xs mt-0.5 text-pretty break-words leading-snug">
+              Âm lịch: {lunarLine}
+            </p>
+          ) : lunarPrefetch === "loading" ? (
+            <p className="text-muted-foreground text-xs mt-0.5">
+              Đang tra âm lịch…
+            </p>
+          ) : null}
         </div>
 
         <button
