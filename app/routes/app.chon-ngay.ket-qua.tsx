@@ -12,7 +12,7 @@ const ResultDayCard = lazy(() =>
     default: m.ResultDayCard,
   })),
 );
-import { chonNgayMethodologyHash } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
+import { ChonNgayMethodologyCollapsible } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
@@ -47,6 +47,7 @@ export default function AppChonNgayKetQua() {
   const [resultDays, setResultDays] = useState<ResultDay[]>([]);
   const [unlockedDetail, setUnlockedDetail] = useState(false);
   const [detailBusy, setDetailBusy] = useState(false);
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
 
   useEffect(() => {
     if (!state?.payload) {
@@ -66,6 +67,7 @@ export default function AppChonNgayKetQua() {
     setPhase(0);
     setShowResults(false);
     setShowShare(false);
+    setMethodologyOpen(false);
   }, [state?.payload, parsedDays]);
 
   useEffect(() => {
@@ -172,15 +174,25 @@ export default function AppChonNgayKetQua() {
                 {resultDays.length} ngày phù hợp — sắp theo độ ưu tiên
               </p>
               <p className="text-[#6b6558] text-[12px] leading-relaxed pb-0.5 -mt-0.5">
-                <Link
-                  to={`/app/chon-ngay#${chonNgayMethodologyHash()}`}
-                  className="underline font-medium text-[#5c574a] hover:text-foreground"
+                <button
+                  type="button"
+                  id="ket-qua-methodology-toggle"
+                  aria-expanded={methodologyOpen}
+                  aria-controls="phuong-phap-chon-ngay-panel"
+                  onClick={() => setMethodologyOpen((o) => !o)}
+                  className="underline font-medium text-[#5c574a] hover:text-foreground text-left"
                 >
                   Cách chúng tôi chọn ngày cho bạn
-                </Link>
+                </button>
                 {" "}
                 — lọc ngày dữ chung, đối chiếu lá số, rồi xếp hạng theo mệnh.
               </p>
+              <ChonNgayMethodologyCollapsible
+                hideTrigger
+                open={methodologyOpen}
+                onOpenChange={setMethodologyOpen}
+                className="-mt-0.5"
+              />
 
               <Suspense
                 fallback={

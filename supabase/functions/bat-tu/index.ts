@@ -405,6 +405,7 @@ function buildUpstream(
           "person2_birth_date",
           "person2_birth_time",
           "person2_gender",
+          "relationship_type",
         ],
       };
       break;

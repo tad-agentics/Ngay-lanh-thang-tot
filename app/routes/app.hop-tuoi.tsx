@@ -24,7 +24,10 @@ import {
   profileToBatTuPersonQuery,
   timeInputToBatTuBirthTime,
 } from "~/lib/bat-tu-birth";
-import { hopTuoiPayloadToPanel } from "~/lib/hop-tuoi-result";
+import {
+  HOP_TUOI_RELATIONSHIP_OPTIONS,
+  hopTuoiPayloadToPanel,
+} from "~/lib/hop-tuoi-result";
 import { scoreToLetterGrade } from "~/lib/score-grade";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 
@@ -38,6 +41,7 @@ export default function AppHopTuoi() {
     ngaySinh: "",
     gioSinh: "",
     gioiTinh: "" as "nam" | "nu" | "",
+    relationshipType: "",
   });
   const [showResult, setShowResult] = useState(false);
   const [showShare, setShowShare] = useState(false);
@@ -83,6 +87,9 @@ export default function AppHopTuoi() {
         person2_birth_date: p2Date,
         person2_birth_time: timeInputToBatTuBirthTime(form.gioSinh) ?? 11,
         person2_gender: p2Gender,
+        ...(form.relationshipType.trim()
+          ? { relationship_type: form.relationshipType.trim() }
+          : {}),
       },
     });
     setBusy(false);
@@ -108,7 +115,12 @@ export default function AppHopTuoi() {
     setShowResult(false);
     setShowShare(false);
     setPanel(null);
-    setForm({ ngaySinh: "", gioSinh: "", gioiTinh: "" });
+    setForm({
+      ngaySinh: "",
+      gioSinh: "",
+      gioiTinh: "",
+      relationshipType: "",
+    });
   }
 
   const hopRow = costs.hop_tuoi;
@@ -179,6 +191,29 @@ export default function AppHopTuoi() {
                 NGƯỜI KIA — không lưu sau khi rời màn
               </p>
               <div className="flex flex-col gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hop-relationship" className="text-xs">
+                    Mối quan hệ (phản hồi chi tiết v2)
+                  </Label>
+                  <select
+                    id="hop-relationship"
+                    className="w-full h-10 px-3 text-sm rounded-md border border-border bg-background text-foreground"
+                    value={form.relationshipType}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        relationshipType: e.target.value,
+                      }))
+                    }
+                  >
+                    {HOP_TUOI_RELATIONSHIP_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="hop-other-date" className="text-xs">
                     Ngày sinh dương lịch
@@ -289,10 +324,13 @@ export default function AppHopTuoi() {
                   resultType: "hop_tuoi",
                   suKien: "Hợp tuổi",
                   day: {
-                    dateLabel: panel.gradLabel,
+                    dateLabel: panel.chipLabel,
                     lunarLabel: "",
                     reasons: [
-                      `${panel.gradLabel} — điểm ${panel.score}/100`,
+                      `${panel.chipLabel} — điểm ${panel.score}/100`,
+                      ...(panel.reading
+                        ? [panel.reading.slice(0, 160)]
+                        : []),
                     ],
                   },
                   grade: scoreToLetterGrade(panel.score),

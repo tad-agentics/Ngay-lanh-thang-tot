@@ -3,20 +3,7 @@ import CountUp from "react-countup";
 import { motion } from "motion/react";
 
 import { Chip } from "~/components/Chip";
-
-export type HopTuoiGradLabel =
-  | "Rất hợp"
-  | "Hợp"
-  | "Trung bình"
-  | "Cần lưu ý";
-
-interface HopTuoiResultPanelProps {
-  score: number;
-  gradLabel: HopTuoiGradLabel;
-  naphAm1: string;
-  naphAm2: string;
-  naphAmRelation: string;
-}
+import type { HopTuoiGradLabel, HopTuoiPanelView } from "~/lib/hop-tuoi-result";
 
 function scoreColor(score: number): string {
   if (score >= 85) return "oklch(0.52 0.10 155)";
@@ -35,14 +22,21 @@ function gradChipColor(
 const RADIUS = 44;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-/** D3: score count-up + ring + grade label fade. */
-export function HopTuoiResultPanel({
-  score,
-  gradLabel,
-  naphAm1,
-  naphAm2,
-  naphAmRelation,
-}: HopTuoiResultPanelProps) {
+/** D3: score count-up + ring + grade / verdict fade. */
+export function HopTuoiResultPanel(panel: HopTuoiPanelView) {
+  const {
+    apiVersion,
+    score,
+    gradLabel,
+    chipLabel,
+    naphAm1,
+    naphAm2,
+    naphAmRelation,
+    criteriaLines,
+    reading,
+    advice,
+  } = panel;
+
   const [animated, setAnimated] = useState(false);
   const ringRef = useRef<SVGCircleElement>(null);
 
@@ -106,9 +100,69 @@ export function HopTuoiResultPanel({
         className="flex flex-col items-center gap-2"
       >
         <Chip color={gradChipColor(gradLabel)} size="md" radius="sm">
-          {gradLabel}
+          {chipLabel}
         </Chip>
       </motion.div>
+
+      {apiVersion === 2 && criteriaLines.length > 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.25, duration: 0.35 }}
+          className="w-full border border-border bg-card px-4 py-3"
+          style={{ borderRadius: "var(--radius-md)" }}
+        >
+          <p
+            className="text-muted-foreground text-[10px] mb-2 uppercase tracking-wide"
+            style={{ fontFamily: "var(--font-ibm-mono)" }}
+          >
+            Tiêu chí
+          </p>
+          <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
+            {criteriaLines.map((line, i) => (
+              <li key={`${i}-${line.slice(0, 48)}`}>{line}</li>
+            ))}
+          </ul>
+        </motion.div>
+      ) : null}
+
+      {apiVersion === 2 && reading ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.3, duration: 0.35 }}
+          className="w-full border border-border bg-card px-4 py-3"
+          style={{ borderRadius: "var(--radius-md)" }}
+        >
+          <p
+            className="text-muted-foreground text-[10px] mb-2 uppercase tracking-wide"
+            style={{ fontFamily: "var(--font-ibm-mono)" }}
+          >
+            Diễn giải
+          </p>
+          <p className="text-sm text-foreground leading-relaxed">{reading}</p>
+        </motion.div>
+      ) : null}
+
+      {apiVersion === 2 && advice ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.35, duration: 0.35 }}
+          className="w-full border border-border bg-card px-4 py-3"
+          style={{ borderRadius: "var(--radius-md)" }}
+        >
+          <p
+            className="text-muted-foreground text-[10px] mb-2 uppercase tracking-wide"
+            style={{ fontFamily: "var(--font-ibm-mono)" }}
+          >
+            Gợi ý
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {advice}
+          </p>
+        </motion.div>
+      ) : null}
 
       <motion.div
         initial={{ opacity: 0 }}

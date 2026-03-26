@@ -21,6 +21,8 @@ describe("hopTuoiPayloadToPanel", () => {
       nap_am_2: "Thạch Lựu Mộc",
       summary: "Tương sinh Thổ–Mộc — tài chính ổn.",
     });
+    expect(p?.apiVersion).toBe(1);
+    expect(p?.chipLabel).toBe(p?.gradLabel);
     expect(p?.score).toBe(78);
     expect(p?.gradLabel).toBe("Hợp");
     expect(p?.naphAm1).toContain("Thổ");
@@ -31,6 +33,7 @@ describe("hopTuoiPayloadToPanel", () => {
     const p = hopTuoiPayloadToPanel({
       data: { diem: 55, nap_am_1: "A", nap_am_2: "B", mo_ta: "OK" },
     });
+    expect(p?.apiVersion).toBe(1);
     expect(p?.score).toBe(55);
     expect(p?.naphAmRelation).toBe("OK");
   });
@@ -50,6 +53,27 @@ describe("hopTuoiPayloadToPanel", () => {
     expect(p?.naphAm1).toBe("Lộ Bàng Thổ");
     expect(p?.naphAm2).toBe("Kiếm Phong Kim");
     expect(p?.naphAmRelation).toContain("tương hợp");
+  });
+
+  it("maps v2: version 2 + verdict + criteria + reading + advice", () => {
+    const p = hopTuoiPayloadToPanel({
+      version: 2,
+      overall_score: 80,
+      verdict: "Khá hợp trong quan hệ đối tác",
+      criteria: [
+        { label: "Nạp Âm tương sinh" },
+        "Địa Chi tam hợp",
+      ],
+      reading: "Hai bên bổ trợ trong giai đoạn đầu.",
+      advice: "Nên chốt cam kết bằng văn bản.",
+      nap_am_1: "Kim 1",
+      nap_am_2: "Mộc 2",
+    });
+    expect(p?.apiVersion).toBe(2);
+    expect(p?.chipLabel).toContain("Khá hợp");
+    expect(p?.criteriaLines.length).toBeGreaterThanOrEqual(2);
+    expect(p?.reading).toContain("bổ trợ");
+    expect(p?.advice).toContain("văn bản");
   });
 
   it("returns null for non-object", () => {
