@@ -4,6 +4,7 @@ import { Moon, Sun } from "lucide-react";
 
 import { Chip } from "~/components/Chip";
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
@@ -434,6 +435,7 @@ export default function AppNgayChiTiet() {
             dark
             className="pt-2 pb-2"
             titleClassName="!text-primary"
+            endAdornment={<CreditsHeaderChip forDarkSurface />}
           />
           {headerMeta?.subline || headerMeta?.chip ? (
             <div className="flex items-center justify-between gap-2 mt-1 pb-1">

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -10,6 +11,8 @@ interface ScreenHeaderProps {
   showBack?: boolean;
   /** Title visually centered (back stays tappable on the left), Figma Make style. */
   centerTitle?: boolean;
+  /** Right side (e.g. số dư) — với `centerTitle` được đặt absolute phải. */
+  endAdornment?: ReactNode;
   className?: string;
   /** Merged into the title `<h1>` (e.g. gold accent on dark headers). */
   titleClassName?: string;
@@ -23,6 +26,7 @@ export function ScreenHeader({
   onBack,
   showBack = true,
   centerTitle = false,
+  endAdornment,
   className,
   titleClassName,
   dark = false,
@@ -57,7 +61,9 @@ export function ScreenHeader({
       <div
         className={cn(
           "min-w-0",
-          centerTitle ? "w-full text-center px-11" : "flex-1",
+          centerTitle
+            ? cn("w-full text-center px-11", endAdornment && "pr-[5.5rem]")
+            : "flex-1",
         )}
       >
         <h1
@@ -86,6 +92,17 @@ export function ScreenHeader({
           </p>
         ) : null}
       </div>
+
+      {endAdornment ? (
+        <div
+          className={cn(
+            "shrink-0",
+            centerTitle && "absolute right-0 top-5 z-10",
+          )}
+        >
+          {endAdornment}
+        </div>
+      ) : null}
     </div>
   );
 }

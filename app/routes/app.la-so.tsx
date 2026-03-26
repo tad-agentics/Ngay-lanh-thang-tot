@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { useProfile } from "~/hooks/useProfile";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import {
@@ -187,7 +188,11 @@ export default function AppLaSo() {
 
   const core = (
       <div className="min-h-[60vh] bg-background px-4 pb-24">
-        <ScreenHeader title="Lá số tứ trụ" centerTitle />
+        <ScreenHeader
+          title="Lá số tứ trụ"
+          centerTitle
+          endAdornment={<CreditsHeaderChip />}
+        />
 
         {phase === "done" && displaySummary ? (
           <div className="flex flex-col gap-4">

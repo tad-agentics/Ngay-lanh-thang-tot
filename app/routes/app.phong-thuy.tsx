@@ -4,6 +4,7 @@ import { Compass } from "lucide-react";
 import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
@@ -88,7 +89,10 @@ export default function AppPhongThuy() {
 
   return (
     <div className="px-4 pb-8">
-      <ScreenHeader title="Phong thủy" />
+      <ScreenHeader
+        title="Phong thủy"
+        endAdornment={<CreditsHeaderChip />}
+      />
 
       <div className="flex flex-col gap-4">
         <div

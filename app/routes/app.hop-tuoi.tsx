@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
 
 const HopTuoiResultPanel = lazy(() =>
@@ -120,7 +121,10 @@ export default function AppHopTuoi() {
 
   return (
     <div className="px-4 pb-8">
-      <ScreenHeader title="Hợp tuổi" />
+      <ScreenHeader
+        title="Hợp tuổi"
+        endAdornment={<CreditsHeaderChip />}
+      />
 
       {!showResult ? (
         <CreditGate featureKey="hop_tuoi">

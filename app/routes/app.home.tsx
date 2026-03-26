@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Coins } from "lucide-react";
 
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { BestHourCard } from "~/components/home/BestHourCard";
 import { CalendarGrid } from "~/components/home/CalendarGrid";
 import { TodaySummaryCard } from "~/components/home/TodaySummaryCard";
@@ -18,10 +18,6 @@ import {
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
-import {
-  creditsBalanceChipLabel,
-  creditsBalanceFootnote,
-} from "~/lib/subscription";
 
 function monthYyyyMm(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
@@ -202,25 +198,7 @@ export default function AppHome() {
             ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={() => void navigate("/app/mua-luong")}
-            className="flex items-center gap-1.5 border border-border px-2.5 py-1.5 text-foreground shrink-0"
-            style={{ borderRadius: "var(--radius-pill)", minHeight: 36 }}
-            title={creditsBalanceFootnote(profile) ?? undefined}
-          >
-            <Coins size={13} className="text-accent" strokeWidth={1.5} />
-            <span
-              style={{
-                fontFamily: "var(--font-ibm-mono)",
-                fontSize: 12,
-                fontWeight: 500,
-              }}
-            >
-              {creditsBalanceChipLabel(profile)}
-              {creditsBalanceFootnote(profile) ? "" : " lượng"}
-            </span>
-          </button>
+          <CreditsHeaderChip />
         </div>
 
         {summaryErr ? <ErrorBanner message={summaryErr} /> : null}

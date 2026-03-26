@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -128,10 +129,11 @@ export default function AppChonNgay() {
 
   return (
     <div className="min-h-[60vh] bg-background pb-8">
-      <div className="px-4 pt-6 pb-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-[family-name:var(--font-lora)]">
+      <div className="px-4 pt-6 pb-2 flex items-start justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-[family-name:var(--font-lora)] min-w-0 flex-1">
           Chọn Ngày Tốt
         </h1>
+        <CreditsHeaderChip className="mt-1" />
       </div>
 
       <div className="px-4 flex flex-col gap-6">

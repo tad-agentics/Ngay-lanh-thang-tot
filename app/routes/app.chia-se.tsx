@@ -8,6 +8,7 @@ const ShareCardCanvas = lazy(() =>
   })),
 );
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { useProfile } from "~/hooks/useProfile";
@@ -185,7 +186,10 @@ export default function AppChiaSe() {
 
   return (
     <div className="px-4 pb-8">
-      <ScreenHeader title="Chia sẻ ngày tốt" />
+      <ScreenHeader
+        title="Chia sẻ ngày tốt"
+        endAdornment={<CreditsHeaderChip />}
+      />
 
       <CreditGate featureKey="share_card">
         <ChiaSeCard state={state} />
