@@ -11,6 +11,57 @@ type EdgeErrorBody = {
   error?: { code?: string; message?: string };
 };
 
+async function parseFunctionsHttpError(
+  error: FunctionsHttpError,
+): Promise<{ code: string; message: string }> {
+  const fallback =
+    error.message ?? "Edge Function trả lỗi (không có chi tiết).";
+  const res = error.context;
+  if (!res || typeof res.text !== "function") {
+    return { code: "INVOKE", message: fallback };
+  }
+  let text = "";
+  try {
+    text = await res.text();
+  } catch {
+    return { code: "INVOKE", message: fallback };
+  }
+  if (text) {
+    try {
+      const body = JSON.parse(text) as unknown;
+      if (
+        body &&
+        typeof body === "object" &&
+        "error" in body &&
+        (body as EdgeErrorBody).error != null
+      ) {
+        const e = (body as EdgeErrorBody).error!;
+        const code = typeof e.code === "string" ? e.code : "EDGE";
+        const msg =
+          typeof e.message === "string" && e.message.length ? e.message : fallback;
+        return { code, message: withPayosHint(code, msg) };
+      }
+    } catch {
+      const short = text.length > 400 ? `${text.slice(0, 400)}…` : text;
+      return { code: "INVOKE", message: short || fallback };
+    }
+  }
+  return { code: "INVOKE", message: fallback };
+}
+
+function withPayosHint(code: string, message: string): string {
+  if (code === "SERVER_CONFIG") {
+    return `${message} Trên Supabase: Project Settings → Edge Functions → Secrets — cần PAYOS_CLIENT_ID, PAYOS_API_KEY, PAYOS_CHECKSUM_KEY (và thường có SUPABASE_SERVICE_ROLE_KEY). Sau đó deploy lại function payos-create-checkout.`;
+  }
+  if (code === "UNAUTHORIZED") {
+    return `${message} Thử đăng xuất và đăng nhập lại.`;
+  }
+  if (code === "PAYOS_ERROR" || code === "DB_ERROR") {
+    return message;
+  }
+  return message;
+}
+
 export async function createPayosCheckout(
   req: CreatePayosCheckoutRequest,
 ): Promise<
@@ -23,28 +74,8 @@ export async function createPayosCheckout(
 
   if (error) {
     if (error instanceof FunctionsHttpError) {
-      try {
-        const body = (await error.context.json()) as unknown;
-        if (
-          body &&
-          typeof body === "object" &&
-          "error" in body &&
-          (body as EdgeErrorBody).error != null
-        ) {
-          const e = (body as EdgeErrorBody).error!;
-          return {
-            ok: false,
-            code: typeof e.code === "string" ? e.code : "PAYOS",
-            message:
-              typeof e.message === "string" && e.message.length
-                ? e.message
-                : (error.message ??
-                  "Không mở được cổng thanh toán lúc này."),
-          };
-        }
-      } catch {
-        // ignore parse errors
-      }
+      const parsed = await parseFunctionsHttpError(error);
+      return { ok: false, code: parsed.code, message: parsed.message };
     }
     return {
       ok: false,
