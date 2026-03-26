@@ -213,7 +213,20 @@ export interface CreatePayosCheckoutRequest {
   cancel_url: string;
 }
 
+/** Chi tiết chuyển khoản / VietQR do PayOS trả về khi tạo payment request. */
+export interface PayosTransferDetails {
+  qr_code: string | null;
+  bank_bin: string | null;
+  account_number: string | null;
+  account_name: string | null;
+  amount_vnd: number;
+  transfer_content: string;
+  provider_order_code: string;
+}
+
 export interface CreatePayosCheckoutResponse {
   order_id: string;
   checkout_url: string;
+  /** Có thể null nếu PayOS không gửi đủ trường (fallback: mở checkout_url). */
+  transfer: PayosTransferDetails | null;
 }

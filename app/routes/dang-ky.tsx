@@ -53,8 +53,11 @@ export default function DangKy() {
       toast.error(error.message);
       return;
     }
+
+    const session = data.session;
     const uid = data.user?.id;
-    if (uid && landingSignupPrefillHasAny(prefill)) {
+
+    if (session && uid && landingSignupPrefillHasAny(prefill)) {
       const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
       if (prefill.displayName) patch.display_name = prefill.displayName;
       if (prefill.ngaySinh) patch.ngay_sinh = prefill.ngaySinh;
@@ -67,8 +70,16 @@ export default function DangKy() {
         );
       }
     }
-    toast.success("Đã gửi email xác nhận (nếu bật). Kiểm tra hộp thư.");
-    navigate("/app", { replace: true });
+
+    if (session) {
+      toast.success("Đã tạo tài khoản.");
+      navigate("/app", { replace: true });
+    } else {
+      toast.success(
+        "Đã gửi email xác nhận (nếu bật). Mở link trong thư rồi đăng nhập để vào app.",
+      );
+      navigate("/dang-nhap", { replace: true });
+    }
   }
 
   return (

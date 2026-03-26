@@ -18,7 +18,8 @@ export function CreditGate({
   children: React.ReactNode;
 }) {
   const { profile, loading: profileLoading } = useProfile();
-  const { costs, loading: costsLoading } = useFeatureCosts();
+  const { costs, loading: costsLoading, error: costsError, reload: reloadCosts } =
+    useFeatureCosts();
 
   if (profileLoading || costsLoading) {
     return (
@@ -28,12 +29,43 @@ export function CreditGate({
     );
   }
 
+  if (costsError) {
+    return (
+      <div className="space-y-4">
+        <ErrorBanner
+          message={`Không tải được bảng giá lượng: ${costsError}`}
+        />
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          onClick={() => reloadCosts()}
+        >
+          Thử lại
+        </Button>
+      </div>
+    );
+  }
+
   const row = costs[featureKey];
   if (!row) {
     if (import.meta.env.DEV) {
-      console.warn(`CreditGate: unknown feature_key "${featureKey}"`);
+      console.warn(`CreditGate: missing feature_credit_costs row for "${featureKey}"`);
     }
-    return <>{children}</>;
+    return (
+      <div className="space-y-4">
+        <ErrorBanner
+          message="Chưa cấu hình lượng cho tính năng này trên hệ thống. Bạn có thể thử tải lại."
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full sm:w-auto"
+          onClick={() => reloadCosts()}
+        >
+          Thử lại
+        </Button>
+      </div>
+    );
   }
 
   if (row.is_free || row.credit_cost <= 0) {

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { PayCheckoutSheet } from "~/components/PayCheckoutSheet";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
-import type { PackageSku } from "~/lib/api-types";
+import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { createPayosCheckout } from "~/lib/payos";
 import { UI_PACKAGES } from "~/lib/packages";
 import { useProfile } from "~/hooks/useProfile";
@@ -11,6 +12,9 @@ import { useProfile } from "~/hooks/useProfile";
 export default function AppMuaLuong() {
   const { profile, loading } = useProfile();
   const [busySku, setBusySku] = useState<PackageSku | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [checkoutPayload, setCheckoutPayload] =
+    useState<CreatePayosCheckoutResponse | null>(null);
 
   async function checkout(sku: PackageSku) {
     setBusySku(sku);
@@ -25,7 +29,15 @@ export default function AppMuaLuong() {
       toast.error(result.message);
       return;
     }
-    window.location.href = result.data.checkout_url;
+    setCheckoutPayload(result.data);
+    setSheetOpen(true);
+  }
+
+  function handleSheetOpen(open: boolean) {
+    setSheetOpen(open);
+    if (!open) {
+      setCheckoutPayload(null);
+    }
   }
 
   return (
@@ -77,11 +89,17 @@ export default function AppMuaLuong() {
               disabled={busySku !== null}
               onClick={() => void checkout(pkg.sku)}
             >
-              {busySku === pkg.sku ? "Đang chuyển…" : "Thanh toán"}
+              {busySku === pkg.sku ? "Đang tạo đơn…" : "Thanh toán"}
             </Button>
           </li>
         ))}
       </ul>
+
+      <PayCheckoutSheet
+        open={sheetOpen}
+        onOpenChange={handleSheetOpen}
+        payload={checkoutPayload}
+      />
     </div>
   );
 }

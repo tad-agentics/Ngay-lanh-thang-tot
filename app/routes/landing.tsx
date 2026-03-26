@@ -7,7 +7,6 @@ import {
 import { Link } from "react-router";
 
 import type { Route } from "./+types/landing";
-import { useInstallPrompt } from "~/hooks/useInstallPrompt";
 
 import "~/styles/landing-marketing.css";
 
@@ -360,16 +359,21 @@ function LandingFaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
+function readStandalonePwa(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+      true
+  );
+}
+
 export default function Landing() {
-  const install = useInstallPrompt();
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => {
-      if (window.scrollY > 120) install.markEngaged();
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [install.markEngaged]);
+    setIsStandalone(readStandalonePwa());
+  }, []);
 
   return (
     <>
@@ -387,7 +391,7 @@ export default function Landing() {
             <Link to="/dang-nhap" className="lp-nav-login">
               Đăng nhập
             </Link>
-            {install.isStandalone ? (
+            {isStandalone ? (
               <Link to="/app" className="lp-nav-cta">
                 <span className="lp-nav-cta-long">Mở ứng dụng</span>
                 <span className="lp-nav-cta-short">Vào ngay</span>
@@ -621,58 +625,6 @@ export default function Landing() {
           <span className="lp-ft-note">© 2026 ngaylanhthangtot.vn</span>
         </footer>
       </div>
-
-      {install.engaged &&
-      !install.isStandalone &&
-      (install.canInstall || install.showIosInstructions) ? (
-        <div
-          className="fixed bottom-0 inset-x-0 z-[1000] border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-          style={{
-            borderColor: "var(--lp-border)",
-            background: "rgba(228,223,214,.95)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <div className="mx-auto max-w-3xl flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-            <p className="text-sm" style={{ color: "var(--lp-muted)" }}>
-              Ghim vào màn hình — lần sau mở không phải gõ địa chỉ.
-            </p>
-            <div className="flex gap-2">
-              {install.canInstall ? (
-                <button
-                  type="button"
-                  className="lp-nav-cta"
-                  onClick={() => void install.promptInstall()}
-                >
-                  Cài ứng dụng
-                </button>
-              ) : null}
-              {install.isStandalone ? (
-                <Link to="/app" className="lp-nav-cta">
-                  <span className="lp-nav-cta-long">Mở ứng dụng</span>
-                  <span className="lp-nav-cta-short">Vào ngay</span>
-                </Link>
-              ) : (
-                <a href="#main-form" className="lp-nav-cta">
-                  <span className="lp-nav-cta-long">Dựng lá số miễn phí</span>
-                  <span className="lp-nav-cta-short">Thử ngay</span>
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {install.showIosInstructions && !install.isStandalone ? (
-        <p
-          className="mx-auto max-w-3xl px-4 pb-6 text-sm text-center"
-          style={{ color: "var(--lp-muted)" }}
-        >
-          Trên điện thoại, trong trình duyệt đi kèm máy, bấm nút Chia sẻ và chọn{" "}
-          <strong style={{ color: "var(--lp-ink)" }}>Thêm vào Màn hình chính</strong> — lần
-          sau mở lên tựa như một ứng dụng riêng.
-        </p>
-      ) : null}
     </>
   );
 }

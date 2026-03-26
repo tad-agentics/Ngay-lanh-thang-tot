@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@supabase/supabase-js": [
+        "../../node_modules/@supabase/supabase-js"
+      ]
+    }
+  },
+  "include": ["./**/*.ts", "./**/*.d.ts"]
+}
