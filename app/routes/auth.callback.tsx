@@ -69,18 +69,28 @@ export default function AuthCallback() {
 
     const t = window.setTimeout(() => {
       if (!active || settled) return;
-      void supabase.auth.getSession().then(({ data, error }) => {
-        if (!active || settled) return;
-        if (error) {
-          goLogin(error.message);
-          return;
-        }
-        if (data.session) {
-          goApp();
-        } else {
-          goLogin("Không lấy được phiên. Thử đăng nhập lại.");
-        }
-      });
+      void supabase.auth
+        .getSession()
+        .then(({ data, error }) => {
+          if (!active || settled) return;
+          if (error) {
+            goLogin(error.message);
+            return;
+          }
+          if (data.session) {
+            goApp();
+          } else {
+            goLogin("Không lấy được phiên. Thử đăng nhập lại.");
+          }
+        })
+        .catch((e) => {
+          if (!active || settled) return;
+          goLogin(
+            e instanceof Error
+              ? e.message
+              : "Lỗi mạng khi lấy phiên đăng nhập.",
+          );
+        });
     }, SESSION_WAIT_MS);
 
     return () => {

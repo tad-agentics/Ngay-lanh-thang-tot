@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "@supabase/supabase-js";
 import {
   generateOrderCode,
   isPackageSku,
@@ -85,7 +85,11 @@ Deno.serve(async (req) => {
     cancel_url?: string;
   };
   try {
-    body = await req.json();
+    body = (await req.json()) as {
+      package_sku?: string;
+      return_url?: string;
+      cancel_url?: string;
+    };
   } catch {
     return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400);
   }
@@ -177,7 +181,17 @@ Deno.serve(async (req) => {
   const payosJson = await payosRes.json().catch(() => ({})) as {
     code?: string;
     desc?: string;
-    data?: { checkoutUrl?: string; paymentLinkId?: string };
+    data?: {
+      checkoutUrl?: string;
+      paymentLinkId?: string;
+      qrCode?: string;
+      bin?: string;
+      accountNumber?: string;
+      accountName?: string;
+      amount?: number;
+      description?: string;
+      orderCode?: number;
+    };
   };
 
   await admin
@@ -188,7 +202,13 @@ Deno.serve(async (req) => {
     })
     .eq("id", orderRow.id);
 
-  if (!payosRes.ok || payosJson.code !== "00" || !payosJson.data?.checkoutUrl) {
+  if (
+    !payosRes.ok ||
+    payosJson.code !== "00" ||
+    !payosJson.data ||
+    typeof payosJson.data.checkoutUrl !== "string" ||
+    payosJson.data.checkoutUrl.length === 0
+  ) {
     console.error("PayOS error", payosRes.status, payosJson);
     await admin
       .from("payment_orders")
@@ -205,8 +225,45 @@ Deno.serve(async (req) => {
     );
   }
 
+  const pdata = payosJson.data;
+
+  const amountVnd =
+    typeof pdata.amount === "number" && Number.isFinite(pdata.amount)
+      ? pdata.amount
+      : pkg.amountVnd;
+
+  const hasTransfer =
+    (typeof pdata.qrCode === "string" && pdata.qrCode.length > 0) ||
+    (typeof pdata.accountNumber === "string" &&
+      pdata.accountNumber.length > 0);
+
+  const transfer = hasTransfer
+    ? {
+      qr_code:
+        typeof pdata.qrCode === "string" && pdata.qrCode.length > 0
+          ? pdata.qrCode
+          : null,
+      bank_bin: typeof pdata.bin === "string" ? pdata.bin : null,
+      account_number:
+        typeof pdata.accountNumber === "string" && pdata.accountNumber.length > 0
+          ? pdata.accountNumber
+          : null,
+      account_name:
+        typeof pdata.accountName === "string" && pdata.accountName.length > 0
+          ? pdata.accountName
+          : null,
+      amount_vnd: amountVnd,
+      transfer_content:
+        typeof pdata.description === "string" && pdata.description.length > 0
+          ? pdata.description
+          : pkg.description,
+      provider_order_code: String(pdata.orderCode ?? orderCode),
+    }
+    : null;
+
   return json({
     order_id: orderRow.id,
-    checkout_url: payosJson.data.checkoutUrl,
+    checkout_url: pdata.checkoutUrl,
+    transfer,
   });
 });
