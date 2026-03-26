@@ -22,6 +22,7 @@ const corsHeaders = {
  * (upstream có thể vẫn trả full — không dựa vào UI để giữ bí mật).
  */
 const PHONG_THUY_TEASER_STRIP_KEYS = [
+  "ky_than",
   "huong_xau",
   "mau_ky",
   "so_ky",
@@ -35,6 +36,7 @@ const PHONG_THUY_TEASER_STRIP_KEYS = [
   "hoa_giai",
   "phi_tinh_note_vi",
   "couple_harmony",
+  "kyThan",
   "huongXau",
   "mauKy",
   "soKy",

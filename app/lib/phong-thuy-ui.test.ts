@@ -108,6 +108,7 @@ describe("phongThuyPayloadToView", () => {
     expect(v?.mauKy).toBe("—");
     expect(v?.goiY).toEqual([]);
     expect(v?.purposeSpecific).toBeNull();
+    expect(v?.kyThanApi).toBeNull();
   });
 
   it("maps full sample: phi tinh + couple + purpose_specific", () => {

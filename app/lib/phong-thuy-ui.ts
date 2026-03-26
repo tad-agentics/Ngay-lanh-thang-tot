@@ -486,9 +486,7 @@ function phongThuyPayloadToViewInner(
       ? pickStr(nested, ["user_menh_label", "menh_label"])
       : null);
   const dungThanRaw = pickStr(nested, ["dung_than", "dungThan"]);
-  const kyThanRaw = pickStr(nested, ["ky_than", "kyThan"]);
   const dungThanApi = dungThanRaw !== "—" ? dungThanRaw : null;
-  const kyThanApi = kyThanRaw !== "—" ? kyThanRaw : null;
 
   const huArr = nested.huong_tot ?? nested.huongTot;
   const huongTotItems = parseDirectionItems(huArr);
@@ -534,7 +532,7 @@ function phongThuyPayloadToViewInner(
       purpose,
       userMenhLabel,
       dungThanApi,
-      kyThanApi,
+      kyThanApi: null,
       huongTotItems,
       mauTotItems,
       soTotNumbers,
@@ -556,6 +554,9 @@ function phongThuyPayloadToViewInner(
       coupleHarmony: null,
     };
   }
+
+  const kyThanRaw = pickStr(nested, ["ky_than", "kyThan"]);
+  const kyThanApi = kyThanRaw !== "—" ? kyThanRaw : null;
 
   const hxArr = nested.huong_xau ?? nested.huongXau;
   const hxItems = parseDirectionItems(hxArr);
@@ -674,7 +675,7 @@ function joinNumbersLegacy(arr: unknown): string {
   return nums.length ? nums.join(", ") : "—";
 }
 
-/** Chỉ block 1–2 (tốt): meta + mệnh + Dụng/Kỵ + hướng/màu/số tốt — không map paywall fields. */
+/** Chỉ block tốt: meta + mệnh + Dụng Thần + hướng/màu/số tốt — không Kỵ Thần và không map paywall fields. */
 export function phongThuyPayloadToTeaserView(data: unknown): PhongThuyView | null {
   return phongThuyPayloadToViewInner(data, "teaser");
 }
