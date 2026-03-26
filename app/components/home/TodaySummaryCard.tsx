@@ -1,3 +1,4 @@
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import type { DayType } from "~/lib/api-types";
@@ -7,6 +8,8 @@ interface TodaySummaryCardProps {
   lunarDate: string;
   solarDate: string;
   isLoading?: boolean;
+  aiReading?: string | null;
+  aiReadingLoading?: boolean;
 }
 
 export function TodaySummaryCard({
@@ -14,6 +17,8 @@ export function TodaySummaryCard({
   lunarDate,
   solarDate,
   isLoading,
+  aiReading = null,
+  aiReadingLoading = false,
 }: TodaySummaryCardProps) {
   if (isLoading) {
     return (
@@ -81,6 +86,13 @@ export function TodaySummaryCard({
         >
           {lunarDate}
         </p>
+
+        <AiReadingBlock
+          title="Diễn giải nhanh"
+          variant="on-surface"
+          loading={aiReadingLoading}
+          text={aiReading}
+        />
       </div>
     </div>
   );

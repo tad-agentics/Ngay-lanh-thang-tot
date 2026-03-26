@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Moon, Sun } from "lucide-react";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -18,6 +19,7 @@ import {
   type DayDetailPurposeVerdict,
 } from "~/lib/day-detail-view";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
@@ -146,6 +148,8 @@ function DayDetailFetched({
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payload, setPayload] = useState<unknown>(null);
+  const [dayAiReading, setDayAiReading] = useState<string | null>(null);
+  const [dayAiLoading, setDayAiLoading] = useState(false);
   const onPayloadRef = useRef(onPayload);
   onPayloadRef.current = onPayload;
 
@@ -164,6 +168,8 @@ function DayDetailFetched({
     }
     setLoading(true);
     setErr(null);
+    setDayAiReading(null);
+    setDayAiLoading(false);
     onPayloadRef.current?.(null);
     void (async () => {
       const res = await invokeBatTu({
@@ -180,6 +186,17 @@ function DayDetailFetched({
       }
       setPayload(res.data);
       onPayloadRef.current?.(res.data);
+      setDayAiLoading(true);
+      setDayAiReading(null);
+      void invokeGenerateReading({
+        endpoint: "day-detail",
+        data: res.data,
+      }).then((r) => {
+        if (!cancelled) {
+          setDayAiReading(r.reading);
+          setDayAiLoading(false);
+        }
+      });
     })();
     return () => {
       cancelled = true;
@@ -227,6 +244,13 @@ function DayDetailFetched({
               <p className="text-sm text-muted-foreground">—</p>
             )}
           </section>
+
+          <AiReadingBlock
+            title="Diễn giải nhanh"
+            variant="on-card"
+            loading={dayAiLoading}
+            text={dayAiReading}
+          />
 
           <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
             <div className="flex gap-3 items-start">
@@ -389,19 +413,27 @@ function DayDetailFetched({
           ) : null}
         </>
       ) : (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p
-            className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
-            style={{ fontFamily: "var(--font-ibm-mono)" }}
-          >
-            Nhận xét
-          </p>
-          <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
-            {fallbackLines.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ul>
-        </div>
+        <>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p
+              className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
+              style={{ fontFamily: "var(--font-ibm-mono)" }}
+            >
+              Nhận xét
+            </p>
+            <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
+              {fallbackLines.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          </div>
+          <AiReadingBlock
+            title="Diễn giải nhanh"
+            variant="on-card"
+            loading={dayAiLoading}
+            text={dayAiReading}
+          />
+        </>
       )}
     </div>
   );

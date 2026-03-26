@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
@@ -26,6 +27,7 @@ import {
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   gioiTinhToBatTuGender,
@@ -63,6 +65,9 @@ export default function AppHopTuoi() {
     null,
   );
   const [lastError, setLastError] = useState<string | null>(null);
+  const [hopAiReading, setHopAiReading] = useState<string | null>(null);
+  const [hopAiLoading, setHopAiLoading] = useState(false);
+  const hopAiGenRef = useRef(0);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
@@ -130,6 +135,17 @@ export default function AppHopTuoi() {
       }
       setPanel(mapped);
       setShowResult(true);
+      const gen = ++hopAiGenRef.current;
+      setHopAiReading(null);
+      setHopAiLoading(true);
+      void invokeGenerateReading({
+        endpoint: "hop-tuoi",
+        data: res.data,
+      }).then((r) => {
+        if (gen !== hopAiGenRef.current) return;
+        setHopAiReading(r.reading);
+        setHopAiLoading(false);
+      });
       window.setTimeout(() => setShowShare(true), 1600);
     } finally {
       setBusy(false);
@@ -137,10 +153,13 @@ export default function AppHopTuoi() {
   }
 
   function handleReset() {
+    hopAiGenRef.current += 1;
     setShowResult(false);
     setShowShare(false);
     setLastError(null);
     setPanel(null);
+    setHopAiReading(null);
+    setHopAiLoading(false);
     setForm({
       ngaySinh: "",
       otherBirthTime: HOP_OTHER_BIRTH_TIME_DEFAULT,
@@ -347,6 +366,13 @@ export default function AppHopTuoi() {
           >
             <HopTuoiResultPanel {...panel} />
           </Suspense>
+
+          <AiReadingBlock
+            title="Tóm lại cho bạn"
+            variant="on-card"
+            loading={hopAiLoading}
+            text={hopAiReading}
+          />
 
           <div className="px-1">
             {panel.apiVersion === 2 ? (

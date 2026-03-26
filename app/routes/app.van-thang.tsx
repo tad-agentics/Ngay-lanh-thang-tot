@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
@@ -11,6 +12,7 @@ import { useProfile } from "~/hooks/useProfile";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { mapTieuVanPayload, type TieuVanUi } from "~/lib/tieu-van-ui";
@@ -80,6 +82,13 @@ export default function AppVanThang() {
   const [lunarPrefetch, setLunarPrefetch] = useState<
     "idle" | "loading" | "done"
   >("idle");
+  const [tieuVanAiReading, setTieuVanAiReading] = useState<
+    Record<string, string | null>
+  >({});
+  const [tieuVanAiLoading, setTieuVanAiLoading] = useState<
+    Record<string, boolean>
+  >({});
+  const tieuVanAiGenRef = useRef<Record<string, number>>({});
 
   const costRow = costs[VAN_FEATURE];
   const cost = costRow?.credit_cost ?? 3;
@@ -147,6 +156,19 @@ export default function AppVanThang() {
       }
       const ui = mapTieuVanPayload(res.data);
       setUnlocked((prev) => ({ ...prev, [ym]: ui }));
+      const ymKey = ym;
+      const nextGen = (tieuVanAiGenRef.current[ymKey] ?? 0) + 1;
+      tieuVanAiGenRef.current[ymKey] = nextGen;
+      setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
+      setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: true }));
+      void invokeGenerateReading({
+        endpoint: "tieu-van",
+        data: res.data,
+      }).then((r) => {
+        if (tieuVanAiGenRef.current[ymKey] !== nextGen) return;
+        setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: r.reading }));
+        setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: false }));
+      });
       await refresh();
     } finally {
       setUnlocking(false);
@@ -216,6 +238,8 @@ export default function AppVanThang() {
     detail ? stripRedundantSolarMonthPrefix(detail.tongQuan, ym) : "";
   const canLuuDisplay =
     detail ? stripRedundantSolarMonthPrefix(detail.canLuu, ym) : "";
+  const tieuVanAiLoad = tieuVanAiLoading[ym] ?? false;
+  const tieuVanAiText = tieuVanAiReading[ym] ?? null;
 
   return (
     <div className="px-4 pb-8">
@@ -331,6 +355,13 @@ export default function AppVanThang() {
                 <p>{tongQuanDisplay}</p>
               </div>
             </QualitativeCard>
+
+            <AiReadingBlock
+              title="Diễn giải nhanh"
+              variant="on-card"
+              loading={tieuVanAiLoad}
+              text={tieuVanAiText}
+            />
 
             {detail.tags.length > 0 ? (
               <div

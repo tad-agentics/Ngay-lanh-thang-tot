@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
   buildCalendarDaysForMonth,
   parseNgayHomNayForHome,
@@ -43,6 +44,8 @@ export default function AppHome() {
   const [summaryErr, setSummaryErr] = useState<string | null>(null);
   const [calendarErr, setCalendarErr] = useState<string | null>(null);
   const [todayHome, setTodayHome] = useState<NgayHomNayHome | null>(null);
+  const [todayAiReading, setTodayAiReading] = useState<string | null>(null);
+  const [todayAiReadingLoading, setTodayAiReadingLoading] = useState(false);
   const [weeklyCount, setWeeklyCount] = useState<number | null>(null);
   const [lichPayload, setLichPayload] = useState<unknown | null>(null);
 
@@ -59,6 +62,8 @@ export default function AppHome() {
       setSummaryLoading(false);
       setSummaryErr(null);
       setTodayHome(null);
+      setTodayAiReading(null);
+      setTodayAiReadingLoading(false);
       setWeeklyCount(null);
       return;
     }
@@ -66,6 +71,8 @@ export default function AppHome() {
     let cancelled = false;
     setSummaryLoading(true);
     setSummaryErr(null);
+    setTodayAiReading(null);
+    setTodayAiReadingLoading(false);
 
     void (async () => {
       const body = profileToBatTuPersonQuery(profile);
@@ -82,6 +89,18 @@ export default function AppHome() {
         parsedToday = parseNgayHomNayForHome(nhn.data);
         if (!parsedToday)
           errs.push("Không tải được kết quả Hôm nay lúc này. Thử lại sau vài giây.");
+        else {
+          setTodayAiReadingLoading(true);
+          void invokeGenerateReading({
+            endpoint: "ngay-hom-nay",
+            data: nhn.data,
+          }).then((r) => {
+            if (!cancelled) {
+              setTodayAiReading(r.reading);
+              setTodayAiReadingLoading(false);
+            }
+          });
+        }
       } else {
         errs.push(nhn.message);
       }
@@ -223,6 +242,10 @@ export default function AppHome() {
               lunarDate={todayHome?.lunarLabel ?? "—"}
               solarDate={todayHome?.solarDateVi ?? "—"}
               isLoading={summaryLoading}
+              aiReading={todayAiReading}
+              aiReadingLoading={
+                !summaryLoading && todayHome != null ? todayAiReadingLoading : false
+              }
             />
             <BestHourCard
               hourRange={todayHome?.hourRange ?? "—"}

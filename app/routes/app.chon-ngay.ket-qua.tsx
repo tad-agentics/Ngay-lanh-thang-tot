@@ -12,6 +12,7 @@ const ResultDayCard = lazy(() =>
     default: m.ResultDayCard,
   })),
 );
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { ChonNgayMethodologyCollapsible } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
@@ -23,6 +24,7 @@ import {
   mergeReasonsIntoDays,
 } from "~/lib/chon-ngay-result";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
@@ -48,6 +50,8 @@ export default function AppChonNgayKetQua() {
   const [unlockedDetail, setUnlockedDetail] = useState(false);
   const [detailBusy, setDetailBusy] = useState(false);
   const [methodologyOpen, setMethodologyOpen] = useState(false);
+  const [chonAiReading, setChonAiReading] = useState<string | null>(null);
+  const [chonAiLoading, setChonAiLoading] = useState(false);
 
   useEffect(() => {
     if (!state?.payload) {
@@ -68,7 +72,28 @@ export default function AppChonNgayKetQua() {
     setShowResults(false);
     setShowShare(false);
     setMethodologyOpen(false);
+    setChonAiReading(null);
+    setChonAiLoading(false);
   }, [state?.payload, parsedDays]);
+
+  useEffect(() => {
+    if (!state?.payload) return;
+    let cancelled = false;
+    setChonAiLoading(true);
+    setChonAiReading(null);
+    void invokeGenerateReading({
+      endpoint: "chon-ngay",
+      data: state.payload,
+    }).then((r) => {
+      if (!cancelled) {
+        setChonAiReading(r.reading);
+        setChonAiLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [state?.payload]);
 
   useEffect(() => {
     if (!state?.payload) return;
@@ -192,6 +217,13 @@ export default function AppChonNgayKetQua() {
                 open={methodologyOpen}
                 onOpenChange={setMethodologyOpen}
                 className="-mt-0.5"
+              />
+
+              <AiReadingBlock
+                title="Diễn giải nhanh"
+                variant="on-card"
+                loading={chonAiLoading}
+                text={chonAiReading}
               />
 
               <Suspense

@@ -184,6 +184,26 @@ export interface Database {
         };
         Relationships: [];
       };
+      reading_cache: {
+        Row: {
+          cache_key: string;
+          reading: string;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          cache_key: string;
+          reading: string;
+          created_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          reading?: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

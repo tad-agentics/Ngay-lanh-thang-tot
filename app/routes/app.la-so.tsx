@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ const LasoRevealSequence = lazy(() =>
     default: m.LasoRevealSequence,
   })),
 );
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
@@ -29,6 +30,7 @@ import {
   ngaySinhToBatTuBirthDate,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { cn } from "~/components/ui/utils";
 
@@ -76,6 +78,9 @@ export default function AppLaSo() {
   const [reveal, setReveal] = useState<ReturnType<
     typeof laSoJsonToRevealProps
   > | null>(null);
+  const [tuTruAiReading, setTuTruAiReading] = useState<string | null>(null);
+  const [tuTruAiLoading, setTuTruAiLoading] = useState(false);
+  const tuTruAiGenRef = useRef(0);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
 
@@ -119,12 +124,25 @@ export default function AppLaSo() {
     if (g !== undefined) body.gender = g;
 
     setPhase("loading");
+    setTuTruAiReading(null);
+    setTuTruAiLoading(false);
     const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
     if (!res.ok) {
       toast.error(res.message);
       setPhase("confirm");
       return;
     }
+
+    const tuTruGen = ++tuTruAiGenRef.current;
+    setTuTruAiLoading(true);
+    void invokeGenerateReading({
+      endpoint: "tu-tru",
+      data: res.data,
+    }).then((r) => {
+      if (tuTruGen !== tuTruAiGenRef.current) return;
+      setTuTruAiReading(r.reading);
+      setTuTruAiLoading(false);
+    });
 
     const props =
       laSoJsonToRevealProps(res.data) ??
@@ -265,6 +283,13 @@ export default function AppLaSo() {
                 </div>
               </div>
             </div>
+
+            <AiReadingBlock
+              title="Diễn giải nhanh"
+              variant="on-card"
+              loading={tuTruAiLoading}
+              text={tuTruAiReading}
+            />
 
             <Button
               size="default"

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Compass } from "lucide-react";
 import { toast } from "sonner";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
@@ -11,6 +12,7 @@ import { Button } from "~/components/ui/button";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import {
@@ -25,6 +27,9 @@ export default function AppPhongThuy() {
   const [unlocked, setUnlocked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<PhongThuyView | null>(null);
+  const [phongAiReading, setPhongAiReading] = useState<string | null>(null);
+  const [phongAiLoading, setPhongAiLoading] = useState(false);
+  const phongAiGenRef = useRef(0);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
@@ -68,6 +73,17 @@ export default function AppPhongThuy() {
     }
     setView(v);
     setUnlocked(true);
+    const g = ++phongAiGenRef.current;
+    setPhongAiReading(null);
+    setPhongAiLoading(true);
+    void invokeGenerateReading({
+      endpoint: "phong-thuy",
+      data: res.data,
+    }).then((r) => {
+      if (g !== phongAiGenRef.current) return;
+      setPhongAiReading(r.reading);
+      setPhongAiLoading(false);
+    });
   }
 
   const phongRow = costs.phong_thuy;
@@ -268,6 +284,15 @@ export default function AppPhongThuy() {
               </div>
             ))}
           </div>
+        ) : null}
+
+        {unlocked ? (
+          <AiReadingBlock
+            title="Diễn giải nhanh"
+            variant="on-card"
+            loading={phongAiLoading}
+            text={phongAiReading}
+          />
         ) : null}
 
         {!unlocked ? (

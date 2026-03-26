@@ -415,6 +415,10 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
+# Presentation layer: Anthropic Haiku + DB cache. Same anon pattern as bat-tu free ops.
+[functions.generate-reading]
+verify_jwt = false
+
 # Public share preview + OG HTML (anon `apikey` only).
 [functions.share-resolve]
 verify_jwt = false

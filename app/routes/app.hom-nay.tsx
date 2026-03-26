@@ -7,6 +7,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
   parseNgayHomNayForHome,
@@ -19,6 +20,8 @@ export default function AppHomNay() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [today, setToday] = useState<NgayHomNayHome | null>(null);
+  const [todayAiReading, setTodayAiReading] = useState<string | null>(null);
+  const [todayAiReadingLoading, setTodayAiReadingLoading] = useState(false);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -28,11 +31,15 @@ export default function AppHomNay() {
       setLoading(false);
       setErr(null);
       setToday(null);
+      setTodayAiReading(null);
+      setTodayAiReadingLoading(false);
       return;
     }
 
     let cancelled = false;
     setLoading(true);
+    setTodayAiReading(null);
+    setTodayAiReadingLoading(false);
     void (async () => {
       const res = await invokeBatTu({ op: "ngay-hom-nay", body: { ...q } });
       if (cancelled) return;
@@ -43,7 +50,20 @@ export default function AppHomNay() {
         return;
       }
       setErr(null);
-      setToday(parseNgayHomNayForHome(res.data));
+      const parsed = parseNgayHomNayForHome(res.data);
+      setToday(parsed);
+      if (parsed) {
+        setTodayAiReadingLoading(true);
+        void invokeGenerateReading({
+          endpoint: "ngay-hom-nay",
+          data: res.data,
+        }).then((r) => {
+          if (!cancelled) {
+            setTodayAiReading(r.reading);
+            setTodayAiReadingLoading(false);
+          }
+        });
+      }
     })();
     return () => {
       cancelled = true;
@@ -87,6 +107,8 @@ export default function AppHomNay() {
             lunarDate="—"
             solarDate="—"
             isLoading
+            aiReading={null}
+            aiReadingLoading={false}
           />
           <BestHourCard hourRange="—" isLoading />
         </div>
@@ -98,6 +120,8 @@ export default function AppHomNay() {
             dayType={today.dayType}
             lunarDate={today.lunarLabel}
             solarDate={today.solarDateVi}
+            aiReading={todayAiReading}
+            aiReadingLoading={todayAiReadingLoading}
           />
           <BestHourCard hourRange={today.hourRange} />
         </div>
