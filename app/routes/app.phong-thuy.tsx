@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Compass } from "lucide-react";
+import { CircleHelp, Compass } from "lucide-react";
 import { toast } from "sonner";
 
 import { AiReadingBlock } from "~/components/AiReadingBlock";
@@ -18,6 +18,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -121,9 +126,39 @@ function PhongThuyQueryFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`phong-partner${s}`} className="text-xs">
-          Người cùng không gian (tùy chọn)
-        </Label>
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor={`phong-partner${s}`} className="text-xs leading-snug">
+            Ngày sinh người cùng nhà (tuỳ chọn)
+          </Label>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground inline-flex rounded-full p-0.5 -m-0.5 shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                aria-label="Giải thích: người cùng nhà và vì sao nhập ngày sinh"
+              >
+                <CircleHelp className="size-3.5" aria-hidden />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              sideOffset={6}
+              className="max-w-[min(20rem,calc(100vw-2rem))] px-3 py-2.5 text-left font-normal leading-relaxed text-balance"
+            >
+              <span className="block font-medium text-primary-foreground/95 mb-1.5">
+                “Người cùng không gian” là gì?
+              </span>
+              Là người thường xuyên ở chung phòng hoặc chung nhà với bạn — ví dụ
+              vợ/chồng, con, người thuê cùng, bố mẹ cùng sinh sống.
+              <span className="block mt-2">
+                Nhập đúng ngày sinh của họ để tính thêm phần hài hòa Nạp Âm và
+                gợi ý hóa giải khi hai mệnh xung khắc (hữu ích cho phòng ngủ,
+                bàn làm việc, khu vực dùng chung). Để trống nếu bạn chỉ xem cho
+                một người.
+              </span>
+            </TooltipContent>
+          </Tooltip>
+        </div>
         <Input
           id={`phong-partner${s}`}
           type="date"
@@ -131,7 +166,8 @@ function PhongThuyQueryFields({
           onChange={(e) => onPartnerNgayIsoChange(e.target.value)}
         />
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Hóa giải xung Nạp Âm khi có sinh nhật hợp lệ — để trống nếu không cần.
+          Dùng khi muốn gợi ý cho cả hai mệnh trong cùng căn nhà — để trống nếu
+          chỉ cần xem cho bản thân.
         </p>
       </div>
     </div>
