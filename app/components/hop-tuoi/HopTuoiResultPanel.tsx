@@ -3,6 +3,7 @@ import CountUp from "react-countup";
 import { ChevronDown } from "lucide-react";
 import { motion } from "motion/react";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import {
   Collapsible,
@@ -63,6 +64,37 @@ function sentimentBadge(row: HopTuoiCriterionRow): {
 const RADIUS = 44;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
+/** Trên ngưỡng này (hoặc nhiều đoạn) mới dùng thu gọn — mô tả 1–2 câu đọc thẳng luôn. */
+const CRITERION_COLLAPSE_MIN_CHARS = 200;
+
+function shouldCollapseCriterionDescription(text: string): boolean {
+  const t = text.trim();
+  if (t.length > CRITERION_COLLAPSE_MIN_CHARS) return true;
+  if (/\n\s*\n/.test(t)) return true;
+  const lines = t.split("\n").filter((l) => l.trim().length > 0);
+  return lines.length > 2;
+}
+
+function HopTuoiCriterionCollapsibleDesc({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
+      <CollapsibleTrigger
+        type="button"
+        className="flex w-full items-center justify-between gap-2 text-left text-xs text-muted-foreground hover:text-foreground transition-colors rounded-sm py-1"
+      >
+        <span>{open ? "Thu gọn mô tả" : "Xem mô tả"}</span>
+        <ChevronDown
+          className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="pt-2 text-xs text-muted-foreground leading-relaxed data-[state=closed]:animate-none">
+        {text}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
 function HopTuoiCriterionItem({
   row,
   index,
@@ -70,9 +102,10 @@ function HopTuoiCriterionItem({
   row: HopTuoiCriterionRow;
   index: number;
 }) {
-  const [open, setOpen] = useState(false);
   const { labelVi, className } = sentimentBadge(row);
-  const hasDesc = Boolean(row.description && row.description.trim().length > 0);
+  const desc = row.description?.trim() ?? "";
+  const hasDesc = desc.length > 0;
+  const useCollapse = hasDesc && shouldCollapseCriterionDescription(desc);
 
   return (
     <motion.li
@@ -92,22 +125,10 @@ function HopTuoiCriterionItem({
           {row.name}
         </span>
       </div>
-      {hasDesc ? (
-        <Collapsible open={open} onOpenChange={setOpen} className="mt-2">
-          <CollapsibleTrigger
-            type="button"
-            className="flex w-full items-center justify-between gap-2 text-left text-xs text-muted-foreground hover:text-foreground transition-colors rounded-sm py-1"
-          >
-            <span>{open ? "Thu gọn mô tả" : "Xem mô tả"}</span>
-            <ChevronDown
-              className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2 text-xs text-muted-foreground leading-relaxed data-[state=closed]:animate-none">
-            {row.description}
-          </CollapsibleContent>
-        </Collapsible>
+      {hasDesc && !useCollapse ? (
+        <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{desc}</p>
       ) : null}
+      {hasDesc && useCollapse ? <HopTuoiCriterionCollapsibleDesc text={desc} /> : null}
     </motion.li>
   );
 }
@@ -296,25 +317,36 @@ function PersonMiniCard({
   );
 }
 
-export function HopTuoiResultPanel(panel: HopTuoiPanelView) {
-  const {
-    apiVersion,
-    score,
-    showNumericScore,
-    gradLabel,
-    chipLabel,
-    verdict,
-    verdictLevel,
-    naphAm1,
-    naphAm2,
-    naphAmRelation,
-    criteriaRows,
-    reading,
-    advice,
-    relationshipLabel,
-    relationshipType,
-    personCards,
-  } = panel;
+export type HopTuoiResultPanelProps = HopTuoiPanelView & {
+  aiReadingLoading: boolean;
+  aiReadingText: string | null;
+};
+
+export function HopTuoiResultPanel({
+  aiReadingLoading,
+  aiReadingText,
+  apiVersion,
+  score,
+  showNumericScore,
+  gradLabel,
+  chipLabel,
+  verdict,
+  verdictLevel,
+  naphAm1,
+  naphAm2,
+  naphAmRelation,
+  criteriaRows,
+  advice,
+  relationshipLabel,
+  relationshipType,
+  personCards,
+}: HopTuoiResultPanelProps) {
+  /** `advice` từ API v2 thường generic / trùng Nạp Âm; LLM đã nhận full JSON — chỉ hiện khi không có Diễn giải. */
+  const showApiAdviceFallback =
+    apiVersion === 2 &&
+    Boolean(advice?.trim()) &&
+    !aiReadingLoading &&
+    !aiReadingText?.trim();
 
   const p1 = personCards.p1;
   const p2 = personCards.p2;
@@ -399,7 +431,7 @@ export function HopTuoiResultPanel(panel: HopTuoiPanelView) {
           >
             Tiêu chí
           </p>
-          <ul className="flex flex-col gap-2">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {criteriaRows.map((row, i) => (
               <HopTuoiCriterionItem key={`${i}-${row.name.slice(0, 32)}`} row={row} index={i} />
             ))}
@@ -407,25 +439,21 @@ export function HopTuoiResultPanel(panel: HopTuoiPanelView) {
         </motion.div>
       ) : null}
 
-      {apiVersion === 2 && reading ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.35 }}
-          className="w-full border border-border bg-card px-4 py-3"
-          style={{ borderRadius: "var(--radius-md)" }}
-        >
-          <p
-            className="text-muted-foreground text-[10px] mb-2 uppercase tracking-wide"
-            style={{ fontFamily: "var(--font-ibm-mono)" }}
-          >
-            Diễn giải
-          </p>
-          <p className="text-sm text-foreground leading-relaxed">{reading}</p>
-        </motion.div>
-      ) : null}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.35 }}
+        className="w-full"
+      >
+        <AiReadingBlock
+          title="Diễn giải"
+          variant="on-card"
+          loading={aiReadingLoading}
+          text={aiReadingText}
+        />
+      </motion.div>
 
-      {apiVersion === 2 && advice ? (
+      {showApiAdviceFallback ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { GrainOverlay } from "~/components/GrainOverlay";
@@ -364,22 +363,19 @@ export default function AppHopTuoi() {
               <p className="text-muted-foreground text-sm py-4">Đang tải…</p>
             }
           >
-            <HopTuoiResultPanel {...panel} />
+            <HopTuoiResultPanel
+              {...panel}
+              aiReadingLoading={hopAiLoading}
+              aiReadingText={hopAiReading}
+            />
           </Suspense>
-
-          <AiReadingBlock
-            title="Tóm lại cho bạn"
-            variant="on-card"
-            loading={hopAiLoading}
-            text={hopAiReading}
-          />
 
           <div className="px-1">
             {panel.apiVersion === 2 ? (
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {isLowScore
-                  ? "Có tín hiệu cần lưu ý — xem tiêu chí và Gợi ý phía trên."
-                  : "Xem Diễn giải và tiêu chí cụ thể trong khung kết quả."}
+                  ? "Có tín hiệu cần lưu ý — xem tiêu chí, Diễn giải và Gợi ý trong khung kết quả."
+                  : "Xem tiêu chí, Diễn giải và Gợi ý trong khung kết quả."}
               </p>
             ) : isLowScore ? (
               <p className="text-muted-foreground text-sm leading-relaxed">
@@ -419,9 +415,11 @@ export default function AppHopTuoi() {
                       panel.apiVersion === 2 && panel.score == null
                         ? panel.chipLabel
                         : `${panel.chipLabel} — điểm ${panel.score ?? "—"}/100`,
-                      ...(panel.reading
-                        ? [panel.reading.slice(0, 160)]
-                        : []),
+                      ...(hopAiReading?.trim()
+                        ? [hopAiReading.trim().slice(0, 160)]
+                        : panel.reading
+                          ? [panel.reading.slice(0, 160)]
+                          : []),
                     ],
                   },
                   grade:
