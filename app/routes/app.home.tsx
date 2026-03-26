@@ -212,7 +212,7 @@ export default function AppHome() {
               Lá số Bát Tự chưa có. Lập ngay để xem lịch Hôm nay, tuần này và tháng này theo đúng
               mệnh và Dụng Thần của bạn — không phải kết quả chung.
             </p>
-            <Button asChild variant="secondary" className="w-full sm:w-auto">
+            <Button asChild variant="forest" className="w-full sm:w-auto">
               <Link to="/app/la-so">Lập lá số ngay</Link>
             </Button>
           </div>
