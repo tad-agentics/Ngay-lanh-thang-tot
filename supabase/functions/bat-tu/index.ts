@@ -822,11 +822,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (!ANONYMOUS_OPS.has(op)) {
-    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
-    if (cached) return cached;
-  }
-
+  /**
+   * Never return Redis cache for authenticated ops before billing — a cache hit would skip
+   * credit deduction and ledger insert (`resolveFeatureKey` + charge block below).
+   * Anonymous ops use the cache path above (lines 768–770) only.
+   */
   const featureKey = resolveFeatureKey(op, body);
   /** Client hint: bootstrap first chart from Settings — no credits (only when profile has no lá số yet). */
   const firstLaSoFree =
@@ -1009,7 +1009,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (isUpstreamCacheable(op, upstreamInit) && redisRestConfigured()) {
+  if (
+    ANONYMOUS_OPS.has(op) &&
+    isUpstreamCacheable(op, upstreamInit) &&
+    redisRestConfigured()
+  ) {
     try {
       const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
       await redisSetExString(ck, JSON.stringify({ data }), cacheTtl);

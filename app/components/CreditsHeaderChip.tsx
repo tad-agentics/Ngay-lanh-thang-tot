@@ -5,6 +5,7 @@ import { useProfile } from "~/hooks/useProfile";
 import {
   creditsBalanceChipLabel,
   creditsBalanceFootnote,
+  subscriptionActive,
 } from "~/lib/subscription";
 import { cn } from "~/components/ui/utils";
 
@@ -22,6 +23,7 @@ export function CreditsHeaderChip({
   const navigate = useNavigate();
   const { profile } = useProfile();
   const foot = creditsBalanceFootnote(profile);
+  const subOn = subscriptionActive(profile?.subscription_expires_at);
 
   return (
     <button
@@ -52,6 +54,18 @@ export function CreditsHeaderChip({
         {creditsBalanceChipLabel(profile)}
         {foot ? "" : " lượng"}
       </span>
+      {subOn ? (
+        <span
+          className={cn(
+            "shrink-0 rounded-full px-1.5 py-px text-[9px] font-semibold uppercase tracking-wide",
+            forDarkSurface
+              ? "bg-primary/30 text-surface-foreground"
+              : "bg-primary/15 text-primary",
+          )}
+        >
+          Gói
+        </span>
+      ) : null}
     </button>
   );
 }

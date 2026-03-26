@@ -43,7 +43,8 @@ const INTENT_UNSET = "__unset__";
 
 export default function AppChonNgay() {
   const navigate = useNavigate();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, refresh: refreshProfile } =
+    useProfile();
   const { costs } = useFeatureCosts();
   const [rangePreset, setRangePreset] = useState<RangePreset>(30);
   const [intent, setIntent] = useState<TuTruIntent | "">("");
@@ -109,6 +110,7 @@ export default function AppChonNgay() {
       return;
     }
     setErr(null);
+    await refreshProfile();
     const intentLabel =
       TU_TRU_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? intent;
     navigate("/app/chon-ngay/ket-qua", {
@@ -225,7 +227,8 @@ export default function AppChonNgay() {
         <CreditGate featureKey={featureKey}>
           <Button
             type="button"
-            className="w-full min-h-12 rounded-[var(--radius-md)] font-semibold bg-make-cta text-make-cta-foreground hover:bg-make-cta/92 border-0 shadow-none"
+            variant="default"
+            className="w-full min-h-12 rounded-[var(--radius-md)] font-semibold shadow-sm"
             disabled={
               busy || profileLoading || !profile?.ngay_sinh || days == null
             }
