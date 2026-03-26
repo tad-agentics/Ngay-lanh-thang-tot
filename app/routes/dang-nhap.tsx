@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 
+import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
 import { supabase } from "~/lib/supabase";
 
@@ -23,6 +24,15 @@ export default function DangNhap() {
   return (
     <main className="min-h-svh flex flex-col items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm space-y-6">
+        <Link
+          to="/"
+          className="flex flex-col items-center gap-2 no-underline text-foreground hover:opacity-90"
+        >
+          <BrandLogoMark size={56} />
+          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+            Ngày Lành Tháng Tốt
+          </span>
+        </Link>
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
             Đăng nhập

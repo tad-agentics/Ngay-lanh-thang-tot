@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
@@ -38,18 +39,10 @@ export default function AppBatDau() {
       <div className="flex flex-col items-center justify-center flex-1 pb-4 pt-10">
         <div className="mb-8 flex flex-col items-center">
           <div
-            className="border border-accent/30 flex items-center justify-center mb-5"
+            className="border border-accent/30 flex items-center justify-center mb-5 overflow-hidden"
             style={{ width: 64, height: 64, borderRadius: "var(--radius-md)" }}
           >
-            <span
-              style={{
-                fontFamily: "var(--font-noto)",
-                fontSize: 32,
-                color: "var(--accent)",
-              }}
-            >
-              吉
-            </span>
+            <BrandLogoMark size={64} />
           </div>
 
           <h1

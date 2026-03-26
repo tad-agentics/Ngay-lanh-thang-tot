@@ -17,7 +17,7 @@ const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
 export const links: Route.LinksFunction = () => [
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Serif+SC:wght@400;600;700&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Montserrat:wght@700;800;900&family=Noto+Serif+SC:wght@400;600;700&display=swap",
   },
 ];
 
@@ -385,7 +385,19 @@ export default function Landing() {
       <div id="lp">
         <nav className="lp-nav" aria-label="Chính">
           <Link to="/" className="lp-nav-logo">
-            Ngày Lành <span>Tháng Tốt</span>
+            <img
+              src="/logo-mark.svg"
+              alt=""
+              width={44}
+              height={44}
+              className="lp-nav-logo-mark"
+              decoding="async"
+            />
+            <span className="lp-nav-logo-divider" aria-hidden />
+            <span className="lp-nav-logo-text">
+              <span className="lp-nav-logo-line1">Ngày Lành</span>
+              <span className="lp-nav-logo-line2">Tháng Tốt</span>
+            </span>
           </Link>
           <div className="lp-nav-actions">
             <Link to="/dang-nhap" className="lp-nav-login">
@@ -600,7 +612,19 @@ export default function Landing() {
 
         <footer>
           <Link to="/" className="lp-ft-logo">
-            Ngày Lành Tháng Tốt
+            <img
+              src="/logo-mark-reversed.svg"
+              alt=""
+              width={40}
+              height={40}
+              className="lp-ft-logo-mark"
+              decoding="async"
+            />
+            <span className="lp-ft-logo-divider" aria-hidden />
+            <span className="lp-ft-logo-text">
+              <span className="lp-ft-logo-line1">Ngày Lành</span>
+              <span className="lp-ft-logo-line2">Tháng Tốt</span>
+            </span>
           </Link>
           <nav className="lp-ft-links" aria-label="Liên kết chân trang">
             <a href="#offer-h2" className="lp-ft-link">
