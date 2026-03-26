@@ -193,6 +193,7 @@ export default function AppHopTuoi() {
       <ScreenHeader
         title="Hợp tuổi"
         showBack={false}
+        appScreenTitle
         endAdornment={<CreditsHeaderChip />}
       />
 

@@ -178,6 +178,7 @@ export default function AppPhongThuy() {
       <ScreenHeader
         title="Phong thủy"
         showBack={false}
+        appScreenTitle
         endAdornment={<CreditsHeaderChip />}
       />
 

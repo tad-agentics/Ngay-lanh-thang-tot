@@ -201,8 +201,8 @@ export default function AppLaSo() {
       <div className="min-h-[60vh] bg-background px-4 pb-24">
         <ScreenHeader
           title="Lá số tứ trụ"
-          centerTitle
           showBack={false}
+          appScreenTitle
           endAdornment={<CreditsHeaderChip />}
         />
 

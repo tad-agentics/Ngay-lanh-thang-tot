@@ -46,8 +46,8 @@ export default function AppLaSoChiTiet() {
     <div className="min-h-[60vh] bg-background px-4 pb-24">
       <ScreenHeader
         title="Chi tiết lá số"
-        centerTitle
         showBack={false}
+        appScreenTitle
       />
 
       <div className="flex flex-col gap-4">
