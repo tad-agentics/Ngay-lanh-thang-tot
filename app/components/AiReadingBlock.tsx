@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
 type Variant = "on-surface" | "on-card";
@@ -9,6 +10,8 @@ interface AiReadingBlockProps {
   /** Khi !loading: nếu null hoặc rỗng thì không render. */
   text: string | null;
   variant?: Variant;
+  /** Sau khi đã từng loading, nếu không có text — hiển thị gợi ý thay vì ẩn hẳn. */
+  emptyLabel?: string;
 }
 
 export function AiReadingBlock({
@@ -16,8 +19,15 @@ export function AiReadingBlock({
   loading,
   text,
   variant = "on-card",
+  emptyLabel = "Diễn giải tự động tạm chưa tải được. Thử làm mới trang hoặc quay lại sau.",
 }: AiReadingBlockProps) {
-  if (!loading && (!text || !text.trim())) return null;
+  const [hasStarted, setHasStarted] = useState(false);
+  useEffect(() => {
+    if (loading) setHasStarted(true);
+  }, [loading]);
+
+  const trimmed = text?.trim() ?? "";
+  if (!loading && trimmed.length === 0 && !hasStarted) return null;
 
   const isSurface = variant === "on-surface";
   const titleCls = isSurface
@@ -50,15 +60,21 @@ export function AiReadingBlock({
           <div className={`h-3 rounded ${shimmerCls} animate-pulse w-[92%]`} />
           <div className={`h-3 rounded ${shimmerCls} animate-pulse w-4/5`} />
         </div>
-      ) : (
+      ) : trimmed.length > 0 ? (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.35 }}
           className={`text-sm leading-relaxed ${bodyCls}`}
         >
-          {text}
+          {trimmed}
         </motion.p>
+      ) : (
+        <p
+          className={`text-sm leading-relaxed opacity-80 ${isSurface ? "text-surface-foreground/80" : "text-muted-foreground"}`}
+        >
+          {emptyLabel}
+        </p>
       )}
     </div>
   );

@@ -37,8 +37,9 @@ const TTL_MS: Record<string, number> = {
 };
 
 const MAX_BODY_CHARS = 180_000;
-const HAIKU_MODEL = "claude-3-5-haiku-20241022";
-const REQUEST_TIMEOUT_MS = 5_000;
+/** Mặc định Haiku 4.5 — 3.5 Haiku dated có thể đã retire. Ghi đè: secret ANTHROPIC_MODEL */
+const DEFAULT_LLM_MODEL = "claude-haiku-4-5";
+const REQUEST_TIMEOUT_MS = 8_000;
 
 function ok(reading: string | null): Response {
   return new Response(JSON.stringify({ reading }), {
@@ -80,7 +81,13 @@ function ttlForEndpoint(endpoint: string): number {
 
 async function anthropicReading(userJson: string): Promise<string | null> {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!key?.trim()) return null;
+  if (!key?.trim()) {
+    console.warn("generate-reading: ANTHROPIC_API_KEY missing");
+    return null;
+  }
+
+  const model =
+    Deno.env.get("ANTHROPIC_MODEL")?.trim() || DEFAULT_LLM_MODEL;
 
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -94,7 +101,7 @@ async function anthropicReading(userJson: string): Promise<string | null> {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: HAIKU_MODEL,
+        model,
         max_tokens: 512,
         system: SYSTEM_PROMPT,
         messages: [
@@ -106,13 +113,22 @@ async function anthropicReading(userJson: string): Promise<string | null> {
       }),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => "");
+      console.warn(
+        "generate-reading: Anthropic HTTP",
+        res.status,
+        errBody.slice(0, 500),
+      );
+      return null;
+    }
     const body = (await res.json()) as {
       content?: Array<{ type?: string; text?: string }>;
     };
     const text = body.content?.find((c) => c.type === "text")?.text?.trim();
     return text && text.length > 0 ? text : null;
-  } catch {
+  } catch (e) {
+    console.warn("generate-reading: Anthropic fetch error", e);
     return null;
   } finally {
     clearTimeout(t);
