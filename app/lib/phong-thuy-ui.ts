@@ -239,11 +239,17 @@ function parseColorItems(arr: unknown): PhongThuyColorItem[] {
   return out;
 }
 
+/** Chỉ tên màu (không kèm mã hex) cho copy dễ đọc; hex vẫn có trên `PhongThuyColorItem` cho swatch. */
 function colorItemsToRich(items: PhongThuyColorItem[]): string {
   if (!items.length) return "—";
-  return items
-    .map((it) => (it.hex ? `${it.color} ${it.hex}` : it.color))
-    .join(" · ");
+  const parts: string[] = [];
+  for (const it of items) {
+    const label = it.color.trim();
+    if (!label) continue;
+    if (/^#?[0-9A-Fa-f]{3,8}$/.test(label)) continue;
+    parts.push(label);
+  }
+  return parts.length ? parts.join(" · ") : "—";
 }
 
 function joinColorLabels(arr: unknown): string {

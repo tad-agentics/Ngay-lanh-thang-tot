@@ -32,8 +32,9 @@ describe("phongThuyPayloadToView", () => {
     });
     expect(v?.huongTot).toContain("Bắc");
     expect(v?.huongTot).toContain("Dụng Thần");
-    expect(v?.mauTot).toMatch(/Đen.*#1a1a1a/i);
+    expect(v?.mauTot).toContain("Đen");
     expect(v?.mauTot).toContain("Trắng");
+    expect(v?.mauTot).not.toMatch(/#1a1a1a/i);
     expect(v?.soTot).toBe("1, 6");
     expect(v?.huongXau).toContain("Nam");
     expect(v?.mauKy).toContain("Đỏ");
@@ -77,7 +78,8 @@ describe("phongThuyPayloadToView", () => {
     expect(v?.userMenhLabel).toContain("Thủy");
     expect(v?.dungThanApi).toBe("Mộc");
     expect(v?.kyThanApi).toBe("Kim");
-    expect(v?.mauTot).toContain("#3A6B35");
+    expect(v?.mauTot).toContain("Xanh lá");
+    expect(v?.mauTot).not.toMatch(/#3A6B35/i);
   });
 
   it("returns null for non-object", () => {
