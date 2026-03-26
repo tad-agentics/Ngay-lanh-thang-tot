@@ -218,9 +218,19 @@ export default function AppChonNgay() {
               );
             })}
           </div>
-          {days != null && creditHint ? (
+          {days != null && creditHint && costRow ? (
             <p className="text-xs text-muted-foreground pt-1">
-              Từ hôm nay · {days} ngày · {creditHint}
+              Tìm ngày lành trong · {days} ngày tới ·{" "}
+              {costRow.is_free || costRow.credit_cost <= 0 ? (
+                <>không trừ lượng</>
+              ) : (
+                <>
+                  cần{" "}
+                  <strong className="font-semibold text-foreground">
+                    {costRow.credit_cost} lượng
+                  </strong>
+                </>
+              )}
             </p>
           ) : null}
         </div>
