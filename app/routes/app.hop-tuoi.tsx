@@ -12,6 +12,7 @@ const HopTuoiResultPanel = lazy(() =>
   })),
 );
 import { ScreenHeader } from "~/components/ScreenHeader";
+import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -33,6 +34,7 @@ import {
 } from "~/lib/bat-tu-birth";
 import {
   HOP_TUOI_RELATIONSHIP_OPTIONS,
+  hopTuoiGradToLetterGrade,
   hopTuoiPayloadToPanel,
 } from "~/lib/hop-tuoi-result";
 import { scoreToLetterGrade } from "~/lib/score-grade";
@@ -60,6 +62,7 @@ export default function AppHopTuoi() {
   const [panel, setPanel] = useState<ReturnType<typeof hopTuoiPayloadToPanel>>(
     null,
   );
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
@@ -89,6 +92,7 @@ export default function AppHopTuoi() {
     }
 
     setBusy(true);
+    setLastError(null);
     try {
       const p2BirthTime =
         form.otherBirthTime === HOP_OTHER_BIRTH_TIME_DEFAULT
@@ -111,15 +115,17 @@ export default function AppHopTuoi() {
       });
 
       if (!res.ok) {
+        setLastError(res.message);
         toast.error(res.message);
         return;
       }
 
       const mapped = hopTuoiPayloadToPanel(res.data);
       if (!mapped) {
-        toast.error(
-          "Không tải được kết quả hợp tuổi lúc này. Thử lại sau vài giây.",
-        );
+        const msg =
+          "Không tải được kết quả hợp tuổi lúc này. Thử lại sau vài giây.";
+        setLastError(msg);
+        toast.error(msg);
         return;
       }
       setPanel(mapped);
@@ -133,6 +139,7 @@ export default function AppHopTuoi() {
   function handleReset() {
     setShowResult(false);
     setShowShare(false);
+    setLastError(null);
     setPanel(null);
     setForm({
       ngaySinh: "",
@@ -158,7 +165,10 @@ export default function AppHopTuoi() {
     );
   }
 
-  const isLowScore = panel ? panel.score < 50 : false;
+  const isLowScore = panel
+    ? panel.gradLabel === "Cần lưu ý" ||
+      (panel.score != null && panel.score < 50)
+    : false;
 
   return (
     <div className="px-4 pb-8">
@@ -274,6 +284,12 @@ export default function AppHopTuoi() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {form.otherBirthTime === HOP_OTHER_BIRTH_TIME_DEFAULT ? (
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Chọn đúng khung giờ can chi giúp v2 luận sâu hơn; một số
+                      tiêu chí có thể ở mức trung tính nếu để mặc định.
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -305,6 +321,13 @@ export default function AppHopTuoi() {
               </div>
             </div>
 
+            {lastError ? (
+              <Alert variant="destructive" className="text-left">
+                <AlertTitle>Không thực hiện được yêu cầu</AlertTitle>
+                <AlertDescription>{lastError}</AlertDescription>
+              </Alert>
+            ) : null}
+
             <Button
               size="lg"
               disabled={!form.ngaySinh || !form.gioiTinh || busy}
@@ -326,7 +349,13 @@ export default function AppHopTuoi() {
           </Suspense>
 
           <div className="px-1">
-            {isLowScore ? (
+            {panel.apiVersion === 2 ? (
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                {isLowScore
+                  ? "Có tín hiệu cần lưu ý — xem tiêu chí và Gợi ý phía trên."
+                  : "Xem Diễn giải và tiêu chí cụ thể trong khung kết quả."}
+              </p>
+            ) : isLowScore ? (
               <p className="text-muted-foreground text-sm leading-relaxed">
                 Có một số điểm cần chú ý — xem chi tiết để hiểu thêm.
               </p>
@@ -356,18 +385,23 @@ export default function AppHopTuoi() {
                 to="/app/chia-se"
                 state={{
                   resultType: "hop_tuoi",
-                  suKien: "Hợp tuổi",
+                  suKien: panel.relationshipLabel ?? "Hợp tuổi",
                   day: {
                     dateLabel: panel.chipLabel,
                     lunarLabel: "",
                     reasons: [
-                      `${panel.chipLabel} — điểm ${panel.score}/100`,
+                      panel.apiVersion === 2 && panel.score == null
+                        ? panel.chipLabel
+                        : `${panel.chipLabel} — điểm ${panel.score ?? "—"}/100`,
                       ...(panel.reading
                         ? [panel.reading.slice(0, 160)]
                         : []),
                     ],
                   },
-                  grade: scoreToLetterGrade(panel.score),
+                  grade:
+                    panel.apiVersion === 2 && panel.score == null
+                      ? hopTuoiGradToLetterGrade(panel.gradLabel)
+                      : scoreToLetterGrade(panel.score ?? 72),
                 }}
               >
                 Chia sẻ kết quả
