@@ -1,3 +1,5 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
+
 import type {
   CreatePayosCheckoutRequest,
   CreatePayosCheckoutResponse,
@@ -19,6 +21,30 @@ export async function createPayosCheckout(
   >("payos-create-checkout", { body: req });
 
   if (error) {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const body = (await error.context.json()) as unknown;
+        if (
+          body &&
+          typeof body === "object" &&
+          "error" in body &&
+          (body as EdgeErrorBody).error != null
+        ) {
+          const e = (body as EdgeErrorBody).error!;
+          return {
+            ok: false,
+            code: typeof e.code === "string" ? e.code : "PAYOS",
+            message:
+              typeof e.message === "string" && e.message.length
+                ? e.message
+                : (error.message ??
+                  "Không mở được cổng thanh toán lúc này."),
+          };
+        }
+      } catch {
+        // ignore parse errors
+      }
+    }
     return {
       ok: false,
       code: "INVOKE",

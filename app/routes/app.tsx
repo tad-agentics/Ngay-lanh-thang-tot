@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { AppMobileShell } from "~/components/AppMobileShell";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
+import { FeatureCostsProvider } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { ProfileProvider } from "~/lib/profile-context";
@@ -98,9 +99,11 @@ function AppShellWithProfile({
   const hasLaso = profileHasLaso(profile.la_so);
 
   return (
-    <AppMobileShell hasLaso={hasLaso}>
-      <Outlet />
-    </AppMobileShell>
+    <FeatureCostsProvider>
+      <AppMobileShell hasLaso={hasLaso}>
+        <Outlet />
+      </AppMobileShell>
+    </FeatureCostsProvider>
   );
 }
 

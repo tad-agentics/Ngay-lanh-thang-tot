@@ -1,4 +1,9 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/landing";
@@ -354,7 +359,7 @@ function LandingFaqItem({ q, a }: { q: string; a: string }) {
   );
 }
 
-function isStandalonePwa(): boolean {
+function readStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -364,7 +369,11 @@ function isStandalonePwa(): boolean {
 }
 
 export default function Landing() {
-  const isStandalone = isStandalonePwa();
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    setIsStandalone(readStandalonePwa());
+  }, []);
 
   return (
     <>

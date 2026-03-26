@@ -51,16 +51,16 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  let message = "Đã có lỗi";
+  let details = "Đã xảy ra lỗi không mong muốn. Bạn thử tải lại trang.";
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? "Không tìm thấy trang" : "Lỗi";
     details =
       error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
+        ? "Không tìm thấy trang bạn yêu cầu."
+        : error.statusText || "Máy chủ trả về lỗi. Thử lại sau.";
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;
