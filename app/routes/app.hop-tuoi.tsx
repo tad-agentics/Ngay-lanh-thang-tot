@@ -78,37 +78,40 @@ export default function AppHopTuoi() {
     }
 
     setBusy(true);
-    const res = await invokeBatTu({
-      op: "hop-tuoi",
-      body: {
-        person1_birth_date: p1.birth_date,
-        person1_birth_time: p1.birth_time ?? 11,
-        person1_gender: p1.gender ?? 1,
-        person2_birth_date: p2Date,
-        person2_birth_time: timeInputToBatTuBirthTime(form.gioSinh) ?? 11,
-        person2_gender: p2Gender,
-        ...(form.relationshipType.trim()
-          ? { relationship_type: form.relationshipType.trim() }
-          : {}),
-      },
-    });
-    setBusy(false);
+    try {
+      const res = await invokeBatTu({
+        op: "hop-tuoi",
+        body: {
+          person1_birth_date: p1.birth_date,
+          person1_birth_time: p1.birth_time ?? 11,
+          person1_gender: p1.gender ?? 1,
+          person2_birth_date: p2Date,
+          person2_birth_time: timeInputToBatTuBirthTime(form.gioSinh) ?? 11,
+          person2_gender: p2Gender,
+          ...(form.relationshipType.trim()
+            ? { relationship_type: form.relationshipType.trim() }
+            : {}),
+        },
+      });
 
-    if (!res.ok) {
-      toast.error(res.message);
-      return;
-    }
+      if (!res.ok) {
+        toast.error(res.message);
+        return;
+      }
 
-    const mapped = hopTuoiPayloadToPanel(res.data);
-    if (!mapped) {
-      toast.error(
-        "Không tải được kết quả hợp tuổi lúc này. Thử lại sau vài giây.",
-      );
-      return;
+      const mapped = hopTuoiPayloadToPanel(res.data);
+      if (!mapped) {
+        toast.error(
+          "Không tải được kết quả hợp tuổi lúc này. Thử lại sau vài giây.",
+        );
+        return;
+      }
+      setPanel(mapped);
+      setShowResult(true);
+      window.setTimeout(() => setShowShare(true), 1600);
+    } finally {
+      setBusy(false);
     }
-    setPanel(mapped);
-    setShowResult(true);
-    window.setTimeout(() => setShowShare(true), 1600);
   }
 
   function handleReset() {
