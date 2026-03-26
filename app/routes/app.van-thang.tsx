@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -14,22 +14,26 @@ import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { mapTieuVanPayload, type TieuVanUi } from "~/lib/tieu-van-ui";
 import { subscriptionActive } from "~/lib/subscription";
+import {
+  buildVanThangMonthHeading,
+  parseConvertDateLunarTucLine,
+  solarYmToTitleLabel,
+  stripRedundantSolarMonthPrefix,
+} from "~/lib/van-thang-month-label";
 
 const VAN_FEATURE = toDbFeatureKey("van_thang");
 
-function monthOptions(count: number): { ym: string; label: string }[] {
-  const out: { ym: string; label: string }[] = [];
+function monthOptions(count: number): { ym: string; solarLabel: string }[] {
+  const out: { ym: string; solarLabel: string }[] = [];
   const d = new Date();
   for (let i = 0; i < count; i++) {
     const x = new Date(d.getFullYear(), d.getMonth() + i, 1);
     const y = x.getFullYear();
     const m = x.getMonth() + 1;
     const ym = `${y}-${String(m).padStart(2, "0")}`;
-    const label = new Intl.DateTimeFormat("vi-VN", {
-      month: "long",
-      year: "numeric",
-    }).format(x);
-    out.push({ ym, label });
+    const solarLabel =
+      solarYmToTitleLabel(ym) ?? `Tháng ${m} Năm ${y}`;
+    out.push({ ym, solarLabel });
   }
   return out;
 }
@@ -69,17 +73,51 @@ export default function AppVanThang() {
   const [monthIdx, setMonthIdx] = useState(0);
   const [unlocked, setUnlocked] = useState<Record<string, TieuVanUi>>({});
   const [unlocking, setUnlocking] = useState(false);
+  const [lunarTucByYm, setLunarTucByYm] = useState<
+    Record<string, string | null>
+  >({});
 
   const costRow = costs[VAN_FEATURE];
   const cost = costRow?.credit_cost ?? 3;
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const q = profileToBatTuPersonQuery(profile ?? null);
+  const prefetchLunarLabels =
+    !loading && !costsLoading && hasLaso && Boolean(q.birth_date);
+
+  useEffect(() => {
+    if (!prefetchLunarLabels) return;
+    let cancelled = false;
+    void (async () => {
+      const entries = await Promise.all(
+        months.map(async ({ ym }) => {
+          const res = await invokeBatTu<unknown>({
+            op: "convert-date",
+            body: { solar: `${ym}-01` },
+          });
+          if (!res.ok) return [ym, null] as const;
+          const line = parseConvertDateLunarTucLine(res.data);
+          return [ym, line] as const;
+        }),
+      );
+      if (!cancelled) {
+        setLunarTucByYm(Object.fromEntries(entries));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [prefetchLunarLabels, months]);
+
   const reveal = laSoJsonToRevealProps(profile?.la_so ?? undefined);
   const nhatChuProfile = reveal?.nhatChu ?? "";
 
   const current = months[monthIdx] ?? months[0]!;
   const ym = current.ym;
+  const monthHeading = buildVanThangMonthHeading(
+    current.solarLabel,
+    lunarTucByYm[ym],
+  );
   const isUnlocked = Boolean(unlocked[ym]);
 
   async function runTieuVan() {
@@ -154,6 +192,11 @@ export default function AppVanThang() {
       detail.chartStrength ||
       detail.thapThanOfMonth);
 
+  const tongQuanDisplay =
+    detail ? stripRedundantSolarMonthPrefix(detail.tongQuan, ym) : "";
+  const canLuuDisplay =
+    detail ? stripRedundantSolarMonthPrefix(detail.canLuu, ym) : "";
+
   return (
     <div className="px-4 pb-8">
       <ScreenHeader title="Vận tháng" />
@@ -171,7 +214,9 @@ export default function AppVanThang() {
         </button>
 
         <div className="text-center flex-1">
-          <p className="text-foreground text-sm font-medium">{current.label}</p>
+          <p className="text-foreground text-sm font-medium text-pretty break-words px-1">
+            {monthHeading}
+          </p>
         </div>
 
         <button
@@ -202,11 +247,16 @@ export default function AppVanThang() {
             <p className="text-surface-foreground text-sm leading-relaxed">
               {isUnlocked && detail ? (
                 <>
-                  <span className="text-surface-foreground/90">{current.label}</span>
                   {detail.pillarHint !== "—" ? (
-                    <> — trụ tháng {detail.pillarHint}.</>
+                    <>
+                      Trụ tháng{" "}
+                      <span className="text-surface-foreground/90 font-medium">
+                        {detail.pillarHint}
+                      </span>
+                      .
+                    </>
                   ) : (
-                    <>.</>
+                    <>Theo lá số cho tháng bạn đang chọn.</>
                   )}
                   {detail.userMenhLabel ? (
                     <>
@@ -221,7 +271,7 @@ export default function AppVanThang() {
                 </>
               ) : (
                 <>
-                  {current.label} — bạn đang xem khung tháng dương lịch. Mở khóa để đọc diễn
+                  {monthHeading} — bạn đang xem khung tháng dương lịch. Mở khóa để đọc diễn
                   giải theo trụ tháng, quan hệ với mệnh và Đại Vận từ lá số, không phải lịch
                   chung.
                 </>
@@ -246,7 +296,7 @@ export default function AppVanThang() {
                     <span className="text-foreground font-medium">{nhatChuLine}</span>
                   </p>
                 ) : null}
-                <p>{detail.tongQuan}</p>
+                <p>{tongQuanDisplay}</p>
               </div>
             </QualitativeCard>
 
@@ -318,7 +368,7 @@ export default function AppVanThang() {
             ) : null}
 
             <QualitativeCard kicker="Đại vận & nhịp trong tháng">
-              <p className="text-muted-foreground text-sm leading-relaxed">{detail.canLuu}</p>
+              <p className="text-muted-foreground text-sm leading-relaxed">{canLuuDisplay}</p>
             </QualitativeCard>
 
             <p className="text-muted-foreground text-xs leading-relaxed px-0.5">
