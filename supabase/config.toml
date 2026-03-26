@@ -400,6 +400,11 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 [functions.payos-webhook]
 verify_jwt = false
 
+# JWT is validated inside the handler via auth.getUser() (Bearer access token).
+# Avoids gateway 401 when the platform JWT check and client invoke headers disagree.
+[functions.payos-create-checkout]
+verify_jwt = false
+
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
 # Optional Redis cache (Upstash REST): set secrets UPSTASH_REDIS_REST_URL,
 # UPSTASH_REDIS_REST_TOKEN. TTL default 3600s; max 3600 via BAT_TU_CACHE_TTL_SEC.

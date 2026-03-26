@@ -62,25 +62,80 @@ function withPayosHint(code: string, message: string): string {
   return message;
 }
 
+/** Session access token for Edge invoke; refresh nếu sắp hết hạn. */
+async function accessTokenForFunctionsInvoke(): Promise<string | null> {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+  if (error || !session?.access_token) return null;
+
+  const exp = session.expires_at;
+  const expMs = typeof exp === "number" ? exp * 1000 : 0;
+  if (expMs > 0 && expMs < Date.now() + 120_000) {
+    const { data: refreshed, error: refErr } =
+      await supabase.auth.refreshSession();
+    if (!refErr && refreshed.session?.access_token) {
+      return refreshed.session.access_token;
+    }
+  }
+
+  return session.access_token;
+}
+
 export async function createPayosCheckout(
   req: CreatePayosCheckoutRequest,
 ): Promise<
   | { ok: true; data: CreatePayosCheckoutResponse }
   | { ok: false; code: string; message: string }
 > {
-  const { data, error } = await supabase.functions.invoke<
-    CreatePayosCheckoutResponse | EdgeErrorBody
-  >("payos-create-checkout", { body: req });
+  let accessToken = await accessTokenForFunctionsInvoke();
+  if (!accessToken) {
+    return {
+      ok: false,
+      code: "UNAUTHORIZED",
+      message: withPayosHint(
+        "UNAUTHORIZED",
+        "Chưa có phiên đăng nhập hợp lệ.",
+      ),
+    };
+  }
 
-  if (error) {
+  let data: CreatePayosCheckoutResponse | EdgeErrorBody | null = null;
+  let error: unknown = null;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const out = await supabase.functions.invoke<
+      CreatePayosCheckoutResponse | EdgeErrorBody
+    >("payos-create-checkout", {
+      body: req,
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    data = out.data;
+    error = out.error;
+
+    if (!error) break;
+
     if (error instanceof FunctionsHttpError) {
       const parsed = await parseFunctionsHttpError(error);
+      if (parsed.code === "UNAUTHORIZED" && attempt === 0) {
+        const { data: ref, error: refErr } =
+          await supabase.auth.refreshSession();
+        if (!refErr && ref.session?.access_token) {
+          accessToken = ref.session.access_token;
+          continue;
+        }
+      }
       return { ok: false, code: parsed.code, message: parsed.message };
     }
+
     return {
       ok: false,
       code: "INVOKE",
-      message: error.message ?? "Không mở được cổng thanh toán lúc này.",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Không mở được cổng thanh toán lúc này.",
     };
   }
 
