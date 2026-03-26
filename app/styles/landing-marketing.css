@@ -390,6 +390,17 @@
   border-color: rgba(197, 165, 90, 0.5);
 }
 
+#lp .lp-form-row input.lp-form-input-invalid {
+  border-color: rgba(139, 26, 26, 0.65);
+}
+
+#lp .lp-form-field-error {
+  font-size: 0.78rem;
+  color: var(--lp-red);
+  margin: 0.45rem 0 0;
+  line-height: 1.45;
+}
+
 #lp .lp-form-row-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;

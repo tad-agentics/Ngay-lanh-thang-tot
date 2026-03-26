@@ -10,7 +10,10 @@ import type { Route } from "./+types/landing";
 
 import "~/styles/landing-marketing.css";
 
-import { LANDING_GIO_SINH as GIO_SINH } from "~/lib/landing-cta-constants";
+import {
+  LANDING_GIO_SINH as GIO_SINH,
+  parseLandingDobDdMmYyyy,
+} from "~/lib/landing-cta-constants";
 
 const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
 
@@ -190,19 +193,38 @@ export function meta({}: Route.MetaArgs) {
 
 type CTAFormFields = { name: string; dob: string; gio: string; gender: string };
 
+type CTACommitted = {
+  name: string;
+  dobIso: string;
+  gio: string;
+  gender: string;
+};
+
 function CTAForm({ id }: { id: string }) {
-  const [submitted, setSubmitted] = useState(false);
+  const [committed, setCommitted] = useState<CTACommitted | null>(null);
   const [form, setForm] = useState<CTAFormFields>({
     name: "",
     dob: "",
     gio: GIO_SINH[0]!,
     gender: "",
   });
+  const [dobError, setDobError] = useState<string | null>(null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.dob || !form.gender) return;
-    setSubmitted(true);
+    setDobError(null);
+    const dobParsed = parseLandingDobDdMmYyyy(form.dob);
+    if (!dobParsed.ok) {
+      setDobError(dobParsed.message);
+      return;
+    }
+    if (!form.name.trim() || !form.gender) return;
+    setCommitted({
+      name: form.name.trim(),
+      dobIso: dobParsed.iso,
+      gio: form.gio,
+      gender: form.gender,
+    });
   }
 
   const set =
@@ -210,14 +232,16 @@ function CTAForm({ id }: { id: string }) {
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const signupSearch = new URLSearchParams({
-    name: form.name,
-    dob: form.dob,
-    gio: form.gio,
-    gender: form.gender,
-  }).toString();
+  const signupSearch = committed
+    ? new URLSearchParams({
+        name: committed.name,
+        dob: committed.dobIso,
+        gio: committed.gio,
+        gender: committed.gender,
+      }).toString()
+    : "";
 
-  if (submitted) {
+  if (committed) {
     return (
       <div className="lp-cta-card">
         <div className="lp-cta-card-inner" style={{ textAlign: "center", padding: "1rem 0" }}>
@@ -232,7 +256,7 @@ function CTAForm({ id }: { id: string }) {
             吉
           </div>
           <h2 className="lp-cta-heading" style={{ marginBottom: "0.75rem" }}>
-            Lá số cho {form.name} đã dựng xong
+            Lá số cho {committed.name} đã dựng xong
           </h2>
           <p className="lp-cta-sub" style={{ marginBottom: "1.5rem" }}>
             Mở tài khoản để xem Nhật Chủ, Dụng Thần và các ngày tốt bám theo mệnh của
@@ -287,9 +311,35 @@ function CTAForm({ id }: { id: string }) {
               Ngày sinh
             </label>
             <p className="lp-form-hint">
-              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng.
+              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng. Nhập dd/mm/yyyy
+              (ví dụ 15/08/1990).
             </p>
-            <input id={`${id}-dob`} type="date" value={form.dob} onChange={set("dob")} required />
+            <input
+              id={`${id}-dob`}
+              type="text"
+              name="birthday-ddmmyyyy"
+              autoComplete="off"
+              placeholder="dd/mm/yyyy"
+              className={dobError ? "lp-form-input-invalid" : undefined}
+              value={form.dob}
+              onChange={(e) => {
+                setDobError(null);
+                setForm((f) => ({ ...f, dob: e.target.value }));
+              }}
+              aria-invalid={dobError ? true : undefined}
+              aria-describedby={
+                dobError ? `${id}-dob-hint ${id}-dob-error` : `${id}-dob-hint`
+              }
+            />
+            <p id={`${id}-dob-hint`} className="sr-only">
+              Định dạng hai chữ số ngày, hai chữ số tháng, bốn chữ số năm, cách nhau bằng dấu gạch
+              chéo.
+            </p>
+            {dobError ? (
+              <p id={`${id}-dob-error`} className="lp-form-field-error" role="alert">
+                {dobError}
+              </p>
+            ) : null}
           </div>
           <div className="lp-form-row lp-form-row-2">
             <div>
