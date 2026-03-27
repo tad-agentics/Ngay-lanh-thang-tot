@@ -169,6 +169,38 @@ function extractNguHanhFromLayer(
   return null;
 }
 
+/**
+ * Trọng số ngũ hành từ engine (vd. tu-tru-api `_raw.element_counts`: Kim/Mộc/…).
+ * Chuẩn hóa thành %: 100 * v / sum(v) — không giả định đã là phần trăm.
+ */
+function extractNguHanhFromElementCounts(
+  counts: unknown,
+): Record<string, number> | null {
+  if (counts == null || typeof counts !== "object" || Array.isArray(counts)) {
+    return null;
+  }
+  const agg: Record<string, number> = {};
+  for (const [nk, nv] of Object.entries(counts as Record<string, unknown>)) {
+    const canon = canonNguHanhKey(nk);
+    if (!canon) continue;
+    const num =
+      typeof nv === "number" && Number.isFinite(nv)
+        ? nv
+        : parseNguHanhNumber(nv);
+    if (num == null || !Number.isFinite(num) || num < 0) continue;
+    agg[canon] = (agg[canon] ?? 0) + num;
+  }
+  const keys = Object.keys(agg);
+  if (keys.length === 0) return null;
+  const sum = keys.reduce((s, k) => s + agg[k]!, 0);
+  if (sum <= 0) return null;
+  const out: Record<string, number> = {};
+  for (const k of keys) {
+    out[k] = (agg[k]! / sum) * 100;
+  }
+  return out;
+}
+
 /** Luôn trả đủ 5 cột; thiếu từ API → 0. */
 function padFiveElements(hit: Record<string, number>): Record<string, number> {
   const base: Record<string, number> = {};
@@ -189,7 +221,9 @@ const NGU_HANH_PLACEHOLDER: Record<string, number> = {
 
 /**
  * Đọc phân bổ ngũ hành (%) từ JSON lá số.
- * Nếu không có trường hợp lệ → placeholder đều 20% (không phải dữ liệu API).
+ * Ưu tiên `element_counts` (thường trong `_raw` từ GET la-so): trọng số → % theo tổng.
+ * Sau đó các trường `ngu_hanh` / `five_elements` đã là %.
+ * Nếu không có dữ liệu → placeholder đều 20% (chỉ để không trống UI).
  */
 function pickNguHanh(root: Record<string, unknown>): Record<string, number> {
   const layers: Record<string, unknown>[] = [root];
@@ -197,7 +231,29 @@ function pickNguHanh(root: Record<string, unknown>): Record<string, number> {
     const n = asRecord(root[k]);
     if (n) layers.push(n);
   }
+
+  const seen = new Set<Record<string, unknown>>();
+  const all: Record<string, unknown>[] = [];
+  const push = (x: Record<string, unknown> | null) => {
+    if (!x || seen.has(x)) return;
+    seen.add(x);
+    all.push(x);
+  };
   for (const layer of layers) {
+    push(layer);
+    push(asRecord(layer._raw));
+    for (const ik of ["data", "result"] as const) {
+      push(asRecord(layer[ik]));
+    }
+  }
+
+  for (const layer of all) {
+    const fromCounts =
+      extractNguHanhFromElementCounts(layer.element_counts) ??
+      extractNguHanhFromElementCounts(
+        asRecord(layer._raw)?.element_counts,
+      );
+    if (fromCounts) return padFiveElements(fromCounts);
     const hit = extractNguHanhFromLayer(layer);
     if (hit) return padFiveElements(hit);
   }
@@ -463,4 +519,62 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
   const nguHanh = pickNguHanh(root);
 
   return { thienCan, diaChi, thanSat, daiVanList, nguHanh };
+}
+
+function tryLayerElementCountsEnrichment(
+  layer: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!layer) return null;
+  const raw = asRecord(layer._raw);
+  if (
+    raw &&
+    raw.element_counts != null &&
+    typeof raw.element_counts === "object" &&
+    !Array.isArray(raw.element_counts)
+  ) {
+    return { _raw: { element_counts: raw.element_counts } };
+  }
+  if (
+    layer.element_counts != null &&
+    typeof layer.element_counts === "object" &&
+    !Array.isArray(layer.element_counts)
+  ) {
+    return { element_counts: layer.element_counts };
+  }
+  return null;
+}
+
+/**
+ * Gói nhỏ `_raw.element_counts` (hoặc `element_counts`) từ phản hồi GET /v1/la-so
+ * để ghép vào `profile.la_so` khi hiển thị chi tiết — tránh chỉ có tứ trụ từ POST tu-tru.
+ */
+export function extractLaSoChiTietEnrichment(
+  upstream: unknown,
+): Record<string, unknown> | null {
+  if (!upstream || typeof upstream !== "object" || Array.isArray(upstream)) {
+    return null;
+  }
+  const root = upstream as Record<string, unknown>;
+  return (
+    tryLayerElementCountsEnrichment(root) ??
+    tryLayerElementCountsEnrichment(asRecord(root.data)) ??
+    tryLayerElementCountsEnrichment(asRecord(root.result))
+  );
+}
+
+export function mergeLaSoJsonForChiTietDisplay(
+  stored: LaSoJson | null | undefined,
+  enrichment: Record<string, unknown> | null | undefined,
+): LaSoJson | null | undefined {
+  if (!stored) return stored;
+  if (!enrichment || Object.keys(enrichment).length === 0) return stored;
+  const s = stored as Record<string, unknown>;
+  const e = enrichment;
+  const out: Record<string, unknown> = { ...s, ...e };
+  const sRaw = asRecord(s._raw);
+  const eRaw = asRecord(e._raw);
+  if (sRaw && eRaw) {
+    out._raw = { ...sRaw, ...eRaw };
+  }
+  return out as LaSoJson;
 }

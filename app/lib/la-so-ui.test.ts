@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import type { LaSoJson } from "./api-types";
 import {
+  extractLaSoChiTietEnrichment,
   laSoJsonToChiTiet,
   laSoJsonToRevealProps,
+  mergeLaSoJsonForChiTietDisplay,
   profileHasLaso,
 } from "./la-so-ui";
 
@@ -157,5 +160,73 @@ describe("laSoJsonToChiTiet", () => {
       hoa: 20,
       tho: 20,
     });
+  });
+
+  it("reads _raw.element_counts (trọng số engine) → phần trăm theo tổng", () => {
+    const d = laSoJsonToChiTiet({
+      _raw: {
+        element_counts: {
+          Kim: 4.4,
+          Mộc: 0.6,
+          Thủy: 2,
+          Hỏa: 2,
+          Thổ: 1,
+        },
+      },
+    });
+    const sum =
+      d.nguHanh.kim +
+      d.nguHanh.moc +
+      d.nguHanh.thuy +
+      d.nguHanh.hoa +
+      d.nguHanh.tho;
+    expect(sum).toBeCloseTo(100, 5);
+    expect(d.nguHanh.kim).toBeCloseTo(44, 5);
+    expect(d.nguHanh.moc).toBeCloseTo(6, 5);
+  });
+
+  it("element_counts trong data._raw (shape la-so đầy đủ)", () => {
+    const d = laSoJsonToChiTiet({
+      data: {
+        _raw: {
+          element_counts: { Kim: 50, Mộc: 10, Thủy: 10, Hỏa: 15, Thổ: 15 },
+        },
+      },
+    });
+    expect(d.nguHanh.kim).toBe(50);
+    expect(d.nguHanh.tho).toBe(15);
+  });
+
+  it("mergeLaSoJsonForChiTietDisplay gộp sâu _raw, không ghi đè field khác", () => {
+    const merged = mergeLaSoJsonForChiTietDisplay(
+      {
+        _raw: { support_ratio: 0.4, element_counts: { Kim: 1, Mộc: 1 } },
+      } as LaSoJson,
+      {
+        _raw: { element_counts: { Kim: 3, Mộc: 1 } },
+      },
+    );
+    const raw = merged?._raw as Record<string, unknown>;
+    expect(raw.support_ratio).toBe(0.4);
+    const d = laSoJsonToChiTiet(merged);
+    expect(d.nguHanh.kim).toBeCloseTo(75, 5);
+  });
+
+  it("extractLaSoChiTietEnrichment lấy _raw từ bọc data/result", () => {
+    const ext = extractLaSoChiTietEnrichment({
+      data: {
+        _raw: { element_counts: { Kim: 1, Mộc: 3 } },
+      },
+    });
+    expect(ext).toEqual({
+      _raw: { element_counts: { Kim: 1, Mộc: 3 } },
+    });
+    const merged = mergeLaSoJsonForChiTietDisplay(
+      { pillars: {} } as LaSoJson,
+      ext,
+    );
+    const d = laSoJsonToChiTiet(merged);
+    expect(d.nguHanh.kim).toBeCloseTo(25, 5);
+    expect(d.nguHanh.moc).toBeCloseTo(75, 5);
   });
 });

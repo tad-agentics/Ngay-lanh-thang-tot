@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -23,7 +23,12 @@ import {
   normalizeLaSoSectionsInput,
   type LaSoChiTietSection,
 } from "~/lib/generate-reading";
-import { laSoJsonToChiTiet, profileHasLaso } from "~/lib/la-so-ui";
+import {
+  extractLaSoChiTietEnrichment,
+  laSoJsonToChiTiet,
+  mergeLaSoJsonForChiTietDisplay,
+  profileHasLaso,
+} from "~/lib/la-so-ui";
 
 /** Thanh ngũ hành — khớp Make: xám / forest / xanh / đỏ sẫm / ochre. */
 const NGU_HANH_COLORS: Record<string, string> = {
@@ -105,6 +110,8 @@ function persistChiTietSession(
   state: {
     luanSections?: LaSoChiTietSection[] | null;
     payload?: unknown | null;
+    /** `_raw.element_counts` từ GET la-so — nhỏ, giữ để thanh ngũ hành khớp engine sau F5 */
+    chiTietEnrichment?: Record<string, unknown> | null;
   },
 ): void {
   const key = `${LA_SO_CHI_TIET_SESSION}${profileId}`;
@@ -113,6 +120,12 @@ function persistChiTietSession(
       Array.isArray(state.luanSections) && state.luanSections.length > 0;
     const hasPayload =
       state.payload !== undefined && state.payload !== null;
+    const enrich =
+      state.chiTietEnrichment != null &&
+      typeof state.chiTietEnrichment === "object" &&
+      Object.keys(state.chiTietEnrichment).length > 0
+        ? state.chiTietEnrichment
+        : undefined;
 
     if (hasLuan) {
       sessionStorage.setItem(
@@ -121,6 +134,7 @@ function persistChiTietSession(
           v: 5,
           revision: cacheRevision,
           luanSections: state.luanSections,
+          ...(enrich ? { chiTietEnrichment: enrich } : {}),
         }),
       );
       return;
@@ -143,6 +157,7 @@ function persistChiTietSession(
           v: 5,
           revision: cacheRevision,
           payload: state.payload,
+          ...(enrich ? { chiTietEnrichment: enrich } : {}),
         }),
       );
       return;
@@ -220,6 +235,18 @@ export default function AppLaSoChiTiet() {
   const [luanSections, setLuanSections] = useState<LaSoChiTietSection[]>([]);
   /** Đã có payload `la-so` nhưng bước generate-reading lỗi — chỉ gọi lại generate-reading. */
   const [laSoPayloadRetry, setLaSoPayloadRetry] = useState<unknown | null>(null);
+  /** Phần bổ sung từ GET la-so (`_raw.element_counts`) — ref đồng bộ khi gọi persist sau await. */
+  const [chiTietEnrichment, setChiTietEnrichment] = useState<
+    Record<string, unknown> | null
+  >(null);
+  const chiTietEnrichmentRef = useRef<Record<string, unknown> | null>(null);
+  const assignChiTietEnrichment = useCallback(
+    (x: Record<string, unknown> | null) => {
+      chiTietEnrichmentRef.current = x;
+      setChiTietEnrichment(x);
+    },
+    [],
+  );
   const [detailBusy, setDetailBusy] = useState(false);
   const [detailAiLoading, setDetailAiLoading] = useState(false);
   const detailGenRef = useRef(0);
@@ -245,7 +272,10 @@ export default function AppLaSoChiTiet() {
     const expectedRevision = laSoChiTietCacheRevision(profile);
     try {
       const raw = sessionStorage.getItem(key);
-      if (!raw) return;
+      if (!raw) {
+        assignChiTietEnrichment(null);
+        return;
+      }
       const o = JSON.parse(raw) as {
         v?: number;
         revision?: string;
@@ -255,6 +285,7 @@ export default function AppLaSoChiTiet() {
         payload?: unknown;
         structuredSections?: unknown;
         luanSections?: LaSoChiTietSection[];
+        chiTietEnrichment?: Record<string, unknown>;
       };
       const revisionMatches =
         typeof o.revision === "string" && o.revision === expectedRevision;
@@ -264,8 +295,20 @@ export default function AppLaSoChiTiet() {
         o.profileUpdatedAt === profile.updated_at;
       if (!revisionMatches && !legacyV2Matches) {
         sessionStorage.removeItem(key);
+        assignChiTietEnrichment(null);
         return;
       }
+      const enrichRestored =
+        o.chiTietEnrichment != null &&
+        typeof o.chiTietEnrichment === "object" &&
+        !Array.isArray(o.chiTietEnrichment)
+          ? o.chiTietEnrichment
+          : extractLaSoChiTietEnrichment(o.payload);
+      assignChiTietEnrichment(
+        enrichRestored && Object.keys(enrichRestored).length > 0
+          ? enrichRestored
+          : null,
+      );
       const restoredLuan = normalizeLaSoSectionsInput(o.luanSections);
       if (restoredLuan.length > 0) {
         setLuanSections(restoredLuan);
@@ -273,6 +316,10 @@ export default function AppLaSoChiTiet() {
         if (legacyV2Matches && !revisionMatches) {
           persistChiTietSession(profile.id, expectedRevision, {
             luanSections: restoredLuan,
+            chiTietEnrichment:
+              enrichRestored && Object.keys(enrichRestored).length > 0
+                ? enrichRestored
+                : undefined,
           });
         }
         return;
@@ -297,6 +344,10 @@ export default function AppLaSoChiTiet() {
                 text: o.reading.trim(),
               },
             ]),
+            chiTietEnrichment:
+              enrichRestored && Object.keys(enrichRestored).length > 0
+                ? enrichRestored
+                : undefined,
           });
         }
         return;
@@ -307,18 +358,25 @@ export default function AppLaSoChiTiet() {
         if (legacyV2Matches && !revisionMatches) {
           persistChiTietSession(profile.id, expectedRevision, {
             payload: o.payload,
+            chiTietEnrichment:
+              enrichRestored && Object.keys(enrichRestored).length > 0
+                ? enrichRestored
+                : undefined,
           });
         }
       }
     } catch {
       sessionStorage.removeItem(key);
+      assignChiTietEnrichment(null);
     }
   }, [
+    assignChiTietEnrichment,
     profile?.id,
     profile?.ngay_sinh,
     profile?.gio_sinh,
     profile?.gioi_tinh,
     profile?.birth_data_locked_at,
+    profile?.updated_at,
   ]);
 
   async function runGenerateReadingFromPayload(payload: unknown) {
@@ -352,6 +410,7 @@ export default function AppLaSoChiTiet() {
         if (mountedRef.current) setLuanSections([]);
         persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
           payload,
+          chiTietEnrichment: chiTietEnrichmentRef.current ?? undefined,
         });
         return;
       }
@@ -364,6 +423,7 @@ export default function AppLaSoChiTiet() {
         if (mountedRef.current) setLuanSections([]);
         persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
           payload,
+          chiTietEnrichment: chiTietEnrichmentRef.current ?? undefined,
         });
         return;
       }
@@ -371,6 +431,7 @@ export default function AppLaSoChiTiet() {
       setLaSoPayloadRetry(null);
       persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
         luanSections: clamped,
+        chiTietEnrichment: chiTietEnrichmentRef.current ?? undefined,
       });
       void refresh();
     } finally {
@@ -392,6 +453,7 @@ export default function AppLaSoChiTiet() {
     }
     setLaSoPayloadRetry(null);
     setLuanSections([]);
+    assignChiTietEnrichment(null);
     persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {});
     setDetailBusy(true);
     setDetailAiLoading(false);
@@ -404,9 +466,12 @@ export default function AppLaSoChiTiet() {
       if (mountedRef.current) setDetailBusy(false);
       return;
     }
+    const ext = extractLaSoChiTietEnrichment(res.data);
+    if (ext) assignChiTietEnrichment(ext);
     const payload = laSoReadingPayload(res.data);
     persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
       payload,
+      chiTietEnrichment: ext ?? undefined,
     });
     if (!mountedRef.current) return;
     setLaSoPayloadRetry(payload);
@@ -428,7 +493,12 @@ export default function AppLaSoChiTiet() {
     );
   }
 
-  const detail = laSoJsonToChiTiet(profile.la_so as LaSoJson);
+  const detail = laSoJsonToChiTiet(
+    mergeLaSoJsonForChiTietDisplay(
+      profile.la_so as LaSoJson,
+      chiTietEnrichment,
+    ) as LaSoJson,
+  );
   const { nguHanh } = detail;
   const currentDaiVan =
     detail.daiVanList.find((d) => d.isActive) ??
