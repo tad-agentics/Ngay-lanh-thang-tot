@@ -185,6 +185,22 @@ describe("laSoJsonToChiTiet", () => {
     expect(d.nguHanh.moc).toBeCloseTo(6, 5);
   });
 
+  it("elementCounts camelCase trên _raw (API)", () => {
+    const d = laSoJsonToChiTiet({
+      _raw: { elementCounts: { Kim: 2, Mộc: 2, Thủy: 2, Hỏa: 2, Thổ: 2 } },
+    });
+    expect(d.nguHanh.kim).toBeCloseTo(20, 5);
+  });
+
+  it("extractLaSoChiTietEnrichment: camelCase + lồng payload", () => {
+    const ext = extractLaSoChiTietEnrichment({
+      payload: { _raw: { elementCounts: { Kim: 9, Mộc: 1 } } },
+    });
+    expect(ext).toEqual({
+      _raw: { element_counts: { Kim: 9, Mộc: 1 } },
+    });
+  });
+
   it("element_counts trong data._raw (shape la-so đầy đủ)", () => {
     const d = laSoJsonToChiTiet({
       data: {

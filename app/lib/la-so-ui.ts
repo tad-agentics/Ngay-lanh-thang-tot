@@ -248,10 +248,15 @@ function pickNguHanh(root: Record<string, unknown>): Record<string, number> {
   }
 
   for (const layer of all) {
+    const raw = asRecord(layer._raw);
     const fromCounts =
       extractNguHanhFromElementCounts(layer.element_counts) ??
       extractNguHanhFromElementCounts(
-        asRecord(layer._raw)?.element_counts,
+        (layer as { elementCounts?: unknown }).elementCounts,
+      ) ??
+      extractNguHanhFromElementCounts(raw?.element_counts) ??
+      extractNguHanhFromElementCounts(
+        raw ? (raw as { elementCounts?: unknown }).elementCounts : undefined,
       );
     if (fromCounts) return padFiveElements(fromCounts);
     const hit = extractNguHanhFromLayer(layer);
@@ -521,33 +526,66 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
   return { thienCan, diaChi, thanSat, daiVanList, nguHanh };
 }
 
+function isPlainElementCounts(
+  v: unknown,
+): v is Record<string, unknown> {
+  return (
+    v != null && typeof v === "object" && !Array.isArray(v)
+  );
+}
+
+function pickElementCountsForEnrichment(
+  layer: Record<string, unknown>,
+): Record<string, unknown> | null {
+  const raw = asRecord(layer._raw);
+  const candidates: unknown[] = [
+    layer.element_counts,
+    (layer as { elementCounts?: unknown }).elementCounts,
+    raw?.element_counts,
+    raw ? (raw as { elementCounts?: unknown }).elementCounts : undefined,
+  ];
+  for (const c of candidates) {
+    if (isPlainElementCounts(c)) return c as Record<string, unknown>;
+  }
+  return null;
+}
+
 function tryLayerElementCountsEnrichment(
   layer: Record<string, unknown> | null,
 ): Record<string, unknown> | null {
   if (!layer) return null;
-  const raw = asRecord(layer._raw);
-  if (
-    raw &&
-    raw.element_counts != null &&
-    typeof raw.element_counts === "object" &&
-    !Array.isArray(raw.element_counts)
-  ) {
-    return { _raw: { element_counts: raw.element_counts } };
-  }
-  if (
-    layer.element_counts != null &&
-    typeof layer.element_counts === "object" &&
-    !Array.isArray(layer.element_counts)
-  ) {
-    return { element_counts: layer.element_counts };
-  }
-  return null;
+  const counts = pickElementCountsForEnrichment(layer);
+  if (!counts) return null;
+  return { _raw: { element_counts: counts } };
 }
 
 /**
  * Gói nhỏ `_raw.element_counts` (hoặc `element_counts`) từ phản hồi GET /v1/la-so
  * để ghép vào `profile.la_so` khi hiển thị chi tiết — tránh chỉ có tứ trụ từ POST tu-tru.
  */
+/** Các lớp envelope hay gặp từ GET /v1/la-so hoặc payload đã lột. */
+const LA_SO_ENRICH_NEST_KEYS = [
+  "data",
+  "result",
+  "payload",
+  "la_so",
+  "chart",
+  "detail",
+] as const;
+
+function tryNestedElementCountsEnrichment(
+  r: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!r) return null;
+  const direct = tryLayerElementCountsEnrichment(r);
+  if (direct) return direct;
+  for (const k of LA_SO_ENRICH_NEST_KEYS) {
+    const hit = tryLayerElementCountsEnrichment(asRecord(r[k]));
+    if (hit) return hit;
+  }
+  return null;
+}
+
 export function extractLaSoChiTietEnrichment(
   upstream: unknown,
 ): Record<string, unknown> | null {
@@ -556,9 +594,9 @@ export function extractLaSoChiTietEnrichment(
   }
   const root = upstream as Record<string, unknown>;
   return (
-    tryLayerElementCountsEnrichment(root) ??
-    tryLayerElementCountsEnrichment(asRecord(root.data)) ??
-    tryLayerElementCountsEnrichment(asRecord(root.result))
+    tryNestedElementCountsEnrichment(root) ??
+    tryNestedElementCountsEnrichment(asRecord(root.data)) ??
+    tryNestedElementCountsEnrichment(asRecord(root.result))
   );
 }
 

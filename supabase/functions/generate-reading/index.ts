@@ -45,6 +45,9 @@ const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt
 9. KHÔNG lặp lại dữ liệu thô (tên field, số index, mảng). Luận ra ý nghĩa.`;
 
 /** Thời hạn cache (ms) theo quy ước sản phẩm */
+/** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
+const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
+
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
   "chon-ngay": 24 * 60 * 60 * 1000,
@@ -170,20 +173,118 @@ function tryParseLaSoChiTietRecord(text: string): Record<string, unknown> | null
   return null;
 }
 
+function stripViCombiningKey(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function normalizeLaSoAspectKey(key: string): string | null {
+  const k = key.trim();
+  if (LA_SO_KEY_ALIAS[k]) return LA_SO_KEY_ALIAS[k];
+  if (LA_SO_ASPECT_ORDER.includes(k as (typeof LA_SO_ASPECT_ORDER)[number])) {
+    return k;
+  }
+  const underscored = stripViCombiningKey(k).replace(/\s+/g, "_");
+  if (
+    LA_SO_ASPECT_ORDER.includes(
+      underscored as (typeof LA_SO_ASPECT_ORDER)[number],
+    )
+  ) {
+    return underscored;
+  }
+  const compact = underscored.replace(/_/g, "");
+  for (const id of LA_SO_ASPECT_ORDER) {
+    if (id.replace(/_/g, "") === compact) return id;
+  }
+  return null;
+}
+
+function coerceLaSoSectionText(v: unknown): string | null {
+  if (typeof v === "string") {
+    const t = v.trim().replace(/^\s*[-*•]\s+/gm, "").trim();
+    return t.length > 0 ? t : null;
+  }
+  if (Array.isArray(v)) {
+    const parts = v
+      .filter((x): x is string => typeof x === "string")
+      .map((x) => x.trim())
+      .filter((x) => x.length > 0);
+    if (!parts.length) return null;
+    return parts.join(" ");
+  }
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    const o = v as Record<string, unknown>;
+    const nest = o.text ?? o.body ?? o.content ?? o.noi_dung;
+    return coerceLaSoSectionText(nest);
+  }
+  return null;
+}
+
+function sectionsFromExplicitArray(raw: unknown): LaSoChiTietSection[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: LaSoChiTietSection[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const r = row as Record<string, unknown>;
+    const idRaw = typeof r.id === "string" ? r.id.trim() : "";
+    const canon = normalizeLaSoAspectKey(idRaw);
+    if (!canon) continue;
+    const title =
+      typeof r.title === "string" && r.title.trim()
+        ? r.title.trim()
+        : (LA_SO_ASPECT_TITLES[canon] ?? canon);
+    const text = coerceLaSoSectionText(r.text);
+    if (!text) continue;
+    out.push({ id: canon, title, text });
+  }
+  return out.length > 0 ? out : null;
+}
+
+const LA_SO_NESTED_ASPECT_WRAPPERS = [
+  "luan_giai",
+  "luanGiai",
+  "luận_giải",
+  "reading",
+  "chi_tiet",
+  "chiTiet",
+  "noi_dung",
+  "noiDung",
+] as const;
+
+function flattenLaSoChiTietRecord(
+  record: Record<string, unknown>,
+): Record<string, unknown> {
+  let flat = { ...record };
+  for (const w of LA_SO_NESTED_ASPECT_WRAPPERS) {
+    const v = flat[w];
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      flat = { ...flat, ...(v as Record<string, unknown>) };
+    }
+  }
+  return flat;
+}
+
 function parseLaSoChiTietSections(text: string): LaSoChiTietSection[] | null {
   const record = tryParseLaSoChiTietRecord(text);
   if (!record) return null;
+
+  const fromArr = sectionsFromExplicitArray(record.sections);
+  if (fromArr?.length) return fromArr;
+
+  const flat = flattenLaSoChiTietRecord(record);
   const byId = new Map<string, string>();
 
-  for (const key of Object.keys(record)) {
-    const canon = LA_SO_KEY_ALIAS[key] ??
-      (LA_SO_ASPECT_ORDER.includes(key as (typeof LA_SO_ASPECT_ORDER)[number])
-        ? key
-        : null);
+  for (const key of Object.keys(flat)) {
+    if (key === "sections") continue;
+    if ((LA_SO_NESTED_ASPECT_WRAPPERS as readonly string[]).includes(key)) {
+      continue;
+    }
+    const canon = normalizeLaSoAspectKey(key);
     if (!canon) continue;
-    const v = record[key];
-    if (typeof v !== "string") continue;
-    const t = v.trim().replace(/^\s*[-*•]\s+/gm, "").trim();
+    const t = coerceLaSoSectionText(flat[key]);
     if (!t) continue;
     byId.set(canon, t);
   }
@@ -343,6 +444,22 @@ async function anthropicLaSoChiTiet(userJson: string): Promise<string | null> {
   );
 }
 
+const LA_SO_CHI_TIET_RETRY_SYSTEM =
+`Bạn nhận cùng JSON đầu vào (endpoint la-so-chi-tiet). Nhiệm vụ: CHỈ trả về một object JSON, không markdown, không \`\`\`, không lời dẫn.
+Các khóa bắt buộc (chuỗi tiếng Việt, văn xuôi, không gạch đầu dòng): tinh_cach, su_nghiep, tai_van, suc_khoe, tinh_duyen.
+Tạo đủ 5 khóa trừ khi dữ liệu đầu vào hoàn toàn không cho phép một mục (khi đó bỏ khóa đó hẳn).`;
+
+async function anthropicLaSoChiTietStructRetry(
+  userJson: string,
+): Promise<string | null> {
+  return await anthropicCompletion(
+    LA_SO_CHI_TIET_RETRY_SYSTEM,
+    userJson,
+    2048,
+    LA_SO_CHI_TIET_TIMEOUT_MS,
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -381,7 +498,10 @@ Deno.serve(async (req) => {
   }
 
   const dataJson = stableStringify(data);
-  const cacheInput = `${endpoint}\n${dataJson}`;
+  const cacheInput =
+    endpoint === "la-so-chi-tiet"
+      ? `${LA_SO_CHI_TIET_CACHE_VER}\n${endpoint}\n${dataJson}`
+      : `${endpoint}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify({ endpoint, data });
@@ -424,6 +544,12 @@ Deno.serve(async (req) => {
     const raw = await anthropicLaSoChiTiet(payload);
     if (!raw) return ok(null, null);
     let sections = parseLaSoChiTietSections(raw);
+    if (!sections?.length) {
+      const retryText = await anthropicLaSoChiTietStructRetry(payload);
+      if (retryText) {
+        sections = parseLaSoChiTietSections(retryText);
+      }
+    }
     if (!sections?.length) {
       console.warn(
         "[luận-giải] la-so-chi-tiet: JSON rỗng hoặc không đọc được — thử luận giải một khối văn",
