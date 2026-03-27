@@ -56,13 +56,13 @@ function normalizeLaSoSections(
   return out.length > 0 ? out : null;
 }
 
-/** Chuẩn hóa mảng section (API hoặc session); rỗng nếu không hợp lệ. */
+/** Chuẩn hóa mảng section (phản hồi máy chủ hoặc session); rỗng nếu không hợp lệ. */
 export function normalizeLaSoSectionsInput(raw: unknown): LaSoChiTietSection[] {
   return normalizeLaSoSections(raw) ?? [];
 }
 
 /**
- * Gọi Edge `generate-reading` — an toàn: EF trả 200; reading/sections có thể null.
+ * Gọi Edge luận giải (`generate-reading`) — luôn HTTP 200; reading/sections có thể null.
  */
 export async function invokeGenerateReading(
   input: GenerateReadingInput,
@@ -77,12 +77,12 @@ export async function invokeGenerateReading(
         if (error instanceof FunctionsHttpError) {
           try {
             const body = (await error.context.json()) as unknown;
-            console.warn("[generate-reading]", error.message, body);
+            console.warn("[luận-giải]", error.message, body);
           } catch {
-            console.warn("[generate-reading]", error.message);
+            console.warn("[luận-giải]", error.message);
           }
         } else {
-          console.warn("[generate-reading]", error);
+          console.warn("[luận-giải]", error);
         }
       }
       return { reading: null, sections: null };
@@ -99,7 +99,9 @@ export async function invokeGenerateReading(
     }
     return { reading: null, sections: null };
   } catch (e) {
-    if (import.meta.env.DEV) console.warn("[generate-reading] invoke failed", e);
+    if (import.meta.env.DEV) {
+      console.warn("[luận-giải] Gọi Edge thất bại:", e);
+    }
     return { reading: null, sections: null };
   }
 }

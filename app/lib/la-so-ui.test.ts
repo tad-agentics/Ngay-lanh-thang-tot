@@ -91,6 +91,38 @@ describe("laSoJsonToChiTiet", () => {
     );
   });
 
+  it("đại vận active khớp dai_van.current — không mặc định phần tử đầu danh sách", () => {
+    const d = laSoJsonToChiTiet({
+      dai_van: {
+        current: { display: "Giáp Thân", age_range: "31-40" },
+      },
+      dai_van_list: [
+        { label: "Canh Thìn", years: "1-10" },
+        { label: "Giáp Thân", years: "31-40" },
+        { label: "Ất Dậu", years: "51-60" },
+      ],
+    });
+    const active = d.daiVanList.filter((x) => x.isActive);
+    expect(active).toHaveLength(1);
+    expect(active[0].label).toBe("Giáp Thân");
+    expect(active[0].years).toBe("31-40");
+  });
+
+  it("đọc dai_van_list + current từ lớp data", () => {
+    const d = laSoJsonToChiTiet({
+      data: {
+        dai_van: { current: { display: "Nhâm Ngọ", age_range: "21-30" } },
+        dai_van_list: [
+          { label: "Tân Tỵ", years: "11-20" },
+          { label: "Nhâm Ngọ", years: "21-30" },
+        ],
+      },
+    });
+    const active = d.daiVanList.filter((x) => x.isActive);
+    expect(active).toHaveLength(1);
+    expect(active[0].label).toBe("Nhâm Ngọ");
+  });
+
   it("reads ngũ hành from nested data + Vietnamese keys", () => {
     const d = laSoJsonToChiTiet({
       data: {

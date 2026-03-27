@@ -38,6 +38,17 @@ const LA_SO_CHI_TIET_SESSION = "la-so-chi-tiet-ai:";
 /** Tránh vượt ~5MB sessionStorage; payload structured thường < 100KB. */
 const MAX_LASO_PAYLOAD_CACHE_CHARS = 1_500_000;
 
+/** Thứ tự nhãn cố định — luôn hiển thị đủ 5 mục; nội dung là đoạn văn tự động cho từng khía cạnh. */
+const LA_SO_CHI_TIET_ASPECT_ROWS: { id: string; title: string }[] = [
+  { id: "tinh_cach", title: "Tính cách" },
+  { id: "su_nghiep", title: "Sự nghiệp" },
+  { id: "tai_van", title: "Tài vận" },
+  { id: "suc_khoe", title: "Sức khỏe" },
+  { id: "tinh_duyen", title: "Tình duyên" },
+];
+
+const TONG_HOP_SECTION_ID = "tong_hop";
+
 /**
  * Khóa cache theo dữ liệu sinh / chốt lá số — không dùng `updated_at` (sẽ đổi sau refresh
  * số dư, subscription, v.v. và làm mất luận giải đã tạo khi F5).
@@ -87,7 +98,7 @@ function laSoReadingPayload(data: unknown): unknown {
   return cur;
 }
 
-/** Lưu luận giải theo khía cạnh và/hoặc payload chờ generate-reading; rỗng hết thì xóa key. */
+/** Lưu luận giải theo khía cạnh và/hoặc tải trọng chờ Edge luận giải; rỗng hết thì xóa key. */
 function persistChiTietSession(
   profileId: string,
   cacheRevision: string,
@@ -143,12 +154,69 @@ function persistChiTietSession(
   }
 }
 
+function LaSoChiTietLuanAccordion({
+  sections,
+}: {
+  sections: LaSoChiTietSection[];
+}) {
+  const byId = new Map(sections.map((s) => [s.id, s]));
+  const singleTongHop =
+    sections.length === 1 && sections[0]?.id === TONG_HOP_SECTION_ID;
+
+  if (singleTongHop) {
+    const sec = sections[0]!;
+    return (
+      <Accordion type="multiple" defaultValue={[sec.id]} className="w-full">
+        <AccordionItem value={sec.id}>
+          <AccordionTrigger className="text-sm font-semibold py-3">
+            {sec.title}
+          </AccordionTrigger>
+          <AccordionContent>
+            <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+              {sec.text}
+            </p>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    );
+  }
+
+  const defaultOpen = LA_SO_CHI_TIET_ASPECT_ROWS.map((r) => r.id);
+  return (
+    <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
+      {LA_SO_CHI_TIET_ASPECT_ROWS.map(({ id, title }) => {
+        const sec = byId.get(id);
+        const body = sec?.text?.trim();
+        return (
+          <AccordionItem key={id} value={id}>
+            <AccordionTrigger className="text-sm font-semibold py-3">
+              {title}
+            </AccordionTrigger>
+            <AccordionContent>
+              {body ? (
+                <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                  {body}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm leading-relaxed italic">
+                  Chưa có luận giải cho mục này — phản hồi lá số thiếu dữ liệu cho khía cạnh
+                  đó, hoặc luận giải theo từng khía cạnh chưa tạo được.
+                </p>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        );
+      })}
+    </Accordion>
+  );
+}
+
 export default function AppLaSoChiTiet() {
   const navigate = useNavigate();
   const { profile, loading, refresh } = useProfile();
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
 
-  /** Luận giải generative theo khía cạnh (một lần gọi la-so-chi-tiet). */
+  /** Luận giải tự động theo khía cạnh (một lần gọi la-so-chi-tiet). */
   const [luanSections, setLuanSections] = useState<LaSoChiTietSection[]>([]);
   /** Đã có payload `la-so` nhưng bước generate-reading lỗi — chỉ gọi lại generate-reading. */
   const [laSoPayloadRetry, setLaSoPayloadRetry] = useState<unknown | null>(null);
@@ -362,6 +430,9 @@ export default function AppLaSoChiTiet() {
 
   const detail = laSoJsonToChiTiet(profile.la_so as LaSoJson);
   const { nguHanh } = detail;
+  const currentDaiVan =
+    detail.daiVanList.find((d) => d.isActive) ??
+    (detail.daiVanList.length === 1 ? detail.daiVanList[0] : undefined);
 
   const q = profileToBatTuPersonQuery(profile);
   const needsBirthTime = q.birth_time === undefined;
@@ -502,43 +573,39 @@ export default function AppLaSoChiTiet() {
           className="bg-card border border-border px-4 py-4 shadow-sm"
           style={{ borderRadius: "var(--radius-lg)" }}
         >
-          <p className="text-foreground text-base font-semibold mb-3">Đại Vận</p>
-          <div className="flex flex-col gap-2">
-            {detail.daiVanList.map((dv) => (
-              <div
-                key={`${dv.label}-${dv.years}`}
-                className={cn(
-                  "flex items-center gap-2 py-2.5 px-3 rounded-[var(--radius-sm)]",
-                  dv.isActive
-                    ? "bg-forest text-make-cta shadow-sm"
-                    : "border border-border bg-transparent",
-                )}
-              >
-                <span
-                  className={cn(
-                    "text-sm font-semibold flex-1 min-w-0",
-                    dv.isActive ? "text-make-cta" : "text-foreground",
-                  )}
-                >
-                  {dv.label}
+          <p className="text-foreground text-base font-semibold mb-1">
+            Đại vận hiện tại
+          </p>
+          <p className="text-muted-foreground text-xs leading-relaxed mb-3">
+            Theo dữ liệu lá số đã lưu — trụ và khoảng tuổi tương ứng giai đoạn đang vận.
+          </p>
+          {currentDaiVan ? (
+            <div
+              className={cn(
+                "flex flex-col gap-1 py-3 px-3 rounded-[var(--radius-sm)]",
+                "bg-forest text-make-cta shadow-sm",
+              )}
+            >
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <span className="text-sm font-semibold text-make-cta min-w-0">
+                  {currentDaiVan.label}
                 </span>
-                <span
-                  className={cn(
-                    "text-xs tabular-nums shrink-0",
-                    dv.isActive ? "text-make-cta" : "text-muted-foreground",
-                  )}
-                  style={{ fontFamily: "var(--font-ibm-mono)" }}
-                >
-                  {dv.years}
-                </span>
-                {dv.isActive ? (
-                  <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-md bg-black/22 text-make-cta border border-make-cta/30">
-                    Hiện tại
+                {currentDaiVan.years !== "—" ? (
+                  <span
+                    className="text-xs tabular-nums shrink-0 text-make-cta/95"
+                    style={{ fontFamily: "var(--font-ibm-mono)" }}
+                  >
+                    Tuổi {currentDaiVan.years}
                   </span>
                 ) : null}
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Chưa xác định được đại vận hiện tại từ dữ liệu. Kiểm tra lá số đã chốt có đủ
+              thông tin đại vận.
+            </p>
+          )}
         </div>
 
         {showLaSoFlowPanel ? (
@@ -550,9 +617,10 @@ export default function AppLaSoChiTiet() {
               Luận giải theo lá số
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Mỗi khía cạnh (tính cách, sự nghiệp, tài vận, sức khỏe, tình duyên khi có dữ
-              liệu) là một đoạn văn mạch lạc, dựa trên lá số chi tiết — không thay thế bảng
-              tứ trụ ở trên.
+              Năm mục bên dưới giữ đúng khía cạnh như giao diện cũ. Trong từng mục bạn xem một
+              đoạn luận giải tự động (không gạch đầu dòng, không trích nguyên văn thô từ dữ
+              liệu gốc — chỉ văn bản tư vấn mạch lạc), bám theo lá số chi tiết — không thay
+              thế bảng tứ trụ phía trên.
             </p>
             {(detailBusy || detailAiLoading) && luanSections.length === 0 ? (
               <div className="space-y-2" aria-busy="true">
@@ -560,24 +628,7 @@ export default function AppLaSoChiTiet() {
                 <div className="h-10 rounded-md bg-muted/40 animate-pulse w-[94%]" />
               </div>
             ) : luanSections.length > 0 ? (
-              <Accordion
-                type="multiple"
-                defaultValue={luanSections.map((s) => s.id)}
-                className="w-full"
-              >
-                {luanSections.map((sec) => (
-                  <AccordionItem key={sec.id} value={sec.id}>
-                    <AccordionTrigger className="text-sm font-semibold py-3">
-                      {sec.title}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-                        {sec.text}
-                      </p>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
+              <LaSoChiTietLuanAccordion sections={luanSections} />
             ) : null}
           </div>
         ) : null}
@@ -596,8 +647,8 @@ export default function AppLaSoChiTiet() {
             </p>
             {needsBirthTime ? (
               <p className="text-destructive text-xs leading-relaxed mb-3">
-                Thiếu khung giờ sinh trên hồ sơ — không gọi được API lá số chi
-                tiết. Cập nhật trong Cài đặt (hoặc lập lại lá số nếu được phép).
+                Thiếu khung giờ sinh trên hồ sơ — không lấy được lá số chi tiết từ
+                máy chủ. Cập nhật trong Cài đặt (hoặc lập lại lá số nếu được phép).
               </p>
             ) : null}
             <Button
