@@ -15,7 +15,7 @@ export const FEATURE_KEY_MAP: Record<string, string> = {
   van_thang: "tieu_van",
   hop_tuoi: "hop_tuoi",
   phong_thuy: "phong_thuy",
-  /** Diễn giải chi tiết lá số (GET /v1/la-so + generate-reading). */
+  /** Diễn giải chi tiết lá số — canonical key (miễn phí; bat-tu op `la-so`). */
   la_so_diengiai: "la_so_diengiai",
   chia_se: "share_card",
 };

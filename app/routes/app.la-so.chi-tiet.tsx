@@ -4,13 +4,11 @@ import { toast } from "sonner";
 
 import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
-import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/utils";
-import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import type { LaSoJson } from "~/lib/api-types";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -92,7 +90,7 @@ function persistChiTietSession(
       if (s.length > MAX_LASO_PAYLOAD_CACHE_CHARS) {
         if (import.meta.env.DEV) {
           console.warn(
-            "[la-so chi tiết] Payload quá lớn — không cache (F5 có thể mất nút thử lại không trừ lượng).",
+            "[la-so chi tiết] Payload quá lớn — không cache (F5 có thể mất nút thử lại).",
           );
         }
         sessionStorage.removeItem(key);
@@ -118,11 +116,10 @@ function persistChiTietSession(
 export default function AppLaSoChiTiet() {
   const navigate = useNavigate();
   const { profile, loading, refresh } = useProfile();
-  const { costs, loading: costsLoading } = useFeatureCosts();
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
 
   const [detailReading, setDetailReading] = useState<string | null>(null);
-  /** Đã trả phí bat-tu `la-so` nhưng Haiku lỗi — chỉ gọi lại generate-reading, không trừ lượng lần hai. */
+  /** Đã có payload `la-so` nhưng bước generate-reading lỗi — chỉ gọi lại generate-reading. */
   const [laSoPayloadRetry, setLaSoPayloadRetry] = useState<unknown | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
   const [detailAiLoading, setDetailAiLoading] = useState(false);
@@ -185,7 +182,7 @@ export default function AppLaSoChiTiet() {
       const text = reading?.trim() ?? null;
       if (!text) {
         toast.error(
-          "Chưa tạo được diễn giải. Bạn có thể thử lại — không trừ thêm lượng.",
+          "Chưa tạo được diễn giải. Bạn có thể thử lại.",
         );
         if (mountedRef.current) setDetailReading(null);
         persistChiTietSession(profile.id, profile.updated_at, { payload });
@@ -253,15 +250,12 @@ export default function AppLaSoChiTiet() {
 
   const q = profileToBatTuPersonQuery(profile);
   const needsBirthTime = q.birth_time === undefined;
-  const costRow = costs.la_so_diengiai;
-  const unlockLabel =
+  const detailCtaLabel =
     detailBusy && !detailAiLoading
       ? "Đang lấy lá số…"
       : detailBusy && detailAiLoading
-        ? "Đang viết diễn giải…"
-        : costRow?.is_free || (costRow?.credit_cost ?? 0) <= 0
-          ? "Mở khóa diễn giải chi tiết"
-          : `Mở khóa — ${costRow?.credit_cost ?? 10} lượng`;
+        ? "Đang tạo diễn giải…"
+        : "Xem diễn giải chi tiết";
 
   const showReadingBlock =
     Boolean(detailReading) || detailAiLoading || detailBusy;
@@ -436,8 +430,7 @@ export default function AppLaSoChiTiet() {
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
               Bản đầy đủ theo tính cách, sự nghiệp, tài vận, sức khỏe và (khi có)
-              tình duyên — từ lá số có cấu trúc, viết gọn bằng AI. Mỗi lần mở khóa
-              trừ lượng theo bảng giá.
+              tình duyên — lấy từ lá số có cấu trúc, diễn giải gọn dễ đọc.
             </p>
             {needsBirthTime ? (
               <p className="text-destructive text-xs leading-relaxed mb-3">
@@ -445,20 +438,14 @@ export default function AppLaSoChiTiet() {
                 tiết. Cập nhật trong Cài đặt (hoặc lập lại lá số nếu được phép).
               </p>
             ) : null}
-            {costsLoading ? (
-              <p className="text-muted-foreground text-xs">Đang tải bảng giá…</p>
-            ) : (
-              <CreditGate featureKey="la_so_diengiai">
-                <Button
-                  type="button"
-                  className="font-semibold"
-                  disabled={detailBusy || needsBirthTime}
-                  onClick={() => void runLaSoDetailReading()}
-                >
-                  {unlockLabel}
-                </Button>
-              </CreditGate>
-            )}
+            <Button
+              type="button"
+              className="font-semibold"
+              disabled={detailBusy || needsBirthTime}
+              onClick={() => void runLaSoDetailReading()}
+            >
+              {detailCtaLabel}
+            </Button>
           </div>
         ) : null}
 
@@ -471,8 +458,8 @@ export default function AppLaSoChiTiet() {
               Diễn giải chưa sẵn sàng
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Dữ liệu lá số đã lấy xong; bước viết AI gặp sự cố. Thử lại chỉ tạo
-              diễn giải — không trừ thêm lượng.
+              Dữ liệu lá số đã lấy xong; bước diễn giải gặp sự cố. Thử lại chỉ
+              tạo phần diễn giải.
             </p>
             <Button
               type="button"

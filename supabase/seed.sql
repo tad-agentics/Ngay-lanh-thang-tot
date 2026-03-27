@@ -25,7 +25,7 @@ insert into public.feature_credit_costs (feature_key, credit_cost, is_free) valu
   ('tieu_van', 6, false),
   ('hop_tuoi', 16, false),
   ('phong_thuy', 10, false),
-  ('la_so_diengiai', 10, false),
+  ('la_so_diengiai', 0, true),
   ('share_card', 2, false)
 on conflict (feature_key) do update set
   credit_cost = excluded.credit_cost,
