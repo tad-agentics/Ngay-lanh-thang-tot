@@ -9,7 +9,7 @@ import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/utils";
-import { useProfile } from "~/hooks/useProfile";
+import { useProfile, type Profile } from "~/hooks/useProfile";
 import type { LaSoJson } from "~/lib/api-types";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -28,6 +28,19 @@ const NGU_HANH_COLORS: Record<string, string> = {
 const LA_SO_CHI_TIET_SESSION = "la-so-chi-tiet-ai:";
 /** Tránh vượt ~5MB sessionStorage; payload structured thường < 100KB. */
 const MAX_LASO_PAYLOAD_CACHE_CHARS = 1_500_000;
+
+/**
+ * Khóa cache theo dữ liệu sinh / chốt lá số — không dùng `updated_at` (sẽ đổi sau refresh
+ * số dư, subscription, v.v. và làm mất diễn giải đã tạo khi F5).
+ */
+function laSoChiTietCacheRevision(p: Profile): string {
+  return [
+    p.ngay_sinh ?? "",
+    p.gio_sinh ?? "",
+    p.gioi_tinh ?? "",
+    p.birth_data_locked_at ?? "",
+  ].join("\x1e");
+}
 
 function isLaSoSemanticShape(o: Record<string, unknown>): boolean {
   return (
@@ -60,10 +73,10 @@ function laSoReadingPayload(data: unknown): unknown {
   return cur;
 }
 
-/** Lưu reading và/hoặc payload chờ Haiku; cả hai rỗng thì xóa key. */
+/** Lưu reading và/hoặc payload chờ generate-reading; cả hai rỗng thì xóa key. */
 function persistChiTietSession(
   profileId: string,
-  profileUpdatedAt: string,
+  cacheRevision: string,
   state: { reading?: string | null; payload?: unknown | null },
 ): void {
   const key = `${LA_SO_CHI_TIET_SESSION}${profileId}`;
@@ -77,8 +90,8 @@ function persistChiTietSession(
       sessionStorage.setItem(
         key,
         JSON.stringify({
-          v: 2,
-          profileUpdatedAt,
+          v: 3,
+          revision: cacheRevision,
           reading: state.reading!.trim(),
         }),
       );
@@ -99,8 +112,8 @@ function persistChiTietSession(
       sessionStorage.setItem(
         key,
         JSON.stringify({
-          v: 2,
-          profileUpdatedAt,
+          v: 3,
+          revision: cacheRevision,
           payload: state.payload,
         }),
       );
@@ -143,31 +156,57 @@ export default function AppLaSoChiTiet() {
   useEffect(() => {
     if (!profile?.id) return;
     const key = `${LA_SO_CHI_TIET_SESSION}${profile.id}`;
+    const expectedRevision = laSoChiTietCacheRevision(profile);
     try {
       const raw = sessionStorage.getItem(key);
       if (!raw) return;
       const o = JSON.parse(raw) as {
+        v?: number;
+        revision?: string;
+        /** @deprecated v2 — so khớp updated_at dễ lệch sau refresh profile */
         profileUpdatedAt?: string;
         reading?: string;
         payload?: unknown;
       };
-      if (o.profileUpdatedAt !== profile.updated_at) {
+      const revisionMatches =
+        typeof o.revision === "string" && o.revision === expectedRevision;
+      const legacyV2Matches =
+        o.v === 2 &&
+        typeof o.profileUpdatedAt === "string" &&
+        o.profileUpdatedAt === profile.updated_at;
+      if (!revisionMatches && !legacyV2Matches) {
         sessionStorage.removeItem(key);
         return;
       }
       if (typeof o.reading === "string" && o.reading.trim()) {
         setDetailReading(o.reading.trim());
         setLaSoPayloadRetry(null);
+        if (legacyV2Matches && !revisionMatches) {
+          persistChiTietSession(profile.id, expectedRevision, {
+            reading: o.reading.trim(),
+          });
+        }
         return;
       }
       if (o.payload !== undefined && o.payload !== null) {
         setLaSoPayloadRetry(o.payload);
         setDetailReading(null);
+        if (legacyV2Matches && !revisionMatches) {
+          persistChiTietSession(profile.id, expectedRevision, {
+            payload: o.payload,
+          });
+        }
       }
     } catch {
       sessionStorage.removeItem(key);
     }
-  }, [profile?.id, profile?.updated_at]);
+  }, [
+    profile?.id,
+    profile?.ngay_sinh,
+    profile?.gio_sinh,
+    profile?.gioi_tinh,
+    profile?.birth_data_locked_at,
+  ]);
 
   async function runGenerateReadingFromPayload(payload: unknown) {
     if (!profile) return;
@@ -185,13 +224,17 @@ export default function AppLaSoChiTiet() {
           "Chưa tạo được diễn giải. Bạn có thể thử lại.",
         );
         if (mountedRef.current) setDetailReading(null);
-        persistChiTietSession(profile.id, profile.updated_at, { payload });
+        persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
+          payload,
+        });
         return;
       }
       if (!mountedRef.current) return;
       setLaSoPayloadRetry(null);
       setDetailReading(text);
-      persistChiTietSession(profile.id, profile.updated_at, { reading: text });
+      persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
+        reading: text,
+      });
       void refresh();
     } finally {
       if (gen === detailGenRef.current && mountedRef.current) {
@@ -211,7 +254,7 @@ export default function AppLaSoChiTiet() {
       return;
     }
     setLaSoPayloadRetry(null);
-    persistChiTietSession(profile.id, profile.updated_at, {});
+    persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {});
     setDetailBusy(true);
     setDetailAiLoading(false);
     const res = await invokeBatTu<unknown>({
@@ -224,7 +267,9 @@ export default function AppLaSoChiTiet() {
       return;
     }
     const payload = laSoReadingPayload(res.data);
-    persistChiTietSession(profile.id, profile.updated_at, { payload });
+    persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
+      payload,
+    });
     if (!mountedRef.current) return;
     setLaSoPayloadRetry(payload);
     await runGenerateReadingFromPayload(payload);
