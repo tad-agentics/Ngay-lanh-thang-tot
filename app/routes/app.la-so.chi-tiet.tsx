@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ScreenHeader } from "~/components/ScreenHeader";
@@ -19,11 +18,11 @@ import { useProfile, type Profile } from "~/hooks/useProfile";
 import type { LaSoJson } from "~/lib/api-types";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
-  extractLaSoStructuredSections,
-  type LaSoStructuredSection,
-} from "~/lib/la-so-structured-sections";
+  invokeGenerateReading,
+  normalizeLaSoSectionsInput,
+  type LaSoChiTietSection,
+} from "~/lib/generate-reading";
 import { laSoJsonToChiTiet, profileHasLaso } from "~/lib/la-so-ui";
 
 /** Thanh ngũ hành — khớp Make: xám / forest / xanh / đỏ sẫm / ochre. */
@@ -55,10 +54,15 @@ function laSoChiTietCacheRevision(p: Profile): string {
 function isLaSoSemanticShape(o: Record<string, unknown>): boolean {
   return (
     "tinh_cach" in o ||
+    "tinhCach" in o ||
     "su_nghiep" in o ||
+    "suNghiep" in o ||
     "tai_van" in o ||
+    "taiVan" in o ||
     "suc_khoe" in o ||
+    "sucKhoe" in o ||
     "tinh_duyen" in o ||
+    "tinhDuyen" in o ||
     "_raw" in o
   );
 }
@@ -83,35 +87,29 @@ function laSoReadingPayload(data: unknown): unknown {
   return cur;
 }
 
-/** Lưu reading + khối cấu trúc và/hoặc payload chờ generate-reading; rỗng hết thì xóa key. */
+/** Lưu luận giải theo khía cạnh và/hoặc payload chờ generate-reading; rỗng hết thì xóa key. */
 function persistChiTietSession(
   profileId: string,
   cacheRevision: string,
   state: {
-    reading?: string | null;
-    structuredSections?: LaSoStructuredSection[] | null;
+    luanSections?: LaSoChiTietSection[] | null;
     payload?: unknown | null;
   },
 ): void {
   const key = `${LA_SO_CHI_TIET_SESSION}${profileId}`;
   try {
-    const hasReading =
-      typeof state.reading === "string" && state.reading.trim().length > 0;
+    const hasLuan =
+      Array.isArray(state.luanSections) && state.luanSections.length > 0;
     const hasPayload =
       state.payload !== undefined && state.payload !== null;
 
-    if (hasReading) {
-      const structured =
-        state.structuredSections && state.structuredSections.length > 0
-          ? state.structuredSections
-          : undefined;
+    if (hasLuan) {
       sessionStorage.setItem(
         key,
         JSON.stringify({
-          v: 4,
+          v: 5,
           revision: cacheRevision,
-          reading: state.reading!.trim(),
-          ...(structured ? { structuredSections: structured } : {}),
+          luanSections: state.luanSections,
         }),
       );
       return;
@@ -131,7 +129,7 @@ function persistChiTietSession(
       sessionStorage.setItem(
         key,
         JSON.stringify({
-          v: 4,
+          v: 5,
           revision: cacheRevision,
           payload: state.payload,
         }),
@@ -150,11 +148,8 @@ export default function AppLaSoChiTiet() {
   const { profile, loading, refresh } = useProfile();
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
 
-  const [detailReading, setDetailReading] = useState<string | null>(null);
-  /** Khối tóm tắt từ GET /v1/la-so (hiển thị trước luận giải liền mạch). */
-  const [laSoStructuredSections, setLaSoStructuredSections] = useState<
-    LaSoStructuredSection[]
-  >([]);
+  /** Luận giải generative theo khía cạnh (một lần gọi la-so-chi-tiet). */
+  const [luanSections, setLuanSections] = useState<LaSoChiTietSection[]>([]);
   /** Đã có payload `la-so` nhưng bước generate-reading lỗi — chỉ gọi lại generate-reading. */
   const [laSoPayloadRetry, setLaSoPayloadRetry] = useState<unknown | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
@@ -190,7 +185,8 @@ export default function AppLaSoChiTiet() {
         profileUpdatedAt?: string;
         reading?: string;
         payload?: unknown;
-        structuredSections?: LaSoStructuredSection[];
+        structuredSections?: unknown;
+        luanSections?: LaSoChiTietSection[];
       };
       const revisionMatches =
         typeof o.revision === "string" && o.revision === expectedRevision;
@@ -202,27 +198,44 @@ export default function AppLaSoChiTiet() {
         sessionStorage.removeItem(key);
         return;
       }
-      if (typeof o.reading === "string" && o.reading.trim()) {
-        setDetailReading(o.reading.trim());
+      const restoredLuan = normalizeLaSoSectionsInput(o.luanSections);
+      if (restoredLuan.length > 0) {
+        setLuanSections(restoredLuan);
         setLaSoPayloadRetry(null);
-        setLaSoStructuredSections(
-          Array.isArray(o.structuredSections) ? o.structuredSections : [],
-        );
         if (legacyV2Matches && !revisionMatches) {
           persistChiTietSession(profile.id, expectedRevision, {
-            reading: o.reading.trim(),
-            structuredSections:
-              Array.isArray(o.structuredSections) && o.structuredSections.length
-                ? o.structuredSections
-                : undefined,
+            luanSections: restoredLuan,
+          });
+        }
+        return;
+      }
+      if (typeof o.reading === "string" && o.reading.trim()) {
+        setLuanSections(
+          normalizeLaSoSectionsInput([
+            {
+              id: "tong_hop",
+              title: "Luận giải",
+              text: o.reading.trim(),
+            },
+          ]),
+        );
+        setLaSoPayloadRetry(null);
+        if (legacyV2Matches && !revisionMatches) {
+          persistChiTietSession(profile.id, expectedRevision, {
+            luanSections: normalizeLaSoSectionsInput([
+              {
+                id: "tong_hop",
+                title: "Luận giải",
+                text: o.reading.trim(),
+              },
+            ]),
           });
         }
         return;
       }
       if (o.payload !== undefined && o.payload !== null) {
         setLaSoPayloadRetry(o.payload);
-        setDetailReading(null);
-        setLaSoStructuredSections(extractLaSoStructuredSections(o.payload));
+        setLuanSections([]);
         if (legacyV2Matches && !revisionMatches) {
           persistChiTietSession(profile.id, expectedRevision, {
             payload: o.payload,
@@ -245,30 +258,51 @@ export default function AppLaSoChiTiet() {
     const gen = ++detailGenRef.current;
     setDetailAiLoading(true);
     try {
-      const { reading } = await invokeGenerateReading({
-        endpoint: "la-so",
+      const { reading, sections } = await invokeGenerateReading({
+        endpoint: "la-so-chi-tiet",
         data: payload,
       });
       if (gen !== detailGenRef.current || !mountedRef.current) return;
-      const text = reading?.trim() ?? null;
-      if (!text) {
+
+      const fromModel =
+        sections && sections.length > 0
+          ? sections
+          : reading?.trim()
+            ? [
+                {
+                  id: "tong_hop",
+                  title: "Luận giải",
+                  text: reading.trim(),
+                },
+              ]
+            : null;
+
+      if (!fromModel?.length) {
         toast.error(
           "Chưa tạo được luận giải. Bạn có thể thử lại.",
         );
-        if (mountedRef.current) setDetailReading(null);
+        if (mountedRef.current) setLuanSections([]);
         persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
           payload,
         });
         return;
       }
       if (!mountedRef.current) return;
-      const structured = extractLaSoStructuredSections(payload);
-      if (mountedRef.current) setLaSoStructuredSections(structured);
+      const clamped = normalizeLaSoSectionsInput(fromModel);
+      if (!clamped.length) {
+        toast.error(
+          "Chưa tạo được luận giải. Bạn có thể thử lại.",
+        );
+        if (mountedRef.current) setLuanSections([]);
+        persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
+          payload,
+        });
+        return;
+      }
+      if (mountedRef.current) setLuanSections(clamped);
       setLaSoPayloadRetry(null);
-      setDetailReading(text);
       persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
-        reading: text,
-        structuredSections: structured.length ? structured : undefined,
+        luanSections: clamped,
       });
       void refresh();
     } finally {
@@ -289,7 +323,7 @@ export default function AppLaSoChiTiet() {
       return;
     }
     setLaSoPayloadRetry(null);
-    setLaSoStructuredSections([]);
+    setLuanSections([]);
     persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {});
     setDetailBusy(true);
     setDetailAiLoading(false);
@@ -303,8 +337,6 @@ export default function AppLaSoChiTiet() {
       return;
     }
     const payload = laSoReadingPayload(res.data);
-    const structured = extractLaSoStructuredSections(payload);
-    if (mountedRef.current) setLaSoStructuredSections(structured);
     persistChiTietSession(profile.id, laSoChiTietCacheRevision(profile), {
       payload,
     });
@@ -340,17 +372,20 @@ export default function AppLaSoChiTiet() {
         ? "Đang tạo luận giải…"
         : "Xem luận giải chi tiết";
 
-  const showReadingBlock =
-    Boolean(detailReading) || detailAiLoading || detailBusy;
-
   const showPaidUnlockCard =
-    !detailReading && !laSoPayloadRetry && !detailBusy && !detailAiLoading;
+    luanSections.length === 0 &&
+    !laSoPayloadRetry &&
+    !detailBusy &&
+    !detailAiLoading;
 
   const showRetryReadingCard =
-    !detailReading && laSoPayloadRetry != null && !detailBusy && !detailAiLoading;
+    luanSections.length === 0 &&
+    laSoPayloadRetry != null &&
+    !detailBusy &&
+    !detailAiLoading;
 
   const showLaSoFlowPanel =
-    detailBusy || detailReading != null || laSoPayloadRetry != null;
+    detailBusy || luanSections.length > 0 || detailAiLoading;
 
   return (
     <div className="min-h-[60vh] bg-background px-4 pb-24">
@@ -515,41 +550,34 @@ export default function AppLaSoChiTiet() {
               Luận giải theo lá số
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Theo từng khía cạnh từ dữ liệu có cấu trúc của lá số chi tiết. Phần bên dưới
-              là luận giải liền mạch — hai phần bổ sung cho nhau, không thay thế bảng tứ
-              trụ ở trên.
+              Mỗi khía cạnh (tính cách, sự nghiệp, tài vận, sức khỏe, tình duyên khi có dữ
+              liệu) là một đoạn văn mạch lạc, dựa trên lá số chi tiết — không thay thế bảng
+              tứ trụ ở trên.
             </p>
-            {detailBusy && !laSoPayloadRetry && !detailReading ? (
+            {(detailBusy || detailAiLoading) && luanSections.length === 0 ? (
               <div className="space-y-2" aria-busy="true">
                 <div className="h-10 rounded-md bg-muted/40 animate-pulse" />
                 <div className="h-10 rounded-md bg-muted/40 animate-pulse w-[94%]" />
               </div>
-            ) : laSoStructuredSections.length > 0 ? (
+            ) : luanSections.length > 0 ? (
               <Accordion
                 type="multiple"
-                defaultValue={laSoStructuredSections.map((s) => s.id)}
+                defaultValue={luanSections.map((s) => s.id)}
                 className="w-full"
               >
-                {laSoStructuredSections.map((sec) => (
+                {luanSections.map((sec) => (
                   <AccordionItem key={sec.id} value={sec.id}>
                     <AccordionTrigger className="text-sm font-semibold py-3">
                       {sec.title}
                     </AccordionTrigger>
                     <AccordionContent>
-                      <ul className="list-disc pl-5 space-y-2 text-muted-foreground text-sm leading-relaxed">
-                        {sec.lines.map((line, i) => (
-                          <li key={`${sec.id}-${i}`}>{line}</li>
-                        ))}
-                      </ul>
+                      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+                        {sec.text}
+                      </p>
                     </AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>
-            ) : detailReading != null || laSoPayloadRetry != null ? (
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Phản hồi hiện tại không có các khối tóm tắt riêng — xem phần luận giải bên
-                dưới.
-              </p>
             ) : null}
           </div>
         ) : null}
@@ -604,16 +632,6 @@ export default function AppLaSoChiTiet() {
               Thử lại luận giải
             </Button>
           </div>
-        ) : null}
-
-        {showReadingBlock ? (
-          <AiReadingBlock
-            title="Luận giải liền mạch"
-            loading={detailBusy || detailAiLoading}
-            text={detailReading}
-            variant="on-card"
-            emptyLabel="Luận giải chưa tạo được. Thử lại sau hoặc kiểm tra kết nối."
-          />
         ) : null}
 
         <Button variant="outline" asChild className="w-full font-medium">
