@@ -1,13 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
+import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/components/ui/utils";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import type { LaSoJson } from "~/lib/api-types";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { laSoJsonToChiTiet, profileHasLaso } from "~/lib/la-so-ui";
 
 /** Thanh ngũ hành — khớp Make: xám / forest / xanh / đỏ sẫm / ochre. */
@@ -19,10 +27,114 @@ const NGU_HANH_COLORS: Record<string, string> = {
   tho: "#a67c29",
 };
 
+const LA_SO_CHI_TIET_SESSION = "la-so-chi-tiet-ai:";
+/** Tránh vượt ~5MB sessionStorage; payload structured thường < 100KB. */
+const MAX_LASO_PAYLOAD_CACHE_CHARS = 1_500_000;
+
+function isLaSoSemanticShape(o: Record<string, unknown>): boolean {
+  return (
+    "tinh_cach" in o ||
+    "su_nghiep" in o ||
+    "tai_van" in o ||
+    "suc_khoe" in o ||
+    "tinh_duyen" in o ||
+    "_raw" in o
+  );
+}
+
+/**
+ * Lột envelope từ tu-tru-api (data / result / payload, tối đa vài lần)
+ * cho tới khi gặp object có khối ngữ nghĩa lá số hoặc không còn lớp hợp lệ.
+ */
+function laSoReadingPayload(data: unknown): unknown {
+  let cur: unknown = data;
+  for (let depth = 0; depth < 6; depth++) {
+    if (cur == null || typeof cur !== "object" || Array.isArray(cur)) break;
+    const o = cur as Record<string, unknown>;
+    if (isLaSoSemanticShape(o)) return o;
+    const inner = o.data ?? o.result ?? o.payload;
+    if (inner != null && typeof inner === "object" && !Array.isArray(inner)) {
+      cur = inner;
+      continue;
+    }
+    break;
+  }
+  return cur;
+}
+
+/** Lưu reading và/hoặc payload chờ Haiku; cả hai rỗng thì xóa key. */
+function persistChiTietSession(
+  profileId: string,
+  profileUpdatedAt: string,
+  state: { reading?: string | null; payload?: unknown | null },
+): void {
+  const key = `${LA_SO_CHI_TIET_SESSION}${profileId}`;
+  try {
+    const hasReading =
+      typeof state.reading === "string" && state.reading.trim().length > 0;
+    const hasPayload =
+      state.payload !== undefined && state.payload !== null;
+
+    if (hasReading) {
+      sessionStorage.setItem(
+        key,
+        JSON.stringify({
+          v: 2,
+          profileUpdatedAt,
+          reading: state.reading!.trim(),
+        }),
+      );
+      return;
+    }
+
+    if (hasPayload) {
+      const s = JSON.stringify(state.payload);
+      if (s.length > MAX_LASO_PAYLOAD_CACHE_CHARS) {
+        if (import.meta.env.DEV) {
+          console.warn(
+            "[la-so chi tiết] Payload quá lớn — không cache (F5 có thể mất nút thử lại không trừ lượng).",
+          );
+        }
+        sessionStorage.removeItem(key);
+        return;
+      }
+      sessionStorage.setItem(
+        key,
+        JSON.stringify({
+          v: 2,
+          profileUpdatedAt,
+          payload: state.payload,
+        }),
+      );
+      return;
+    }
+
+    sessionStorage.removeItem(key);
+  } catch {
+    // quota / private mode
+  }
+}
+
 export default function AppLaSoChiTiet() {
   const navigate = useNavigate();
-  const { profile, loading } = useProfile();
+  const { profile, loading, refresh } = useProfile();
+  const { costs, loading: costsLoading } = useFeatureCosts();
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
+
+  const [detailReading, setDetailReading] = useState<string | null>(null);
+  /** Đã trả phí bat-tu `la-so` nhưng Haiku lỗi — chỉ gọi lại generate-reading, không trừ lượng lần hai. */
+  const [laSoPayloadRetry, setLaSoPayloadRetry] = useState<unknown | null>(null);
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [detailAiLoading, setDetailAiLoading] = useState(false);
+  const detailGenRef = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -30,6 +142,103 @@ export default function AppLaSoChiTiet() {
       navigate("/app/la-so", { replace: true });
     }
   }, [hasLaso, loading, navigate]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const key = `${LA_SO_CHI_TIET_SESSION}${profile.id}`;
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return;
+      const o = JSON.parse(raw) as {
+        profileUpdatedAt?: string;
+        reading?: string;
+        payload?: unknown;
+      };
+      if (o.profileUpdatedAt !== profile.updated_at) {
+        sessionStorage.removeItem(key);
+        return;
+      }
+      if (typeof o.reading === "string" && o.reading.trim()) {
+        setDetailReading(o.reading.trim());
+        setLaSoPayloadRetry(null);
+        return;
+      }
+      if (o.payload !== undefined && o.payload !== null) {
+        setLaSoPayloadRetry(o.payload);
+        setDetailReading(null);
+      }
+    } catch {
+      sessionStorage.removeItem(key);
+    }
+  }, [profile?.id, profile?.updated_at]);
+
+  async function runGenerateReadingFromPayload(payload: unknown) {
+    if (!profile) return;
+    const gen = ++detailGenRef.current;
+    setDetailAiLoading(true);
+    try {
+      const { reading } = await invokeGenerateReading({
+        endpoint: "la-so",
+        data: payload,
+      });
+      if (gen !== detailGenRef.current || !mountedRef.current) return;
+      const text = reading?.trim() ?? null;
+      if (!text) {
+        toast.error(
+          "Chưa tạo được diễn giải. Bạn có thể thử lại — không trừ thêm lượng.",
+        );
+        if (mountedRef.current) setDetailReading(null);
+        persistChiTietSession(profile.id, profile.updated_at, { payload });
+        return;
+      }
+      if (!mountedRef.current) return;
+      setLaSoPayloadRetry(null);
+      setDetailReading(text);
+      persistChiTietSession(profile.id, profile.updated_at, { reading: text });
+      void refresh();
+    } finally {
+      if (gen === detailGenRef.current && mountedRef.current) {
+        setDetailAiLoading(false);
+        setDetailBusy(false);
+      }
+    }
+  }
+
+  async function runLaSoDetailReading() {
+    if (!profile) return;
+    const q = profileToBatTuPersonQuery(profile);
+    if (!q.birth_date || q.birth_time === undefined) {
+      toast.error(
+        "Cần đủ ngày sinh và khung giờ sinh. Hãy kiểm tra Cài đặt tài khoản.",
+      );
+      return;
+    }
+    setLaSoPayloadRetry(null);
+    persistChiTietSession(profile.id, profile.updated_at, {});
+    setDetailBusy(true);
+    setDetailAiLoading(false);
+    const res = await invokeBatTu<unknown>({
+      op: "la-so",
+      body: { ...q },
+    });
+    if (!res.ok) {
+      toast.error(res.message);
+      if (mountedRef.current) setDetailBusy(false);
+      return;
+    }
+    const payload = laSoReadingPayload(res.data);
+    persistChiTietSession(profile.id, profile.updated_at, { payload });
+    if (!mountedRef.current) return;
+    setLaSoPayloadRetry(payload);
+    await runGenerateReadingFromPayload(payload);
+  }
+
+  async function retryReadingOnly() {
+    if (!laSoPayloadRetry) return;
+    setDetailBusy(true);
+    setDetailAiLoading(false);
+    await runGenerateReadingFromPayload(laSoPayloadRetry);
+  }
 
   if (loading || !profile?.la_so || !hasLaso) {
     return (
@@ -42,12 +251,34 @@ export default function AppLaSoChiTiet() {
   const detail = laSoJsonToChiTiet(profile.la_so as LaSoJson);
   const { nguHanh } = detail;
 
+  const q = profileToBatTuPersonQuery(profile);
+  const needsBirthTime = q.birth_time === undefined;
+  const costRow = costs.la_so_diengiai;
+  const unlockLabel =
+    detailBusy && !detailAiLoading
+      ? "Đang lấy lá số…"
+      : detailBusy && detailAiLoading
+        ? "Đang viết diễn giải…"
+        : costRow?.is_free || (costRow?.credit_cost ?? 0) <= 0
+          ? "Mở khóa diễn giải chi tiết"
+          : `Mở khóa — ${costRow?.credit_cost ?? 10} lượng`;
+
+  const showReadingBlock =
+    Boolean(detailReading) || detailAiLoading || detailBusy;
+
+  const showPaidUnlockCard =
+    !detailReading && !laSoPayloadRetry && !detailBusy && !detailAiLoading;
+
+  const showRetryReadingCard =
+    !detailReading && laSoPayloadRetry != null && !detailBusy && !detailAiLoading;
+
   return (
     <div className="min-h-[60vh] bg-background px-4 pb-24">
       <ScreenHeader
         title="Chi tiết lá số"
         showBack={false}
         appScreenTitle
+        endAdornment={<CreditsHeaderChip />}
       />
 
       <div className="flex flex-col gap-4">
@@ -194,6 +425,75 @@ export default function AppLaSoChiTiet() {
             ))}
           </div>
         </div>
+
+        {showPaidUnlockCard ? (
+          <div
+            className="bg-card border border-border px-4 py-4 shadow-sm"
+            style={{ borderRadius: "var(--radius-lg)" }}
+          >
+            <p className="text-foreground text-base font-semibold mb-2">
+              Diễn giải chi tiết
+            </p>
+            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+              Bản đầy đủ theo tính cách, sự nghiệp, tài vận, sức khỏe và (khi có)
+              tình duyên — từ lá số có cấu trúc, viết gọn bằng AI. Mỗi lần mở khóa
+              trừ lượng theo bảng giá.
+            </p>
+            {needsBirthTime ? (
+              <p className="text-destructive text-xs leading-relaxed mb-3">
+                Thiếu khung giờ sinh trên hồ sơ — không gọi được API lá số chi
+                tiết. Cập nhật trong Cài đặt (hoặc lập lại lá số nếu được phép).
+              </p>
+            ) : null}
+            {costsLoading ? (
+              <p className="text-muted-foreground text-xs">Đang tải bảng giá…</p>
+            ) : (
+              <CreditGate featureKey="la_so_diengiai">
+                <Button
+                  type="button"
+                  className="font-semibold"
+                  disabled={detailBusy || needsBirthTime}
+                  onClick={() => void runLaSoDetailReading()}
+                >
+                  {unlockLabel}
+                </Button>
+              </CreditGate>
+            )}
+          </div>
+        ) : null}
+
+        {showRetryReadingCard ? (
+          <div
+            className="bg-card border border-border px-4 py-4 shadow-sm"
+            style={{ borderRadius: "var(--radius-lg)" }}
+          >
+            <p className="text-foreground text-base font-semibold mb-2">
+              Diễn giải chưa sẵn sàng
+            </p>
+            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+              Dữ liệu lá số đã lấy xong; bước viết AI gặp sự cố. Thử lại chỉ tạo
+              diễn giải — không trừ thêm lượng.
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              className="font-semibold"
+              onClick={() => void retryReadingOnly()}
+            >
+              Thử lại diễn giải
+            </Button>
+          </div>
+        ) : null}
+
+        {showReadingBlock ? (
+          <AiReadingBlock
+            title="Diễn giải chi tiết"
+            loading={detailBusy || detailAiLoading}
+            text={detailReading}
+            variant="on-card"
+            emptyLabel="Diễn giải chưa tạo được. Thử lại sau hoặc kiểm tra kết nối."
+          />
+        ) : null}
 
         <Button variant="outline" asChild className="w-full font-medium">
           <Link to="/app/la-so">← Lá số tứ trụ</Link>

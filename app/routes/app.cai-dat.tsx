@@ -132,7 +132,6 @@ export default function AppCaiDat() {
         const body: Record<string, unknown> = {
           birth_date,
           tz: "Asia/Ho_Chi_Minh",
-          first_la_so_free: true,
         };
         if (birthTimeCode !== UNSET) {
           const bt = Number(birthTimeCode);

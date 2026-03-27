@@ -34,6 +34,7 @@ const TTL_MS: Record<string, number> = {
   "tieu-van": 7 * 24 * 60 * 60 * 1000,
   "hop-tuoi": 7 * 24 * 60 * 60 * 1000,
   "tu-tru": 7 * 24 * 60 * 60 * 1000,
+  "la-so": 7 * 24 * 60 * 60 * 1000,
 };
 
 const MAX_BODY_CHARS = 180_000;

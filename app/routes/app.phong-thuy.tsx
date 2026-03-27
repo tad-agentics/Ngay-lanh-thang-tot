@@ -380,7 +380,7 @@ export default function AppPhongThuy() {
   const phongCostLabel =
     phongRow?.is_free || (phongRow?.credit_cost ?? 0) <= 0
       ? null
-      : (phongRow?.credit_cost ?? 5);
+      : (phongRow?.credit_cost ?? 10);
   const phongUnlockLabel =
     busy
       ? "Đang tải…"

@@ -251,7 +251,7 @@ export default function AppChonNgay() {
               ? "Đang tra…"
               : costRow?.is_free || (costRow?.credit_cost ?? 0) <= 0
                 ? "Tìm ngày phù hợp"
-                : `Tìm ngày phù hợp — ${costRow?.credit_cost ?? 5} lượng`}
+                : `Tìm ngày phù hợp — ${costRow?.credit_cost ?? 10} lượng`}
           </Button>
         </CreditGate>
 

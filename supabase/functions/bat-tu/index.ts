@@ -106,6 +106,7 @@ const VALID_OPS = new Set([
   "tieu-van",
   "hop-tuoi",
   "phong-thuy",
+  "la-so",
   "share",
 ]);
 
@@ -428,6 +429,27 @@ function buildUpstream(
       };
       break;
 
+    case "la-so":
+      if (!body.birth_date) {
+        return {
+          ok: false,
+          message: "Thiếu birth_date (GET /v1/la-so).",
+        };
+      }
+      if (body.birth_time === undefined || body.birth_time === null) {
+        return {
+          ok: false,
+          message: "Thiếu birth_time (GET /v1/la-so).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/la-so",
+        // OpenAPI: https://tu-tru-api.fly.dev/docs#/default/la_so_endpoint_v1_la_so_get — chỉ birth_date, birth_time, gender
+        queryKeys: ["birth_date", "birth_time", "gender"],
+      };
+      break;
+
     case "tu-tru":
       if (!body.birth_date) {
         return {
@@ -604,6 +626,8 @@ function resolveFeatureKey(
       return "chon_ngay_detail";
     case "day-detail":
       return "day_detail";
+    case "la-so":
+      return "la_so_diengiai";
     case "tu-tru":
       return "tu_tru";
     case "tieu-van":
@@ -884,18 +908,14 @@ Deno.serve(async (req) => {
    * Never return Redis cache for authenticated ops before billing — a cache hit would skip
    * credit deduction and ledger insert (`resolveFeatureKey` + charge block below).
    * Anonymous ops use the cache path above (lines 768–770) only.
+   * `tu-tru` (lập lá số) luôn miễn phí — `featureKeyForBilling` null cho op đó.
    */
   const featureKey = resolveFeatureKey(op, body);
-  /** Client hint: bootstrap first chart from Settings — no credits (only when profile has no lá số yet). */
-  const firstLaSoFree =
-    op === "tu-tru" &&
-    Boolean(userId) &&
-    body.first_la_so_free === true;
   const phongThuyTeaser =
     op === "phong-thuy" &&
     String(body.detail ?? "").toLowerCase() === "teaser";
-  let featureKeyForBilling =
-    firstLaSoFree && featureKey === "tu_tru" ? null : featureKey;
+  let featureKeyForBilling: string | null = featureKey;
+  if (op === "tu-tru") featureKeyForBilling = null;
   if (phongThuyTeaser) featureKeyForBilling = null;
   let chargedAmount = 0;
 

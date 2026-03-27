@@ -109,7 +109,7 @@ export default function AppChonNgayKetQua() {
     };
   }, [state?.payload]);
 
-  const perDetail = costs["chon_ngay_detail"]?.credit_cost ?? 2;
+  const perDetail = costs["chon_ngay_detail"]?.credit_cost ?? 4;
   const detailTotal = perDetail * Math.max(1, resultDays.length);
   const hasSub = subscriptionActive(profile?.subscription_expires_at);
   const canBulkDetail =

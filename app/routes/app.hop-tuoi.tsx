@@ -173,7 +173,7 @@ export default function AppHopTuoi() {
       ? "Đang phân tích…"
       : hopRow?.is_free || (hopRow?.credit_cost ?? 0) <= 0
         ? "Kiểm tra hợp tuổi"
-        : `Kiểm tra hợp tuổi — ${hopRow?.credit_cost ?? 8} lượng`;
+        : `Kiểm tra hợp tuổi — ${hopRow?.credit_cost ?? 16} lượng`;
 
   if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
