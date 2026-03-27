@@ -592,6 +592,10 @@ export default function AppLaSoChiTiet() {
                 hoa: "Hỏa",
                 tho: "Thổ",
               };
+              const pct =
+                Number.isFinite(val) && val >= 0
+                  ? Math.min(100, Math.round(val))
+                  : 0;
               return (
                 <div key={key} className="flex items-center gap-3">
                   <span className="text-foreground text-xs font-medium w-9 shrink-0">
@@ -604,14 +608,14 @@ export default function AppLaSoChiTiet() {
                     <div
                       className="h-full transition-all"
                       style={{
-                        width: `${Math.min(100, val)}%`,
+                        width: `${pct}%`,
                         background: NGU_HANH_COLORS[key] ?? "var(--muted-foreground)",
                         borderRadius: "var(--radius-pill)",
                       }}
                     />
                   </div>
                   <span className="text-muted-foreground text-xs w-9 text-right tabular-nums shrink-0">
-                    {val}%
+                    {pct}%
                   </span>
                 </div>
               );
