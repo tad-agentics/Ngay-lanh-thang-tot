@@ -246,7 +246,7 @@ function DayDetailFetched({
           </section>
 
           <AiReadingBlock
-            title="Diễn giải nhanh"
+            title="Luận giải"
             variant="on-card"
             loading={dayAiLoading}
             text={dayAiReading}
@@ -428,7 +428,7 @@ function DayDetailFetched({
             </ul>
           </div>
           <AiReadingBlock
-            title="Diễn giải nhanh"
+            title="Luận giải"
             variant="on-card"
             loading={dayAiLoading}
             text={dayAiReading}

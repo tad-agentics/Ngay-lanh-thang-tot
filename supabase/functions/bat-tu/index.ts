@@ -909,7 +909,7 @@ Deno.serve(async (req) => {
    * credit deduction and ledger insert (`resolveFeatureKey` + charge block below).
    * Anonymous ops use the cache path above (lines 768–770) only.
    * `tu-tru` (lập lá số) luôn miễn phí — `featureKeyForBilling` null cho op đó.
-   * `la-so` (diễn giải chi tiết lá số) không trừ lượng.
+   * `la-so` (luận giải chi tiết lá số) không trừ lượng.
    */
   const featureKey = resolveFeatureKey(op, body);
   const phongThuyTeaser =

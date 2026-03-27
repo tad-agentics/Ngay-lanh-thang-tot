@@ -220,7 +220,7 @@ export default function AppChonNgayKetQua() {
               />
 
               <AiReadingBlock
-                title="Diễn giải nhanh"
+                title="Luận giải"
                 variant="on-card"
                 loading={chonAiLoading}
                 text={chonAiReading}

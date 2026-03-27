@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 type Variant = "on-surface" | "on-card";
 
 interface AiReadingBlockProps {
-  /** Tiêu đề khối (tránh trùng "Diễn giải" từ API hợp tuổi v2). */
+  /** Tiêu đề khối (tránh trùng nhãn chung từ API hợp tuổi v2). */
   title?: string;
   loading: boolean;
   /** Khi !loading: nếu null hoặc rỗng thì không render. */
@@ -15,11 +15,11 @@ interface AiReadingBlockProps {
 }
 
 export function AiReadingBlock({
-  title = "Diễn giải nhanh",
+  title = "Luận giải",
   loading,
   text,
   variant = "on-card",
-  emptyLabel = "Diễn giải tự động tạm chưa tải được. Thử làm mới trang hoặc quay lại sau.",
+  emptyLabel = "Luận giải tự động tạm chưa tải được. Thử làm mới trang hoặc quay lại sau.",
 }: AiReadingBlockProps) {
   const [hasStarted, setHasStarted] = useState(false);
   useEffect(() => {

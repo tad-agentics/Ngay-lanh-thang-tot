@@ -761,7 +761,7 @@ export default function AppPhongThuy() {
 
         {unlocked ? (
           <AiReadingBlock
-            title="Diễn giải nhanh"
+            title="Luận giải"
             variant="on-card"
             loading={phongAiLoading}
             text={phongAiReading}

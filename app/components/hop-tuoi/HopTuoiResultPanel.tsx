@@ -341,7 +341,7 @@ export function HopTuoiResultPanel({
   relationshipType,
   personCards,
 }: HopTuoiResultPanelProps) {
-  /** `advice` từ API v2 thường generic / trùng Nạp Âm; LLM đã nhận full JSON — chỉ hiện khi không có Diễn giải. */
+  /** `advice` từ API v2 thường generic / trùng Nạp Âm; LLM đã nhận full JSON — chỉ hiện khi không có Luận giải. */
   const showApiAdviceFallback =
     apiVersion === 2 &&
     Boolean(advice?.trim()) &&
@@ -446,7 +446,7 @@ export function HopTuoiResultPanel({
         className="w-full"
       >
         <AiReadingBlock
-          title="Diễn giải"
+          title="Luận giải"
           variant="on-card"
           loading={aiReadingLoading}
           text={aiReadingText}

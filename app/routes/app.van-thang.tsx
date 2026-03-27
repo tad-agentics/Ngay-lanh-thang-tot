@@ -335,7 +335,7 @@ export default function AppVanThang() {
                 </>
               ) : (
                 <>
-                  {monthHeading} — bạn đang xem khung tháng dương lịch. Mở khóa để đọc diễn
+                  {monthHeading} — bạn đang xem khung tháng dương lịch. Mở khóa để xem luận
                   giải theo trụ tháng, quan hệ với mệnh và Đại Vận từ lá số, không phải lịch
                   chung.
                 </>
@@ -352,7 +352,7 @@ export default function AppVanThang() {
               </QualitativeCard>
             ) : null}
 
-            <QualitativeCard kicker="Diễn giải">
+            <QualitativeCard kicker="Luận giải">
               <div className="space-y-2">
                 {nhatChuLine ? (
                   <p className="text-muted-foreground text-xs">
@@ -365,7 +365,7 @@ export default function AppVanThang() {
             </QualitativeCard>
 
             <AiReadingBlock
-              title="Diễn giải nhanh"
+              title="Luận giải"
               variant="on-card"
               loading={tieuVanAiLoad}
               text={tieuVanAiText}
@@ -458,7 +458,7 @@ export default function AppVanThang() {
             {subActive || (profile?.credits_balance ?? 0) >= cost ? (
               <>
                 <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                  Mở khóa để xem diễn giải định tính: trụ tháng, mệnh, quan hệ ngũ hành với tháng,
+                  Mở khóa để xem luận giải định tính: trụ tháng, mệnh, quan hệ ngũ hành với tháng,
                   nhịp Đại Vận và lưu ý trong tháng — không dùng điểm số, bám theo lá số đã
                   lưu.
                 </p>

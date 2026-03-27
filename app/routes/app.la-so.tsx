@@ -285,7 +285,7 @@ export default function AppLaSo() {
             </div>
 
             <AiReadingBlock
-              title="Diễn giải nhanh"
+              title="Luận giải"
               variant="on-card"
               loading={tuTruAiLoading}
               text={tuTruAiReading}

@@ -376,8 +376,8 @@ export default function AppHopTuoi() {
             {panel.apiVersion === 2 ? (
               <p className="text-muted-foreground text-sm leading-relaxed">
                 {isLowScore
-                  ? "Có tín hiệu cần lưu ý — xem tiêu chí, Diễn giải và Gợi ý trong khung kết quả."
-                  : "Xem tiêu chí, Diễn giải và Gợi ý trong khung kết quả."}
+                  ? "Có tín hiệu cần lưu ý — xem tiêu chí, Luận giải và Gợi ý trong khung kết quả."
+                  : "Xem tiêu chí, Luận giải và Gợi ý trong khung kết quả."}
               </p>
             ) : isLowScore ? (
               <p className="text-muted-foreground text-sm leading-relaxed">

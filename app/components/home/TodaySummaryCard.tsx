@@ -88,7 +88,7 @@ export function TodaySummaryCard({
         </p>
 
         <AiReadingBlock
-          title="Diễn giải nhanh"
+          title="Luận giải"
           variant="on-surface"
           loading={aiReadingLoading}
           text={aiReading}

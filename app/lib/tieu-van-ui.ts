@@ -48,7 +48,7 @@ const ELEMENT_RELATION_VI: Record<string, string> = {
 };
 
 const ELEMENT_RELATION_FALLBACK =
-  "Quan hệ ngũ hành giữa tháng và mệnh bạn có nhịp riêng — đối chiếu thêm diễn giải tổng quan và Đại Vận bên dưới.";
+  "Quan hệ ngũ hành giữa tháng và mệnh bạn có nhịp riêng — đối chiếu thêm luận giải tổng quan và Đại Vận bên dưới.";
 
 function elementRelationToLabel(code: string | null): string | null {
   if (!code || !code.trim()) return null;
@@ -188,7 +188,7 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
   if (!root) {
     return emptyUi({
       tongQuan:
-        "Tháng này nên giữ nhịp ổn định; diễn giải chi tiết có sau khi mở khóa.",
+        "Tháng này nên giữ nhịp ổn định; luận giải chi tiết có sau khi mở khóa.",
     });
   }
 

@@ -483,11 +483,11 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
       naphAmRelation.trim() === reading.trim()
     ) {
       naphAmRelation =
-        "Tóm tắt Nạp Âm — nội dung chi tiết xem ở Diễn giải / Tiêu chí.";
+        "Tóm tắt Nạp Âm — nội dung chi tiết xem ở Luận giải / Tiêu chí.";
     }
     if (naphAmRelation === "—" && (naphAm1 !== "—" || naphAm2 !== "—")) {
       naphAmRelation =
-        "Hai Nạp Âm được đối chiếu trong tiêu chí và diễn giải phía trên.";
+        "Hai Nạp Âm được đối chiếu trong tiêu chí và luận giải phía trên.";
     }
 
     const showNumericScore = scoreForV2 != null;
