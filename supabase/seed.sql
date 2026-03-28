@@ -22,7 +22,7 @@ insert into public.feature_credit_costs (feature_key, credit_cost, is_free) valu
   ('chon_ngay_detail', 4, false),
   ('day_detail', 0, true),
   ('tu_tru', 0, true),
-  ('tieu_van', 6, false),
+  ('tieu_van', 24, false),
   ('hop_tuoi', 16, false),
   ('phong_thuy', 10, false),
   ('la_so_diengiai', 0, true),

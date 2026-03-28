@@ -102,7 +102,7 @@ export default function AppVanThang() {
   const tieuVanAiGenRef = useRef<Record<string, number>>({});
 
   const costRow = costs[VAN_FEATURE];
-  const cost = costRow?.credit_cost ?? 6;
+  const cost = costRow?.credit_cost ?? 24;
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const q = profileToBatTuPersonQuery(profile ?? null);
