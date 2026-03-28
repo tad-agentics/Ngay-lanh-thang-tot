@@ -177,7 +177,7 @@ export default function AppHopTuoi() {
       ? "Đang phân tích…"
       : hopRow?.is_free || (hopRow?.credit_cost ?? 0) <= 0
         ? "Kiểm tra hợp tuổi"
-        : `Kiểm tra hợp tuổi — ${hopRow?.credit_cost ?? 16} lượng`;
+        : `Kiểm tra hợp tuổi — ${hopRow?.credit_cost ?? 24} lượng`;
 
   const hopOtherNgayInvalid =
     form.ngaySinh.trim().length > 0 &&
@@ -402,31 +402,33 @@ export default function AppHopTuoi() {
             />
           </Suspense>
 
-          <div className="px-1">
-            {panel.apiVersion === 2 ? (
+          {panel.apiVersion === 2 && !isLowScore ? (
+            <div className="px-1">
               <p className="text-muted-foreground text-sm leading-relaxed">
-                {isLowScore
-                  ? "Có tín hiệu cần lưu ý — xem tiêu chí, Luận giải và Gợi ý trong khung kết quả."
-                  : "Xem tiêu chí, Luận giải và Gợi ý trong khung kết quả."}
+                Xem tiêu chí, Luận giải và Gợi ý trong khung kết quả.
               </p>
-            ) : isLowScore ? (
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Có một số điểm cần chú ý — xem chi tiết để hiểu thêm.
-              </p>
-            ) : (
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                Nạp Âm{" "}
-                <span className="text-foreground font-medium">
-                  {panel.naphAm1}
-                </span>{" "}
-                và{" "}
-                <span className="text-foreground font-medium">
-                  {panel.naphAm2}
-                </span>{" "}
-                — {panel.naphAmRelation}
-              </p>
-            )}
-          </div>
+            </div>
+          ) : panel.apiVersion !== 2 ? (
+            <div className="px-1">
+              {isLowScore ? (
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Có một số điểm cần chú ý — xem chi tiết để hiểu thêm.
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-sm leading-relaxed">
+                  Nạp Âm{" "}
+                  <span className="text-foreground font-medium">
+                    {panel.naphAm1}
+                  </span>{" "}
+                  và{" "}
+                  <span className="text-foreground font-medium">
+                    {panel.naphAm2}
+                  </span>{" "}
+                  — {panel.naphAmRelation}
+                </p>
+              )}
+            </div>
+          ) : null}
 
           {showShare ? (
             <Button

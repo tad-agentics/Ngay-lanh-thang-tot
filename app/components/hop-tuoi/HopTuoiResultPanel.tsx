@@ -224,13 +224,16 @@ function VerdictHeadlineBlock({
   verdict,
   verdictLevel,
   gradLabel,
-  chipLabel,
 }: {
   verdict: string | null;
   verdictLevel: number | null;
   gradLabel: HopTuoiGradLabel;
-  chipLabel: string;
 }) {
+  /** Tránh lặp khi API gửi verdict trùng nhãn bậc (vd. cả hai đều "Cần lưu ý"). */
+  const verdictNorm = verdict?.normalize("NFC").trim() ?? "";
+  const gradNorm = gradLabel.normalize("NFC").trim();
+  const showGradChip = !verdict || verdictNorm !== gradNorm;
+
   return (
     <div className="flex flex-col items-center gap-3 w-full px-1">
       {verdict ? (
@@ -249,19 +252,17 @@ function VerdictHeadlineBlock({
           Mức đánh giá: {verdictLevel}/4
         </p>
       ) : null}
-      <p className="text-[10px] text-muted-foreground text-center max-w-[320px] leading-relaxed">
-        Kết quả theo quan hệ bạn chọn — định tính (verdict, tiêu chí), không có
-        điểm tổng 0–100 từ API trừ khi máy chủ gửi kèm.
-      </p>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-      >
-        <Chip color={gradChipColor(gradLabel)} size="md" radius="sm">
-          {chipLabel}
-        </Chip>
-      </motion.div>
+      {showGradChip ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <Chip color={gradChipColor(gradLabel)} size="md" radius="sm">
+            {gradLabel}
+          </Chip>
+        </motion.div>
+      ) : null}
     </div>
   );
 }
@@ -287,7 +288,7 @@ function PersonMiniCard({
       style={{ borderRadius: "var(--radius-md)" }}
     >
       <p
-        className="text-[10px] text-muted-foreground mb-1.5 uppercase tracking-wide"
+        className="text-[10px] text-muted-foreground mb-1.5 tracking-wide"
         style={{ fontFamily: "var(--font-ibm-mono)" }}
       >
         {title}
@@ -332,13 +333,9 @@ export function HopTuoiResultPanel({
   chipLabel,
   verdict,
   verdictLevel,
-  naphAm1,
-  naphAm2,
-  naphAmRelation,
   criteriaRows,
   advice,
   relationshipLabel,
-  relationshipType,
   personCards,
 }: HopTuoiResultPanelProps) {
   /** `advice` từ API v2 thường generic / trùng Nạp Âm; LLM đã nhận full JSON — chỉ hiện khi không có Luận giải. */
@@ -366,21 +363,11 @@ export function HopTuoiResultPanel({
 
   return (
     <div className="flex flex-col items-center gap-6">
-      {relationshipLabel || relationshipType ? (
+      {relationshipLabel ? (
         <div className="w-full flex flex-col items-center gap-1.5">
-          {relationshipLabel ? (
-            <Chip color="default" size="sm" radius="sm">
-              {relationshipLabel}
-            </Chip>
-          ) : null}
-          {relationshipType && apiVersion === 2 ? (
-            <span
-              className="text-[10px] text-muted-foreground"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
-              {relationshipType}
-            </span>
-          ) : null}
+          <Chip color="default" size="sm" radius="sm">
+            {relationshipLabel}
+          </Chip>
         </div>
       ) : null}
 
@@ -406,13 +393,12 @@ export function HopTuoiResultPanel({
           verdict={verdict}
           verdictLevel={verdictLevel}
           gradLabel={gradLabel}
-          chipLabel={chipLabel}
         />
       ) : null}
 
       {showPeople && (p1 || p2) ? (
         <div className="w-full grid gap-2 sm:grid-cols-2">
-          {p1 ? <PersonMiniCard title="Bạn (từ lá số)" card={p1} /> : null}
+          {p1 ? <PersonMiniCard title="BẠN" card={p1} /> : null}
           {p2 ? <PersonMiniCard title="Người so sánh" card={p2} /> : null}
         </div>
       ) : null}
@@ -429,7 +415,7 @@ export function HopTuoiResultPanel({
             className="text-muted-foreground text-[10px] mb-3 uppercase tracking-wide"
             style={{ fontFamily: "var(--font-ibm-mono)" }}
           >
-            Tiêu chí
+            Chi tiết từng tiêu chí
           </p>
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {criteriaRows.map((row, i) => (
@@ -471,35 +457,6 @@ export function HopTuoiResultPanel({
         </motion.div>
       ) : null}
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
-        className="w-full border border-border bg-card px-4 py-3"
-        style={{ borderRadius: "var(--radius-md)" }}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-muted-foreground text-xs">Nạp Âm — tóm tắt</span>
-        </div>
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span
-            className="border border-border px-2 py-0.5 text-xs text-foreground"
-            style={{ borderRadius: "var(--radius-sm)" }}
-          >
-            {naphAm1}
-          </span>
-          <span className="text-muted-foreground text-xs">×</span>
-          <span
-            className="border border-border px-2 py-0.5 text-xs text-foreground"
-            style={{ borderRadius: "var(--radius-sm)" }}
-          >
-            {naphAm2}
-          </span>
-        </div>
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          {naphAmRelation}
-        </p>
-      </motion.div>
     </div>
   );
 }

@@ -2,7 +2,7 @@
  * Edge luận giải: JSON từ máy chủ → văn bản tiếng Việt (Haiku) + cache DB.
  * `la-so-chi-tiet`: một lần gọi → JSON nhiều khía cạnh (đoạn văn).
  * `tieu-van` / `luu-nien`: một lần gọi → JSON 3 phần (nhin_chung, thuc_tien, ung_xu); lỗi parse → một khối văn dự phòng.
- * Các endpoint khác → một khối văn.
+ * Các endpoint khác → một khối văn (`hop-tuoi`: 8–10 câu, gom từ toàn bộ tiêu chí).
  * Luôn trả HTTP 200 — không 500.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -23,7 +23,7 @@ const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt
 ## ĐỘ DÀI THEO ENDPOINT
 - ngay-hom-nay: 2–3 câu. Tập trung: hôm nay tốt/xấu, nên làm gì, giờ nào tốt nhất.
 - chon-ngay: 2–3 câu mỗi ngày được recommend. Tập trung: tại sao ngày này tốt cho mục đích đó.
-- hop-tuoi: 3–4 câu. Tập trung: tổng quan mối quan hệ, điểm mạnh, điểm cần lưu ý.
+- hop-tuoi: **8–10 câu** văn xuôi liền mạch. **Bắt buộc** dùng toàn bộ các mục trong \`criteria\` / \`tieu_chi\` / \`tieuchi\` (tên + sentiment/tone + mô tả nếu có) để suy luận: gom nhóm xu hướng (thuận, trung tính, cần lưu ý), **không bỏ sót** tiêu chí nào có trong JSON; sau đó kết về **tổng quan mối quan hệ** trong bối cảnh quan hệ được chọn (vd. relationship_label / relationship_type). Không liệt kê dạng bảng hay gạch đầu dòng; không nhắc tên field kỹ thuật.
 - tieu-van, luu-nien: **dự phòng** — một đoạn 15–22 câu liền mạch khi không dùng JSON 3 phần; vẫn **nhất quán element_relation**; khi data có Dụng Thần / Thập Thần tháng thì **giải thích ngắn** ý nghĩa và gợi ý thực tế như trong prompt JSON chính.
 - dai-van: 1–2 câu mỗi vận. Tập trung: đặc điểm giai đoạn, so sánh với Dụng Thần.
 - la-so: 2–3 câu mỗi mục (tính cách, sự nghiệp, tài vận, tình duyên, sức khỏe). Tập trung: diễn giải ý nghĩa thực tế cho cuộc sống.
@@ -59,6 +59,8 @@ Khi endpoint là tieu-van hoặc luu-nien và trong data có element_relation ho
 const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
 /** Bump khi đổi SYSTEM_PROMPT cho tieu-van/luu-nien — làm mới reading_cache. */
 const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-04-02a";
+/** Bump khi đổi độ dài / hướng dẫn hop-tuoi trong SYSTEM_PROMPT — làm mới reading_cache. */
+const HOP_TUOI_PROMPT_VER = "2026-03-28a";
 
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
@@ -76,6 +78,8 @@ const MAX_BODY_CHARS = 180_000;
 /** Mặc định Haiku 4.5 — 3.5 Haiku dated có thể đã retire. Ghi đè: secret ANTHROPIC_MODEL */
 const DEFAULT_LLM_MODEL = "claude-haiku-4-5";
 const REQUEST_TIMEOUT_MS = 8_000;
+/** hop-tuoi: 8–10 câu + toàn bộ tiêu chí — cần thời gian và token lớn hơn mặc định. */
+const HOP_TUOI_REQUEST_TIMEOUT_MS = 18_000;
 /** tieu-van / luu-nien: đoạn một khối dự phòng (dài hơn). */
 const TIEU_VAN_LUU_NIEN_TIMEOUT_MS = 20_000;
 /** JSON 3 phần (tieu-van / luu-nien) — mỗi phần 6–7 câu. */
@@ -83,6 +87,7 @@ const TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS = 32_000;
 const LA_SO_CHI_TIET_TIMEOUT_MS = 28_000;
 
 const READING_MAX_TOKENS_DEFAULT = 512;
+const READING_MAX_TOKENS_HOP_TUOI = 1_536;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = 2048;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON = 4096;
 
@@ -685,7 +690,9 @@ Deno.serve(async (req) => {
       ? `${LA_SO_CHI_TIET_CACHE_VER}\n${endpoint}\n${dataJson}`
       : endpoint === "tieu-van" || endpoint === "luu-nien"
         ? `${TIEU_VAN_LUU_NIEN_PROMPT_VER}\n${endpoint}\n${dataJson}`
-        : `${endpoint}\n${dataJson}`;
+        : endpoint === "hop-tuoi"
+          ? `${HOP_TUOI_PROMPT_VER}\n${endpoint}\n${dataJson}`
+          : `${endpoint}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify({ endpoint, data });
@@ -868,7 +875,14 @@ Deno.serve(async (req) => {
     return ok(null, sections);
   }
 
-  const reading = await anthropicReading(payload);
+  const reading =
+    endpoint === "hop-tuoi"
+      ? await anthropicReading(
+          payload,
+          READING_MAX_TOKENS_HOP_TUOI,
+          HOP_TUOI_REQUEST_TIMEOUT_MS,
+        )
+      : await anthropicReading(payload);
   if (!reading) {
     return ok(null, null);
   }
