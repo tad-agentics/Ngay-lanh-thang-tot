@@ -33,6 +33,21 @@ import type { ResultDay } from "~/lib/api-types";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { subscriptionActive } from "~/lib/subscription";
 
+/** Gỡ **bold** / heading / bullet hay sót từ model — khối luận giải chung chỉ văn xuôi. */
+function sanitizeChonNgayOverviewText(raw: string | null): string | null {
+  if (!raw) return null;
+  let t = raw.trim();
+  if (!t) return null;
+  for (let i = 0; i < 8; i++) {
+    const next = t.replace(/\*\*([^*]+)\*\*/g, "$1");
+    if (next === t) break;
+    t = next;
+  }
+  t = t.replace(/^#{1,6}\s+/gm, "");
+  t = t.replace(/^\s*[-*•]\s+/gm, "");
+  return t.trim() || null;
+}
+
 type Phase = 0 | 1 | 2;
 
 export default function AppChonNgayKetQua() {
@@ -100,7 +115,7 @@ export default function AppChonNgayKetQua() {
       }),
     ]).then(([main, cards]) => {
       if (cancelled) return;
-      setChonAiReading(main.reading);
+      setChonAiReading(sanitizeChonNgayOverviewText(main.reading));
       const allowedIso = new Set(
         mapChonNgayPayloadToResultDays(state.payload, 5).map((d) => d.isoDate),
       );
