@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { mapTieuVanPayload, tieuVanTongQuanDisplayOrNull } from "./tieu-van-ui";
+import {
+  formatDaiVanContextLineForVanThangDisplay,
+  mapTieuVanPayload,
+  tieuVanTongQuanDisplayOrNull,
+} from "./tieu-van-ui";
 
 describe("mapTieuVanPayload", () => {
   it("uses prose fallbacks when string fields missing", () => {
@@ -96,6 +100,30 @@ describe("mapTieuVanPayload", () => {
     expect(fromDetails.linhVuc).toHaveLength(1);
     expect(fromDetails.linhVuc[0]?.title).toBe("Sức khoẻ");
     expect(fromDetails.linhVuc[0]?.body).toContain("ngủ");
+  });
+});
+
+describe("formatDaiVanContextLineForVanThangDisplay", () => {
+  it("bỏ «Đang trong vận» và thêm «với tháng này»", () => {
+    expect(
+      formatDaiVanContextLineForVanThangDisplay(
+        "Đang trong vận Quý Mùi (Thủy) — trung tính",
+      ),
+    ).toBe("Quý Mùi (Thủy) — trung tính với tháng này");
+  });
+
+  it("không đổi khi không có tiền tố đại vận", () => {
+    expect(
+      formatDaiVanContextLineForVanThangDisplay("Tránh quyết định vội."),
+    ).toBe("Tránh quyết định vội.");
+  });
+
+  it("không lặp hậu tố với tháng này", () => {
+    expect(
+      formatDaiVanContextLineForVanThangDisplay(
+        "Đang trong vận Giáp Tý — ổn với tháng này",
+      ),
+    ).toBe("Giáp Tý — ổn với tháng này");
   });
 });
 

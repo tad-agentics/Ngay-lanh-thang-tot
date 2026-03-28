@@ -58,7 +58,7 @@ const TONG_QUAN_OPTIMISTIC_RE =
   /thuận lợi|suôn sẻ|giai đoạn thuận|khá thuận|rất thuận|thuận toàn diện|đặc biệt thuận|thời điểm thuận|mọi việc.{0,14}thuận|tháng.{0,16}thuận lợi/i;
 
 /**
- * Trả về `null` nên ẩn đoạn tổng quan từ máy chủ (tránh mâu thuẫn với khối "Quan hệ tháng với mệnh").
+ * Trả về `null` nên ẩn đoạn tổng quan từ máy chủ (tránh mâu thuẫn với khối "Tháng này với mệnh bạn" trên Vận tháng).
  * Các trường hợp khác trả về `tongQuan` nhập vào.
  */
 export function tieuVanTongQuanDisplayOrNull(
@@ -74,6 +74,21 @@ export function tieuVanTongQuanDisplayOrNull(
   if (!ELEMENT_CODES_CHALLENGING.has(code)) return tongQuan;
   if (TONG_QUAN_OPTIMISTIC_RE.test(t)) return null;
   return tongQuan;
+}
+
+const DANG_TRONG_VAN_PREFIX_RE = /^\s*đang\s+trong\s+vận\s+/iu;
+const VOI_THANG_NAY_SUFFIX_RE = /với\s+tháng\s+này\s*$/iu;
+
+/**
+ * Khối «Đại vận hiện tại» trên Vận tháng — gọn câu API dạng «Đang trong vận … — …».
+ */
+export function formatDaiVanContextLineForVanThangDisplay(text: string): string {
+  const t = text.trim();
+  if (!t) return t;
+  const stripped = t.replace(DANG_TRONG_VAN_PREFIX_RE, "").trim();
+  if (stripped === t) return t;
+  if (VOI_THANG_NAY_SUFFIX_RE.test(stripped)) return stripped;
+  return `${stripped} với tháng này`;
 }
 
 function elementRelationToLabel(code: string | null): string | null {

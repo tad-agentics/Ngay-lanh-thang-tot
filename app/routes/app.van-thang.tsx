@@ -16,6 +16,7 @@ import { invokeGenerateReading } from "~/lib/generate-reading";
 import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import {
+  formatDaiVanContextLineForVanThangDisplay,
   mapTieuVanPayload,
   tieuVanTongQuanDisplayOrNull,
   type TieuVanUi,
@@ -251,8 +252,11 @@ export default function AppVanThang() {
     detail != null
       ? tieuVanTongQuanDisplayOrNull(detail.elementRelationCode, tongQuanStripped)
       : null;
-  const canLuuDisplay =
-    detail ? stripRedundantSolarMonthPrefix(detail.canLuu, ym) : "";
+  const canLuuDisplay = detail
+    ? formatDaiVanContextLineForVanThangDisplay(
+        stripRedundantSolarMonthPrefix(detail.canLuu, ym),
+      )
+    : "";
   const tieuVanAiLoad = tieuVanAiLoading[ym] ?? false;
   const tieuVanAiText = tieuVanAiReading[ym] ?? null;
 
@@ -315,7 +319,7 @@ export default function AppVanThang() {
               className="text-surface-foreground/50 text-xs mb-1.5"
               style={{ fontFamily: "var(--font-ibm-mono)" }}
             >
-              {isUnlocked ? "THEO LÁ SỐ ĐÃ LƯU" : "KHUNG THÁNG"}
+              {isUnlocked ? "LÁ SỐ CỦA BẠN" : "KHUNG THÁNG"}
             </p>
             <p className="text-surface-foreground text-sm leading-relaxed">
               {isUnlocked && detail ? (
@@ -356,7 +360,7 @@ export default function AppVanThang() {
         {isUnlocked && detail ? (
           <>
             {detail.elementRelationLabel ? (
-              <QualitativeCard kicker="Quan hệ tháng với mệnh">
+              <QualitativeCard kicker="Tháng này với mệnh bạn">
                 <p>{detail.elementRelationLabel}</p>
               </QualitativeCard>
             ) : null}
@@ -372,6 +376,19 @@ export default function AppVanThang() {
                 {tongQuanDisplay != null && tongQuanDisplay.length > 0 ? (
                   <p className="text-foreground text-sm leading-relaxed">{tongQuanDisplay}</p>
                 ) : null}
+                {canLuuDisplay.trim().length > 0 ? (
+                  <div className="mt-3 pt-3 border-t border-border/60">
+                    <p
+                      className="text-muted-foreground text-[10px] mb-1.5 uppercase tracking-wide"
+                      style={{ fontFamily: "var(--font-ibm-mono)" }}
+                    >
+                      Đại vận hiện tại
+                    </p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      {canLuuDisplay}
+                    </p>
+                  </div>
+                ) : null}
                 <AiReadingBlock
                   showTitle={false}
                   variant="on-card"
@@ -386,7 +403,9 @@ export default function AppVanThang() {
                 className="bg-card border border-border px-4 py-4"
                 style={{ borderRadius: "var(--radius-lg)" }}
               >
-                <p className="text-foreground text-sm font-medium mb-3">Nhịp tháng</p>
+                <p className="text-foreground text-sm font-medium mb-3">
+                  Tháng này nhìn chung
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {detail.tags.map((t) => (
                     <span
@@ -397,15 +416,14 @@ export default function AppVanThang() {
                     </span>
                   ))}
                 </div>
-                <p className="text-muted-foreground text-xs mt-3 leading-relaxed">
-                  Các nhãn tóm tắt xu hướng — không phải điểm số, mà là hướng cảm nhận chung
-                  trong tháng.
-                </p>
               </div>
             ) : null}
 
             {hasTuTruMeta ? (
-              <QualitativeCard kicker="Thêm từ tứ trụ (khi có giờ sinh)">
+              <QualitativeCard
+                kicker="Thêm từ tứ trụ đầy đủ"
+                titleOptional="Lá số vẫn lập được chỉ với ngày sinh; giờ sinh không bắt buộc để có bản tóm tắt lá số. Các dòng dưới chỉ xuất hiện khi bản tính có đủ bốn trụ (thường là bạn đã nhập giờ sinh trong hồ sơ): Dụng Thần, thế lá số và Thập Thần của trụ tháng so với Nhật Chủ. Chúng bổ sung luận tháng phía trên, không thay cho khối Tháng này với mệnh bạn."
+              >
                 <ul className="list-disc pl-5 space-y-1.5 text-sm">
                   {detail.dungThanApi ? (
                     <li>
@@ -448,16 +466,12 @@ export default function AppVanThang() {
               </div>
             ) : null}
 
-            <QualitativeCard kicker="Đại vận & nhịp trong tháng">
-              <p className="text-muted-foreground text-sm leading-relaxed">{canLuuDisplay}</p>
-            </QualitativeCard>
-
             <p className="text-muted-foreground text-xs leading-relaxed px-0.5">
-              Việc lớn trong tháng có thể đối chiếu thêm ở{" "}
+              Có việc lớn trong tháng? →{" "}
               <Link to="/app/chon-ngay" className="text-primary font-medium underline underline-offset-2">
                 Chọn ngày lành
               </Link>{" "}
-              để chọn ngày cụ thể theo lá số.
+              để xem ngày cụ thể theo lá số của bạn.
             </p>
           </>
         ) : (
