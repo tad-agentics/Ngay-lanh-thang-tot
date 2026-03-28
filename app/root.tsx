@@ -7,6 +7,8 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { QueryProvider } from "~/components/QueryProvider";
+import { SiteBanner } from "~/components/SiteBanner";
 import { Toaster } from "~/components/ui/sonner";
 import { AuthProvider } from "~/lib/auth";
 
@@ -52,10 +54,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Outlet />
-      <Toaster richColors position="top-center" />
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <SiteBanner />
+        <Outlet />
+        <Toaster richColors position="top-center" />
+      </AuthProvider>
+    </QueryProvider>
   );
 }
 

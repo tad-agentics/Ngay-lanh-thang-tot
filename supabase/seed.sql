@@ -7,7 +7,8 @@
 -- App config
 insert into public.app_config (config_key, value) values
   ('starter_credits', '20'),
-  ('credit_expiry_months', '12')
+  ('credit_expiry_months', '12'),
+  ('site_banner', '{"enabled":true,"message":"Đây là vị trí thông báo sticky — sửa trong bảng app_config (site_banner) hoặc admin Edge Function.","href":null}')
 on conflict (config_key) do update set value = excluded.value, updated_at = now();
 
 -- Feature costs — align with Make `FEATURE_COSTS` + northstar §11 (single DB source; UI loads via query)

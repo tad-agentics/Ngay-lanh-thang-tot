@@ -425,3 +425,10 @@ verify_jwt = false
 
 [functions.share-og]
 verify_jwt = false
+
+# Validate JWT + ADMIN_EMAILS allowlist inside handler (same pattern as create-share-token).
+[functions.admin-dashboard-stats]
+verify_jwt = false
+
+[functions.admin-site-banner]
+verify_jwt = false
