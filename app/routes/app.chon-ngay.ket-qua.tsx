@@ -52,6 +52,10 @@ export default function AppChonNgayKetQua() {
   const [methodologyOpen, setMethodologyOpen] = useState(false);
   const [chonAiReading, setChonAiReading] = useState<string | null>(null);
   const [chonAiLoading, setChonAiLoading] = useState(false);
+  const [chonDayReadings, setChonDayReadings] = useState<
+    Record<string, string>
+  >({});
+  const [chonDayReadingsLoading, setChonDayReadingsLoading] = useState(false);
 
   useEffect(() => {
     if (!state?.payload) {
@@ -74,21 +78,40 @@ export default function AppChonNgayKetQua() {
     setMethodologyOpen(false);
     setChonAiReading(null);
     setChonAiLoading(false);
+    setChonDayReadings({});
+    setChonDayReadingsLoading(false);
   }, [state?.payload, parsedDays]);
 
   useEffect(() => {
     if (!state?.payload) return;
     let cancelled = false;
     setChonAiLoading(true);
+    setChonDayReadingsLoading(true);
     setChonAiReading(null);
-    void invokeGenerateReading({
-      endpoint: "chon-ngay",
-      data: state.payload,
-    }).then((r) => {
-      if (!cancelled) {
-        setChonAiReading(r.reading);
-        setChonAiLoading(false);
+    setChonDayReadings({});
+    void Promise.all([
+      invokeGenerateReading({
+        endpoint: "chon-ngay",
+        data: state.payload,
+      }),
+      invokeGenerateReading({
+        endpoint: "chon-ngay-cards",
+        data: state.payload,
+      }),
+    ]).then(([main, cards]) => {
+      if (cancelled) return;
+      setChonAiReading(main.reading);
+      const allowedIso = new Set(
+        mapChonNgayPayloadToResultDays(state.payload, 5).map((d) => d.isoDate),
+      );
+      const raw = cards.dayReadings ?? {};
+      const filtered: Record<string, string> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        if (allowedIso.has(k)) filtered[k] = v;
       }
+      setChonDayReadings(filtered);
+      setChonAiLoading(false);
+      setChonDayReadingsLoading(false);
     });
     return () => {
       cancelled = true;
@@ -246,6 +269,8 @@ export default function AppChonNgayKetQua() {
                     animationIndex={i}
                     detailHref={`/app/ngay/${day.isoDate}`}
                     menh={menhLabel ?? undefined}
+                    dayReading={chonDayReadings[day.isoDate] ?? null}
+                    dayReadingLoading={chonDayReadingsLoading}
                   />
                 ))}
               </Suspense>

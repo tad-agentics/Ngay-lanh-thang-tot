@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { Clock, Star } from "lucide-react";
 import { Link } from "react-router";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/components/ui/utils";
 import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
 
@@ -33,6 +34,9 @@ export interface ResultDayCardProps {
   menh?: string;
   /** If set, shows link to full day detail (Wave 2). */
   detailHref?: string;
+  /** Luận giải LLM trên thẻ (endpoint `chon-ngay-cards`). */
+  dayReading?: string | null;
+  dayReadingLoading?: boolean;
 }
 
 export function ResultDayCard({
@@ -46,6 +50,8 @@ export function ResultDayCard({
   animationIndex,
   menh,
   detailHref,
+  dayReading = null,
+  dayReadingLoading = false,
 }: ResultDayCardProps) {
   const isGradeA = grade === "A";
   const isB = grade === "B";
@@ -214,6 +220,63 @@ export function ResultDayCard({
               : null}
           </div>
         )}
+
+        {dayReadingLoading || (dayReading && dayReading.trim()) ? (
+          <div
+            className={cn(
+              "mt-3 pt-3 border-t",
+              isGradeA ? "border-white/15" : "border-border/60",
+            )}
+          >
+            <p
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-wide mb-2",
+                isGradeA ? "" : "text-muted-foreground",
+              )}
+              style={{
+                fontFamily: "system-ui, sans-serif",
+                color: isGradeA ? MK.aMuted : undefined,
+              }}
+            >
+              Luận giải ngày lành
+            </p>
+            {dayReadingLoading && !(dayReading && dayReading.trim()) ? (
+              <div className="flex flex-col gap-2">
+                <Skeleton
+                  className={cn(
+                    "h-3 w-full rounded",
+                    isGradeA ? "bg-white/15" : undefined,
+                  )}
+                />
+                <Skeleton
+                  className={cn(
+                    "h-3 w-[92%] rounded",
+                    isGradeA ? "bg-white/12" : undefined,
+                  )}
+                />
+                <Skeleton
+                  className={cn(
+                    "h-3 w-[78%] rounded",
+                    isGradeA ? "bg-white/10" : undefined,
+                  )}
+                />
+              </div>
+            ) : (
+              <p
+                className={cn(
+                  "text-[13px] leading-relaxed",
+                  isGradeA ? "" : "text-muted-foreground",
+                )}
+                style={{
+                  fontFamily: "system-ui, sans-serif",
+                  color: isGradeA ? "#E5E0D0" : undefined,
+                }}
+              >
+                {dayReading?.trim()}
+              </p>
+            )}
+          </div>
+        ) : null}
 
         {detailHref ? (
           <p className="mt-3 text-xs">

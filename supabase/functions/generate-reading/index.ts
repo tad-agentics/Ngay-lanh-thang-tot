@@ -2,6 +2,8 @@
  * Edge luận giải: JSON từ máy chủ → văn bản tiếng Việt (Haiku) + cache DB.
  * `la-so-chi-tiet`: một lần gọi → JSON nhiều khía cạnh (đoạn văn).
  * `tieu-van` / `luu-nien`: một lần gọi → JSON 3 phần (nhin_chung, thuc_tien, ung_xu); lỗi parse → một khối văn dự phòng.
+ * `chon-ngay`: luận giải tổng (`CHON_NGAY_SYSTEM`) + cache version.
+ * `chon-ngay-cards`: JSON `day_readings` theo từng ngày (thẻ kết quả).
  * Các endpoint khác → một khối văn (`hop-tuoi`: 8–10 câu, gom từ toàn bộ tiêu chí).
  * Luôn trả HTTP 200 — không 500.
  */
@@ -22,7 +24,6 @@ const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt
 
 ## ĐỘ DÀI THEO ENDPOINT
 - ngay-hom-nay: 2–3 câu. Tập trung: hôm nay tốt/xấu, nên làm gì, giờ nào tốt nhất.
-- chon-ngay: 2–3 câu mỗi ngày được recommend. Tập trung: tại sao ngày này tốt cho mục đích đó.
 - hop-tuoi: **8–10 câu** văn xuôi liền mạch. **Bắt buộc** dùng toàn bộ các mục trong \`criteria\` / \`tieu_chi\` / \`tieuchi\` (tên + sentiment/tone + mô tả nếu có) để suy luận: gom nhóm xu hướng (thuận, trung tính, cần lưu ý), **không bỏ sót** tiêu chí nào có trong JSON; sau đó kết về **tổng quan mối quan hệ** trong bối cảnh quan hệ được chọn (vd. relationship_label / relationship_type). Không liệt kê dạng bảng hay gạch đầu dòng; không nhắc tên field kỹ thuật.
 - tieu-van, luu-nien: **dự phòng** — một đoạn 15–22 câu liền mạch khi không dùng JSON 3 phần; vẫn **nhất quán element_relation**; khi data có Dụng Thần / Thập Thần tháng thì **giải thích ngắn** ý nghĩa và gợi ý thực tế như trong prompt JSON chính.
 - dai-van: 1–2 câu mỗi vận. Tập trung: đặc điểm giai đoạn, so sánh với Dụng Thần.
@@ -54,6 +55,82 @@ Khi endpoint là tieu-van hoặc luu-nien và trong data có element_relation ho
 8. KHÔNG chen câu tiếng Anh. Thuật ngữ lịch số giữ nguyên tiếng Việt như trong dữ liệu gốc.
 9. KHÔNG lặp lại dữ liệu thô (tên field, số index, mảng). Luận ra ý nghĩa.`;
 
+/** Luận giải tổng (khối trên) — màn kết quả chọn ngày. */
+const CHON_NGAY_SYSTEM = `Bạn là chuyên gia phong thủy và lịch số Việt Nam, viết luận giải cho màn "Chọn ngày" — tính năng cốt lõi của ứng dụng.
+
+## ĐẦU VÀO / ĐẦU RA
+- Đầu vào: JSON có "endpoint":"chon-ngay" và "data" chứa kết quả đã lọc và xếp hạng.
+- Đầu ra: Một đoạn văn xuôi tiếng Việt duy nhất, tự nhiên như đang tư vấn trực tiếp. Không tiêu đề, không khung, không "Dưới đây là…".
+
+## CẤU TRÚC DATA QUAN TRỌNG
+- "meta.intent": mục đích người dùng đã chọn (CUOI_HOI, KHAI_TRUONG, DONG_THO, AN_TANG…).
+- "meta.bat_tu_summary": tóm tắt lá số người dùng — mệnh, Dụng Thần, cường nhược, Đại Vận hiện tại, summary_vi.
+- "recommended_dates": danh sách ngày tốt, xếp theo score giảm dần. Mỗi ngày có: date, lunar_date, score, grade, truc, sao_cat, sao_hung, nguhanh_day, reason_vi, summary_vi, time_slots.
+- "dates_to_avoid": ngày cần tránh (severity 2 hoặc 3).
+
+## NHIỆM VỤ
+
+### Câu mở (bắt buộc, 1 câu):
+Kết nối mục đích (intent) với lá số người dùng. Dùng thông tin từ bat_tu_summary để cá nhân hóa. Ví dụ: nếu intent là CUOI_HOI và mệnh Mộc, mở kiểu "Với mệnh Mộc và Dụng Thần Thủy, những ngày có năng lượng Thủy hoặc Mộc sẽ đặc biệt thuận lợi cho hôn lễ của bạn."
+
+### Thân bài (2–3 câu mỗi ngày recommend):
+- Giải thích VÌ SAO ngày đó thuận cho ĐÚNG mục đích user đã chọn.
+- Dùng ý từ data (trực, sao cát, hành ngày, reason_vi) nhưng diễn đạt bằng lời đời thường — không đọc tên field.
+- Nếu ngày có time_slots, nhắc giờ tốt nhất (1-2 giờ) một cách tự nhiên, ví dụ: "nên tiến hành vào giờ Thìn hoặc giờ Mùi."
+- Nếu ngày nào có sao_hung, nhắc nhẹ nhưng không làm mất niềm tin.
+
+### Câu kết (tùy chọn, 1 câu):
+Nếu có nhiều ngày recommend, gợi ý ngày tốt nhất. Nếu chỉ có 1 ngày hoặc grade thấp (C, D), trấn an: ngày vẫn hợp lá số, khuyên mở rộng khoảng tìm kiếm nếu muốn thêm lựa chọn.
+
+## GIỌNG VĂN THEO INTENT
+- Hôn nhân (CUOI_HOI, DAM_CUOI, AN_HOI): Ấm áp, thiêng liêng, vui mừng. Dùng từ: "hỷ sự", "lương duyên", "phúc khí".
+- Kinh doanh (KHAI_TRUONG, KY_HOP_DONG, CAU_TAI, NHAM_CHUC): Tự tin, hào hứng, chuyên nghiệp. Dùng từ: "tài lộc", "hanh thông", "phát đạt".
+- Xây dựng (DONG_THO, NHAP_TRACH, LAM_NHA, MUA_NHA_DAT): Vững chãi, an tâm. Dùng từ: "nền móng vững", "an cư lạc nghiệp", "thuận phong thủy".
+- Tang lễ (AN_TANG, CAI_TANG): Trang trọng, tôn kính, nhẹ nhàng. Tránh từ vui vẻ. Dùng từ: "an nghỉ", "thanh thản", "trọn đạo hiếu".
+- Sức khỏe (KHAM_BENH, PHAU_THUAT): Bình tĩnh, an tâm. Dùng từ: "thuận lợi", "bình an".
+- Mặc định (MAC_DINH, XUAT_HANH…): Ấm áp, rõ ràng, trung tính.
+
+## XỬ LÝ TRƯỜNG HỢP ĐẶC BIỆT
+- Chỉ có 1 ngày recommend: Tập trung phân tích sâu ngày đó. Không nói "chỉ tìm được 1 ngày" theo giọng tiêu cực.
+- Tất cả ngày grade C hoặc D: Trấn an rằng ngày vẫn hợp lá số hơn các ngày khác trong khoảng. Gợi ý nhẹ nhàng mở rộng thời gian tìm kiếm.
+- Ngày có sao_hung nhiều: Nhắc nhẹ cần lưu ý, nhưng nhấn mạnh sao cát và trực vẫn hỗ trợ.
+
+## ĐIỀU CẤM
+1. KHÔNG bịa thông tin ngoài dữ liệu đầu vào. Không đoán, không suy diễn khi thiếu data.
+2. KHÔNG dùng biểu tượng cảm xúc (emoji).
+3. KHÔNG dùng markdown, gạch đầu dòng, danh sách đánh số. Chỉ văn xuôi liền.
+4. KHÔNG đưa phần trăm, xác suất, hoặc điểm số mà data không cung cấp. Trường "score" và "grade" trong data là nội bộ — KHÔNG nhắc trực tiếp score hay grade trong reading.
+5. KHÔNG phán đoán tuyệt đối ("chắc chắn thành công", "không thể thất bại"). Dùng: "rất thuận lợi", "có xu hướng tốt", "cần lưu ý".
+6. KHÔNG chen câu tiếng Anh.
+7. KHÔNG lặp lại dữ liệu thô (tên field, index, mảng JSON). Luận ra ý nghĩa.
+8. KHÔNG nhắc đến dates_to_avoid trừ khi kết quả chỉ có 1 ngày và grade thấp — khi đó chỉ gợi ý mở rộng range, không liệt kê ngày xấu.
+9. KHÔNG dài quá 200 từ toàn bài. Ngắn gọn, mỗi câu phải mang ý nghĩa.`;
+
+/** Luận giải ngắn trên từng thẻ ngày — chỉ trả JSON. */
+const CHON_NGAY_CARDS_JSON_SYSTEM = `Bạn nhận JSON có "endpoint":"chon-ngay-cards" và "data" — cùng payload kết quả chọn ngày (meta, recommended_dates, dates_to_avoid, …).
+
+Nhiệm vụ: CHỈ trả về **một** object JSON hợp lệ, không markdown, không code fence, không lời dẫn trước/sau.
+
+Cấu trúc bắt buộc:
+{"day_readings":{"YYYY-MM-DD":"2–3 câu văn xuôi tiếng Việt", ...}}
+
+Quy tắc:
+- Mỗi khóa trong day_readings là ngày dương lịch ISO (YYYY-MM-DD), trùng với từng ngày trong recommended_dates (hoặc mảng ngày gợi ý tương đương trong data). Tối đa **5** ngày đầu nếu danh sách dài hơn.
+- Mỗi giá trị: **2–3 câu** giải thích vì sao **ngày đó** thuận cho đúng meta.intent; dùng trực, sao cát/hung, hành ngày, reason_vi/summary_vi của **đúng object ngày**; diễn đạt đời thường — không đọc tên field.
+- Giọng văn theo nhóm intent như sau (bám meta.intent):
+  - Hôn nhân (CUOI_HOI, DAM_CUOI, AN_HOI): ấm, thiêng liêng — "hỷ sự", "lương duyên", "phúc khí".
+  - Kinh doanh (KHAI_TRUONG, KY_HOP_DONG, CAU_TAI, NHAM_CHUC): tự tin — "tài lộc", "hanh thông", "phát đạt".
+  - Xây dựng / nhà đất (DONG_THO, NHAP_TRACH, LAM_NHA, MUA_NHA_DAT): vững chãi — "nền móng", "an cư", "thuận phong thủy".
+  - Tang lễ (AN_TANG, CAI_TANG): trang trọng, nhẹ — "an nghỉ", "thanh thản"; không từ vui.
+  - Sức khỏe (KHAM_BENH, PHAU_THUAT): bình tĩnh — "thuận lợi", "bình an".
+  - Khác: ấm áp, trung tính.
+- Có time_slots trong ngày: nhắc 1–2 khung giờ tốt bằng lời tự nhiên (vd. giờ Thìn), không liệt kê kỹ thuật.
+- **KHÔNG** nhắc score, grade, hay điểm số. **KHÔNG** emoji, **KHÔNG** markdown.
+- **KHÔNG** bịa ngoài data. **KHÔNG** lặp JSON thô.`;
+
+const CHON_NGAY_CARDS_JSON_RETRY =
+  `Trả về duy nhất JSON: {"day_readings":{"YYYY-MM-DD":"2-3 câu tiếng Việt",...}} — đủ mọi ngày recommend trong data (tối đa 5). Không \`\`\`, không markdown.`;
+
 /** Thời hạn cache (ms) theo quy ước sản phẩm */
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
 const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
@@ -61,10 +138,15 @@ const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
 const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-04-02a";
 /** Bump khi đổi độ dài / hướng dẫn hop-tuoi trong SYSTEM_PROMPT — làm mới reading_cache. */
 const HOP_TUOI_PROMPT_VER = "2026-03-28a";
+/** Bump khi đổi CHON_NGAY_SYSTEM — làm mới reading_cache. */
+const CHON_NGAY_PROMPT_VER = "2026-03-28c";
+/** Bump khi đổi CHON_NGAY_CARDS_JSON_SYSTEM — làm mới reading_cache thẻ ngày. */
+const CHON_NGAY_CARDS_PROMPT_VER = "2026-03-28b";
 
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
   "chon-ngay": 24 * 60 * 60 * 1000,
+  "chon-ngay-cards": 24 * 60 * 60 * 1000,
   "day-detail": 24 * 60 * 60 * 1000,
   "phong-thuy": 7 * 24 * 60 * 60 * 1000,
   "tieu-van": 7 * 24 * 60 * 60 * 1000,
@@ -80,6 +162,10 @@ const DEFAULT_LLM_MODEL = "claude-haiku-4-5";
 const REQUEST_TIMEOUT_MS = 8_000;
 /** hop-tuoi: 8–10 câu + toàn bộ tiêu chí — cần thời gian và token lớn hơn mặc định. */
 const HOP_TUOI_REQUEST_TIMEOUT_MS = 18_000;
+/** chon-ngay: nhiều ngày × vài câu — hơi cao hơn mặc định. */
+const CHON_NGAY_REQUEST_TIMEOUT_MS = 14_000;
+/** chon-ngay-cards: JSON nhiều ngày. */
+const CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS = 16_000;
 /** tieu-van / luu-nien: đoạn một khối dự phòng (dài hơn). */
 const TIEU_VAN_LUU_NIEN_TIMEOUT_MS = 20_000;
 /** JSON 3 phần (tieu-van / luu-nien) — mỗi phần 6–7 câu. */
@@ -88,6 +174,8 @@ const LA_SO_CHI_TIET_TIMEOUT_MS = 28_000;
 
 const READING_MAX_TOKENS_DEFAULT = 512;
 const READING_MAX_TOKENS_HOP_TUOI = 1_536;
+const READING_MAX_TOKENS_CHON_NGAY = 1_024;
+const READING_MAX_TOKENS_CHON_NGAY_CARDS = 2_048;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = 2048;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON = 4096;
 
@@ -230,9 +318,13 @@ Không markdown, không code fence.`;
 function ok(
   reading: string | null,
   sections?: LaSoChiTietSection[] | null,
+  dayReadings?: Record<string, string> | null,
 ): Response {
   const body: Record<string, unknown> = { reading: reading ?? null };
   if (sections != null && sections.length > 0) body.sections = sections;
+  if (dayReadings != null && Object.keys(dayReadings).length > 0) {
+    body.day_readings = dayReadings;
+  }
   return new Response(JSON.stringify(body), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -272,6 +364,62 @@ function tryParseLaSoChiTietRecord(text: string): Record<string, unknown> | null
     }
   }
   return null;
+}
+
+/** Tối đa số ngày trong `day_readings` (khớp prompt ~5 + dự phòng). */
+const MAX_DAY_READINGS_KEYS = 8;
+
+/** Chuẩn hóa khóa ngày Y-M-D (có thể thiếu số 0) → YYYY-MM-DD; lịch không hợp lệ → null. */
+function normalizeDayKeyToIso(key: string): string | null {
+  const t = key.trim();
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (y < 1000 || y > 9999 || mo < 1 || mo > 12 || d < 1 || d > 31) {
+    return null;
+  }
+  const dt = new Date(Date.UTC(y, mo - 1, d));
+  if (
+    dt.getUTCFullYear() !== y ||
+    dt.getUTCMonth() !== mo - 1 ||
+    dt.getUTCDate() !== d
+  ) {
+    return null;
+  }
+  return `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function normalizeDayReadingsRecord(raw: unknown): Record<string, string> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const iso = normalizeDayKeyToIso(k);
+    if (!iso) continue;
+    if (typeof v !== "string") continue;
+    const t = v.trim().replace(/^\s*[-*•]\s+/gm, "").trim();
+    if (!t) continue;
+    const capped = t.slice(0, 12_000);
+    const prev = out[iso];
+    if (prev != null && prev.length >= capped.length) continue;
+    out[iso] = capped;
+  }
+  const keys = Object.keys(out).sort();
+  if (keys.length === 0) return null;
+  if (keys.length <= MAX_DAY_READINGS_KEYS) return out;
+  const trimmed: Record<string, string> = {};
+  for (const k of keys.slice(0, MAX_DAY_READINGS_KEYS)) {
+    trimmed[k] = out[k]!;
+  }
+  return trimmed;
+}
+
+function parseChonNgayDayReadingsJson(text: string): Record<string, string> | null {
+  const record = tryParseLaSoChiTietRecord(text);
+  if (!record) return null;
+  const dr = record.day_readings ?? record.dayReadings;
+  return normalizeDayReadingsRecord(dr);
 }
 
 function stripViCombiningKey(s: string): string {
@@ -460,7 +608,22 @@ function tieuVanSectionsNeedLengthRetry(
 function readCachedBody(
   endpoint: string,
   reading: string,
-): { reading: string | null; sections: LaSoChiTietSection[] | null } {
+): {
+  reading: string | null;
+  sections: LaSoChiTietSection[] | null;
+  dayReadings: Record<string, string> | null;
+} {
+  if (endpoint === "chon-ngay-cards") {
+    try {
+      const o = JSON.parse(reading) as { day_readings?: unknown };
+      const map = normalizeDayReadingsRecord(o.day_readings);
+      if (map) return { reading: null, sections: null, dayReadings: map };
+    } catch {
+      const map = parseChonNgayDayReadingsJson(reading);
+      if (map) return { reading: null, sections: null, dayReadings: map };
+    }
+    return { reading: null, sections: null, dayReadings: null };
+  }
   if (endpoint === "la-so-chi-tiet") {
     try {
       const o = JSON.parse(reading) as { sections?: unknown };
@@ -479,12 +642,14 @@ function readCachedBody(
             text,
           });
         }
-        if (sections.length > 0) return { reading: null, sections };
+        if (sections.length > 0) {
+          return { reading: null, sections, dayReadings: null };
+        }
       }
     } catch {
       /* fall through */
     }
-    return { reading: null, sections: null };
+    return { reading: null, sections: null, dayReadings: null };
   }
   if (endpoint === "tieu-van" || endpoint === "luu-nien") {
     try {
@@ -504,17 +669,19 @@ function readCachedBody(
             text,
           });
         }
-        if (sections.length > 0) return { reading: null, sections };
+        if (sections.length > 0) {
+          return { reading: null, sections, dayReadings: null };
+        }
       }
     } catch {
       /* cache cũ: một chuỗi văn */
     }
     const plain = reading.trim();
     return plain.length > 0
-      ? { reading: plain, sections: null }
-      : { reading: null, sections: null };
+      ? { reading: plain, sections: null, dayReadings: null }
+      : { reading: null, sections: null, dayReadings: null };
   }
-  return { reading, sections: null };
+  return { reading, sections: null, dayReadings: null };
 }
 
 function stableStringify(value: unknown): string {
@@ -692,7 +859,11 @@ Deno.serve(async (req) => {
         ? `${TIEU_VAN_LUU_NIEN_PROMPT_VER}\n${endpoint}\n${dataJson}`
         : endpoint === "hop-tuoi"
           ? `${HOP_TUOI_PROMPT_VER}\n${endpoint}\n${dataJson}`
-          : `${endpoint}\n${dataJson}`;
+          : endpoint === "chon-ngay"
+            ? `${CHON_NGAY_PROMPT_VER}\n${endpoint}\n${dataJson}`
+            : endpoint === "chon-ngay-cards"
+              ? `${CHON_NGAY_CARDS_PROMPT_VER}\n${endpoint}\n${dataJson}`
+              : `${endpoint}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify({ endpoint, data });
@@ -731,6 +902,14 @@ Deno.serve(async (req) => {
           }
           const r = cached.reading?.trim() ?? "";
           if (r.length > 0) return ok(r, null);
+          await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
+        } else if (endpoint === "chon-ngay-cards") {
+          if (
+            cached.dayReadings != null &&
+            Object.keys(cached.dayReadings).length > 0
+          ) {
+            return ok(null, null, cached.dayReadings);
+          }
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         } else {
           const r = cached.reading?.trim() ?? "";
@@ -873,6 +1052,65 @@ Deno.serve(async (req) => {
       );
     }
     return ok(null, sections);
+  }
+
+  if (endpoint === "chon-ngay") {
+    const reading = await anthropicCompletion(
+      CHON_NGAY_SYSTEM,
+      payload,
+      READING_MAX_TOKENS_CHON_NGAY,
+      CHON_NGAY_REQUEST_TIMEOUT_MS,
+    );
+    if (!reading) {
+      return ok(null, null);
+    }
+    if (admin) {
+      const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
+      await admin.from("reading_cache").upsert(
+        {
+          cache_key: cacheKey,
+          reading,
+          expires_at: expiresAt,
+        },
+        { onConflict: "cache_key" },
+      );
+    }
+    return ok(reading, null);
+  }
+
+  if (endpoint === "chon-ngay-cards") {
+    const raw = await anthropicCompletion(
+      CHON_NGAY_CARDS_JSON_SYSTEM,
+      payload,
+      READING_MAX_TOKENS_CHON_NGAY_CARDS,
+      CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS,
+    );
+    let map = raw ? parseChonNgayDayReadingsJson(raw) : null;
+    if (!map || Object.keys(map).length === 0) {
+      const retry = await anthropicCompletion(
+        CHON_NGAY_CARDS_JSON_RETRY,
+        payload,
+        READING_MAX_TOKENS_CHON_NGAY_CARDS,
+        CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS,
+      );
+      map = retry ? parseChonNgayDayReadingsJson(retry) : null;
+    }
+    if (!map || Object.keys(map).length === 0) {
+      return ok(null, null);
+    }
+    const toStore = JSON.stringify({ day_readings: map });
+    if (admin) {
+      const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
+      await admin.from("reading_cache").upsert(
+        {
+          cache_key: cacheKey,
+          reading: toStore,
+          expires_at: expiresAt,
+        },
+        { onConflict: "cache_key" },
+      );
+    }
+    return ok(null, null, map);
   }
 
   const reading =
