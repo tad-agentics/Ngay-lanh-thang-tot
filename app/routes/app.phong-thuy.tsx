@@ -29,8 +29,9 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
   ddMmYyyyInputToBatTuBirthDate,
+  formatDdMmYyyyWithAutoSlash,
+  isPartialDdMmYyyyInput,
   profileToBatTuPersonQuery,
-  sanitizeDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import {
@@ -93,7 +94,8 @@ function PhongThuyQueryFields({
   const s = idSuffix;
   const partnerDateInvalid =
     partnerNgayDdMmYyyy.trim().length > 0 &&
-    ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy) == null;
+    ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy.trim()) == null &&
+    !isPartialDdMmYyyyInput(partnerNgayDdMmYyyy);
   return (
     <div className="flex flex-col gap-3 mb-4">
       <div className="space-y-2">
@@ -174,7 +176,9 @@ function PhongThuyQueryFields({
           className="tabular-nums"
           value={partnerNgayDdMmYyyy}
           onChange={(e) =>
-            onPartnerNgayDdMmYyyyChange(sanitizeDdMmYyyyInput(e.target.value))
+            onPartnerNgayDdMmYyyyChange(
+              formatDdMmYyyyWithAutoSlash(e.target.value),
+            )
           }
         />
         {partnerDateInvalid ? (
@@ -413,6 +417,7 @@ export default function AppPhongThuy() {
         ? "Tính lại"
         : `Tính lại — ${phongCostLabel} lượng`;
 
+  /** Chặn submit khi ô partner có nội dung nhưng chưa đủ / sai ngày (kể cả đang gõ dở). */
   const partnerBirthInputInvalid =
     partnerNgayDdMmYyyy.trim().length > 0 &&
     ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy.trim()) == null;

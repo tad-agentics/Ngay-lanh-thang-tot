@@ -113,6 +113,40 @@ export function sanitizeDdMmYyyyInput(raw: string): string {
 }
 
 /**
+ * Tự chèn / sau ngày (2 chữ số) và sau tháng (2 chữ số) khi gõ/dán.
+ * Chỉ dựa trên chữ số (tối đa 8) — xóa lùi và dán vẫn ổn.
+ */
+export function formatDdMmYyyyWithAutoSlash(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 1) return digits;
+  if (digits.length === 2) return `${digits}/`;
+
+  const day = digits.slice(0, 2);
+  const monAndYear = digits.slice(2);
+  if (monAndYear.length <= 2) {
+    if (monAndYear.length === 2) {
+      return `${day}/${monAndYear}/`;
+    }
+    return `${day}/${monAndYear}`;
+  }
+  const month = monAndYear.slice(0, 2);
+  const year = monAndYear.slice(2);
+  return `${day}/${month}/${year}`;
+}
+
+/** Đang gõ dở (chưa đủ dd/mm/yyyy) — không coi là nhập sai để tránh báo lỗi khi chèn / tự động. */
+export function isPartialDdMmYyyyInput(raw: string): boolean {
+  const t = raw.trim();
+  if (!t) return false;
+  if (ddMmYyyyInputToBatTuBirthDate(t) != null) return false;
+  return (
+    /^\d{1,2}\/$/.test(t) ||
+    /^\d{1,2}\/\d{1,2}\/?$/.test(t) ||
+    /^\d{1,2}\/\d{1,2}\/\d{1,3}$/.test(t)
+  );
+}
+
+/**
  * ISO/Postgres `YYYY-MM-DD` (hoặc tiền tố) → chuỗi hiển thị DD/MM/YYYY cho ô nhập.
  */
 export function isoYmdToDdMmYyyyInput(iso: string | null | undefined): string {

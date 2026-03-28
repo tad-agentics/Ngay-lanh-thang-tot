@@ -36,7 +36,7 @@ export const HOP_TUOI_RELATIONSHIP_OPTIONS: {
   value: string;
   label: string;
 }[] = [
-  { value: "", label: "Chưa rõ mối quan hệ" },
+  { value: "", label: "Chọn mối quan hệ" },
   { value: "PHU_THE", label: "Phu thê / vợ chồng" },
   { value: "DOI_TAC", label: "Đối tác" },
   { value: "SEP_NHAN_VIEN", label: "Sếp — nhân viên" },

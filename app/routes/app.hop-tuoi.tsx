@@ -30,9 +30,10 @@ import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   ddMmYyyyInputToBatTuBirthDate,
+  formatDdMmYyyyWithAutoSlash,
   gioiTinhToBatTuGender,
+  isPartialDdMmYyyyInput,
   profileToBatTuPersonQuery,
-  sanitizeDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import {
   HOP_TUOI_RELATIONSHIP_OPTIONS,
@@ -180,7 +181,8 @@ export default function AppHopTuoi() {
 
   const hopOtherNgayInvalid =
     form.ngaySinh.trim().length > 0 &&
-    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null;
+    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null &&
+    !isPartialDdMmYyyyInput(form.ngaySinh);
 
   if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
@@ -249,7 +251,7 @@ export default function AppHopTuoi() {
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="hop-relationship" className="text-xs">
-                    Mối quan hệ (phản hồi chi tiết v2)
+                    Mối quan hệ
                   </Label>
                   <select
                     id="hop-relationship"
@@ -286,7 +288,7 @@ export default function AppHopTuoi() {
                     onChange={(e) =>
                       setForm((f) => ({
                         ...f,
-                        ngaySinh: sanitizeDdMmYyyyInput(e.target.value),
+                        ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
                       }))
                     }
                   />
@@ -297,11 +299,7 @@ export default function AppHopTuoi() {
                     >
                       Đúng DD/MM/YYYY, ngày có thật (ví dụ 20/05/1990).
                     </p>
-                  ) : (
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Định dạng DD/MM/YYYY.
-                    </p>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="space-y-2">
@@ -322,7 +320,7 @@ export default function AppHopTuoi() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={HOP_OTHER_BIRTH_TIME_DEFAULT}>
-                        Chưa rõ — mặc định Giờ Ngọ (11h–12h59)
+                        Không biết giờ sinh — dùng Giờ Ngọ
                       </SelectItem>
                       {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
                         <SelectItem key={opt.value} value={String(opt.value)}>
@@ -333,8 +331,8 @@ export default function AppHopTuoi() {
                   </Select>
                   {form.otherBirthTime === HOP_OTHER_BIRTH_TIME_DEFAULT ? (
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Chọn đúng khung giờ can chi giúp v2 luận sâu hơn; một số
-                      tiêu chí có thể ở mức trung tính nếu để mặc định.
+                      Có giờ sinh thì kết quả chính xác hơn — nếu không biết, để
+                      mặc định vẫn xem được.
                     </p>
                   ) : null}
                 </div>
@@ -378,10 +376,10 @@ export default function AppHopTuoi() {
             <Button
               size="lg"
               disabled={
-                !form.ngaySinh ||
+                !form.ngaySinh?.trim() ||
                 !form.gioiTinh ||
                 busy ||
-                hopOtherNgayInvalid
+                ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null
               }
               className="w-full"
               onClick={() => void handleSubmit()}

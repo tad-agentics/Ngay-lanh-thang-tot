@@ -26,10 +26,11 @@ import { useProfile } from "~/hooks/useProfile";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   ddMmYyyyInputToBatTuBirthDate,
+  formatDdMmYyyyWithAutoSlash,
   gioiTinhToBatTuGender,
   gioSinhToBatTuBirthTime,
   isoYmdToDdMmYyyyInput,
-  sanitizeDdMmYyyyInput,
+  isPartialDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
@@ -163,7 +164,8 @@ export default function AppLaSo() {
 
   const laSoNgayInvalid =
     form.ngaySinh.trim().length > 0 &&
-    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null;
+    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null &&
+    !isPartialDdMmYyyyInput(form.ngaySinh);
 
   if (loading) {
     return (
@@ -387,7 +389,7 @@ export default function AppLaSo() {
                 onChange={(e) =>
                   setForm((f) => ({
                     ...f,
-                    ngaySinh: sanitizeDdMmYyyyInput(e.target.value),
+                    ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
                   }))
                 }
               />
@@ -463,7 +465,9 @@ export default function AppLaSo() {
               type="button"
               className="w-full"
               disabled={
-                !form.ngaySinh || !form.gioiTinh || laSoNgayInvalid
+                !form.ngaySinh?.trim() ||
+                !form.gioiTinh ||
+                ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null
               }
               onClick={handleToConfirm}
             >

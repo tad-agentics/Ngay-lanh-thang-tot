@@ -25,10 +25,11 @@ import {
   batTuBirthTimeCodeToGioSinh,
   ddMmYyyyInputToBatTuBirthDate,
   ddMmYyyyInputToIsoDate,
+  formatDdMmYyyyWithAutoSlash,
   gioSinhToBatTuBirthTime,
   gioiTinhToBatTuGender,
   isoYmdToDdMmYyyyInput,
-  sanitizeDdMmYyyyInput,
+  isPartialDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileHasLaso } from "~/lib/la-so-ui";
@@ -198,7 +199,8 @@ export default function AppCaiDat() {
 
   const ngaySinhEditInvalid =
     ngaySinh.trim().length > 0 &&
-    ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()) == null;
+    ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()) == null &&
+    !isPartialDdMmYyyyInput(ngaySinh);
 
   return (
     <div className="min-h-[60vh] bg-background pb-24">
@@ -344,7 +346,7 @@ export default function AppCaiDat() {
                   className="tabular-nums"
                   value={ngaySinh}
                   onChange={(e) =>
-                    setNgaySinh(sanitizeDdMmYyyyInput(e.target.value))
+                    setNgaySinh(formatDdMmYyyyWithAutoSlash(e.target.value))
                   }
                   disabled={loading || !profile}
                 />
@@ -402,7 +404,11 @@ export default function AppCaiDat() {
                 type="button"
                 className="w-full"
                 disabled={
-                  saving || loading || !profile || ngaySinhEditInvalid
+                  saving ||
+                  loading ||
+                  !profile ||
+                  (ngaySinh.trim().length > 0 &&
+                    ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()) == null)
                 }
                 onClick={() => void saveBirth()}
               >

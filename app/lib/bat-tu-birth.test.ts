@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   ddMmYyyyInputToBatTuBirthDate,
   ddMmYyyyInputToIsoDate,
+  formatDdMmYyyyWithAutoSlash,
+  isPartialDdMmYyyyInput,
   isoYmdToDdMmYyyyInput,
   sanitizeDdMmYyyyInput,
 } from "./bat-tu-birth";
@@ -37,5 +39,37 @@ describe("isoYmdToDdMmYyyyInput / ddMmYyyyInputToIsoDate", () => {
 
   it("sanitize loại ký tự lạ", () => {
     expect(sanitizeDdMmYyyyInput("20a/05/1990x")).toBe("20/05/1990");
+  });
+});
+
+describe("formatDdMmYyyyWithAutoSlash", () => {
+  it("chèn / sau ngày và tháng khi gõ", () => {
+    expect(formatDdMmYyyyWithAutoSlash("23")).toBe("23/");
+    expect(formatDdMmYyyyWithAutoSlash("230")).toBe("23/0");
+    expect(formatDdMmYyyyWithAutoSlash("2305")).toBe("23/05/");
+    expect(formatDdMmYyyyWithAutoSlash("23051990")).toBe("23/05/1990");
+  });
+
+  it("giữ 0–2 chữ số đầu chưa đủ ngày", () => {
+    expect(formatDdMmYyyyWithAutoSlash("2")).toBe("2");
+    expect(formatDdMmYyyyWithAutoSlash("")).toBe("");
+  });
+
+  it("chấp nhận dán có slash hoặc chỉ số", () => {
+    expect(formatDdMmYyyyWithAutoSlash("23/05/1990")).toBe("23/05/1990");
+    expect(formatDdMmYyyyWithAutoSlash("ab2305xy1990")).toBe("23/05/1990");
+  });
+});
+
+describe("isPartialDdMmYyyyInput", () => {
+  it("nhận diện đang gõ dở (có / tự chèn)", () => {
+    expect(isPartialDdMmYyyyInput("23/")).toBe(true);
+    expect(isPartialDdMmYyyyInput("23/05/")).toBe(true);
+    expect(isPartialDdMmYyyyInput("23/05/199")).toBe(true);
+  });
+
+  it("không báo partial khi đủ hoặc sai hoàn chỉnh", () => {
+    expect(isPartialDdMmYyyyInput("23/05/1990")).toBe(false);
+    expect(isPartialDdMmYyyyInput("31/02/2020")).toBe(false);
   });
 });
