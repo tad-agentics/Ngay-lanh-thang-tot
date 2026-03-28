@@ -1,4 +1,5 @@
 import type { Database } from "~/lib/database.types";
+import { stableStringify } from "~/lib/stable-stringify";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -178,4 +179,26 @@ export function profileToBatTuPersonQuery(profile: ProfileRow | null): {
     ...(gender !== undefined ? { gender } : {}),
     tz: "Asia/Ho_Chi_Minh",
   };
+}
+
+/** Khớp `tieVanUnlockIdentityKey` trong Edge `bat-tu` — một khóa / bộ birth + tz. */
+export function tieVanUnlockIdentityKey(parts: {
+  birth_date?: string;
+  birth_time?: number;
+  gender?: number;
+  tz?: string;
+}): string {
+  const normalized = {
+    birth_date: parts.birth_date ?? null,
+    birth_time:
+      typeof parts.birth_time === "number" && Number.isFinite(parts.birth_time)
+        ? parts.birth_time
+        : null,
+    gender:
+      typeof parts.gender === "number" && Number.isFinite(parts.gender)
+        ? parts.gender
+        : null,
+    tz: parts.tz ?? null,
+  };
+  return stableStringify(normalized);
 }

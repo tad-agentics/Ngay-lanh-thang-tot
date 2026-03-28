@@ -85,6 +85,45 @@ function normalizeBatTuApiBaseUrl(raw: string): string {
   return s;
 }
 
+function stableStringify(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "null";
+  if (typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stableStringify(v)).join(",")}]`;
+  }
+  const o = value as Record<string, unknown>;
+  const keys = Object.keys(o).sort();
+  const parts = keys.map((k) => {
+    const v = o[k];
+    return `${JSON.stringify(k)}:${stableStringify(v === undefined ? null : v)}`;
+  });
+  return `{${parts.join(",")}}`;
+}
+
+function tieVanUnlockIdentityKey(body: Record<string, unknown>): string {
+  const normalized = {
+    birth_date: body.birth_date != null ? String(body.birth_date) : null,
+    birth_time:
+      typeof body.birth_time === "number" && Number.isFinite(body.birth_time)
+        ? body.birth_time
+        : null,
+    gender:
+      typeof body.gender === "number" && Number.isFinite(body.gender)
+        ? body.gender
+        : null,
+    tz: body.tz != null ? String(body.tz) : null,
+  };
+  return stableStringify(normalized);
+}
+
+function tieVanYearMonth(body: Record<string, unknown>): string | null {
+  if (body.month == null) return null;
+  const s = String(body.month).trim();
+  if (!/^\d{4}-\d{2}$/.test(s)) return null;
+  return s;
+}
+
 /** Ops callable without Supabase session (caller may still send birth_* in `body`). */
 const ANONYMOUS_OPS = new Set([
   "ngay-hom-nay",
@@ -904,6 +943,25 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (op === "tieu-van" && userId) {
+    const ymEarly = tieVanYearMonth(body);
+    if (ymEarly) {
+      const ikeyEarly = tieVanUnlockIdentityKey(body);
+      const { data: unlockedRow, error: unlockReadErr } = await admin
+        .from("tieu_van_unlocks")
+        .select("payload")
+        .eq("user_id", userId)
+        .eq("year_month", ymEarly)
+        .eq("identity_key", ikeyEarly)
+        .maybeSingle();
+      if (unlockReadErr) {
+        console.error("tieu_van_unlocks read", unlockReadErr);
+      } else if (unlockedRow?.payload != null) {
+        return json({ data: unlockedRow.payload });
+      }
+    }
+  }
+
   /**
    * Never return Redis cache for authenticated ops before billing — a cache hit would skip
    * credit deduction and ledger insert (`resolveFeatureKey` + charge block below).
@@ -1114,6 +1172,25 @@ Deno.serve(async (req) => {
     !Array.isArray(data)
       ? stripPhongThuyTeaserPayload(data)
       : data;
+
+  if (op === "tieu-van" && userId && outData != null) {
+    const ymStore = tieVanYearMonth(body);
+    if (ymStore) {
+      const ikeyStore = tieVanUnlockIdentityKey(body);
+      const { error: unlockUpsertErr } = await admin.from("tieu_van_unlocks").upsert(
+        {
+          user_id: userId,
+          year_month: ymStore,
+          identity_key: ikeyStore,
+          payload: outData,
+        },
+        { onConflict: "user_id,year_month,identity_key" },
+      );
+      if (unlockUpsertErr) {
+        console.error("tieu_van_unlocks upsert", unlockUpsertErr);
+      }
+    }
+  }
 
   return json({ data: outData });
 });

@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Link } from "react-router";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -10,8 +17,12 @@ import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { useProfile } from "~/hooks/useProfile";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
-import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import {
+  profileToBatTuPersonQuery,
+  tieVanUnlockIdentityKey,
+} from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { supabase } from "~/lib/supabase";
 import {
   invokeGenerateReading,
   type LaSoChiTietSection,
@@ -138,6 +149,62 @@ export default function AppVanThang() {
     };
   }, [prefetchLunarLabels, months]);
 
+  const vanIdentityKey = useMemo(
+    () => (q.birth_date ? tieVanUnlockIdentityKey(q) : ""),
+    [q.birth_date, q.birth_time, q.gender, q.tz],
+  );
+
+  const startTieuVanAiForMonth = useCallback((ymKey: string, raw: unknown) => {
+    const nextGen = (tieuVanAiGenRef.current[ymKey] ?? 0) + 1;
+    tieuVanAiGenRef.current[ymKey] = nextGen;
+    setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
+    setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: null }));
+    setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: true }));
+    void invokeGenerateReading({
+      endpoint: "tieu-van",
+      data: raw,
+    }).then((r) => {
+      if (tieuVanAiGenRef.current[ymKey] !== nextGen) return;
+      const secs = r.sections && r.sections.length > 0 ? r.sections : null;
+      if (secs) {
+        setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: secs }));
+        setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
+      } else {
+        setTieuVanAiReading((prev) => ({
+          ...prev,
+          [ymKey]: r.reading?.trim() ? r.reading : null,
+        }));
+        setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: null }));
+      }
+      setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: false }));
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!profile?.id || !hasLaso || !vanIdentityKey) return;
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("tieu_van_unlocks")
+        .select("year_month, payload")
+        .eq("identity_key", vanIdentityKey);
+      if (cancelled || error) return;
+      const nextUnlocked: Record<string, TieuVanUi> = {};
+      for (const row of data ?? []) {
+        nextUnlocked[row.year_month] = mapTieuVanPayload(row.payload);
+      }
+      if (cancelled) return;
+      setUnlocked((prev) => ({ ...prev, ...nextUnlocked }));
+      for (const row of data ?? []) {
+        if (cancelled) break;
+        startTieuVanAiForMonth(row.year_month, row.payload as unknown);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id, hasLaso, vanIdentityKey, startTieuVanAiForMonth]);
+
   const reveal = laSoJsonToRevealProps(profile?.la_so ?? undefined);
   const nhatChuProfile = reveal?.nhatChu ?? "";
 
@@ -167,30 +234,7 @@ export default function AppVanThang() {
       }
       const ui = mapTieuVanPayload(res.data);
       setUnlocked((prev) => ({ ...prev, [ym]: ui }));
-      const ymKey = ym;
-      const nextGen = (tieuVanAiGenRef.current[ymKey] ?? 0) + 1;
-      tieuVanAiGenRef.current[ymKey] = nextGen;
-      setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
-      setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: null }));
-      setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: true }));
-      void invokeGenerateReading({
-        endpoint: "tieu-van",
-        data: res.data,
-      }).then((r) => {
-        if (tieuVanAiGenRef.current[ymKey] !== nextGen) return;
-        const secs = r.sections && r.sections.length > 0 ? r.sections : null;
-        if (secs) {
-          setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: secs }));
-          setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
-        } else {
-          setTieuVanAiReading((prev) => ({
-            ...prev,
-            [ymKey]: r.reading?.trim() ? r.reading : null,
-          }));
-          setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: null }));
-        }
-        setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: false }));
-      });
+      startTieuVanAiForMonth(ym, res.data);
       await refresh();
     } finally {
       setUnlocking(false);

@@ -184,6 +184,29 @@ export interface Database {
         };
         Relationships: [];
       };
+      tieu_van_unlocks: {
+        Row: {
+          id: string;
+          user_id: string;
+          year_month: string;
+          identity_key: string;
+          payload: Json;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          year_month: string;
+          identity_key: string;
+          payload: Json;
+          id?: string;
+          created_at?: string;
+        };
+        Update: {
+          payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       reading_cache: {
         Row: {
           cache_key: string;
