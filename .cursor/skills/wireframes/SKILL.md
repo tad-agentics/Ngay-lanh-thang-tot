@@ -196,7 +196,7 @@ All copy must be validated against `copy-rules.mdc` and the EDS copy formula bef
 | CTA | `[Primary CTA]` | `Xem chi tiết` | — |
 | Empty state | `[Empty state message]` | `Cho biết ngày giờ sinh để kết quả dành riêng cho bạn.` | — |
 | Error | `[Error message]` | `Không tải được kết quả lúc này. Thử lại sau vài giây.` | — |
-| Headline | `[Screen headline]` | `Ngày tốt tuần này` | — |
+| Headline | `[Screen headline]` | `Ngày lành tuần này` | — |
 | Personalized | `[Greeting]` | — | `Nhật Chủ {{user.nhat_chu}} — hành {{user.hanh}}` |
 | Paywall | `[Upgrade CTA]` | `Xem lý do và giờ tốt — cần {{cost}} tín dụng` | `{{cost}}` |
 

@@ -4,20 +4,28 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import type { Route } from "./+types/landing";
 
 import "~/styles/landing-marketing.css";
 
-import { LANDING_GIO_SINH as GIO_SINH } from "~/lib/landing-cta-constants";
+import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
+import { useAuth } from "~/lib/auth";
+import {
+  LANDING_GIO_SINH as GIO_SINH,
+  landingSignupPrefillHasAny,
+  parseLandingDobDdMmYyyy,
+  parseLandingSignupPrefill,
+} from "~/lib/landing-cta-constants";
 
 const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
 
 export const links: Route.LinksFunction = () => [
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Serif+SC:wght@400;600;700&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Montserrat:wght@700;800;900&family=Noto+Serif+SC:wght@400;600;700&display=swap",
   },
 ];
 
@@ -28,11 +36,11 @@ const PAINS = [
   },
   {
     title: "Kết quả không cá nhân hóa",
-    desc: '"Ngày này tốt" — tốt cho ai? Chẳng rõ bạn sinh năm nào, đang lo chuyện gì. Một câu dùng chung cho mọi tuổi không phải câu cho riêng bạn.',
+    desc: '"Ngày này lành" — lành cho ai? Chẳng rõ bạn sinh năm nào, đang lo chuyện gì. Một câu dùng chung cho mọi tuổi không phải câu cho riêng bạn.',
   },
   {
     title: "Không giải thích lý do",
-    desc: "Biết là ngày \"tốt\" mà không hiểu vì sao — chưa đủ để chốt việc, cũng khó kể cho người nhà nghe cho ra lẽ.",
+    desc: "Biết là ngày \"lành\" mà không hiểu vì sao — chưa đủ để chốt việc, cũng khó kể cho người nhà nghe cho ra lẽ.",
   },
   {
     title: "Tìm thầy vừa tốn thời gian, vừa đắt",
@@ -52,8 +60,8 @@ const OFFERS = [
     tag: "Nền tảng",
     title: "Lá số Tứ Trụ cá nhân",
     desc: "Nhật Chủ, Dụng Thần, Kỵ Thần, Đại Vận — làm một lần, các kết quả sau bám theo đúng mệnh của bạn.",
-    cr: "15 lượng · lưu vĩnh viễn",
-    free: false,
+    cr: "",
+    free: true,
   },
   {
     tag: "Hàng ngày",
@@ -118,12 +126,16 @@ const FAQS = [
     a: "Chúng tôi bám theo Ngọc Hạp Thông Thư — sách lịch pháp người Việt dùng quen từ lâu. Hơn năm mươi công thức sao ngày, mười hai Trực, hai mươi tám Tú được cài cố định — không kiểu đoán bừa khiến lần này khác lần khác. Kết quả nhất quán và kể được từng bước cho bạn nghe.",
   },
   {
+    q: "Chọn ngày trong ứng dụng hoạt động ra sao?",
+    a: "Không phải ngày lành của người này là ngày lành của người kia. Ba bước: một — loại các ngày Nguyệt Kỵ, Tam Nương, Dương Công Kỵ mà ai cũng nên tránh; hai — so từng ngày với mệnh, Dụng Thần và Kỵ Thần trong lá số của bạn (ví dụ ngày hợp mệnh Kim có thể không hợp mệnh Mộc); ba — chấm điểm theo Trực, sao cát hung và ngũ hành thuận mệnh rồi chọn những ngày đẹp nhất, thường là ba ngày đứng đầu. Sau khi đăng nhập, mở mục Chọn ngày để xem giải thích đầy đủ trước khi tra.",
+  },
+  {
     q: "Tứ trụ là gì, có cần không?",
     a: "Tứ trụ còn gọi bát tự — lấy từ ngày, tháng, năm, giờ sinh, ra hành gốc của bạn (Nhật Chủ), hành nên bổ sung (Dụng Thần), hành nên tránh (Kỵ Thần). Có lá số rồi thì bộ tính toán ưu tiên những ngày Can Chi thuận với Dụng Thần của bạn — sâu hơn hẳn chỉ tra theo năm tuổi.",
   },
   {
     q: "Lượng có hết hạn không?",
-    a: "Mỗi lần mua lượng, dùng trong mười hai tháng kể từ ngày mua. Mở tài khoản mới được hai mươi lượng — đủ làm lá số tứ trụ (mười lăm lượng) và thử chọn ngày lần đầu (năm lượng).",
+    a: "Mỗi lần mua lượng, dùng trong mười hai tháng kể từ ngày mua. Dựng lá số tứ trụ lần đầu không trừ lượng. Mở tài khoản mới được hai mươi lượng — dùng cho chọn ngày, hợp tuổi, vận tháng và các tính năng trả phí khác.",
   },
   {
     q: "Một tài khoản dùng cho cả nhà được không?",
@@ -144,7 +156,7 @@ function landingJsonLd() {
         name: "Ngày Lành Tháng Tốt",
         url: SITE_ORIGIN,
         description:
-          "Ứng dụng chọn ngày tốt bám theo lá số tứ trụ của bạn. Khai trương, cưới hỏi, nhập trạch — tra theo đúng mệnh, không theo lịch chung.",
+          "Ứng dụng chọn ngày lành bám theo lá số tứ trụ của bạn. Khai trương, cưới hỏi, nhập trạch — tra theo đúng mệnh, không theo lịch chung.",
         applicationCategory: "LifestyleApplication",
         inLanguage: "vi",
         offers: {
@@ -168,7 +180,7 @@ function landingJsonLd() {
 export function meta({}: Route.MetaArgs) {
   return [
     {
-      title: "Ngày Lành Tháng Tốt — chọn ngày tốt theo lá số tứ trụ",
+      title: "Ngày Lành Tháng Tốt — chọn ngày lành theo lá số tứ trụ",
     },
     {
       name: "description",
@@ -191,18 +203,53 @@ export function meta({}: Route.MetaArgs) {
 type CTAFormFields = { name: string; dob: string; gio: string; gender: string };
 
 function CTAForm({ id }: { id: string }) {
-  const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
+  const { session, loading: authLoading } = useAuth();
+  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState<CTAFormFields>({
     name: "",
     dob: "",
     gio: GIO_SINH[0]!,
     gender: "",
   });
+  const [dobError, setDobError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!form.name || !form.dob || !form.gender) return;
-    setSubmitted(true);
+    setDobError(null);
+    const dobParsed = parseLandingDobDdMmYyyy(form.dob);
+    if (!dobParsed.ok) {
+      setDobError(dobParsed.message);
+      return;
+    }
+    if (!form.name.trim() || !form.gender) return;
+    if (authLoading) return;
+
+    const params = new URLSearchParams({
+      name: form.name.trim(),
+      dob: dobParsed.iso,
+      gio: form.gio,
+      gender: form.gender,
+    });
+    const prefill = parseLandingSignupPrefill(params);
+
+    const uid = session?.user?.id;
+    if (uid && landingSignupPrefillHasAny(prefill)) {
+      setBusy(true);
+      const err = await applyLandingPrefillToProfile(uid, prefill);
+      setBusy(false);
+      if (err) {
+        toast.error(
+          "Chưa lưu được hồ sơ từ form — mở Cài đặt trong app để nhập lại.",
+        );
+        return;
+      }
+      toast.success("Đã cập nhật hồ sơ.");
+      void navigate("/app/la-so");
+      return;
+    }
+
+    void navigate({ pathname: "/dang-ky", search: `?${params.toString()}` });
   }
 
   const set =
@@ -210,48 +257,14 @@ function CTAForm({ id }: { id: string }) {
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  const signupSearch = new URLSearchParams({
-    name: form.name,
-    dob: form.dob,
-    gio: form.gio,
-    gender: form.gender,
-  }).toString();
-
-  if (submitted) {
-    return (
-      <div className="lp-cta-card">
-        <div className="lp-cta-card-inner" style={{ textAlign: "center", padding: "1rem 0" }}>
-          <div
-            style={{
-              fontFamily: "var(--font-noto), 'Noto Serif SC', serif",
-              fontSize: "2rem",
-              color: "var(--lp-gold)",
-              marginBottom: "1rem",
-            }}
-          >
-            吉
-          </div>
-          <h2 className="lp-cta-heading" style={{ marginBottom: "0.75rem" }}>
-            Lá số cho {form.name} đã dựng xong
-          </h2>
-          <p className="lp-cta-sub" style={{ marginBottom: "1.5rem" }}>
-            Mở tài khoản để xem Nhật Chủ, Dụng Thần và các ngày tốt bám theo mệnh của
-            bạn.
-          </p>
-          <Link
-            to={{ pathname: "/dang-ky", search: `?${signupSearch}` }}
-            className="lp-btn-submit"
-          >
-            Đăng ký và xem lá số →
-          </Link>
-          <div className="lp-form-note">Hai mươi lượng tặng khi mở tài khoản</div>
-        </div>
-        <div className="lp-kanji-bg" aria-hidden>
-          吉
-        </div>
-      </div>
-    );
-  }
+  const submitBusy = authLoading || busy;
+  const submitLabel = submitBusy
+    ? busy
+      ? "Đang lưu…"
+      : "Đang tải…"
+    : session
+      ? "Lưu hồ sơ & vào lá số →"
+      : "Tiếp tục — tạo tài khoản →";
 
   return (
     <div className="lp-cta-card" id={id === "hero-form" ? "main-form" : undefined}>
@@ -266,7 +279,10 @@ function CTAForm({ id }: { id: string }) {
           Cho biết ngày giờ sinh — dựng lá số một lần, rồi mỗi lần chọn ngày đều bám
           theo đó.
         </p>
-        <form onSubmit={handleSubmit} aria-label="Nhập thông tin để dựng lá số tứ trụ">
+        <form
+          onSubmit={(e) => void handleSubmit(e)}
+          aria-label="Nhập thông tin để dựng lá số tứ trụ"
+        >
           <div className="lp-form-row">
             <label className="lp-form-label" htmlFor={`${id}-name`}>
               Họ tên
@@ -287,9 +303,35 @@ function CTAForm({ id }: { id: string }) {
               Ngày sinh
             </label>
             <p className="lp-form-hint">
-              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng.
+              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng. Nhập dd/mm/yyyy
+              (ví dụ 15/08/1990).
             </p>
-            <input id={`${id}-dob`} type="date" value={form.dob} onChange={set("dob")} required />
+            <input
+              id={`${id}-dob`}
+              type="text"
+              name="birthday-ddmmyyyy"
+              autoComplete="off"
+              placeholder="dd/mm/yyyy"
+              className={dobError ? "lp-form-input-invalid" : undefined}
+              value={form.dob}
+              onChange={(e) => {
+                setDobError(null);
+                setForm((f) => ({ ...f, dob: e.target.value }));
+              }}
+              aria-invalid={dobError ? true : undefined}
+              aria-describedby={
+                dobError ? `${id}-dob-hint ${id}-dob-error` : `${id}-dob-hint`
+              }
+            />
+            <p id={`${id}-dob-hint`} className="sr-only">
+              Định dạng hai chữ số ngày, hai chữ số tháng, bốn chữ số năm, cách nhau bằng dấu gạch
+              chéo.
+            </p>
+            {dobError ? (
+              <p id={`${id}-dob-error`} className="lp-form-field-error" role="alert">
+                {dobError}
+              </p>
+            ) : null}
           </div>
           <div className="lp-form-row lp-form-row-2">
             <div>
@@ -322,8 +364,8 @@ function CTAForm({ id }: { id: string }) {
               </select>
             </div>
           </div>
-          <button type="submit" className="lp-btn-submit">
-            Xem ngày lành cho tôi →
+          <button type="submit" className="lp-btn-submit" disabled={submitBusy}>
+            {submitLabel}
           </button>
         </form>
         <div className="lp-form-note">
@@ -385,7 +427,19 @@ export default function Landing() {
       <div id="lp">
         <nav className="lp-nav" aria-label="Chính">
           <Link to="/" className="lp-nav-logo">
-            Ngày Lành <span>Tháng Tốt</span>
+            <img
+              src="/logo-mark.svg"
+              alt=""
+              width={44}
+              height={44}
+              className="lp-nav-logo-mark"
+              decoding="async"
+            />
+            <span className="lp-nav-logo-divider" aria-hidden />
+            <span className="lp-nav-logo-text">
+              <span className="lp-nav-logo-line1">Ngày Lành</span>
+              <span className="lp-nav-logo-line2">Tháng Tốt</span>
+            </span>
           </Link>
           <div className="lp-nav-actions">
             <Link to="/dang-nhap" className="lp-nav-login">
@@ -553,9 +607,9 @@ export default function Landing() {
             ))}
           </div>
           <div className="lp-khoi-dau-box">
-            <strong>Mở tài khoản — được hai mươi lượng tặng.</strong> Đủ dựng lá số (mười
-            lăm lượng) và thử chọn ngày một lần (năm lượng). Gói theo tháng thì không trừ
-            lượng từng việc — dùng trong thời hạn gói.
+            <strong>Mở tài khoản — được hai mươi lượng tặng.</strong> Dựng lá số không trừ
+            lượng; hai mươi lượng dùng cho chọn ngày và các tính năng trả phí. Gói theo tháng
+            thì không trừ lượng từng việc — dùng trong thời hạn gói.
           </div>
         </section>
 
@@ -590,7 +644,7 @@ export default function Landing() {
                 <span>chọn ngày cho chắc.</span>
               </h2>
               <p>
-                Dựng lá số tứ trụ không mất phí — từ đó mỗi ngày tốt đều bám theo mệnh của
+                Dựng lá số tứ trụ không mất phí — từ đó mỗi ngày lành đều bám theo mệnh của
                 bạn.
               </p>
             </div>
@@ -600,7 +654,19 @@ export default function Landing() {
 
         <footer>
           <Link to="/" className="lp-ft-logo">
-            Ngày Lành Tháng Tốt
+            <img
+              src="/logo-mark-reversed.svg"
+              alt=""
+              width={40}
+              height={40}
+              className="lp-ft-logo-mark"
+              decoding="async"
+            />
+            <span className="lp-ft-logo-divider" aria-hidden />
+            <span className="lp-ft-logo-text">
+              <span className="lp-ft-logo-line1">Ngày Lành</span>
+              <span className="lp-ft-logo-line2">Tháng Tốt</span>
+            </span>
           </Link>
           <nav className="lp-ft-links" aria-label="Liên kết chân trang">
             <a href="#offer-h2" className="lp-ft-link">

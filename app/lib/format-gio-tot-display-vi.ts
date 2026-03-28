@@ -43,11 +43,11 @@ function formatOneRange(
   const overnight = endMin <= startMin && !(startH === endH && startM === endM);
 
   if (overnight) {
-    return `${fmtHourMinute(startH, startM)}–${fmtHourMinute(endH, endM)} giờ đêm`;
+    return `${fmtHourMinute(startH, startM)} - ${fmtHourMinute(endH, endM)} giờ đêm`;
   }
 
   const period = periodLabel(startH);
-  return `${fmtHourMinute(startH, startM)}–${fmtHourMinute(endH, endM)} giờ ${period}`;
+  return `${fmtHourMinute(startH, startM)} - ${fmtHourMinute(endH, endM)} giờ ${period}`;
 }
 
 const RANGE_RE = /(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/;
@@ -141,12 +141,16 @@ function parseSegmentToDisplay(segment: string): string | null {
   return null;
 }
 
-/** Chuỗi kiểu "Tý 23:00-01:00; Dần 07:00-09:00" hoặc chỉ "HH:MM-HH:MM". */
+/** Chuỗi kiểu "Tý 23:00-01:00; Dần 07:00-09:00", "HH:MM-HH:MM, HH:MM-HH:MM", hoặc "9–11h". */
 export function formatHourRangeStringDisplayVi(text: string): string | null {
   const raw = text.trim();
   if (!raw || raw === "—") return null;
 
-  const parts = raw.split(/\s*;\s*/);
+  const parts = raw
+    .split(/\s*;\s*/)
+    .flatMap((chunk) => chunk.split(/\s*,\s*/))
+    .map((p) => p.trim())
+    .filter(Boolean);
   const out: string[] = [];
   for (const p of parts) {
     const hit = parseSegmentToDisplay(p);

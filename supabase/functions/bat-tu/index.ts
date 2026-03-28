@@ -18,6 +18,53 @@ const corsHeaders = {
 };
 
 /**
+ * GET /v1/phong-thuy + `detail=teaser`: bỏ các key paywall khỏi JSON trả client
+ * (upstream có thể vẫn trả full — không dựa vào UI để giữ bí mật).
+ */
+const PHONG_THUY_TEASER_STRIP_KEYS = [
+  "ky_than",
+  "huong_xau",
+  "mau_ky",
+  "so_ky",
+  "vat_pham",
+  "purpose_specific",
+  "personalization",
+  "phi_tinh_year",
+  "phi_tinh",
+  "huong_tot_nam_nay",
+  "huong_xau_nam_nay",
+  "hoa_giai",
+  "phi_tinh_note_vi",
+  "couple_harmony",
+  "kyThan",
+  "huongXau",
+  "mauKy",
+  "soKy",
+  "vatPham",
+  "purposeSpecific",
+  "phiTinhYear",
+  "phiTinh",
+  "huongTotNamNay",
+  "huongXauNamNay",
+  "hoaGiai",
+  "phiTinhNoteVi",
+  "coupleHarmony",
+] as const;
+
+function stripPhongThuyTeaserPayload(body: unknown): unknown {
+  if (
+    body == null || typeof body !== "object" || Array.isArray(body)
+  ) {
+    return body;
+  }
+  const o = { ...(body as Record<string, unknown>) };
+  for (const k of PHONG_THUY_TEASER_STRIP_KEYS) {
+    delete o[k];
+  }
+  return o;
+}
+
+/**
  * Expect API origin only (e.g. `https://tu-tru-api.fly.dev`). Paths already include `/v1/...`.
  * Fixes common misconfigurations:
  * - Trailing `/v1` → would become `/v1/v1/...` (404).
@@ -35,6 +82,45 @@ function normalizeBatTuApiBaseUrl(raw: string): string {
   if (s.endsWith("/docs")) {
     s = s.slice(0, -5).replace(/\/+$/, "");
   }
+  return s;
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "null";
+  if (typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stableStringify(v)).join(",")}]`;
+  }
+  const o = value as Record<string, unknown>;
+  const keys = Object.keys(o).sort();
+  const parts = keys.map((k) => {
+    const v = o[k];
+    return `${JSON.stringify(k)}:${stableStringify(v === undefined ? null : v)}`;
+  });
+  return `{${parts.join(",")}}`;
+}
+
+function tieVanUnlockIdentityKey(body: Record<string, unknown>): string {
+  const normalized = {
+    birth_date: body.birth_date != null ? String(body.birth_date) : null,
+    birth_time:
+      typeof body.birth_time === "number" && Number.isFinite(body.birth_time)
+        ? body.birth_time
+        : null,
+    gender:
+      typeof body.gender === "number" && Number.isFinite(body.gender)
+        ? body.gender
+        : null,
+    tz: body.tz != null ? String(body.tz) : null,
+  };
+  return stableStringify(normalized);
+}
+
+function tieVanYearMonth(body: Record<string, unknown>): string | null {
+  if (body.month == null) return null;
+  const s = String(body.month).trim();
+  if (!/^\d{4}-\d{2}$/.test(s)) return null;
   return s;
 }
 
@@ -59,6 +145,7 @@ const VALID_OPS = new Set([
   "tieu-van",
   "hop-tuoi",
   "phong-thuy",
+  "la-so",
   "share",
 ]);
 
@@ -367,7 +454,38 @@ function buildUpstream(
       spec = {
         method: "GET",
         path: "/v1/phong-thuy",
-        queryKeys: ["birth_date", "birth_time", "gender", "tz"],
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "tz",
+          "purpose",
+          "year",
+          "partner_birth_date",
+          /** `teaser` | `full` — upstream may trim payload; teaser không trừ lượng. */
+          "detail",
+        ],
+      };
+      break;
+
+    case "la-so":
+      if (!body.birth_date) {
+        return {
+          ok: false,
+          message: "Thiếu birth_date (GET /v1/la-so).",
+        };
+      }
+      if (body.birth_time === undefined || body.birth_time === null) {
+        return {
+          ok: false,
+          message: "Thiếu birth_time (GET /v1/la-so).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/la-so",
+        // OpenAPI: https://tu-tru-api.fly.dev/docs#/default/la_so_endpoint_v1_la_so_get — chỉ birth_date, birth_time, gender
+        queryKeys: ["birth_date", "birth_time", "gender"],
       };
       break;
 
@@ -405,6 +523,7 @@ function buildUpstream(
           "person2_birth_date",
           "person2_birth_time",
           "person2_gender",
+          "relationship_type",
         ],
       };
       break;
@@ -546,6 +665,8 @@ function resolveFeatureKey(
       return "chon_ngay_detail";
     case "day-detail":
       return "day_detail";
+    case "la-so":
+      return "la_so_diengiai";
     case "tu-tru":
       return "tu_tru";
     case "tieu-van":
@@ -822,19 +943,40 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (!ANONYMOUS_OPS.has(op)) {
-    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
-    if (cached) return cached;
+  if (op === "tieu-van" && userId) {
+    const ymEarly = tieVanYearMonth(body);
+    if (ymEarly) {
+      const ikeyEarly = tieVanUnlockIdentityKey(body);
+      const { data: unlockedRow, error: unlockReadErr } = await admin
+        .from("tieu_van_unlocks")
+        .select("payload")
+        .eq("user_id", userId)
+        .eq("year_month", ymEarly)
+        .eq("identity_key", ikeyEarly)
+        .maybeSingle();
+      if (unlockReadErr) {
+        console.error("tieu_van_unlocks read", unlockReadErr);
+      } else if (unlockedRow?.payload != null) {
+        return json({ data: unlockedRow.payload });
+      }
+    }
   }
 
+  /**
+   * Never return Redis cache for authenticated ops before billing — a cache hit would skip
+   * credit deduction and ledger insert (`resolveFeatureKey` + charge block below).
+   * Anonymous ops use the cache path above (lines 768–770) only.
+   * `tu-tru` (lập lá số) luôn miễn phí — `featureKeyForBilling` null cho op đó.
+   * `la-so` (luận giải chi tiết lá số) không trừ lượng.
+   */
   const featureKey = resolveFeatureKey(op, body);
-  /** Client hint: bootstrap first chart from Settings — no credits (only when profile has no lá số yet). */
-  const firstLaSoFree =
-    op === "tu-tru" &&
-    Boolean(userId) &&
-    body.first_la_so_free === true;
-  const featureKeyForBilling =
-    firstLaSoFree && featureKey === "tu_tru" ? null : featureKey;
+  const phongThuyTeaser =
+    op === "phong-thuy" &&
+    String(body.detail ?? "").toLowerCase() === "teaser";
+  let featureKeyForBilling: string | null = featureKey;
+  if (op === "tu-tru") featureKeyForBilling = null;
+  if (op === "la-so") featureKeyForBilling = null;
+  if (phongThuyTeaser) featureKeyForBilling = null;
   let chargedAmount = 0;
 
   if (featureKeyForBilling && userId) {
@@ -1009,7 +1151,11 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (isUpstreamCacheable(op, upstreamInit) && redisRestConfigured()) {
+  if (
+    ANONYMOUS_OPS.has(op) &&
+    isUpstreamCacheable(op, upstreamInit) &&
+    redisRestConfigured()
+  ) {
     try {
       const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
       await redisSetExString(ck, JSON.stringify({ data }), cacheTtl);
@@ -1018,5 +1164,33 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ data });
+  const outData =
+    op === "phong-thuy" &&
+    phongThuyTeaser &&
+    data != null &&
+    typeof data === "object" &&
+    !Array.isArray(data)
+      ? stripPhongThuyTeaserPayload(data)
+      : data;
+
+  if (op === "tieu-van" && userId && outData != null) {
+    const ymStore = tieVanYearMonth(body);
+    if (ymStore) {
+      const ikeyStore = tieVanUnlockIdentityKey(body);
+      const { error: unlockUpsertErr } = await admin.from("tieu_van_unlocks").upsert(
+        {
+          user_id: userId,
+          year_month: ymStore,
+          identity_key: ikeyStore,
+          payload: outData,
+        },
+        { onConflict: "user_id,year_month,identity_key" },
+      );
+      if (unlockUpsertErr) {
+        console.error("tieu_van_unlocks upsert", unlockUpsertErr);
+      }
+    }
+  }
+
+  return json({ data: outData });
 });

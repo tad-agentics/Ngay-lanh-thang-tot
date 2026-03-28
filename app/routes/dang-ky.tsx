@@ -2,10 +2,11 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import type { Database } from "~/lib/database.types";
+import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
@@ -58,12 +59,7 @@ export default function DangKy() {
     const uid = data.user?.id;
 
     if (session && uid && landingSignupPrefillHasAny(prefill)) {
-      const patch: Database["public"]["Tables"]["profiles"]["Update"] = {};
-      if (prefill.displayName) patch.display_name = prefill.displayName;
-      if (prefill.ngaySinh) patch.ngay_sinh = prefill.ngaySinh;
-      if (prefill.gioSinh) patch.gio_sinh = prefill.gioSinh;
-      if (prefill.gioiTinh) patch.gioi_tinh = prefill.gioiTinh;
-      const { error: pe } = await supabase.from("profiles").update(patch).eq("id", uid);
+      const pe = await applyLandingPrefillToProfile(uid, prefill);
       if (pe) {
         toast.error(
           "Tài khoản đã tạo nhưng chưa lưu được ngày sinh từ form — bạn có thể nhập lại trong Cài đặt.",
@@ -88,6 +84,15 @@ export default function DangKy() {
         onSubmit={(e) => void onSubmit(e)}
         className="w-full max-w-sm space-y-5"
       >
+        <Link
+          to="/"
+          className="flex flex-col items-center gap-2 no-underline text-foreground hover:opacity-90"
+        >
+          <BrandLogoMark size={56} />
+          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+            Ngày Lành Tháng Tốt
+          </span>
+        </Link>
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
             Tạo tài khoản

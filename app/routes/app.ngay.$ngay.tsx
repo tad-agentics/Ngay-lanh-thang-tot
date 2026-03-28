@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Moon, Sun } from "lucide-react";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
-import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
@@ -18,10 +19,10 @@ import {
   type DayDetailPurposeVerdict,
 } from "~/lib/day-detail-view";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
-import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 
 import { Button } from "~/components/ui/button";
@@ -93,6 +94,32 @@ function purposeVerdictLabel(v: DayDetailPurposeVerdict): string {
   }
 }
 
+/** Hiển thị khi chi tiết ngày gắn nhãn Hắc Đạo — giải thích lớp lịch chung vs Bát Tự cá nhân. */
+const HAC_DAO_LASO_EXPLAINER_COPY =
+  "Ngày hắc đạo cũng có thể là ngày đẹp nhất cho một lá số. Theo thuật phong thủy truyền thống, đây là một quyết định có chủ ý — vì Bát Tự cá nhân (mệnh, dụng thần, kỵ thần) được coi là quan trọng hơn Hoàng Đạo/Hắc Đạo chung.";
+
+/** Một khối paywall: chỉ rào khi thiếu hồ sơ; không trừ lượng từng ngày. */
+function NgayChiTietProfilePaywall() {
+  return (
+    <div
+      className="border border-border bg-card px-4 py-5 space-y-4"
+      style={{ borderRadius: "var(--radius-lg)" }}
+    >
+      <div>
+        <p className="text-foreground text-sm font-medium mb-1">
+          Cần ngày sinh trên hồ sơ
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Chi tiết ngày theo lá số cần ít nhất ngày sinh — mỗi lần xem không tốn lượng. Bổ sung trong Cài đặt rồi chọn lại ngày trên lịch.
+        </p>
+      </div>
+      <Button asChild className="w-full sm:w-auto">
+        <Link to="/app/cai-dat">Mở Cài đặt</Link>
+      </Button>
+    </div>
+  );
+}
+
 function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
   switch (v) {
     case "nen_lam":
@@ -117,11 +144,12 @@ function DayDetailFetched({
   profile: ProfileRow;
   onPayload?: (data: unknown | null) => void;
 }) {
-  const { costs } = useFeatureCosts();
   const [purposeExpanded, setPurposeExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payload, setPayload] = useState<unknown>(null);
+  const [dayAiReading, setDayAiReading] = useState<string | null>(null);
+  const [dayAiLoading, setDayAiLoading] = useState(false);
   const onPayloadRef = useRef(onPayload);
   onPayloadRef.current = onPayload;
 
@@ -140,6 +168,8 @@ function DayDetailFetched({
     }
     setLoading(true);
     setErr(null);
+    setDayAiReading(null);
+    setDayAiLoading(false);
     onPayloadRef.current?.(null);
     void (async () => {
       const res = await invokeBatTu({
@@ -156,6 +186,17 @@ function DayDetailFetched({
       }
       setPayload(res.data);
       onPayloadRef.current?.(res.data);
+      setDayAiLoading(true);
+      setDayAiReading(null);
+      void invokeGenerateReading({
+        endpoint: "day-detail",
+        data: res.data,
+      }).then((r) => {
+        if (!cancelled) {
+          setDayAiReading(r.reading);
+          setDayAiLoading(false);
+        }
+      });
     })();
     return () => {
       cancelled = true;
@@ -180,12 +221,6 @@ function DayDetailFetched({
     );
   }
 
-  const dayDetailCost = costs.day_detail;
-  const showLuongCta =
-    dayDetailCost &&
-    !dayDetailCost.is_free &&
-    dayDetailCost.credit_cost > 0;
-
   const purposeSorted =
     view != null ? sortPurposeRowsForDisplay(view.purposeRows) : [];
   const purposeVisible = purposeExpanded
@@ -209,6 +244,13 @@ function DayDetailFetched({
               <p className="text-sm text-muted-foreground">—</p>
             )}
           </section>
+
+          <AiReadingBlock
+            title="Luận giải"
+            variant="on-card"
+            loading={dayAiLoading}
+            text={dayAiReading}
+          />
 
           <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
             <div className="flex gap-3 items-start">
@@ -314,16 +356,6 @@ function DayDetailFetched({
                     : `Xem đầy đủ ${view.purposeRows.length} mục đích`}
                 </button>
               ) : null}
-              {showLuongCta ? (
-                <Button
-                  asChild
-                  className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Link to="/app/mua-luong">
-                    +{dayDetailCost.credit_cost} lượng
-                  </Link>
-                </Button>
-              ) : null}
             </section>
           ) : null}
 
@@ -381,19 +413,27 @@ function DayDetailFetched({
           ) : null}
         </>
       ) : (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p
-            className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
-            style={{ fontFamily: "var(--font-ibm-mono)" }}
-          >
-            Nhận xét
-          </p>
-          <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
-            {fallbackLines.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ul>
-        </div>
+        <>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p
+              className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
+              style={{ fontFamily: "var(--font-ibm-mono)" }}
+            >
+              Nhận xét
+            </p>
+            <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
+              {fallbackLines.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          </div>
+          <AiReadingBlock
+            title="Luận giải"
+            variant="on-card"
+            loading={dayAiLoading}
+            text={dayAiReading}
+          />
+        </>
       )}
     </div>
   );
@@ -434,6 +474,7 @@ export default function AppNgayChiTiet() {
             dark
             className="pt-2 pb-2"
             titleClassName="!text-primary"
+            endAdornment={<CreditsHeaderChip forDarkSurface />}
           />
           {headerMeta?.subline || headerMeta?.chip ? (
             <div className="flex items-center justify-between gap-2 mt-1 pb-1">
@@ -469,30 +510,30 @@ export default function AppNgayChiTiet() {
       </div>
 
       <div className="px-4 pt-4 space-y-4">
+        {headerMeta?.chip?.color === "danger" ? (
+          <aside
+            className="rounded-xl border border-border/80 bg-card/90 px-3.5 py-3 shadow-sm"
+            aria-label="Vì sao ngày Hắc Đạo vẫn có thể phù hợp lá số"
+          >
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {HAC_DAO_LASO_EXPLAINER_COPY}
+            </p>
+          </aside>
+        ) : null}
         {loading ? (
           <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
         ) : !profile?.ngay_sinh ? (
-          <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
-            <p className="text-muted-foreground">Cần ngày sinh trong hồ sơ.</p>
-            <Link
-              to="/app/cai-dat"
-              className="text-primary text-sm font-medium underline"
-            >
-              Mở Cài đặt
-            </Link>
-          </div>
+          <NgayChiTietProfilePaywall />
         ) : (
-          <CreditGate featureKey="day_detail">
-            <DayDetailFetched
-              iso={iso}
-              profile={profile}
-              onPayload={(data) =>
-                setHeaderMeta(
-                  data == null ? null : extractDayDetailHeaderMeta(data),
-                )
-              }
-            />
-          </CreditGate>
+          <DayDetailFetched
+            iso={iso}
+            profile={profile}
+            onPayload={(data) =>
+              setHeaderMeta(
+                data == null ? null : extractDayDetailHeaderMeta(data),
+              )
+            }
+          />
         )}
       </div>
     </div>

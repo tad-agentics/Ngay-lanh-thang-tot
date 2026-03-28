@@ -6,7 +6,7 @@ describe("extractDetailReasonLines", () => {
   it("reads reason_vi and layer3.breakdown from tu-tru-api detail", () => {
     const lines = extractDetailReasonLines({
       status: "success",
-      reason_vi: "Trực Thành — ngày tốt (+20).",
+      reason_vi: "Trực Thành — ngày lành (+20).",
       layer3: {
         breakdown: [
           { source: "X", points: 1, reason_vi: "Một dòng giải thích." },

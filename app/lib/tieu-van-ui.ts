@@ -13,33 +13,208 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
   return "—";
 }
 
+/** Chuỗi hoặc mảng chuỗi (ví dụ `warnings: string[]`) — dùng cho can_luu / lưu ý. */
+function pickProseList(obj: Record<string, unknown>, keys: string[]): string {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+    if (Array.isArray(v)) {
+      const parts = v
+        .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+        .map((s) => s.trim());
+      if (parts.length > 0) return parts.join(" ");
+    }
+  }
+  return "—";
+}
+
 const TONG_QUAN_FALLBACK =
   "Tháng này có biến động nhẹ — nên chủ động quan sát từng tuần.";
 const CAN_LUU_FALLBACK =
   "Tránh quyết định vội vàng vào giữa tháng nếu trụ tháng xung.";
 
-const FALLBACK_GIAI = [
-  {
-    label: "Tài vận",
-    value: 65,
-    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
-  },
-  {
-    label: "Sự nghiệp",
-    value: 68,
-    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
-  },
-  {
-    label: "Tình duyên",
-    value: 62,
-    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
-  },
-  {
-    label: "Sức khoẻ",
-    value: 70,
-    note: "Điểm chi tiết theo bản mệnh — xem thêm khi mở khóa.",
-  },
-];
+/** Dịch mã quan hệ ngũ hành tháng ↔ mệnh (GET /v1/tieu-van) — ngôn ngữ định tính. */
+const ELEMENT_RELATION_VI: Record<string, string> = {
+  bi_sinh:
+    "Tháng bị sinh cho mệnh bạn — dễ được nuôi dưỡng, có thể tích lũy và mở rộng từ từ.",
+  tuong_sinh:
+    "Tháng tương sinh với mệnh bạn — nhịp tương đối thuận, thích hợp đẩy việc cần sự đồng thuận.",
+  bi_khac:
+    "Tháng khắc mệnh bạn — dễ có áp lực hoặc chỗ phải nhún; nên giữ nhịp, tránh giao dịch sốc.",
+  tuong_khac:
+    "Tháng tương khắc với mệnh bạn — dễ căng hoặc phải cạnh tranh; nên thu lại, xử lý từng việc một.",
+  binh_hoa:
+    "Tháng cân hoà với mệnh bạn — không quá hưng cũng không quá kém; giữ ổn định là đủ.",
+};
+
+const ELEMENT_RELATION_FALLBACK =
+  "Quan hệ ngũ hành giữa tháng và mệnh bạn có nhịp riêng — đối chiếu thêm luận giải tổng quan và Đại Vận bên dưới.";
+
+/** Mã quan hệ tháng ↔ mệnh khiến tông tổng quan “rất thuận” dễ mâu thuẫn với UI */
+const ELEMENT_CODES_CHALLENGING = new Set(["tuong_khac", "bi_khac"]);
+
+/** Heuristic: reading/tong_quan từ API đôi khi tích cực dù element_relation là khắc — ẩn đoạn đó trên UI */
+const TONG_QUAN_OPTIMISTIC_RE =
+  /thuận lợi|suôn sẻ|giai đoạn thuận|khá thuận|rất thuận|thuận toàn diện|đặc biệt thuận|thời điểm thuận|mọi việc.{0,14}thuận|tháng.{0,16}thuận lợi/i;
+
+/**
+ * Trả về `null` nên ẩn đoạn tổng quan từ máy chủ khi `element_relation` là khắc mà văn bản lại rất «thuận» (tránh lệch với khung ngũ hành).
+ * Các trường hợp khác trả về `tongQuan` nhập vào.
+ */
+export function tieuVanTongQuanDisplayOrNull(
+  elementRelationCode: string | null | undefined,
+  tongQuan: string,
+): string | null {
+  const t = tongQuan.trim();
+  if (!t) return t || null;
+  const code = (elementRelationCode ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (!ELEMENT_CODES_CHALLENGING.has(code)) return tongQuan;
+  if (TONG_QUAN_OPTIMISTIC_RE.test(t)) return null;
+  return tongQuan;
+}
+
+const DANG_TRONG_VAN_PREFIX_RE = /^\s*đang\s+trong\s+vận\s+/iu;
+const VOI_THANG_NAY_SUFFIX_RE = /với\s+tháng\s+này\s*$/iu;
+
+/**
+ * Khối «Đại vận hiện tại» trên Vận tháng — gọn câu API dạng «Đang trong vận … — …».
+ */
+export function formatDaiVanContextLineForVanThangDisplay(text: string): string {
+  const t = text.trim();
+  if (!t) return t;
+  const stripped = t.replace(DANG_TRONG_VAN_PREFIX_RE, "").trim();
+  if (stripped === t) return t;
+  if (VOI_THANG_NAY_SUFFIX_RE.test(stripped)) return stripped;
+  return `${stripped} với tháng này`;
+}
+
+function elementRelationToLabel(code: string | null): string | null {
+  if (!code || !code.trim()) return null;
+  const k = code.trim().toLowerCase().replace(/-/g, "_");
+  return ELEMENT_RELATION_VI[k] ?? ELEMENT_RELATION_FALLBACK;
+}
+
+function formatUserMenh(raw: unknown): string | null {
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  const o = asRecord(raw);
+  if (!o) return null;
+  const name = pickStr(o, ["name", "ten", "label", "nap_am", "category"]);
+  const hanh = pickStr(o, ["hanh", "element", "han"]);
+  if (name !== "—" && hanh !== "—") return `${name} · ${hanh}`;
+  if (name !== "—") return name;
+  if (hanh !== "—") return hanh;
+  return null;
+}
+
+function normalizeRelationCode(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  return raw.trim();
+}
+
+export interface TieuVanLinhVuc {
+  title: string;
+  body: string;
+}
+
+export interface TieuVanUi {
+  tongQuan: string;
+  canLuu: string;
+  pillarHint: string;
+  tags: string[];
+  userMenhLabel: string | null;
+  /** Câu định tính về quan hệ ngũ hành tháng ↔ mệnh */
+  elementRelationLabel: string | null;
+  elementRelationCode: string | null;
+  nhatChuApi: string | null;
+  dungThanApi: string | null;
+  chartStrength: string | null;
+  thapThanOfMonth: string | null;
+  /** Gợi ý theo lĩnh vực — chỉ chữ, không điểm */
+  linhVuc: TieuVanLinhVuc[];
+}
+
+function collectLinhVucQualitative(root: Record<string, unknown>): TieuVanLinhVuc[] {
+  const out: TieuVanLinhVuc[] = [];
+  const seen = new Set<string>();
+
+  function pushRow(title: string, body: string) {
+    const t = title.trim();
+    const b = body.trim();
+    if (!t || t === "—") return;
+    if (!b || b === "—") return;
+    const key = `${t}|${b}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ title: t, body: b });
+  }
+
+  const scoreArrays = [
+    root.cac_giai,
+    root.scores,
+    root.linh_vuc,
+    root.dimensions,
+  ];
+  for (const arr of scoreArrays) {
+    if (!Array.isArray(arr)) continue;
+    for (const item of arr) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const label = pickStr(o, ["label", "ten", "name", "aspect", "category"]);
+      const prose = pickStr(o, [
+        "note",
+        "mo_ta",
+        "desc",
+        "hint",
+        "description",
+        "reading",
+        "text",
+      ]);
+      if (label !== "—" && prose !== "—") pushRow(label, prose);
+    }
+  }
+
+  const details = root.details ?? root.chi_tiet;
+  if (Array.isArray(details)) {
+    for (const item of details) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const label = pickStr(o, ["category", "label", "ten", "name"]);
+      const prose = pickStr(o, [
+        "description",
+        "note",
+        "mo_ta",
+        "desc",
+        "summary",
+      ]);
+      if (label !== "—" && prose !== "—") pushRow(label, prose);
+    }
+  }
+
+  return out;
+}
+
+function emptyUi(partial?: Partial<TieuVanUi>): TieuVanUi {
+  const base: TieuVanUi = {
+    tongQuan:
+      "Tháng này nên giữ nhịp ổn định — mở khóa hoặc thử lại khi có kết nối để xem bản đầy đủ từ máy chủ.",
+    canLuu:
+      "Ngày Hắc Đạo trên lịch tháng giúp bạn chủ động lùi việc lớn nếu cần.",
+    pillarHint: "—",
+    tags: [],
+    userMenhLabel: null,
+    elementRelationLabel: null,
+    elementRelationCode: null,
+    nhatChuApi: null,
+    dungThanApi: null,
+    chartStrength: null,
+    thapThanOfMonth: null,
+    linhVuc: [],
+  };
+  return { ...base, ...partial };
+}
 
 function pickStringTags(root: Record<string, unknown>): string[] {
   const raw = root.tags ?? root.nhan_xet_tags;
@@ -49,27 +224,13 @@ function pickStringTags(root: Record<string, unknown>): string[] {
     .map((s) => s.trim());
 }
 
-export interface TieuVanUi {
-  tongQuan: string;
-  canLuu: string;
-  pillarHint: string;
-  /** tu-tru-api: gợi ý ngắn (Khá tốt, Chủ động, …) */
-  tags: string[];
-  cacGiai: { label: string; value: number; note: string }[];
-}
-
 export function mapTieuVanPayload(data: unknown): TieuVanUi {
   const root = asRecord(data);
   if (!root) {
-    return {
+    return emptyUi({
       tongQuan:
-        "Tháng này nên giữ nhịp ổn định; chi tiết từng lĩnh vực có sau khi mở khóa.",
-      canLuu:
-        "Ngày Hắc Đạo trên lịch tháng giúp bạn chủ động lùi việc lớn nếu cần.",
-      pillarHint: "—",
-      tags: [],
-      cacGiai: FALLBACK_GIAI,
-    };
+        "Tháng này nên giữ nhịp ổn định; luận giải chi tiết có sau khi mở khóa.",
+    });
   }
 
   const tvp = asRecord(root.tieu_van_pillar) ?? asRecord(root.tieuVanPillar);
@@ -97,7 +258,7 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
   const tongQuan =
     tongQuanRaw === "—" ? TONG_QUAN_FALLBACK : tongQuanRaw;
 
-  const canLuuRaw = pickStr(root, [
+  const canLuuRaw = pickProseList(root, [
     "dai_van_context",
     "daiVanContext",
     "can_luu",
@@ -111,51 +272,52 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
 
   const tags = pickStringTags(root);
 
-  let cacGiai: { label: string; value: number; note: string }[] = [];
-  const scores =
-    root.cac_giai ?? root.scores ?? root.linh_vuc ?? root.dimensions;
-  if (Array.isArray(scores)) {
-    for (const item of scores) {
-      const o = asRecord(item);
-      if (!o) continue;
-      const label = pickStr(o, ["label", "ten", "name", "aspect", "category"]);
-      const value = typeof o.value === "number" ? o.value : Number(o.score);
-      const note = pickStr(o, ["note", "mo_ta", "desc", "hint", "description"]);
-      if (label && label !== "—") {
-        cacGiai.push({
-          label,
-          value: Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 65,
-          note,
-        });
-      }
-    }
-  }
+  const userMenhLabel =
+    formatUserMenh(root.user_menh ?? root.userMenh) ??
+    (pickStr(root, ["user_menh_text", "menh_thang"]) !== "—"
+      ? pickStr(root, ["user_menh_text", "menh_thang"])
+      : null);
 
-  const details = root.details ?? root.chi_tiet;
-  if (!cacGiai.length && Array.isArray(details)) {
-    for (const item of details) {
-      const o = asRecord(item);
-      if (!o) continue;
-      const label = pickStr(o, ["category", "label", "ten", "name"]);
-      const value = typeof o.score === "number" ? o.score : Number(o.value);
-      const note = pickStr(o, ["description", "note", "mo_ta", "desc"]);
-      if (label && label !== "—") {
-        cacGiai.push({
-          label,
-          value: Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 70,
-          note,
-        });
-      }
-    }
-  }
+  const elementRelationCode =
+    normalizeRelationCode(root.element_relation) ??
+    normalizeRelationCode(root.elementRelation);
+  const elementRelationLabel = elementRelationToLabel(elementRelationCode);
 
-  if (!cacGiai.length) {
-    if (tags.length) {
-      cacGiai = [];
-    } else {
-      cacGiai = FALLBACK_GIAI;
-    }
-  }
+  const nhatChuRaw = pickStr(root, ["nhat_chu", "nhatChu", "nhat_chu_text"]);
+  const nhatChuApi = nhatChuRaw !== "—" ? nhatChuRaw : null;
 
-  return { tongQuan, canLuu, pillarHint: pillarHint === "—" ? "—" : pillarHint, tags, cacGiai };
+  const dungRaw = pickStr(root, ["dung_than", "dungThan"]);
+  const dungThanApi = dungRaw !== "—" ? dungRaw : null;
+
+  const chartRaw = pickStr(root, [
+    "chart_strength",
+    "chartStrength",
+    "suc_laso",
+    "strength",
+  ]);
+  const chartStrength = chartRaw !== "—" ? chartRaw : null;
+
+  const thapRaw = pickStr(root, [
+    "thap_than_of_month",
+    "thapThanOfMonth",
+    "thap_than",
+  ]);
+  const thapThanOfMonth = thapRaw !== "—" ? thapRaw : null;
+
+  const linhVuc = collectLinhVucQualitative(root);
+
+  return {
+    tongQuan,
+    canLuu,
+    pillarHint: pillarHint === "—" ? "—" : pillarHint,
+    tags,
+    userMenhLabel,
+    elementRelationLabel,
+    elementRelationCode,
+    nhatChuApi,
+    dungThanApi,
+    chartStrength,
+    thapThanOfMonth,
+    linhVuc,
+  };
 }

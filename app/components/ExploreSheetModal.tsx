@@ -1,8 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import { BookOpen, Home, TrendingUp, Users, X } from "lucide-react";
 import { useNavigate } from "react-router";
 
 import { Chip } from "~/components/Chip";
+import { prefetchCoreAppQueries } from "~/lib/prefetch-app-queries";
 
 interface ExploreSheetModalProps {
   isOpen: boolean;
@@ -56,6 +58,8 @@ const FEATURES: FeatureItem[] = [
 
 export function ExploreSheetModal({ isOpen, onClose, hasLaso }: ExploreSheetModalProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const warmCache = () => prefetchCoreAppQueries(queryClient);
 
   if (!isOpen) return null;
 
@@ -117,6 +121,8 @@ export function ExploreSheetModal({ isOpen, onClose, hasLaso }: ExploreSheetModa
                 key={f.id}
                 type="button"
                 onClick={() => handleFeature(f)}
+                onPointerEnter={warmCache}
+                onTouchStart={warmCache}
                 className="flex items-center gap-3 px-3.5 py-3 bg-background border border-border text-left transition-colors active:bg-muted w-full"
                 style={{ borderRadius: "var(--radius-md)" }}
               >

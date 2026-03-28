@@ -2,6 +2,9 @@
 .branches
 .temp
 
+# Deno lock v5+ from local Deno 2.x breaks `supabase functions deploy` bundler; deps resolve from deno.json.
+functions/deno.lock
+
 # dotenvx
 .env.keys
 .env.local

@@ -2,7 +2,9 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { ChonNgayMethodologyCollapsible } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
@@ -42,7 +44,8 @@ const INTENT_UNSET = "__unset__";
 
 export default function AppChonNgay() {
   const navigate = useNavigate();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, refresh: refreshProfile } =
+    useProfile();
   const { costs } = useFeatureCosts();
   const [rangePreset, setRangePreset] = useState<RangePreset>(30);
   const [intent, setIntent] = useState<TuTruIntent | "">("");
@@ -108,6 +111,7 @@ export default function AppChonNgay() {
       return;
     }
     setErr(null);
+    await refreshProfile();
     const intentLabel =
       TU_TRU_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? intent;
     navigate("/app/chon-ngay/ket-qua", {
@@ -128,10 +132,11 @@ export default function AppChonNgay() {
 
   return (
     <div className="min-h-[60vh] bg-background pb-8">
-      <div className="px-4 pt-6 pb-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-[family-name:var(--font-lora)]">
-          Chọn Ngày Tốt
+      <div className="px-4 pt-6 pb-2 flex items-start justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground font-[family-name:var(--font-lora)] min-w-0 flex-1">
+          Chọn Ngày Lành
         </h1>
+        <CreditsHeaderChip className="mt-1" />
       </div>
 
       <div className="px-4 flex flex-col gap-6">
@@ -213,23 +218,40 @@ export default function AppChonNgay() {
               );
             })}
           </div>
-          {days != null && creditHint ? (
+          {days != null && creditHint && costRow ? (
             <p className="text-xs text-muted-foreground pt-1">
-              Từ hôm nay · {days} ngày · {creditHint}
+              Tìm ngày lành trong · {days} ngày tới ·{" "}
+              {costRow.is_free || costRow.credit_cost <= 0 ? (
+                <>không trừ lượng</>
+              ) : (
+                <>
+                  cần{" "}
+                  <strong className="font-semibold text-foreground">
+                    {costRow.credit_cost} lượng
+                  </strong>
+                </>
+              )}
             </p>
           ) : null}
         </div>
 
+        <ChonNgayMethodologyCollapsible />
+
         <CreditGate featureKey={featureKey}>
           <Button
             type="button"
-            className="w-full min-h-12 rounded-[var(--radius-md)] font-semibold bg-make-cta text-make-cta-foreground hover:bg-make-cta/92 border-0 shadow-none"
+            variant="default"
+            className="w-full min-h-12 rounded-[var(--radius-md)] font-semibold shadow-sm"
             disabled={
               busy || profileLoading || !profile?.ngay_sinh || days == null
             }
             onClick={() => void runLookup()}
           >
-            {busy ? "Đang tra…" : "Tìm ngày phù hợp"}
+            {busy
+              ? "Đang tra…"
+              : costRow?.is_free || (costRow?.credit_cost ?? 0) <= 0
+                ? "Tìm ngày phù hợp"
+                : `Tìm ngày phù hợp — ${costRow?.credit_cost ?? 10} lượng`}
           </Button>
         </CreditGate>
 

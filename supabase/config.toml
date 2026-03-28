@@ -405,10 +405,18 @@ verify_jwt = false
 [functions.payos-create-checkout]
 verify_jwt = false
 
+# Same as payos-create-checkout: Bearer + getUser() inside handler.
+[functions.create-share-token]
+verify_jwt = false
+
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
 # Optional Redis cache (Upstash REST): set secrets UPSTASH_REDIS_REST_URL,
 # UPSTASH_REDIS_REST_TOKEN. TTL default 3600s; max 3600 via BAT_TU_CACHE_TTL_SEC.
 [functions.bat-tu]
+verify_jwt = false
+
+# Presentation layer: Anthropic Haiku + DB cache. Same anon pattern as bat-tu free ops.
+[functions.generate-reading]
 verify_jwt = false
 
 # Public share preview + OG HTML (anon `apikey` only).
@@ -416,4 +424,11 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.share-og]
+verify_jwt = false
+
+# Validate JWT + ADMIN_EMAILS allowlist inside handler (same pattern as create-share-token).
+[functions.admin-dashboard-stats]
+verify_jwt = false
+
+[functions.admin-site-banner]
 verify_jwt = false

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Coins } from "lucide-react";
 
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { BestHourCard } from "~/components/home/BestHourCard";
 import { CalendarGrid } from "~/components/home/CalendarGrid";
 import { TodaySummaryCard } from "~/components/home/TodaySummaryCard";
@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
   buildCalendarDaysForMonth,
   parseNgayHomNayForHome,
@@ -43,6 +44,8 @@ export default function AppHome() {
   const [summaryErr, setSummaryErr] = useState<string | null>(null);
   const [calendarErr, setCalendarErr] = useState<string | null>(null);
   const [todayHome, setTodayHome] = useState<NgayHomNayHome | null>(null);
+  const [todayAiReading, setTodayAiReading] = useState<string | null>(null);
+  const [todayAiReadingLoading, setTodayAiReadingLoading] = useState(false);
   const [weeklyCount, setWeeklyCount] = useState<number | null>(null);
   const [lichPayload, setLichPayload] = useState<unknown | null>(null);
 
@@ -59,6 +62,8 @@ export default function AppHome() {
       setSummaryLoading(false);
       setSummaryErr(null);
       setTodayHome(null);
+      setTodayAiReading(null);
+      setTodayAiReadingLoading(false);
       setWeeklyCount(null);
       return;
     }
@@ -66,6 +71,8 @@ export default function AppHome() {
     let cancelled = false;
     setSummaryLoading(true);
     setSummaryErr(null);
+    setTodayAiReading(null);
+    setTodayAiReadingLoading(false);
 
     void (async () => {
       const body = profileToBatTuPersonQuery(profile);
@@ -82,6 +89,18 @@ export default function AppHome() {
         parsedToday = parseNgayHomNayForHome(nhn.data);
         if (!parsedToday)
           errs.push("Không tải được kết quả Hôm nay lúc này. Thử lại sau vài giây.");
+        else {
+          setTodayAiReadingLoading(true);
+          void invokeGenerateReading({
+            endpoint: "ngay-hom-nay",
+            data: nhn.data,
+          }).then((r) => {
+            if (!cancelled) {
+              setTodayAiReading(r.reading);
+              setTodayAiReadingLoading(false);
+            }
+          });
+        }
       } else {
         errs.push(nhn.message);
       }
@@ -198,23 +217,7 @@ export default function AppHome() {
             ) : null}
           </div>
 
-          <button
-            type="button"
-            onClick={() => void navigate("/app/mua-luong")}
-            className="flex items-center gap-1.5 border border-border px-2.5 py-1.5 text-foreground shrink-0"
-            style={{ borderRadius: "var(--radius-pill)", minHeight: 36 }}
-          >
-            <Coins size={13} className="text-accent" strokeWidth={1.5} />
-            <span
-              style={{
-                fontFamily: "var(--font-ibm-mono)",
-                fontSize: 12,
-                fontWeight: 500,
-              }}
-            >
-              {profile?.credits_balance ?? 0} lượng
-            </span>
-          </button>
+          <CreditsHeaderChip />
         </div>
 
         {summaryErr ? <ErrorBanner message={summaryErr} /> : null}
@@ -225,11 +228,11 @@ export default function AppHome() {
             className="mb-3 rounded-xl border border-border bg-card px-4 py-4 text-sm space-y-3"
           >
             <p className="text-muted-foreground leading-relaxed">
-              Thêm ngày sinh (và nên có giờ sinh / giới tính) trong Cài đặt để xem Hôm nay,
-              tuần này và lịch tháng theo Bát Tự.
+              Lá số Bát Tự chưa có. Lập ngay để xem lịch Hôm nay, tuần này và tháng này theo đúng
+              mệnh và Dụng Thần của bạn — không phải kết quả chung.
             </p>
-            <Button asChild variant="secondary" className="w-full sm:w-auto">
-              <Link to="/app/cai-dat">Mở Cài đặt</Link>
+            <Button asChild variant="forest" className="w-full sm:w-auto">
+              <Link to="/app/la-so">Lập lá số ngay</Link>
             </Button>
           </div>
         ) : (
@@ -239,6 +242,10 @@ export default function AppHome() {
               lunarDate={todayHome?.lunarLabel ?? "—"}
               solarDate={todayHome?.solarDateVi ?? "—"}
               isLoading={summaryLoading}
+              aiReading={todayAiReading}
+              aiReadingLoading={
+                !summaryLoading && todayHome != null ? todayAiReadingLoading : false
+              }
             />
             <BestHourCard
               hourRange={todayHome?.hourRange ?? "—"}

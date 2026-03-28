@@ -120,6 +120,9 @@
   --radius-pill: 9999px;
   --radius: 14px;
 
+  /** Desktop column width for mobile-first `/app` shell (~tablet portrait). */
+  --app-shell-max-width: 48rem;
+
   /* Chart */
   --chart-1: oklch(0.73 0.12 85);
   --chart-2: oklch(0.52 0.10 155);
