@@ -50,25 +50,25 @@ export function SiteBanner() {
   };
 
   const inner = (
-    <span className="min-w-0 flex-1 text-center text-[13px] leading-snug sm:text-sm">
+    <span className="min-w-0 flex-1 text-center text-[13px] leading-snug text-forest-foreground sm:text-sm">
       {banner.message}
     </span>
   );
+
+  const linkClass =
+    "flex min-w-0 flex-1 flex-col items-center text-forest-foreground underline decoration-forest-foreground/45 underline-offset-2 transition hover:decoration-primary sm:inline sm:flex-initial";
 
   return (
     <div
       role="region"
       aria-label="Thông báo"
-      className="sticky top-0 z-[200] border-b border-amber-900/25 bg-gradient-to-r from-amber-950 via-amber-900 to-amber-950 text-amber-50 shadow-sm"
+      className="sticky top-0 z-[200] border-b border-forest-foreground/15 bg-forest text-forest-foreground shadow-sm"
     >
       <div className="mx-auto flex max-w-5xl items-center gap-2 px-3 py-2.5 pr-2 sm:px-4">
         <div className="flex min-w-0 flex-1 items-center justify-center gap-2 sm:gap-3">
           {href ? (
             href.startsWith("/") ? (
-              <Link
-                to={href}
-                className="flex min-w-0 flex-1 flex-col items-center text-amber-50 underline decoration-amber-400/60 underline-offset-2 transition hover:decoration-amber-200 sm:inline sm:flex-initial"
-              >
+              <Link to={href} className={linkClass}>
                 {inner}
               </Link>
             ) : (
@@ -76,7 +76,7 @@ export function SiteBanner() {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex min-w-0 flex-1 flex-col items-center text-amber-50 underline decoration-amber-400/60 underline-offset-2 transition hover:decoration-amber-200 sm:inline sm:flex-initial"
+                className={linkClass}
               >
                 {inner}
               </a>
@@ -88,7 +88,7 @@ export function SiteBanner() {
         <button
           type="button"
           onClick={dismiss}
-          className="shrink-0 rounded-md p-1.5 text-amber-200/90 transition hover:bg-amber-950/50 hover:text-amber-50"
+          className="shrink-0 rounded-md p-1.5 text-forest-foreground/80 transition hover:bg-forest-foreground/10 hover:text-forest-foreground"
           aria-label="Đóng thông báo"
         >
           <X className="size-4" aria-hidden />
