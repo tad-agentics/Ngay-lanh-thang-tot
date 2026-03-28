@@ -22,7 +22,7 @@ const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt
 - ngay-hom-nay: 2–3 câu. Tập trung: hôm nay tốt/xấu, nên làm gì, giờ nào tốt nhất.
 - chon-ngay: 2–3 câu mỗi ngày được recommend. Tập trung: tại sao ngày này tốt cho mục đích đó.
 - hop-tuoi: 3–4 câu. Tập trung: tổng quan mối quan hệ, điểm mạnh, điểm cần lưu ý.
-- tieu-van, luu-nien: 3–4 câu. Tập trung: xu hướng chính của tháng/năm, lĩnh vực nào thuận lợi/cẩn trọng — **bắt buộc nhất quán với `element_relation` (xem mục dưới)**.
+- tieu-van, luu-nien: 3–4 câu. Tập trung: xu hướng chính của tháng/năm, lĩnh vực nào thuận lợi/cẩn trọng — **bắt buộc nhất quán với trường element_relation trong data (xem mục dưới)**.
 - dai-van: 1–2 câu mỗi vận. Tập trung: đặc điểm giai đoạn, so sánh với Dụng Thần.
 - la-so: 2–3 câu mỗi mục (tính cách, sự nghiệp, tài vận, tình duyên, sức khỏe). Tập trung: diễn giải ý nghĩa thực tế cho cuộc sống.
 - phong-thuy: 2–3 câu. Tập trung: tổng hợp gợi ý chính, ưu tiên điều gì trước.
