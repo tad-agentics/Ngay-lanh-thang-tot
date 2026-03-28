@@ -15,7 +15,11 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
-import { mapTieuVanPayload, type TieuVanUi } from "~/lib/tieu-van-ui";
+import {
+  mapTieuVanPayload,
+  tieuVanTongQuanDisplayOrNull,
+  type TieuVanUi,
+} from "~/lib/tieu-van-ui";
 import { subscriptionActive } from "~/lib/subscription";
 import {
   buildVanThangMonthHeading,
@@ -240,8 +244,13 @@ export default function AppVanThang() {
       detail.chartStrength ||
       detail.thapThanOfMonth);
 
+  const tongQuanStripped = detail
+    ? stripRedundantSolarMonthPrefix(detail.tongQuan, ym)
+    : "";
   const tongQuanDisplay =
-    detail ? stripRedundantSolarMonthPrefix(detail.tongQuan, ym) : "";
+    detail != null
+      ? tieuVanTongQuanDisplayOrNull(detail.elementRelationCode, tongQuanStripped)
+      : null;
   const canLuuDisplay =
     detail ? stripRedundantSolarMonthPrefix(detail.canLuu, ym) : "";
   const tieuVanAiLoad = tieuVanAiLoading[ym] ?? false;
@@ -355,21 +364,22 @@ export default function AppVanThang() {
             <QualitativeCard kicker="Luận giải">
               <div className="space-y-2">
                 {nhatChuLine ? (
-                  <p className="text-muted-foreground text-xs">
-                    Nhật Chủ:{" "}
-                    <span className="text-foreground font-medium">{nhatChuLine}</span>
+                  <p className="text-foreground text-sm">
+                    <span className="text-muted-foreground">Nhật Chủ: </span>
+                    <span className="font-medium">{nhatChuLine}</span>
                   </p>
                 ) : null}
-                <p>{tongQuanDisplay}</p>
+                {tongQuanDisplay != null && tongQuanDisplay.length > 0 ? (
+                  <p className="text-foreground text-sm leading-relaxed">{tongQuanDisplay}</p>
+                ) : null}
+                <AiReadingBlock
+                  showTitle={false}
+                  variant="on-card"
+                  loading={tieuVanAiLoad}
+                  text={tieuVanAiText}
+                />
               </div>
             </QualitativeCard>
-
-            <AiReadingBlock
-              title="Luận giải"
-              variant="on-card"
-              loading={tieuVanAiLoad}
-              text={tieuVanAiText}
-            />
 
             {detail.tags.length > 0 ? (
               <div

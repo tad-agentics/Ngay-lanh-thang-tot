@@ -61,6 +61,17 @@ describe("laSoJsonToRevealProps", () => {
     expect(p?.kyThan).toBe("Hỏa");
     expect(p?.daiVan).toBe("Bính Tuất (32-41)");
   });
+
+  it("reads dai_van_current (GET /v1/la-so)", () => {
+    const p = laSoJsonToRevealProps({
+      dai_van_current: {
+        display: "Ất Dậu",
+        hanh: "Mộc",
+        age_range: "28-37",
+      },
+    });
+    expect(p?.daiVan).toBe("Ất Dậu (28-37)");
+  });
 });
 
 describe("laSoJsonToChiTiet", () => {
@@ -92,6 +103,57 @@ describe("laSoJsonToChiTiet", () => {
     expect(d.daiVanList.some((x) => x.isActive && x.label === "Bính Tuất")).toBe(
       true,
     );
+  });
+
+  it("GET /v1/la-so: đọc dai_van_current (một dòng đại vận, không cycles)", () => {
+    const d = laSoJsonToChiTiet({
+      status: "success",
+      dai_van_current: {
+        display: "Ất Dậu",
+        hanh: "Mộc",
+        nap_am_hanh: "Thủy",
+        age_range: "28-37",
+      },
+    });
+    expect(d.daiVanList).toEqual([
+      { label: "Ất Dậu", years: "28-37", isActive: true },
+    ]);
+  });
+
+  it("ưu tiên tuổi mụ / start_end từ current khi khác dai_van_list", () => {
+    const d = laSoJsonToChiTiet({
+      dai_van: {
+        current: {
+          display: "Quý Mùi",
+          age_range: "31-40",
+          age_range_lunar: "35-44",
+        },
+      },
+      dai_van_list: [
+        { label: "Ất Tỵ", years: "21-30" },
+        { label: "Quý Mùi", years: "31-40" },
+      ],
+    });
+    const active = d.daiVanList.filter((x) => x.isActive);
+    expect(active).toHaveLength(1);
+    expect(active[0]!.label).toBe("Quý Mùi");
+    expect(active[0]!.years).toBe("35-44");
+  });
+
+  it("đọc khoảng tuổi từ start_age / end_age", () => {
+    const d = laSoJsonToChiTiet({
+      dai_van: {
+        current: {
+          display: "Quý Mùi",
+          start_age: 35,
+          end_age: 44,
+          age_range: "31-40",
+        },
+      },
+      dai_van_list: [{ label: "Quý Mùi", years: "31-40" }],
+    });
+    const active = d.daiVanList.find((x) => x.isActive);
+    expect(active?.years).toBe("35-44");
   });
 
   it("đại vận active khớp dai_van.current — không mặc định phần tử đầu danh sách", () => {

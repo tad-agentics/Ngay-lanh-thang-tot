@@ -33,6 +33,52 @@ function pickStrOrFromNestedObject(
   return "—";
 }
 
+function numOrStrToInt(x: unknown): number | null {
+  if (typeof x === "number" && Number.isFinite(x)) return Math.trunc(x);
+  if (typeof x === "string" && x.trim()) {
+    const n = Number.parseInt(x.trim(), 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Khoảng tuổi đại vận để hiển thị — ưu tiên số `start`/`end`, rồi tuổi mụ / âm lịch nếu API tách khỏi `age_range`.
+ */
+function pickDaiVanYearsFromObject(o: Record<string, unknown>): string {
+  const start = numOrStrToInt(
+    o.start_age ??
+      o.startAge ??
+      o.age_from ??
+      o.ageFrom ??
+      o.tuoi_tu ??
+      o.tuoiTu,
+  );
+  const end = numOrStrToInt(
+    o.end_age ??
+      o.endAge ??
+      o.age_to ??
+      o.ageTo ??
+      o.tuoi_den ??
+      o.tuoiDen,
+  );
+  if (start != null && end != null && start <= end) {
+    return `${start}-${end}`;
+  }
+  return pickStr(o, [
+    "age_range_lunar",
+    "age_range_muc",
+    "tuoi_muc_range",
+    "tuoi_range",
+    "age_range_vn",
+    "age_range",
+    "ageRange",
+    "years",
+    "range",
+    "nam",
+  ]);
+}
+
 function formatDaiVanField(daiVanRaw: unknown): string {
   if (typeof daiVanRaw === "string" && daiVanRaw.trim()) return daiVanRaw.trim();
   const o = asRecord(daiVanRaw);
@@ -40,10 +86,14 @@ function formatDaiVanField(daiVanRaw: unknown): string {
   const cur = asRecord(o.current);
   if (cur) {
     const display = pickStr(cur, ["display", "label", "name", "ten"]);
-    const range = pickStr(cur, ["age_range", "ageRange", "years", "nam"]);
+    const range = pickDaiVanYearsFromObject(cur);
     if (display !== "—" && range !== "—") return `${display} (${range})`;
     if (display !== "—") return display;
   }
+  const displayFlat = pickStr(o, ["display", "label", "name", "ten"]);
+  const rangeFlat = pickDaiVanYearsFromObject(o);
+  if (displayFlat !== "—" && rangeFlat !== "—") return `${displayFlat} (${rangeFlat})`;
+  if (displayFlat !== "—") return displayFlat;
   return pickStr(o, ["display", "label", "summary"]);
 }
 
@@ -69,6 +119,16 @@ function getDaiVanContext(root: Record<string, unknown>): {
     if (po && (po.current != null || Array.isArray(po.cycles)) && !parentObj) {
       parentObj = po;
     }
+    if (!parentObj) {
+      const flat =
+        asRecord(layer.dai_van_current) ?? asRecord(layer.daiVanCurrent);
+      if (flat) {
+        const hasCur =
+          pickStr(flat, ["display", "label", "name", "ten"]) !== "—" ||
+          pickDaiVanYearsFromObject(flat) !== "—";
+        if (hasCur) parentObj = { current: flat };
+      }
+    }
   }
   return { listRaw, parentObj };
 }
@@ -79,7 +139,8 @@ function applyCurrentToDaiVanRows(
 ): { label: string; years: string; isActive: boolean }[] {
   const current = parentObj ? asRecord(parentObj.current) : null;
   const curLabel = current ? pickStr(current, ["display", "label", "name", "pillar"]) : "—";
-  const curYears = current ? pickStr(current, ["age_range", "years", "range", "ageRange"]) : "—";
+  const curYears =
+    current != null ? pickDaiVanYearsFromObject(current) : "—";
   const curYearsKey = curYears !== "—" ? normalizeAgeRangeKey(curYears) : "";
 
   if (curLabel === "—" && !curYearsKey) return rows;
@@ -96,6 +157,28 @@ function applyCurrentToDaiVanRows(
       ...row,
       isActive: row.isActive || labelMatch || rangeMatch,
     };
+  });
+}
+
+/** Khi `dai_van.current` có khoảng tuổi chi tiết hơn `dai_van_list`, hiển thị theo `current`. */
+function preferCurrentYearsOnActiveRow(
+  rows: { label: string; years: string; isActive: boolean }[],
+  parentObj: Record<string, unknown> | null,
+): { label: string; years: string; isActive: boolean }[] {
+  const current = parentObj ? asRecord(parentObj.current) : null;
+  if (!current) return rows;
+  const curLabel = pickStr(current, ["display", "label", "name", "pillar"]);
+  const curYears = pickDaiVanYearsFromObject(current);
+  if (curLabel === "—" || curYears === "—") return rows;
+  return rows.map((row) => {
+    if (
+      !row.isActive ||
+      row.label === "—" ||
+      row.label.trim() !== curLabel.trim()
+    ) {
+      return row;
+    }
+    return { ...row, years: curYears };
   });
 }
 
@@ -365,7 +448,12 @@ export function laSoJsonToRevealProps(raw: unknown): {
     ["element", "name", "label", "ten"],
   );
 
-  let daiVan = formatDaiVanField(nested.dai_van ?? nested.daiVan);
+  let daiVan = formatDaiVanField(
+    nested.dai_van ??
+      nested.daiVan ??
+      nested.dai_van_current ??
+      nested.daiVanCurrent,
+  );
   if (daiVan === "—") {
     daiVan = pickStr(nested, ["dai_van", "daiVan", "dai_van_hien_tai"]);
   }
@@ -457,7 +545,7 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
       const o = asRecord(item) ?? {};
       return {
         label: pickStr(o, ["label", "ten", "name", "pillar", "display"]),
-        years: pickStr(o, ["years", "nam", "range", "age_range", "ageRange"]),
+        years: pickDaiVanYearsFromObject(o),
         isActive:
           Boolean(o.active) ||
           Boolean(o.isActive) ||
@@ -466,6 +554,7 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
       };
     });
     daiVanList = applyCurrentToDaiVanRows(daiVanList, dvParent);
+    daiVanList = preferCurrentYearsOnActiveRow(daiVanList, dvParent);
     if (!daiVanList.some((x) => x.isActive) && daiVanList.length === 1) {
       daiVanList = [{ ...daiVanList[0], isActive: true }];
     }
@@ -475,12 +564,13 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
     const cycles = dvObj ? dvObj.cycles : undefined;
     const current = dvObj ? asRecord(dvObj.current) : null;
     const curLabel = current ? pickStr(current, ["display", "label"]) : "—";
-    const curYears = current ? pickStr(current, ["age_range", "years"]) : "—";
+    const curYears =
+      current != null ? pickDaiVanYearsFromObject(current) : "—";
     if (dvObj && Array.isArray(cycles)) {
       daiVanList = cycles.map((item) => {
         const o = asRecord(item) ?? {};
         const label = pickStr(o, ["display", "label", "name"]);
-        const years = pickStr(o, ["age_range", "years", "range"]);
+        const years = pickDaiVanYearsFromObject(o);
         const isActive =
           (curLabel !== "—" &&
             label !== "—" &&
@@ -490,6 +580,7 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
             normalizeAgeRangeKey(years) === normalizeAgeRangeKey(curYears));
         return { label, years, isActive };
       });
+      daiVanList = preferCurrentYearsOnActiveRow(daiVanList, dvObj);
     }
     if (!daiVanList.length && (curLabel !== "—" || curYears !== "—")) {
       daiVanList = [
@@ -512,6 +603,15 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
       const po = asRecord(layer.dai_van) ?? asRecord(layer.daiVan);
       if (po) {
         const formatted = formatDaiVanField(po);
+        if (formatted !== "—") {
+          dv = formatted;
+          break;
+        }
+      }
+      const dvf =
+        asRecord(layer.dai_van_current) ?? asRecord(layer.daiVanCurrent);
+      if (dvf) {
+        const formatted = formatDaiVanField(dvf);
         if (formatted !== "—") {
           dv = formatted;
           break;

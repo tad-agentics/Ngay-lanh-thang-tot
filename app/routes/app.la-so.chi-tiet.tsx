@@ -691,10 +691,7 @@ export default function AppLaSoChiTiet() {
               Luận giải theo lá số
             </p>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Năm mục bên dưới giữ đúng khía cạnh như giao diện cũ. Trong từng mục bạn xem một
-              đoạn luận giải tự động (không gạch đầu dòng, không trích nguyên văn thô từ dữ
-              liệu gốc — chỉ văn bản tư vấn mạch lạc), bám theo lá số chi tiết — không thay
-              thế bảng tứ trụ phía trên.
+              Luận giải từng khía cạnh
             </p>
             {(detailBusy || detailAiLoading) && luanSections.length === 0 ? (
               <div className="space-y-2" aria-busy="true">

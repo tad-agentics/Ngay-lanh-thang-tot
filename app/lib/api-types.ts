@@ -30,8 +30,10 @@ export interface LaSoJson {
   menh?: string;
   dung_than?: string;
   ky_than?: string;
-  /** Chuỗi tóm tắt hoặc object tu-tru-api (`current` / `cycles`). */
+  /** Chuỗi tóm tắt hoặc object tu-tru-api (`current` / `cycles`). POST `/v1/tu-tru`. */
   dai_van?: string | Record<string, unknown>;
+  /** Đại vận hiện tại phẳng (`display`, `age_range`, …). GET `/v1/la-so`. */
+  dai_van_current?: Record<string, unknown>;
   ngu_hanh?: Record<string, number>;
   thien_can?: string[];
   dia_chi?: string[];

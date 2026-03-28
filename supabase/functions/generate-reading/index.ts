@@ -22,11 +22,19 @@ const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt
 - ngay-hom-nay: 2–3 câu. Tập trung: hôm nay tốt/xấu, nên làm gì, giờ nào tốt nhất.
 - chon-ngay: 2–3 câu mỗi ngày được recommend. Tập trung: tại sao ngày này tốt cho mục đích đó.
 - hop-tuoi: 3–4 câu. Tập trung: tổng quan mối quan hệ, điểm mạnh, điểm cần lưu ý.
-- tieu-van, luu-nien: 3–4 câu. Tập trung: xu hướng chính của tháng/năm, lĩnh vực nào thuận lợi/cẩn trọng.
+- tieu-van, luu-nien: 3–4 câu. Tập trung: xu hướng chính của tháng/năm, lĩnh vực nào thuận lợi/cẩn trọng — **bắt buộc nhất quán với `element_relation` (xem mục dưới)**.
 - dai-van: 1–2 câu mỗi vận. Tập trung: đặc điểm giai đoạn, so sánh với Dụng Thần.
 - la-so: 2–3 câu mỗi mục (tính cách, sự nghiệp, tài vận, tình duyên, sức khỏe). Tập trung: diễn giải ý nghĩa thực tế cho cuộc sống.
 - phong-thuy: 2–3 câu. Tập trung: tổng hợp gợi ý chính, ưu tiên điều gì trước.
 - Endpoint không nằm trong danh sách trên: 2–3 câu tổng hợp.
+
+## NHẤT QUÁN — tieu-van và luu-nien (bắt buộc)
+Khi endpoint là tieu-van hoặc luu-nien và trong data có element_relation hoặc elementRelation (mã dạng tuong_khac, bi_khac, tuong_sinh, bi_sinh, binh_hoa, …):
+- Coi đây là **khung quan hệ ngũ hành** giữa tháng/năm và mệnh người dùng. Luận giải **không được** đi ngược khung này.
+- tuong_khac hoặc bi_khac: **không** khẳng định tháng/năm "thuận lợi" toàn phần, "suôn sẻ", hay "giai đoạn thuận lợi" như xu hướng chính. Nhịp chủ đạo: căng, áp lực, cạnh tranh hoặc phải giữ nhịp làm từng việc; có thể nói một lĩnh vực cụ thể vẫn khả dụng **nếu** JSON có gợi ý rõ — không mâu thuẫn với khung khắc.
+- tuong_sinh hoặc bi_sinh: được nhấn thuận hơn (vẫn không phóng đại tuyệt đối).
+- binh_hoa: giọng cân bằng, không thiên cực.
+- Nếu các trường như reading / tong_quan / overview trong data mang tông rất tích cực nhưng element_relation là tuong_khac hoặc bi_khac: **ưu tiên element_relation** — không lặp lại mức tích cực mâu thuẫn; có thể diễn giải tích cực cục bộ khi có cơ sở ở phần khác của data.
 
 ## GIỌNG VĂN
 - Ấm áp, rõ ràng, tự tin.
@@ -47,6 +55,8 @@ const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt
 /** Thời hạn cache (ms) theo quy ước sản phẩm */
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
 const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
+/** Bump khi đổi SYSTEM_PROMPT cho tieu-van/luu-nien — làm mới reading_cache. */
+const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-03-28a";
 
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
@@ -501,7 +511,9 @@ Deno.serve(async (req) => {
   const cacheInput =
     endpoint === "la-so-chi-tiet"
       ? `${LA_SO_CHI_TIET_CACHE_VER}\n${endpoint}\n${dataJson}`
-      : `${endpoint}\n${dataJson}`;
+      : endpoint === "tieu-van" || endpoint === "luu-nien"
+        ? `${TIEU_VAN_LUU_NIEN_PROMPT_VER}\n${endpoint}\n${dataJson}`
+        : `${endpoint}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify({ endpoint, data });

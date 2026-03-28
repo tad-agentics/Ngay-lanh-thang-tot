@@ -50,6 +50,32 @@ const ELEMENT_RELATION_VI: Record<string, string> = {
 const ELEMENT_RELATION_FALLBACK =
   "Quan hệ ngũ hành giữa tháng và mệnh bạn có nhịp riêng — đối chiếu thêm luận giải tổng quan và Đại Vận bên dưới.";
 
+/** Mã quan hệ tháng ↔ mệnh khiến tông tổng quan “rất thuận” dễ mâu thuẫn với UI */
+const ELEMENT_CODES_CHALLENGING = new Set(["tuong_khac", "bi_khac"]);
+
+/** Heuristic: reading/tong_quan từ API đôi khi tích cực dù element_relation là khắc — ẩn đoạn đó trên UI */
+const TONG_QUAN_OPTIMISTIC_RE =
+  /thuận lợi|suôn sẻ|giai đoạn thuận|khá thuận|rất thuận|thuận toàn diện|đặc biệt thuận|thời điểm thuận|mọi việc.{0,14}thuận|tháng.{0,16}thuận lợi/i;
+
+/**
+ * Trả về `null` nên ẩn đoạn tổng quan từ máy chủ (tránh mâu thuẫn với khối "Quan hệ tháng với mệnh").
+ * Các trường hợp khác trả về `tongQuan` nhập vào.
+ */
+export function tieuVanTongQuanDisplayOrNull(
+  elementRelationCode: string | null | undefined,
+  tongQuan: string,
+): string | null {
+  const t = tongQuan.trim();
+  if (!t) return t || null;
+  const code = (elementRelationCode ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, "_");
+  if (!ELEMENT_CODES_CHALLENGING.has(code)) return tongQuan;
+  if (TONG_QUAN_OPTIMISTIC_RE.test(t)) return null;
+  return tongQuan;
+}
+
 function elementRelationToLabel(code: string | null): string | null {
   if (!code || !code.trim()) return null;
   const k = code.trim().toLowerCase().replace(/-/g, "_");

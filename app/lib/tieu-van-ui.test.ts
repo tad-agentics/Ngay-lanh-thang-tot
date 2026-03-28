@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { mapTieuVanPayload } from "./tieu-van-ui";
+import { mapTieuVanPayload, tieuVanTongQuanDisplayOrNull } from "./tieu-van-ui";
 
 describe("mapTieuVanPayload", () => {
   it("uses prose fallbacks when string fields missing", () => {
@@ -98,3 +98,26 @@ describe("mapTieuVanPayload", () => {
     expect(fromDetails.linhVuc[0]?.body).toContain("ngủ");
   });
 });
+
+describe("tieuVanTongQuanDisplayOrNull", () => {
+  it("giữ tổng quan khi quan hệ không phải khắc", () => {
+    expect(
+      tieuVanTongQuanDisplayOrNull("tuong_sinh", "Tháng này thuận lợi cho bạn."),
+    ).toBe("Tháng này thuận lợi cho bạn.");
+  });
+
+  it("ẩn tổng quan tích cực mạnh khi element_relation là tương khắc", () => {
+    expect(
+      tieuVanTongQuanDisplayOrNull(
+        "tuong_khac",
+        "Tháng ba năm 2026 là giai đoạn thuận lợi cho bạn.",
+      ),
+    ).toBeNull();
+  });
+
+  it("vẫn hiện tổng quan khi khắc nhưng không dùng từ ngữ thuận lợi toàn phần", () => {
+    const s = "Tháng này cần giữ nhịp, ưu tiên việc đã lên kế hoạch.";
+    expect(tieuVanTongQuanDisplayOrNull("bi_khac", s)).toBe(s);
+  });
+});
+

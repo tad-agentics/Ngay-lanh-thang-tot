@@ -6,6 +6,8 @@ type Variant = "on-surface" | "on-card";
 interface AiReadingBlockProps {
   /** Tiêu đề khối (tránh trùng nhãn chung từ API hợp tuổi v2). */
   title?: string;
+  /** Khi false, không render dòng tiêu đề (dùng khi đã có heading cha). */
+  showTitle?: boolean;
   loading: boolean;
   /** Khi !loading: nếu null hoặc rỗng thì không render. */
   text: string | null;
@@ -16,6 +18,7 @@ interface AiReadingBlockProps {
 
 export function AiReadingBlock({
   title = "Luận giải",
+  showTitle = true,
   loading,
   text,
   variant = "on-card",
@@ -44,16 +47,22 @@ export function AiReadingBlock({
     <div
       className={
         isSurface
-          ? "mt-3 pt-3 border-t border-surface-foreground/12"
-          : "mt-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5"
+          ? showTitle
+            ? "mt-3 pt-3 border-t border-surface-foreground/12"
+            : "mt-3 pt-3 border-t border-border/50"
+          : showTitle
+            ? "mt-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5"
+            : "mt-3 pt-3 border-t border-border/60"
       }
     >
-      <p
-        className={`text-[10px] uppercase tracking-wide mb-1.5 ${titleCls}`}
-        style={{ fontFamily: "var(--font-ibm-mono)" }}
-      >
-        {title}
-      </p>
+      {showTitle ? (
+        <p
+          className={`text-[10px] uppercase tracking-wide mb-1.5 ${titleCls}`}
+          style={{ fontFamily: "var(--font-ibm-mono)" }}
+        >
+          {title}
+        </p>
+      ) : null}
       {loading ? (
         <div className="space-y-2" aria-busy="true" aria-live="polite">
           <div className={`h-3 rounded ${shimmerCls} animate-pulse w-full`} />
