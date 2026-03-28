@@ -25,9 +25,11 @@ import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { useProfile } from "~/hooks/useProfile";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
+  ddMmYyyyInputToBatTuBirthDate,
   gioiTinhToBatTuGender,
   gioSinhToBatTuBirthTime,
-  ngaySinhToBatTuBirthDate,
+  isoYmdToDdMmYyyyInput,
+  sanitizeDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
@@ -92,7 +94,7 @@ export default function AppLaSo() {
     }
     const code = gioSinhToBatTuBirthTime(profile.gio_sinh);
     setForm({
-      ngaySinh: profile.ngay_sinh?.slice(0, 10) ?? "",
+      ngaySinh: isoYmdToDdMmYyyyInput(profile.ngay_sinh),
       birthTimeCode: code !== undefined ? String(code) : UNSET,
       gioiTinh: profile.gioi_tinh ?? "",
     });
@@ -104,11 +106,11 @@ export default function AppLaSo() {
   }
 
   async function runTuTru() {
-    const birth_date = ngaySinhToBatTuBirthDate(
-      form.ngaySinh.trim() ? form.ngaySinh.trim() : null,
-    );
+    const birth_date = ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim());
     if (!birth_date) {
-      toast.error("Ngày sinh không hợp lệ.");
+      toast.error(
+        "Ngày sinh cần đúng DD/MM/YYYY và là ngày có thật trên lịch.",
+      );
       return;
     }
     const body: Record<string, unknown> = {
@@ -158,6 +160,10 @@ export default function AppLaSo() {
     setReveal(props);
     setPhase("revealing");
   }
+
+  const laSoNgayInvalid =
+    form.ngaySinh.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null;
 
   if (loading) {
     return (
@@ -370,10 +376,33 @@ export default function AppLaSo() {
               </p>
               <Input
                 id="la-ngay"
-                type="date"
+                type="text"
+                name="la-so-ngay-ddmmyyyy"
+                autoComplete="off"
+                placeholder="DD/MM/YYYY"
+                aria-invalid={laSoNgayInvalid}
+                maxLength={10}
+                className="tabular-nums"
                 value={form.ngaySinh}
-                onChange={(e) => setForm((f) => ({ ...f, ngaySinh: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    ngaySinh: sanitizeDdMmYyyyInput(e.target.value),
+                  }))
+                }
               />
+              {laSoNgayInvalid ? (
+                <p
+                  className="text-[11px] text-destructive leading-relaxed"
+                  role="alert"
+                >
+                  Nhập đúng DD/MM/YYYY và ngày phải có thật (ví dụ 20/05/1990).
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Định dạng DD/MM/YYYY.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -433,7 +462,9 @@ export default function AppLaSo() {
             <Button
               type="button"
               className="w-full"
-              disabled={!form.ngaySinh || !form.gioiTinh}
+              disabled={
+                !form.ngaySinh || !form.gioiTinh || laSoNgayInvalid
+              }
               onClick={handleToConfirm}
             >
               Tiếp tục

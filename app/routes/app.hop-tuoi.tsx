@@ -29,9 +29,10 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
+  ddMmYyyyInputToBatTuBirthDate,
   gioiTinhToBatTuGender,
-  ngaySinhToBatTuBirthDate,
   profileToBatTuPersonQuery,
+  sanitizeDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import {
   HOP_TUOI_RELATIONSHIP_OPTIONS,
@@ -84,9 +85,11 @@ export default function AppHopTuoi() {
       toast.error("Hồ sơ thiếu ngày sinh — cập nhật trong Cài đặt.");
       return;
     }
-    const p2Date = ngaySinhToBatTuBirthDate(form.ngaySinh);
+    const p2Date = ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim());
     if (!p2Date) {
-      toast.error("Ngày sinh người kia không hợp lệ.");
+      toast.error(
+        "Ngày sinh người kia cần đúng DD/MM/YYYY và là ngày có thật.",
+      );
       return;
     }
     const p2Gender = gioiTinhToBatTuGender(form.gioiTinh);
@@ -174,6 +177,10 @@ export default function AppHopTuoi() {
       : hopRow?.is_free || (hopRow?.credit_cost ?? 0) <= 0
         ? "Kiểm tra hợp tuổi"
         : `Kiểm tra hợp tuổi — ${hopRow?.credit_cost ?? 16} lượng`;
+
+  const hopOtherNgayInvalid =
+    form.ngaySinh.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null;
 
   if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
@@ -269,12 +276,32 @@ export default function AppHopTuoi() {
                   </Label>
                   <Input
                     id="hop-other-date"
-                    type="date"
+                    type="text"
+                    autoComplete="off"
+                    placeholder="DD/MM/YYYY"
+                    aria-invalid={hopOtherNgayInvalid}
+                    maxLength={10}
+                    className="tabular-nums"
                     value={form.ngaySinh}
                     onChange={(e) =>
-                      setForm((f) => ({ ...f, ngaySinh: e.target.value }))
+                      setForm((f) => ({
+                        ...f,
+                        ngaySinh: sanitizeDdMmYyyyInput(e.target.value),
+                      }))
                     }
                   />
+                  {hopOtherNgayInvalid ? (
+                    <p
+                      className="text-[11px] text-destructive leading-relaxed"
+                      role="alert"
+                    >
+                      Đúng DD/MM/YYYY, ngày có thật (ví dụ 20/05/1990).
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      Định dạng DD/MM/YYYY.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -350,7 +377,12 @@ export default function AppHopTuoi() {
 
             <Button
               size="lg"
-              disabled={!form.ngaySinh || !form.gioiTinh || busy}
+              disabled={
+                !form.ngaySinh ||
+                !form.gioiTinh ||
+                busy ||
+                hopOtherNgayInvalid
+              }
               className="w-full"
               onClick={() => void handleSubmit()}
             >

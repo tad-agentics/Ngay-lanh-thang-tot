@@ -28,8 +28,9 @@ import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import {
-  ngaySinhToBatTuBirthDate,
+  ddMmYyyyInputToBatTuBirthDate,
   profileToBatTuPersonQuery,
+  sanitizeDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import {
@@ -76,8 +77,8 @@ type PhongThuyQueryFieldsProps = {
   onPurposeChange: (v: PhongThuyPurposeValue) => void;
   phongYearInput: string;
   onPhongYearInputChange: (v: string) => void;
-  partnerNgayIso: string;
-  onPartnerNgayIsoChange: (v: string) => void;
+  partnerNgayDdMmYyyy: string;
+  onPartnerNgayDdMmYyyyChange: (v: string) => void;
 };
 
 function PhongThuyQueryFields({
@@ -86,10 +87,13 @@ function PhongThuyQueryFields({
   onPurposeChange,
   phongYearInput,
   onPhongYearInputChange,
-  partnerNgayIso,
-  onPartnerNgayIsoChange,
+  partnerNgayDdMmYyyy,
+  onPartnerNgayDdMmYyyyChange,
 }: PhongThuyQueryFieldsProps) {
   const s = idSuffix;
+  const partnerDateInvalid =
+    partnerNgayDdMmYyyy.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy) == null;
   return (
     <div className="flex flex-col gap-3 mb-4">
       <div className="space-y-2">
@@ -161,13 +165,26 @@ function PhongThuyQueryFields({
         </div>
         <Input
           id={`phong-partner${s}`}
-          type="date"
-          value={partnerNgayIso}
-          onChange={(e) => onPartnerNgayIsoChange(e.target.value)}
+          type="text"
+          name={`partner-birth-ddmmyyyy${s}`}
+          autoComplete="off"
+          placeholder="DD/MM/YYYY"
+          aria-invalid={partnerDateInvalid}
+          maxLength={10}
+          className="tabular-nums"
+          value={partnerNgayDdMmYyyy}
+          onChange={(e) =>
+            onPartnerNgayDdMmYyyyChange(sanitizeDdMmYyyyInput(e.target.value))
+          }
         />
+        {partnerDateInvalid ? (
+          <p className="text-[11px] text-destructive leading-relaxed" role="alert">
+            Nhập đúng DD/MM/YYYY và ngày phải có thật trên lịch (ví dụ 20/05/1990).
+          </p>
+        ) : null}
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Dùng khi muốn gợi ý cho cả hai mệnh trong cùng căn nhà — để trống nếu
-          chỉ cần xem cho bản thân.
+          Chỉ định dạng DD/MM/YYYY. Dùng khi muốn gợi ý cho cả hai mệnh trong cùng
+          căn nhà — để trống nếu chỉ cần xem cho bản thân.
         </p>
       </div>
     </div>
@@ -241,7 +258,7 @@ export default function AppPhongThuy() {
   const [phongYearInput, setPhongYearInput] = useState(() =>
     String(new Date().getFullYear()),
   );
-  const [partnerNgayIso, setPartnerNgayIso] = useState("");
+  const [partnerNgayDdMmYyyy, setPartnerNgayDdMmYyyy] = useState("");
   const teaserReqIdRef = useRef(0);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
@@ -267,8 +284,8 @@ export default function AppPhongThuy() {
         const yearOk =
           Number.isFinite(yearN) && yearN >= 1900 && yearN <= 2100;
         let partnerBirth: string | null = null;
-        if (partnerNgayIso.trim().length > 0) {
-          partnerBirth = ngaySinhToBatTuBirthDate(partnerNgayIso.trim());
+        if (partnerNgayDdMmYyyy.trim().length > 0) {
+          partnerBirth = ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy.trim());
           if (!partnerBirth) {
             if (reqId === teaserReqIdRef.current) {
               setTeaserView(null);
@@ -311,7 +328,7 @@ export default function AppPhongThuy() {
     profileLoading,
     purpose,
     phongYearInput,
-    partnerNgayIso,
+    partnerNgayDdMmYyyy,
   ]);
 
   async function runPhongThuy() {
@@ -328,11 +345,13 @@ export default function AppPhongThuy() {
     }
 
     const partnerBirth =
-      partnerNgayIso.trim().length > 0
-        ? ngaySinhToBatTuBirthDate(partnerNgayIso.trim())
+      partnerNgayDdMmYyyy.trim().length > 0
+        ? ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy.trim())
         : null;
-    if (partnerNgayIso.trim().length > 0 && !partnerBirth) {
-      toast.error("Ngày sinh người cùng không gian không hợp lệ.");
+    if (partnerNgayDdMmYyyy.trim().length > 0 && !partnerBirth) {
+      toast.error(
+        "Ngày sinh người cùng không gian cần đúng DD/MM/YYYY và là ngày có thật.",
+      );
       return;
     }
 
@@ -393,6 +412,10 @@ export default function AppPhongThuy() {
       : phongCostLabel == null
         ? "Tính lại"
         : `Tính lại — ${phongCostLabel} lượng`;
+
+  const partnerBirthInputInvalid =
+    partnerNgayDdMmYyyy.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(partnerNgayDdMmYyyy.trim()) == null;
 
   if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
@@ -786,12 +809,12 @@ export default function AppPhongThuy() {
               onPurposeChange={setPurpose}
               phongYearInput={phongYearInput}
               onPhongYearInputChange={setPhongYearInput}
-              partnerNgayIso={partnerNgayIso}
-              onPartnerNgayIsoChange={setPartnerNgayIso}
+              partnerNgayDdMmYyyy={partnerNgayDdMmYyyy}
+              onPartnerNgayDdMmYyyyChange={setPartnerNgayDdMmYyyy}
             />
             <Button
               size="sm"
-              disabled={busy}
+              disabled={busy || partnerBirthInputInvalid}
               onClick={() => void runPhongThuy()}
             >
               {phongRecalcLabel}
@@ -817,13 +840,13 @@ export default function AppPhongThuy() {
               onPurposeChange={setPurpose}
               phongYearInput={phongYearInput}
               onPhongYearInputChange={setPhongYearInput}
-              partnerNgayIso={partnerNgayIso}
-              onPartnerNgayIsoChange={setPartnerNgayIso}
+              partnerNgayDdMmYyyy={partnerNgayDdMmYyyy}
+              onPartnerNgayDdMmYyyyChange={setPartnerNgayDdMmYyyy}
             />
             <CreditGate featureKey="phong_thuy">
               <Button
                 size="sm"
-                disabled={busy}
+                disabled={busy || partnerBirthInputInvalid}
                 onClick={() => void runPhongThuy()}
               >
                 {phongUnlockLabel}

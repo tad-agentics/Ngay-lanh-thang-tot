@@ -77,6 +77,65 @@ export function ngaySinhToBatTuBirthDate(ngaySinh: string | null): string | null
   return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
 }
 
+/**
+ * Chuỗi nhập tay dd/mm/yyyy (ngày và tháng 1–2 chữ số) → dd/mm/yyyy cho tu-tru-api.
+ * Kiểm tra ngày tồn tại trên lịch. Sai định dạng hoặc không hợp lệ → null.
+ */
+export function ddMmYyyyInputToBatTuBirthDate(raw: string): string | null {
+  if (!raw?.trim()) return null;
+  const t = raw.trim();
+  const m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const d = Number.parseInt(m[1]!, 10);
+  const mo = Number.parseInt(m[2]!, 10);
+  const y = Number.parseInt(m[3]!, 10);
+  if (!Number.isFinite(d) || !Number.isFinite(mo) || !Number.isFinite(y)) {
+    return null;
+  }
+  if (mo < 1 || mo > 12 || d < 1 || d > 31 || y < 1000 || y > 9999) {
+    return null;
+  }
+  const dt = new Date(y, mo - 1, d);
+  if (
+    dt.getFullYear() !== y ||
+    dt.getMonth() !== mo - 1 ||
+    dt.getDate() !== d
+  ) {
+    return null;
+  }
+  return `${String(d).padStart(2, "0")}/${String(mo).padStart(2, "0")}/${y}`;
+}
+
+/** Giới hạn ký tự khi gõ ô DD/MM/YYYY (chỉ số và /, tối đa 10). */
+export function sanitizeDdMmYyyyInput(raw: string): string {
+  return raw.replace(/[^\d/]/g, "").slice(0, 10);
+}
+
+/**
+ * ISO/Postgres `YYYY-MM-DD` (hoặc tiền tố) → chuỗi hiển thị DD/MM/YYYY cho ô nhập.
+ */
+export function isoYmdToDdMmYyyyInput(iso: string | null | undefined): string {
+  if (!iso?.trim()) return "";
+  const head = iso.trim().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(head)) return "";
+  const [y, m, d] = head.split("-");
+  if (!y || !m || !d) return "";
+  return `${d.padStart(2, "0")}/${m.padStart(2, "0")}/${y}`;
+}
+
+/**
+ * DD/MM/YYYY hợp lệ (theo `ddMmYyyyInputToBatTuBirthDate`) → `YYYY-MM-DD` cho Postgres.
+ */
+export function ddMmYyyyInputToIsoDate(raw: string): string | null {
+  const api = ddMmYyyyInputToBatTuBirthDate(raw);
+  if (!api) return null;
+  const parts = api.split("/");
+  if (parts.length !== 3) return null;
+  const [d, m, y] = parts;
+  if (!d || !m || !y) return null;
+  return `${y}-${m}-${d}`;
+}
+
 export function gioiTinhToBatTuGender(
   gioiTinh: ProfileRow["gioi_tinh"],
 ): number | undefined {

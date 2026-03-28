@@ -23,9 +23,12 @@ import {
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   batTuBirthTimeCodeToGioSinh,
+  ddMmYyyyInputToBatTuBirthDate,
+  ddMmYyyyInputToIsoDate,
   gioSinhToBatTuBirthTime,
   gioiTinhToBatTuGender,
-  ngaySinhToBatTuBirthDate,
+  isoYmdToDdMmYyyyInput,
+  sanitizeDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileHasLaso } from "~/lib/la-so-ui";
@@ -69,7 +72,7 @@ export default function AppCaiDat() {
 
   useEffect(() => {
     if (!profile || loading) return;
-    setNgaySinh(profile.ngay_sinh?.slice(0, 10) ?? "");
+    setNgaySinh(isoYmdToDdMmYyyyInput(profile.ngay_sinh));
     const code = gioSinhToBatTuBirthTime(profile.gio_sinh);
     setBirthTimeCode(code !== undefined ? String(code) : UNSET);
     setGioiTinh(profile.gioi_tinh ?? UNSET);
@@ -110,10 +113,22 @@ export default function AppCaiDat() {
       setSaving(false);
       return;
     }
+    let ngayIso: string | null = null;
+    const rawNgay = ngaySinh.trim();
+    if (rawNgay.length > 0) {
+      ngayIso = ddMmYyyyInputToIsoDate(rawNgay);
+      if (!ngayIso) {
+        toast.error(
+          "Ngày sinh cần đúng DD/MM/YYYY và là ngày có thật trên lịch.",
+        );
+        setSaving(false);
+        return;
+      }
+    }
     const { error } = await supabase
       .from("profiles")
       .update({
-        ngay_sinh: ngaySinh.trim() ? ngaySinh.trim() : null,
+        ngay_sinh: ngayIso,
         gio_sinh: gioSinh,
         gioi_tinh: gioiTinh === UNSET ? null : (gioiTinh as "nam" | "nu"),
       })
@@ -126,8 +141,8 @@ export default function AppCaiDat() {
 
     let lasoBootstrapError: string | null = null;
     let lasoBootstrapOk = false;
-    if (!hadLaso && ngaySinh.trim() && gioiTinh !== UNSET) {
-      const birth_date = ngaySinhToBatTuBirthDate(ngaySinh.trim());
+    if (!hadLaso && ngayIso && gioiTinh !== UNSET) {
+      const birth_date = ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim());
       if (birth_date) {
         const body: Record<string, unknown> = {
           birth_date,
@@ -180,6 +195,10 @@ export default function AppCaiDat() {
   const ngayLabel = profile?.ngay_sinh
     ? formatNgaySinhDisplay(profile.ngay_sinh)
     : null;
+
+  const ngaySinhEditInvalid =
+    ngaySinh.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()) == null;
 
   return (
     <div className="min-h-[60vh] bg-background pb-24">
@@ -317,11 +336,30 @@ export default function AppCaiDat() {
                 <Label htmlFor="ngay-sinh">Ngày sinh</Label>
                 <Input
                   id="ngay-sinh"
-                  type="date"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="DD/MM/YYYY"
+                  aria-invalid={ngaySinhEditInvalid}
+                  maxLength={10}
+                  className="tabular-nums"
                   value={ngaySinh}
-                  onChange={(e) => setNgaySinh(e.target.value)}
+                  onChange={(e) =>
+                    setNgaySinh(sanitizeDdMmYyyyInput(e.target.value))
+                  }
                   disabled={loading || !profile}
                 />
+                {ngaySinhEditInvalid ? (
+                  <p
+                    className="text-[11px] text-destructive leading-relaxed"
+                    role="alert"
+                  >
+                    Nhập đúng DD/MM/YYYY và ngày phải có thật (ví dụ 20/05/1990).
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Định dạng DD/MM/YYYY.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="gio-sinh">Giờ sinh (khung giờ)</Label>
@@ -363,7 +401,9 @@ export default function AppCaiDat() {
               <Button
                 type="button"
                 className="w-full"
-                disabled={saving || loading || !profile}
+                disabled={
+                  saving || loading || !profile || ngaySinhEditInvalid
+                }
                 onClick={() => void saveBirth()}
               >
                 {saving ? "Đang lưu…" : "Lưu thông tin sinh"}
