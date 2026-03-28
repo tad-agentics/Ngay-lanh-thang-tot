@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 
+import type { LaSoChiTietSection } from "~/lib/generate-reading";
+
 type Variant = "on-surface" | "on-card";
 
 interface AiReadingBlockProps {
@@ -11,6 +13,8 @@ interface AiReadingBlockProps {
   loading: boolean;
   /** Khi !loading: nếu null hoặc rỗng thì không render. */
   text: string | null;
+  /** Nhiều đoạn (ưu tiên hơn text khi có phần tử). */
+  sections?: LaSoChiTietSection[] | null;
   variant?: Variant;
   /** Sau khi đã từng loading, nếu không có text — hiển thị gợi ý thay vì ẩn hẳn. */
   emptyLabel?: string;
@@ -21,6 +25,7 @@ export function AiReadingBlock({
   showTitle = true,
   loading,
   text,
+  sections = null,
   variant = "on-card",
   emptyLabel = "Luận giải tự động tạm chưa tải được. Thử làm mới trang hoặc quay lại sau.",
 }: AiReadingBlockProps) {
@@ -29,8 +34,12 @@ export function AiReadingBlock({
     if (loading) setHasStarted(true);
   }, [loading]);
 
+  const sectionList = sections?.filter((s) => s.text?.trim()) ?? [];
   const trimmed = text?.trim() ?? "";
-  if (!loading && trimmed.length === 0 && !hasStarted) return null;
+  const hasSections = sectionList.length > 0;
+  if (!loading && !hasSections && trimmed.length === 0 && !hasStarted) {
+    return null;
+  }
 
   const isSurface = variant === "on-surface";
   const titleCls = isSurface
@@ -68,6 +77,26 @@ export function AiReadingBlock({
           <div className={`h-3 rounded ${shimmerCls} animate-pulse w-full`} />
           <div className={`h-3 rounded ${shimmerCls} animate-pulse w-[92%]`} />
           <div className={`h-3 rounded ${shimmerCls} animate-pulse w-4/5`} />
+        </div>
+      ) : hasSections ? (
+        <div className="space-y-4">
+          {sectionList.map((s, i) => (
+            <motion.div
+              key={`${s.id}-${i}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.35, delay: i * 0.06 }}
+              className={i > 0 ? "pt-3 border-t border-border/55" : ""}
+            >
+              <p
+                className={`text-[10px] uppercase tracking-wide mb-1.5 ${titleCls}`}
+                style={{ fontFamily: "var(--font-ibm-mono)" }}
+              >
+                {s.title}
+              </p>
+              <p className={`text-sm leading-relaxed ${bodyCls}`}>{s.text}</p>
+            </motion.div>
+          ))}
         </div>
       ) : trimmed.length > 0 ? (
         <motion.p

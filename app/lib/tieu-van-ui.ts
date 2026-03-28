@@ -58,7 +58,7 @@ const TONG_QUAN_OPTIMISTIC_RE =
   /thuận lợi|suôn sẻ|giai đoạn thuận|khá thuận|rất thuận|thuận toàn diện|đặc biệt thuận|thời điểm thuận|mọi việc.{0,14}thuận|tháng.{0,16}thuận lợi/i;
 
 /**
- * Trả về `null` nên ẩn đoạn tổng quan từ máy chủ (tránh mâu thuẫn với khối "Tháng này với mệnh bạn" trên Vận tháng).
+ * Trả về `null` nên ẩn đoạn tổng quan từ máy chủ khi `element_relation` là khắc mà văn bản lại rất «thuận» (tránh lệch với khung ngũ hành).
  * Các trường hợp khác trả về `tongQuan` nhập vào.
  */
 export function tieuVanTongQuanDisplayOrNull(

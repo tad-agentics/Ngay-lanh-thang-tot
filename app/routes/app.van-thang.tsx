@@ -12,7 +12,10 @@ import { useProfile } from "~/hooks/useProfile";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { invokeGenerateReading } from "~/lib/generate-reading";
+import {
+  invokeGenerateReading,
+  type LaSoChiTietSection,
+} from "~/lib/generate-reading";
 import { toDbFeatureKey } from "~/lib/constants";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import {
@@ -90,6 +93,9 @@ export default function AppVanThang() {
   const [tieuVanAiReading, setTieuVanAiReading] = useState<
     Record<string, string | null>
   >({});
+  const [tieuVanAiSections, setTieuVanAiSections] = useState<
+    Record<string, LaSoChiTietSection[] | null>
+  >({});
   const [tieuVanAiLoading, setTieuVanAiLoading] = useState<
     Record<string, boolean>
   >({});
@@ -165,13 +171,24 @@ export default function AppVanThang() {
       const nextGen = (tieuVanAiGenRef.current[ymKey] ?? 0) + 1;
       tieuVanAiGenRef.current[ymKey] = nextGen;
       setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
+      setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: null }));
       setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: true }));
       void invokeGenerateReading({
         endpoint: "tieu-van",
         data: res.data,
       }).then((r) => {
         if (tieuVanAiGenRef.current[ymKey] !== nextGen) return;
-        setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: r.reading }));
+        const secs = r.sections && r.sections.length > 0 ? r.sections : null;
+        if (secs) {
+          setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: secs }));
+          setTieuVanAiReading((prev) => ({ ...prev, [ymKey]: null }));
+        } else {
+          setTieuVanAiReading((prev) => ({
+            ...prev,
+            [ymKey]: r.reading?.trim() ? r.reading : null,
+          }));
+          setTieuVanAiSections((prev) => ({ ...prev, [ymKey]: null }));
+        }
         setTieuVanAiLoading((prev) => ({ ...prev, [ymKey]: false }));
       });
       await refresh();
@@ -259,6 +276,7 @@ export default function AppVanThang() {
     : "";
   const tieuVanAiLoad = tieuVanAiLoading[ym] ?? false;
   const tieuVanAiText = tieuVanAiReading[ym] ?? null;
+  const tieuVanAiSecs = tieuVanAiSections[ym] ?? null;
 
   return (
     <div className="px-4 pb-8">
@@ -359,19 +377,41 @@ export default function AppVanThang() {
 
         {isUnlocked && detail ? (
           <>
-            {detail.elementRelationLabel ? (
-              <QualitativeCard kicker="Tháng này với mệnh bạn">
-                <p>{detail.elementRelationLabel}</p>
-              </QualitativeCard>
-            ) : null}
-
-            <QualitativeCard kicker="Luận giải">
+            <QualitativeCard kicker="Luận giải vận tháng">
               <div className="space-y-2">
                 {nhatChuLine ? (
                   <p className="text-foreground text-sm">
                     <span className="text-muted-foreground">Nhật Chủ: </span>
                     <span className="font-medium">{nhatChuLine}</span>
                   </p>
+                ) : null}
+                {hasTuTruMeta ? (
+                  <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+                    {detail.dungThanApi ? (
+                      <li>
+                        Dụng Thần:{" "}
+                        <span className="font-medium text-foreground">
+                          {detail.dungThanApi}
+                        </span>
+                      </li>
+                    ) : null}
+                    {detail.chartStrength ? (
+                      <li>
+                        Thế lá số:{" "}
+                        <span className="font-medium text-foreground">
+                          {detail.chartStrength}
+                        </span>
+                      </li>
+                    ) : null}
+                    {detail.thapThanOfMonth ? (
+                      <li>
+                        Thập Thần của trụ tháng (so với Nhật Chủ):{" "}
+                        <span className="font-medium text-foreground">
+                          {detail.thapThanOfMonth}
+                        </span>
+                      </li>
+                    ) : null}
+                  </ul>
                 ) : null}
                 {tongQuanDisplay != null && tongQuanDisplay.length > 0 ? (
                   <p className="text-foreground text-sm leading-relaxed">{tongQuanDisplay}</p>
@@ -394,6 +434,7 @@ export default function AppVanThang() {
                   variant="on-card"
                   loading={tieuVanAiLoad}
                   text={tieuVanAiText}
+                  sections={tieuVanAiSecs}
                 />
               </div>
             </QualitativeCard>
@@ -417,40 +458,6 @@ export default function AppVanThang() {
                   ))}
                 </div>
               </div>
-            ) : null}
-
-            {hasTuTruMeta ? (
-              <QualitativeCard
-                kicker="Thêm từ tứ trụ đầy đủ"
-                titleOptional="Lá số vẫn lập được chỉ với ngày sinh; giờ sinh không bắt buộc để có bản tóm tắt lá số. Các dòng dưới chỉ xuất hiện khi bản tính có đủ bốn trụ (thường là bạn đã nhập giờ sinh trong hồ sơ): Dụng Thần, thế lá số và Thập Thần của trụ tháng so với Nhật Chủ. Chúng bổ sung luận tháng phía trên, không thay cho khối Tháng này với mệnh bạn."
-              >
-                <ul className="list-disc pl-5 space-y-1.5 text-sm">
-                  {detail.dungThanApi ? (
-                    <li>
-                      Dụng Thần:{" "}
-                      <span className="font-medium text-foreground">
-                        {detail.dungThanApi}
-                      </span>
-                    </li>
-                  ) : null}
-                  {detail.chartStrength ? (
-                    <li>
-                      Thế lá số:{" "}
-                      <span className="font-medium text-foreground">
-                        {detail.chartStrength}
-                      </span>
-                    </li>
-                  ) : null}
-                  {detail.thapThanOfMonth ? (
-                    <li>
-                      Thập Thần của trụ tháng (so với Nhật Chủ):{" "}
-                      <span className="font-medium text-foreground">
-                        {detail.thapThanOfMonth}
-                      </span>
-                    </li>
-                  ) : null}
-                </ul>
-              </QualitativeCard>
             ) : null}
 
             {detail.linhVuc.length > 0 ? (
