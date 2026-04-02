@@ -11,6 +11,7 @@ import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
+import { referralParamFromSearchParams } from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
 function formatDobVi(ymd: string): string {
@@ -24,6 +25,10 @@ export default function DangKy() {
   const [searchParams] = useSearchParams();
   const prefill = useMemo(
     () => parseLandingSignupPrefill(searchParams),
+    [searchParams],
+  );
+  const referralFromUrl = useMemo(
+    () => referralParamFromSearchParams(searchParams),
     [searchParams],
   );
   const showPrefillBanner = landingSignupPrefillHasAny(prefill);
@@ -46,6 +51,9 @@ export default function DangKy() {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
         data: {
           ...(prefill.displayName ? { full_name: prefill.displayName } : {}),
+          ...(referralFromUrl
+            ? { referral_code: referralFromUrl.toUpperCase() }
+            : {}),
         },
       },
     });
@@ -101,6 +109,18 @@ export default function DangKy() {
             Nhận 20 lượng starter sau khi xác nhận email (theo cấu hình dự án).
           </p>
         </div>
+        {referralFromUrl ? (
+          <div
+            className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-3 text-sm text-foreground"
+            role="status"
+          >
+            <p className="font-medium text-foreground">Mã giới thiệu</p>
+            <p className="text-muted-foreground leading-snug mt-1">
+              Bạn đăng ký qua lời mời — sẽ nhận thưởng lượng sau khi tạo tài khoản
+              (theo cấu hình hệ thống).
+            </p>
+          </div>
+        ) : null}
         {showPrefillBanner ? (
           <div
             className="rounded-lg border border-border bg-muted/40 px-3 py-3 text-sm text-foreground space-y-1.5"
@@ -177,7 +197,11 @@ export default function DangKy() {
         <p className="text-center text-sm text-muted-foreground">
           Đã có tài khoản?{" "}
           <Link
-            to="/dang-nhap"
+            to={
+              referralFromUrl
+                ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}`
+                : "/dang-nhap"
+            }
             className="text-primary underline-offset-4 hover:underline"
           >
             Đăng nhập

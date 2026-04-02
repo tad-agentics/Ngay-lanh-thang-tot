@@ -25,6 +25,7 @@ Chi tiết kiến trúc: `artifacts/docs/tech-spec.md`, `AGENTS.md`, `.cursor/ru
 | Copy + giá hiển thị UI mua lượng | `app/lib/packages.ts` → `UI_PACKAGES` |
 | Map UI key → `feature_key` DB | `app/lib/constants.ts` → `FEATURE_KEY_MAP`, `toDbFeatureKey` |
 | Type DB-aligned | `app/lib/database.types.ts`, `app/lib/api-types.ts` |
+| Giới thiệu + thưởng lượng | Edge `referral-claim`, SQL `apply_referral_pair`, `app_config.referral_bonus_credits` |
 
 **Lưu ý:** Giá gói và số lượng/tháng subscription hiện **hardcode** ở hai chỗ: Edge (`PACKAGES`) và frontend (`UI_PACKAGES`). Admin “sửa gói” theo yêu cầu growth thường cần **hoặc** (A) migration thêm bảng `commerce_packages` + đọc trong `payos-create-checkout` + API cho app, **hoặc** (B) tiếp tục deploy code khi đổi giá — document rõ cho team.
 
@@ -55,12 +56,15 @@ File mẫu: `.env.example`.
 | Secret | Dùng ở |
 |--------|--------|
 | `SUPABASE_URL` | auto |
+| `SUPABASE_ANON_KEY` | EF verify JWT trong handler (vd. `referral-claim`, `payos-create-checkout`) |
 | `SUPABASE_SERVICE_ROLE_KEY` | hầu hết EF ghi DB |
 | `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` | `payos-create-checkout`, `payos-webhook` |
 | `BAT_TU_API_URL`, `BAT_TU_API_KEY` | `bat-tu` |
 | `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (optional) | `generate-reading` |
 | `SHARE_TOKEN_SECRET` | share |
 | `VAPID_*`, `CRON_SECRET` | push / cron (nếu bật) |
+
+**Giới thiệu — `referral-claim`:** trong `supabase/config.toml` đặt `verify_jwt = false`; handler kiểm tra Bearer + `auth.getUser()`, cộng lượng qua RPC `apply_referral_pair` với service role. Không cần thêm secret ngoài bảng trên.
 
 Local EF: `supabase/functions/.env` (gitignored).
 
@@ -76,7 +80,9 @@ Local EF: `supabase/functions/.env` (gitignored).
 | `email`, `display_name` | Hiển thị; `email` có thể lệch OAuth |
 | `ngay_sinh`, `gio_sinh`, `gioi_tinh` | Sinh học; sau `birth_data_locked_at` user **không** sửa được (trigger) |
 | `la_so` | JSON lá số — user **không** sửa trực tiếp (trigger); service_role được |
-| `credits_balance` | `integer >= 0` (CHECK) |
+| `credits_balance` | `integer >= 0` (CHECK) — user **không** PATCH trực tiếp (trigger); service_role / `apply_referral_pair` được |
+| `referral_code` | Mã mời duy nhất (UPPER), sinh khi tạo profile; user **không** sửa qua client |
+| `referred_by` | FK → `profiles.id`, `ON DELETE SET NULL` — người giới thiệu khi thưởng đã áp; user **không** sửa qua client |
 | `subscription_expires_at` | Hết hạn gói “không giới hạn lượng” |
 | `birth_data_locked_at`, `onboarding_completed_at`, `push_enabled` | |
 | `created_at`, `updated_at` | |
@@ -91,7 +97,7 @@ Local EF: `supabase/functions/.env` (gitignored).
 - Cột: `user_id`, `delta` (âm = trừ), `balance_after`, `reason`, `feature_key` (nullable FK), `idempotency_key` (unique), `metadata`, `created_at`.
 - **RLS:** user chỉ đọc own; **không** có policy INSERT cho authenticated — ghi qua **service_role** (Edge).
 
-**Reason** thực tế từ code: `starter_grant`, `payos_purchase`, `payos_subscription`, và các lý do deduct trong `bat-tu` (xem EF).
+**Reason** thực tế từ code: `starter_grant`, `referral_bonus_referee`, `referral_bonus_referrer`, `payos_purchase`, `payos_subscription`, và các lý do deduct trong `bat-tu` (xem EF).
 
 **Admin nạp / hoàn / trừ lượng (khuyến nghị):**
 
@@ -114,7 +120,7 @@ Khi thêm key mới: đồng bộ `FEATURE_KEY_MAP` trong app + EF `bat-tu` nế
 ### 4.4 `app_config`
 
 - `config_key` / `value` (text).
-- Đã dùng: `starter_credits` (int string, default fallback 20), `credit_expiry_months`.
+- Đã dùng: `starter_credits` (int string, default fallback 20), `credit_expiry_months`, **`referral_bonus_credits`** (int string, ví dụ `10`) — số lượng mỗi bên (người được mời + người mời) khi áp referral thành công. **Chỉ user/sự kiện sau khi đổi giá trị** nhận mức mới (không retroactive).
 - **RLS:** read all; ghi bằng service_role.
 
 ### 4.5 `payment_orders`

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { BestHourCard } from "~/components/home/BestHourCard";
@@ -8,10 +9,12 @@ import { TodaySummaryCard } from "~/components/home/TodaySummaryCard";
 import { WeeklyTeaserCard } from "~/components/home/WeeklyTeaserCard";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
+import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
+import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import {
   buildCalendarDaysForMonth,
   parseNgayHomNayForHome,
@@ -19,6 +22,14 @@ import {
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import {
+  readTodayAiReadingSession,
+  readTodayHomeSession,
+  todayAiReadingSessionKey,
+  todayIsoInVn,
+  writeTodayAiReadingSession,
+  writeTodayHomeSession,
+} from "~/lib/today-reading-cache";
 
 function monthYyyyMm(year: number, month: number): string {
   return `${year}-${String(month).padStart(2, "0")}`;
@@ -34,6 +45,8 @@ function firstNameFromDisplay(displayName: string | null): string | null {
 export default function AppHome() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
+  const { costs } = useFeatureCosts();
+  const unlockReadingCost = costs.ai_reading_unlock?.credit_cost ?? 1;
 
   const now = new Date();
   const [calMonth, setCalMonth] = useState(() => now.getMonth() + 1);
@@ -46,6 +59,9 @@ export default function AppHome() {
   const [todayHome, setTodayHome] = useState<NgayHomNayHome | null>(null);
   const [todayAiReading, setTodayAiReading] = useState<string | null>(null);
   const [todayAiReadingLoading, setTodayAiReadingLoading] = useState(false);
+  const [todayReadingSource, setTodayReadingSource] = useState<unknown>(null);
+  const [todayReadingUnlocked, setTodayReadingUnlocked] = useState(false);
+  const [unlockingTodayReading, setUnlockingTodayReading] = useState(false);
   const [weeklyCount, setWeeklyCount] = useState<number | null>(null);
   const [lichPayload, setLichPayload] = useState<unknown | null>(null);
 
@@ -57,6 +73,19 @@ export default function AppHome() {
 
   useEffect(() => {
     if (profileLoading || !profile) return;
+    const todayIso = todayIsoInVn();
+    try {
+      localStorage.removeItem(
+        `ngaytot_today_reading_unlock:${profile.id}:${todayIso}`,
+      );
+    } catch {
+      /* legacy client-only unlock flag */
+    }
+    const sessionCachedReading = readTodayAiReadingSession(
+      profile.id,
+      todayIso,
+    );
+    const sessionCachedHome = readTodayHomeSession(profile.id, todayIso);
 
     if (!canBatTu) {
       setSummaryLoading(false);
@@ -64,15 +93,32 @@ export default function AppHome() {
       setTodayHome(null);
       setTodayAiReading(null);
       setTodayAiReadingLoading(false);
+      setTodayReadingSource(null);
+      setTodayReadingUnlocked(false);
+      setUnlockingTodayReading(false);
       setWeeklyCount(null);
       return;
     }
 
     let cancelled = false;
-    setSummaryLoading(true);
+    if (sessionCachedHome) {
+      setTodayHome(sessionCachedHome);
+      setSummaryLoading(false);
+    } else {
+      setTodayHome(null);
+      setSummaryLoading(true);
+    }
     setSummaryErr(null);
-    setTodayAiReading(null);
-    setTodayAiReadingLoading(false);
+    if (sessionCachedReading) {
+      setTodayAiReading(sessionCachedReading);
+      setTodayAiReadingLoading(false);
+    } else {
+      setTodayAiReading(null);
+      setTodayAiReadingLoading(false);
+    }
+    setTodayReadingSource(null);
+    setTodayReadingUnlocked(false);
+    setUnlockingTodayReading(false);
 
     void (async () => {
       const body = profileToBatTuPersonQuery(profile);
@@ -90,16 +136,58 @@ export default function AppHome() {
         if (!parsedToday)
           errs.push("Không tải được kết quả Hôm nay lúc này. Thử lại sau vài giây.");
         else {
-          setTodayAiReadingLoading(true);
-          void invokeGenerateReading({
-            endpoint: "ngay-hom-nay",
-            data: nhn.data,
-          }).then((r) => {
-            if (!cancelled) {
-              setTodayAiReading(r.reading);
+          setTodayReadingSource(nhn.data);
+          const unlock = await invokeReadingUnlock({
+            dry_run: true,
+            scope: "home",
+            day_iso: todayIso,
+          });
+          if (cancelled) return;
+          const serverAllows = Boolean(
+            unlock.ok &&
+              (unlock.unlocked === true ||
+                unlock.already_unlocked === true ||
+                unlock.subscription_free === true),
+          );
+          setTodayReadingUnlocked(serverAllows);
+          if (serverAllows) {
+            const hadSessionCache = Boolean(sessionCachedReading);
+            if (sessionCachedReading) {
+              setTodayAiReading(sessionCachedReading);
+            } else {
+              setTodayAiReading(null);
+            }
+            if (!hadSessionCache) {
+              setTodayAiReadingLoading(true);
+            } else {
               setTodayAiReadingLoading(false);
             }
-          });
+            void invokeGenerateReading({
+              endpoint: "ngay-hom-nay",
+              data: nhn.data,
+            }).then((r) => {
+              if (!cancelled) {
+                const next = r.reading;
+                if (next) {
+                  setTodayAiReading(next);
+                  writeTodayAiReadingSession(profile.id, todayIso, next);
+                } else if (!hadSessionCache) {
+                  setTodayAiReading(null);
+                }
+                setTodayAiReadingLoading(false);
+              }
+            });
+          } else {
+            try {
+              sessionStorage.removeItem(
+                todayAiReadingSessionKey(profile.id, todayIso),
+              );
+            } catch {
+              /* ignore */
+            }
+            setTodayAiReading(null);
+            setTodayAiReadingLoading(false);
+          }
         }
       } else {
         errs.push(nhn.message);
@@ -112,7 +200,10 @@ export default function AppHome() {
         errs.push(ws.message);
       }
 
-      setTodayHome(parsedToday);
+      setTodayHome(parsedToday ?? sessionCachedHome ?? null);
+      if (parsedToday) {
+        writeTodayHomeSession(profile.id, todayIso, parsedToday);
+      }
       setWeeklyCount(wCount);
       setSummaryErr(errs.length ? errs.join(" ") : null);
       setSummaryLoading(false);
@@ -129,6 +220,46 @@ export default function AppHome() {
     profile?.gio_sinh,
     profile?.gioi_tinh,
   ]);
+
+  async function onUnlockTodayReading() {
+    if (!todayReadingSource || unlockingTodayReading || !profile?.id) return;
+    setUnlockingTodayReading(true);
+
+    setTodayAiReadingLoading(true);
+    const iso = todayIsoInVn();
+    const unlock = await invokeReadingUnlock({
+      scope: "home",
+      day_iso: iso,
+    });
+    if (!unlock.ok) {
+      toast.error(unlock.message);
+      setTodayAiReadingLoading(false);
+      setUnlockingTodayReading(false);
+      return;
+    }
+    if (unlock.charged || unlock.subscription_free) {
+      window.dispatchEvent(new CustomEvent("ngaytot:profile-refresh"));
+    }
+    const r = await invokeGenerateReading({
+      endpoint: "ngay-hom-nay",
+      data: todayReadingSource,
+    });
+    const next = r.reading;
+    setTodayAiReading(next);
+    setTodayAiReadingLoading(false);
+    setTodayReadingUnlocked(true);
+    setUnlockingTodayReading(false);
+    if (next) {
+      writeTodayAiReadingSession(profile.id, iso, next);
+    }
+    toast.success(
+      unlock.charged
+        ? "Đã mở khóa luận giải (đã trừ lượng)."
+        : unlock.subscription_free
+          ? "Đã mở khóa luận giải (gói đang hoạt động)."
+          : "Đã mở khóa luận giải.",
+    );
+  }
 
   useEffect(() => {
     if (profileLoading || !profile) return;
@@ -246,6 +377,10 @@ export default function AppHome() {
               aiReadingLoading={
                 !summaryLoading && todayHome != null ? todayAiReadingLoading : false
               }
+              readingLocked={!summaryLoading && todayHome != null && !todayReadingUnlocked}
+              unlocking={unlockingTodayReading}
+              unlockCost={unlockReadingCost}
+              onUnlockReading={() => void onUnlockTodayReading()}
             />
             <BestHourCard
               hourRange={todayHome?.hourRange ?? "—"}

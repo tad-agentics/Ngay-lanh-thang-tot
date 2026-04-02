@@ -5,10 +5,77 @@
  * `chon-ngay`: luận giải tổng (`CHON_NGAY_SYSTEM`) + cache version.
  * `chon-ngay-cards`: JSON `day_readings` theo từng ngày (thẻ kết quả).
  * Các endpoint khác → một khối văn (`hop-tuoi`: 8–10 câu, gom từ toàn bộ tiêu chí).
+ * `ngay-hom-nay` và `day-detail`: cần Bearer JWT + đã mở khóa (ledger / gói / giá 0) — khớp Edge `reading-unlock`.
  * Luôn trả HTTP 200 — không 500.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+type ServiceClient = ReturnType<typeof createClient>;
+
+const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
+const ISO_DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function subscriptionActiveForReading(expires: string | null): boolean {
+  if (!expires) return false;
+  return new Date(expires) > new Date();
+}
+
+function todayIsoVietnam(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+function dayIsoFromDayDetailData(data: unknown): string | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const d = data as Record<string, unknown>;
+  const date = d.date;
+  if (typeof date !== "string") return null;
+  const t = date.trim();
+  return ISO_DAY_RE.test(t) ? t : null;
+}
+
+/** Khớp quy tắc `reading-unlock` (ledger idempotency / subscription / cost 0). */
+async function userHasPaidAiReadingAccess(
+  admin: ServiceClient,
+  userId: string,
+  scope: "home" | "day_detail",
+  dayIso: string,
+): Promise<boolean> {
+  const idempotencyKey = `ai_reading_unlock:${userId}:${scope}:${dayIso}`;
+  const { data: existing } = await admin
+    .from("credit_ledger")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+  if (existing) return true;
+
+  const { data: costRow } = await admin
+    .from("feature_credit_costs")
+    .select("credit_cost, is_free")
+    .eq("feature_key", AI_READING_UNLOCK_FEATURE_KEY)
+    .maybeSingle();
+  const cost =
+    costRow && !costRow.is_free && (costRow.credit_cost as number) > 0
+      ? (costRow.credit_cost as number)
+      : 0;
+  if (cost <= 0) return true;
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("subscription_expires_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profile) return false;
+  return subscriptionActiveForReading(
+    profile.subscription_expires_at as string | null,
+  );
+}
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -122,6 +189,34 @@ Quy tắc:
 const CHON_NGAY_CARDS_JSON_RETRY =
   `Trả về duy nhất JSON: {"day_readings":{"YYYY-MM-DD":"2-3 câu tiếng Việt",...}} — đủ mọi ngày recommend trong data (tối đa 5). Không \`\`\`, không markdown.`;
 
+const DAY_DETAIL_SYSTEM = `Bạn là chuyên gia phong thủy và lịch số Việt Nam, viết luận giải cho màn chi tiết 1 ngày.
+
+## BỐI CẢNH GIAO DIỆN (bắt buộc tuân thủ)
+- Màn này đã có block dữ liệu kỹ thuật riêng (giờ tốt/giờ xấu, trực, sao, việc hợp/không hợp...).
+- Đoạn của bạn là lớp “luận giải tổng quan”: giúp người dùng hiểu nhịp ngày và biết làm gì — không thay thế bảng giờ hay danh sách việc bên dưới.
+
+## ĐẦU VÀO / ĐẦU RA
+- Đầu vào: JSON với "endpoint":"day-detail" và "data" là dữ liệu ngày đã tính.
+- Đầu ra: một đoạn văn xuôi tiếng Việt liền mạch, đủ sâu để có giá trị thực tế.
+
+## ĐỘ DÀI VÀ CẤU TRÚC (bắt buộc)
+- Viết **9–14 câu**, tổng khoảng **280–420 từ** (không quá ngắn).
+- Luôn **kết thúc bằng một câu trọn vẹn** có dấu chấm, không dừng giữa ý.
+
+## NỘI DUNG THEO THỨ TỰ (vẫn chỉ một khối văn xuôi, không tiêu đề)
+1) 2–3 câu mở đầu: nhịp chính của ngày (thuận/chững/cần thận trọng), neo vào ý nghĩa thực tế — có thể nhắn nhẹ trực/sao/hoàng hắc đạo nếu data có, nhưng **không đọc lại như báo cáo**.
+2) 3–4 câu: gợi ý **công việc & ra quyết định** — nên ưu tiên loại việc gì, cách chia nhịp trong ngày, điều nên hoãn hoặc làm cẩn trọng.
+3) 2–3 câu: **quan hệ & giao tiếp** — họp, thương lượng, hẹn gặp: nên giữ thái độ gì, tránh kích động hay cam kết vội khi data gợi ý căng.
+4) 1–2 câu: **điều chỉnh thân tâm** — ngủ nghỉ, giữ nhịp, một lời nhắc bình an (không lời khuyên y tế cụ thể).
+5) 1 câu cuối (tùy data): gợi **một** khung thời điểm phù hợp — ưu tiên nói theo **can giờ** (vd. giờ Thìn, giờ Ngọ) hoặc “đầu ngày / giữa ngày / cuối ngày”; **tránh** chuỗi “3–7 giờ” dễ bị cắt. Không liệt kê cả danh sách giờ tốt/xấu.
+
+## TUYỆT ĐỐI KHÔNG
+- KHÔNG liệt kê toàn bộ giờ tốt hoặc toàn bộ giờ xấu.
+- KHÔNG lướt qua hàng chục “việc hợp/không hợp” như lịch vạn sự; tối đa **một** ví dụ việc nếu giúp minh họa.
+- KHÔNG nêu điểm số, phần trăm, hạng A/B/C trừ khi JSON có rõ và cần thiết — ưu tiên diễn giải định tính.
+- KHÔNG markdown, KHÔNG emoji, KHÔNG tiếng Anh, KHÔNG phán tuyệt đối.
+`;
+
 /** Thời hạn cache (ms) theo quy ước sản phẩm */
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
 const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
@@ -133,6 +228,8 @@ const HOP_TUOI_PROMPT_VER = "2026-03-28a";
 const CHON_NGAY_PROMPT_VER = "2026-03-28d";
 /** Bump khi đổi CHON_NGAY_CARDS_JSON_SYSTEM — làm mới reading_cache thẻ ngày. */
 const CHON_NGAY_CARDS_PROMPT_VER = "2026-03-28b";
+/** Bump khi đổi cấu hình output cho day-detail (max token / format). */
+const DAY_DETAIL_PROMPT_VER = "2026-04-02e";
 
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
@@ -167,6 +264,8 @@ const READING_MAX_TOKENS_DEFAULT = 512;
 const READING_MAX_TOKENS_HOP_TUOI = 1_536;
 const READING_MAX_TOKENS_CHON_NGAY = 1_024;
 const READING_MAX_TOKENS_CHON_NGAY_CARDS = 2_048;
+const READING_MAX_TOKENS_DAY_DETAIL = 2_560;
+const DAY_DETAIL_REQUEST_TIMEOUT_MS = 22_000;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = 2048;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON = 4096;
 
@@ -842,6 +941,42 @@ Deno.serve(async (req) => {
     return ok(null, null);
   }
 
+  if (endpoint === "ngay-hom-nay" || endpoint === "day-detail") {
+    const gateUrl = Deno.env.get("SUPABASE_URL");
+    const gateAnon = Deno.env.get("SUPABASE_ANON_KEY");
+    const gateService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const authHeader = req.headers.get("Authorization");
+    if (!gateUrl || !gateAnon || !gateService || !authHeader?.startsWith("Bearer ")) {
+      return ok(null, null);
+    }
+    const userClient = createClient(gateUrl, gateAnon, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    const uid = userData?.user?.id;
+    if (userErr || !uid) {
+      return ok(null, null);
+    }
+    const dayIso =
+      endpoint === "ngay-hom-nay"
+        ? todayIsoVietnam()
+        : dayIsoFromDayDetailData(data);
+    if (!dayIso) {
+      return ok(null, null);
+    }
+    const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
+    const adminGate = createClient(gateUrl, gateService);
+    const allowed = await userHasPaidAiReadingAccess(
+      adminGate,
+      uid,
+      scope,
+      dayIso,
+    );
+    if (!allowed) {
+      return ok(null, null);
+    }
+  }
+
   const dataJson = stableStringify(data);
   const cacheInput =
     endpoint === "la-so-chi-tiet"
@@ -850,6 +985,8 @@ Deno.serve(async (req) => {
         ? `${TIEU_VAN_LUU_NIEN_PROMPT_VER}\n${endpoint}\n${dataJson}`
         : endpoint === "hop-tuoi"
           ? `${HOP_TUOI_PROMPT_VER}\n${endpoint}\n${dataJson}`
+          : endpoint === "day-detail"
+            ? `${DAY_DETAIL_PROMPT_VER}\n${endpoint}\n${dataJson}`
           : endpoint === "chon-ngay"
             ? `${CHON_NGAY_PROMPT_VER}\n${endpoint}\n${dataJson}`
             : endpoint === "chon-ngay-cards"
@@ -1111,6 +1248,13 @@ Deno.serve(async (req) => {
           READING_MAX_TOKENS_HOP_TUOI,
           HOP_TUOI_REQUEST_TIMEOUT_MS,
         )
+      : endpoint === "day-detail"
+        ? await anthropicCompletion(
+            DAY_DETAIL_SYSTEM,
+            payload,
+            READING_MAX_TOKENS_DAY_DETAIL,
+            DAY_DETAIL_REQUEST_TIMEOUT_MS,
+          )
       : await anthropicReading(payload);
   if (!reading) {
     return ok(null, null);

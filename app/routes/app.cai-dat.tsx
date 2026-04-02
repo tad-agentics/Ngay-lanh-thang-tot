@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, ExternalLink, Lock } from "lucide-react";
+import { ChevronRight, Copy, ExternalLink, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -100,6 +100,34 @@ export default function AppCaiDat() {
   const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const provider = authProviderBadge(user);
+
+  const inviteBase =
+    (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const inviteUrl =
+    profile?.referral_code && inviteBase
+      ? `${inviteBase}/dang-ky?ref=${encodeURIComponent(profile.referral_code)}`
+      : "";
+
+  async function copyReferralCode() {
+    if (!profile?.referral_code) return;
+    try {
+      await navigator.clipboard.writeText(profile.referral_code);
+      toast.success("Đã sao chép mã giới thiệu.");
+    } catch {
+      toast.error("Không sao chép được — thử chọn và copy thủ công.");
+    }
+  }
+
+  async function copyInviteLink() {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Đã sao chép link mời bạn.");
+    } catch {
+      toast.error("Không sao chép được — thử copy thủ công.");
+    }
+  }
 
   async function saveBirth() {
     if (!user || birthLocked) return;
@@ -298,6 +326,64 @@ export default function AppCaiDat() {
             <p className="text-sm text-muted-foreground">Chưa đọc được hồ sơ.</p>
           )}
         </section>
+
+        {profile && !loading ? (
+          <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm space-y-3">
+            <p className="text-xs text-muted-foreground">Mời bạn</p>
+            <p className="text-sm text-foreground leading-snug">
+              Mỗi người bạn giới thiệu đăng ký — bạn và họ cùng nhận 10 lượng.
+            </p>
+            {profile.referral_code ? (
+              <>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <code className="flex-1 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm font-semibold tracking-wide text-foreground tabular-nums">
+                    {profile.referral_code}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 gap-2 font-medium"
+                    onClick={() => void copyReferralCode()}
+                  >
+                    <Copy className="size-4" aria-hidden />
+                    Sao chép mã
+                  </Button>
+                </div>
+                {inviteUrl ? (
+                  <>
+                    <p className="text-[11px] text-muted-foreground break-all leading-relaxed">
+                      {inviteUrl}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full gap-2 font-medium"
+                      onClick={() => void copyInviteLink()}
+                    >
+                      <Copy className="size-4" aria-hidden />
+                      Sao chép link đăng ký
+                    </Button>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Mã giới thiệu chưa sẵn sàng ở hồ sơ hiện tại. Bấm làm mới để đồng
+                  bộ lại dữ liệu.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full font-medium"
+                  onClick={() => void refresh()}
+                >
+                  Làm mới mã giới thiệu
+                </Button>
+              </>
+            )}
+          </section>
+        ) : null}
 
         <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm">
           <div className="flex items-start justify-between gap-4">

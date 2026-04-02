@@ -402,6 +402,13 @@ verify_jwt = false
 
 # JWT is validated inside the handler via auth.getUser() (Bearer access token).
 # Avoids gateway 401 when the platform JWT check and client invoke headers disagree.
+[functions.referral-claim]
+verify_jwt = false
+
+# Bearer + getUser() in handler; optional dry_run (no charge).
+[functions.reading-unlock]
+verify_jwt = false
+
 [functions.payos-create-checkout]
 verify_jwt = false
 
@@ -415,7 +422,7 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
-# Presentation layer: Anthropic Haiku + DB cache. Same anon pattern as bat-tu free ops.
+# Anthropic + DB cache. `ngay-hom-nay` / `day-detail` require Bearer + unlock check in handler; other endpoints unchanged.
 [functions.generate-reading]
 verify_jwt = false
 

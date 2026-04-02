@@ -20,6 +20,8 @@ export interface Database {
           gioi_tinh: "nam" | "nu" | null;
           la_so: Json | null;
           credits_balance: number;
+          referral_code: string;
+          referred_by: string | null;
           subscription_expires_at: string | null;
           birth_data_locked_at: string | null;
           onboarding_completed_at: string | null;
@@ -36,6 +38,8 @@ export interface Database {
           gioi_tinh?: "nam" | "nu" | null;
           la_so?: Json | null;
           credits_balance?: number;
+          referral_code?: string;
+          referred_by?: string | null;
           subscription_expires_at?: string | null;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
@@ -52,6 +56,8 @@ export interface Database {
           gioi_tinh?: "nam" | "nu" | null;
           la_so?: Json | null;
           credits_balance?: number;
+          referral_code?: string;
+          referred_by?: string | null;
           subscription_expires_at?: string | null;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
@@ -229,7 +235,12 @@ export interface Database {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      apply_referral_pair: {
+        Args: { p_referee_id: string; p_referrer_id: string };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
   };
 }

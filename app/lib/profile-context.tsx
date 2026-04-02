@@ -11,6 +11,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 
 import type { Database } from "~/lib/database.types";
+import { tryConsumePendingReferralClaim } from "~/lib/referral-claim";
 import { supabase } from "~/lib/supabase";
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -50,6 +51,28 @@ function useProfileState(user: User): ProfileContextValue {
   useEffect(() => {
     void load("full");
   }, [load, userId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled || !session?.access_token) return;
+      await tryConsumePendingReferralClaim(session);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    const onRefresh = () => {
+      void load("silent");
+    };
+    window.addEventListener("ngaytot:profile-refresh", onRefresh);
+    return () => window.removeEventListener("ngaytot:profile-refresh", onRefresh);
+  }, [load]);
 
   const refresh = useCallback(() => load("silent"), [load]);
   const reload = useCallback(() => load("full"), [load]);

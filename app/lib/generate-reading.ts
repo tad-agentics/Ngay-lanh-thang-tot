@@ -120,9 +120,19 @@ export async function invokeGenerateReading(
   input: GenerateReadingInput,
 ): Promise<GenerateReadingResponse> {
   try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     const { data, error } =
       await supabase.functions.invoke<unknown>("generate-reading", {
         body: input,
+        ...(session?.access_token
+          ? {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            }
+          : {}),
       });
     if (error) {
       if (import.meta.env.DEV) {

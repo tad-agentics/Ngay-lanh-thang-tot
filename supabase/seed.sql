@@ -7,6 +7,7 @@
 -- App config
 insert into public.app_config (config_key, value) values
   ('starter_credits', '20'),
+  ('referral_bonus_credits', '10'),
   ('credit_expiry_months', '12'),
   ('site_banner', '{"enabled":true,"message":"Đây là vị trí thông báo sticky — sửa trong bảng app_config (site_banner) hoặc admin Edge Function.","href":null}')
 on conflict (config_key) do update set value = excluded.value, updated_at = now();
@@ -27,7 +28,8 @@ insert into public.feature_credit_costs (feature_key, credit_cost, is_free) valu
   ('hop_tuoi', 24, false),
   ('phong_thuy', 10, false),
   ('la_so_diengiai', 0, true),
-  ('share_card', 2, false)
+  ('share_card', 2, false),
+  ('ai_reading_unlock', 1, false)
 on conflict (feature_key) do update set
   credit_cost = excluded.credit_cost,
   is_free = excluded.is_free,

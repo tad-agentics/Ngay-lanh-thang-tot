@@ -1,19 +1,22 @@
 ---
 name: Referral code + lượng
-overview: Thêm mã giới thiệu duy nhất trên mỗi profile, bonus lượng hai chiều khi đăng ký có mã hợp lệ, số lượng đọc từ `app_config` (admin chỉnh DB/EF như các key khác). Xử lý thống nhất ưu tiên trigger trên `auth.users`; bổ sung lớp "claim" sau đăng nhập cho OAuth / email xác nhận trễ.
+overview: Thêm mã giới thiệu duy nhất trên mỗi profile, bonus lượng hai chiều khi đăng ký có mã hợp lệ, số lượng đọc từ app_config. Trigger handle_new_user cho email+metadata; OAuth / mã trễ qua Edge referral-claim (service_role). Bảo vệ cột credits/referred_by/referral_code trước client.
 todos:
   - id: db-migration
-    content: "Migration: profiles.referral_code + referred_by; app_config referral_bonus_credits; backfill; handle_new_user + claim_referral()"
-    status: pending
+    content: "Migration: columns + app_config; extend profiles_enforce_update_rules; handle_new_user atomic referral; FK ON DELETE SET NULL"
+    status: completed
+  - id: edge-referral-claim
+    content: "Supabase EF referral-claim: JWT user, service_role apply bonus + ledger (idempotent), share logic SQL hoặc duplicate carefully with trigger"
+    status: completed
   - id: signup-oauth
-    content: "dang-ky: ref query + field + signUp metadata; dang-nhap/OAuth: sessionStorage ref; auth.callback hoặc app mount gọi claim_referral"
-    status: pending
+    content: "dang-ky: ref + signUp metadata; dang-nhap: sessionStorage; app mount invoke referral-claim (not RPC if using Edge)"
+    status: completed
   - id: ux-settings
-    content: "Màn hồ sơ/cài đặt: hiển thị mã + copy + link; chỉnh copy marketing"
-    status: pending
+    content: "Cài đặt: mã + copy + link; copy marketing; clear sessionStorage on signOut"
+    status: completed
   - id: admin-docs
-    content: Ghi referral_bonus_credits + flow vào admin-dashboard-context / changelog nếu cần
-    status: pending
+    content: admin-dashboard-context + optional changelog; referral_bonus_credits
+    status: completed
 isProject: true
 ---
 
@@ -21,75 +24,110 @@ isProject: true
 
 ## Bối cảnh codebase
 
-- Profile + tạo user: trigger [`supabase/migrations/20260325120100_auth_create_profile.sql`](supabase/migrations/20260325120100_auth_create_profile.sql) — `handle_new_user()` chạy **sau insert** `auth.users`, tạo `profiles` + dòng `credit_ledger` `starter_grant`. Starter lấy từ [`app_config.starter_credits`](supabase/migrations/20260327120000_seed_feature_costs_and_app_config.sql).
-- Credits / ledger: [`profiles.credits_balance`](supabase/migrations/20260325120000_initial_schema.sql) + [`credit_ledger`](supabase/migrations/20260325120000_initial_schema.sql) (ghi chủ yếu qua service_role / SECURITY DEFINER).
-- Đăng ký email: [`app/routes/dang-ky.tsx`](app/routes/dang-ky.tsx) — `supabase.auth.signUp({ options: { data: { ... } } })` → metadata vào `raw_user_meta_data` (đủ để trigger đọc mã giới thiệu nếu truyền vào `data`).
-- OAuth: [`app/routes/auth.callback.tsx`](app/routes/auth.callback.tsx) chỉ điều hướng sau session — **không** truyền `referral` vào metadata mặc định; cần đường bù sau khi có session (sessionStorage + RPC/EF hoặc `updateUser` không đủ để chạy lại trigger). **Khuyến nghị:** hàm SQL `SECURITY DEFINER` `claim_referral(p_code text)` gọi một lần từ client khi `referred_by is null`.
+- Profile + tạo user: `[handle_new_user](supabase/migrations/20260325120100_auth_create_profile.sql)` sau `INSERT auth.users`: `profiles` + `credit_ledger` `starter_grant`; starter từ `app_config.starter_credits`.
+- Credits: `[profiles.credits_balance](supabase/migrations/20260325120000_initial_schema.sql)`, `[credit_ledger](supabase/migrations/20260325120000_initial_schema.sql)`.
+- Đăng ký: `[app/routes/dang-ky.tsx](app/routes/dang-ky.tsx)` — `signUp({ options: { data } })` → `raw_user_meta_data` (trigger đọc `referral_code` / key thống nhất).
+- OAuth: `[app/routes/dang-nhap.tsx](app/routes/dang-nhap.tsx)` `[signInWithOAuth](app/routes/dang-nhap.tsx)`; `[auth.callback.tsx](app/routes/auth.callback.tsx)` chỉ điều hướng — không metadata referral.
+- Trigger bảo vệ profile: `[profiles_enforce_update_rules](supabase/migrations/20260325210000_personalization_profile_protection.sql)` — đã nhánh bypass `**service_role**` (JWT) cho toàn bộ check.
 
 ## Quy tắc nghiệp vụ (v1)
 
-| Qui tắc | Cách triển khai gợi ý |
-|--------|------------------------|
-| Mỗi user một mã unique | Cột `profiles.referral_code` **NOT NULL UNIQUE**, generate trong `handle_new_user` (vd. 8 ký tự chữ+ số, loại trừ ký tự gây nhầm 0/O/1/I nếu muốn). |
-| Bonus cho cả hai | Đọc `app_config.referral_bonus_credits` (integer, default 10 trong migration seed). Cộng `bonus` vào **referee** và **referrer**; 2 dòng ledger + cập nhật `balance_after`. |
-| Một lần / người được mời | Cột `profiles.referred_by uuid` nullable, FK → `profiles(id)`; chỉ set khi apply thành công; RPC/tigger từ chối nếu đã có `referred_by`. |
-| Không tự giới thiệu chính mình | So sánh `referrer.id <> new.id`. |
-| Idempotency | Khóa `idempotency_key` unique: vd. `referral_referee:{referee_user_id}`, `referral_referrer:{referrer_id}:{referee_user_id}`. |
-| Chuẩn hóa mã | Lưu `referral_code` dạng canonical (vd. UPPER); so khớp case-insensitive qua `upper(trim(input))`. |
 
-## Kiến trúc xử lý (mermaid)
+| Qui tắc                              | Cách triển khai                                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Mỗi user một mã unique               | `profiles.referral_code text NOT NULL UNIQUE`, generate trong `handle_new_user` (vd. 8 ký tự, có thể loại trừ 0/O/1/I).                                            |
+| Bonus cả hai phía                    | `app_config.referral_bonus_credits` (text int, default `'10'`). Cộng vào referee + referrer; 2 dòng ledger + `balance_after`.                                      |
+| Một lần / referee                    | `profiles.referred_by uuid` nullable; chỉ set khi thành công; từ chối nếu đã có.                                                                                   |
+| Không tự giới thiệu                  | Referrer id khác referee id; không khớp `referral_code` của chính referee.                                                                                         |
+| Idempotency                          | `idempotency_key` unique: `referral_referee:{referee_uuid}`, `referral_referrer:{referrer_uuid}:{referee_uuid}`.                                                   |
+| Chuẩn hóa mã                         | Lưu UPPER; so khớp `upper(trim(input))`.                                                                                                                           |
+| Bonus khi nào (v1 — ghi rõ sản phẩm) | **Áp bonus ngay khi insert user** (trigger / Edge), **không** chờ xác nhận email. Nếu sau này đổi policy “chỉ sau confirm”, cần migration + job bù — không làm v1. |
+
+
+## Chính sách bảo mật (bổ sung audit)
+
+### 1. Chặn client sửa cột nhạy cảm
+
+RLS hiện cho phép user **UPDATE** cả dòng `profiles`. **Mở rộng** `profiles_enforce_update_rules`:
+
+- Sau nhánh bypass `service_role` (giữ nguyên).
+- Với `**TG_OP = 'UPDATE'`** và **user đang sửa chính row**: `auth.uid() = NEW.id` (hoặc tương đương an toàn trong Supabase), nếu `credits_balance`, `referred_by`, hoặc `referral_code` **khác** `OLD` → `RAISE EXCEPTION` (chỉ server/trigger/Edge service_role được đổi các cột này).
+
+`handle_new_user` chạy trong ngữ cảnh auth internal: thường **không** có `auth.uid() = NEW.id` cho session của end-user khi trigger DB chạy INSERT rồi UPDATE — verify sau migration trên staging; nếu `auth.uid()` trùng edge case, dùng `pg_trigger_depth()` / cờ transaction chỉ khi bắt buộc.
+
+### 2. Không dùng RPC `claim_referral` chỉ SECURITY DEFINER + UPDATE (nếu đã chặn cột theo kiểu trên)
+
+Gọi RPC từ browser có JWT `authenticated`: PostgREST thực thi UPDATE với role đó → trigger **chặn** thay đổi `credits_balance`. **Cách đã chốt trong plan (post-audit):**
+
+- **Edge Function `referral-claim`**: client `invoke('referral-claim', { code })` kèm Bearer user JWT; handler verify session, đọc `referral_bonus_credits`, dùng **Supabase admin (service_role)** cập nhật `profiles` + `credit_ledger` (atomic, idempotent). Cùng quy tắc nghiệp vụ như nhánh referral trong `handle_new_user` (có thể tách hàm SQL `INTERNAL` chỉ gọi từ trigger/Edge bằng `service_role` hoặc duplicate có kiểm thử — ưu tiên **một hàm SQL** `apply_referral_pair(referee_id, referrer_id, bonus)` SECURITY DEFINER gọi bởi trigger + Edge để tránh lệch logic).
+
+### 3. Foreign key `referred_by`
+
+`referred_by uuid REFERENCES profiles(id) **ON DELETE SET NULL`** — tránh chặn xóa user referrer (nếu sau này admin xóa tài khoản); ledger vẫn là nguồn sự thật lịch sử.
+
+### 4. Atomic + race
+
+Toàn bộ bonus trong **một transaction** (trigger block hoặc hàm SQL). Hai referee song song không làm referrer âm (chỉ cộng). Idempotency keys xử lý gọi trùng `referral-claim`.
+
+### 5. SessionStorage (OAuth)
+
+- Một key cố định, vd. `ngaytot_pending_referral`.
+- **Xóa** khi `signOut` và sau `invoke` thành công hoặc sau khi xử lý xong (kể cả mã sai — tránh lặp vô hạn; throttling phía server tùy chọn v1).
+
+## Kiến trúc xử lý (cập nhật)
 
 ```mermaid
 sequenceDiagram
   participant Client
   participant Auth as SupabaseAuth
   participant Trg as handle_new_user
+  participant Edge as referral_claim_EF
   participant DB as Postgres
 
-  Client->>Auth: signUp(metadata hoặc OAuth)
-  Auth->>Trg: after insert auth.users
-  Trg->>DB: insert profile + referral_code + starter
-  alt metadata có referral_code hợp lệ
-    Trg->>DB: +bonus referee/referrer, ledger x2, set referred_by
-  end
-  Client->>DB: claim_referral(code) nếu OAuth và referred_by null
-  DB->>DB: same bonus rules + idempotent
+  Client->>Auth: signUp với metadata referral_code
+  Auth->>Trg: insert auth.users
+  Trg->>DB: profile + starter + referral_code + optional apply_referral_pair
+  Client->>Auth: OAuth
+  Auth->>DB: profile + starter + referral_code (không metadata ref)
+  Client->>Edge: invoke referral-claim + JWT + code
+  Edge->>DB: service_role apply_referral_pair + ledger
 ```
 
-## Việc cần làm — Backend / DB
 
-1. **Migration mới** (một file SQL, đặt tên theo chuỗi hiện có):
-   - `ALTER TABLE profiles` thêm:
-     - `referral_code text NOT NULL UNIQUE` — với user cũ: backfill bằng batch generate (loop PL/pgSQL hoặc nhiều `UPDATE ... FROM generate_series` + kiểm tra unique).
-     - `referred_by uuid REFERENCES profiles(id)` nullable; index `(referred_by)` tùy báo cáo.
-   - `INSERT INTO app_config` `referral_bonus_credits` = `'10'` (string như `starter_credits`).
-   - **Sửa `handle_new_user`:** sau khi insert profile và ledger starter:
-     - Generate + `UPDATE profiles SET referral_code = ...` (hoặc insert đủ cột nếu đổi thành insert một bước).
-     - Đọc mã từ `NEW.raw_user_meta_data->>'referral_code'` (và/hoặc key chuẩn một tên duy nhất ví dụ `ref`).
-     - Nếu mã khớp referrer và rules OK: cộng bonus (transaction hoặc block `EXCEPTION` an toàn), insert `credit_ledger` với `reason` ví dụ `referral_bonus_referee` / `referral_bonus_referrer`, metadata JSON (`referrer_id`, `referee_id`, `code`).
-   - **Hàm `public.claim_referral(p_code text)`** `SECURITY DEFINER`, `SET search_path = public`, kiểm tra `auth.uid()` = referee, `referred_by IS NULL`, referrer tồn tại, không self, cùng logic cộng lượng + ledger + set `referred_by`. Trả `boolean` hoặc enum kết quả cho UI.
-2. **RLS:** không mở update `credits_balance` / `referred_by` cho user thường; mọi thay đổi qua trigger + `claim_referral` definer.
-3. **Admin config:** `referral_bonus_credits` giống các key `app_config` khác — dashboard admin (hoặc SQL) cập nhật; document trong [`artifacts/docs/admin-dashboard-context.md`](artifacts/docs/admin-dashboard-context.md).
 
-## Việc cần làm — Frontend
+## Backend / DB — checklist
 
-1. **[`app/routes/dang-ky.tsx`](app/routes/dang-ky.tsx):**
-   - Đọc `?ref=` hoặc `?referral=` từ URL (đồng bộ với landing share link).
-   - Ô nhập tùy chọn “Mã giới thiệu” + đồng bộ với query param.
-   - Truyền vào `signUp`: `options.data.referral_code` (hoặc key thống nhất với trigger).
-2. **OAuth / Google:** Trên [`app/routes/dang-nhap.tsx`](app/routes/dang-nhap.tsx) (và flow có `signInWithOAuth`): trước redirect, lưu mã từ `?ref=` vào `sessionStorage`. Sau khi [`auth.callback`](app/routes/auth.callback.tsx) có session (hoặc ngay [`app/routes/app.tsx`](app/routes/app.tsx) lần đầu vào app): nếu đã đăng nhập, gọi `supabase.rpc('claim_referral', { p_code })` một lần, xóa storage; bỏ qua lỗi business (đã dùng mã / mã sai).
-3. **Cài đặt / chia sẻ:** Hiển thị “Mã giới thiệu của bạn” (đọc `profile.referral_code`), nút copy + gợi ý link `https://…/dang-ky?ref=CODE`. Cập nhật copy sản phẩm (starter + giới thiệu).
-4. **Types:** Chạy `supabase gen types` sau migration; cập nhật [`app/lib/database.types.ts`](app/lib/database.types.ts) hoặc generate.
+1. **Migration**
+  - `referral_code`, `referred_by` (FK `ON DELETE SET NULL`), unique + index nếu cần báo cáo.
+  - Backfill `referral_code` cho user cũ.
+  - `app_config.referral_bonus_credits` = `'10'`.
+2. **Hàm nội bộ** (khuyến nghị): `apply_referral_pair(referee_user_id uuid, referrer_user_id uuid)` hoặc tên tương đương — chỉ gọi từ `handle_new_user` (sau khi có referee profile id) và từ Edge (service_role). Kiểm tra: không self, bonus > 0, referrer tồn tại, referee `referred_by` null, idempotency insert ledger.
+3. `**handle_new_user`**: generate `referral_code`; đọc `NEW.raw_user_meta_data->>'referral_code'` (một key duy nhất, document trong code); nếu hợp lệ → gọi hàm apply trong cùng transaction.
+4. `**profiles_enforce_update_rules`**: như mục bảo mật (1).
+5. **Edge `referral-claim`**: verify JWT user; parse code; lookup referrer; gọi cùng hàm apply; trả **JSON** `{ ok, error_code }` (vd. `invalid_code`, `already_redeemed`, `self`, `success`) — tránh chỉ `boolean` cho UX/toast.
+6. `**supabase/config.toml`**: `[functions.referral-claim] verify_jwt = false` + verify JWT trong handler (pattern giống `payos-create-checkout`).
 
-## Kiểm thử tay
+## Frontend — checklist
 
-- Đăng ký email với mã hợp lệ → cả hai balance + 2 ledger.
-- Đăng ký mã sai / không có referrer → chỉ starter.
-- Không cho `claim_referral` hai lần.
-- OAuth + sessionStorage ref → bonus sau `claim_referral`.
-- Đổi `referral_bonus_credits` trong `app_config` → user mới nhận đúng số mới.
+1. **dang-ky**: `?ref=` / `?referral=` + field; `signUp.data.referral_code` khớp trigger.
+2. **dang-nhap**: trước OAuth, lưu ref vào `sessionStorage` (`ngaytot_pending_referral`).
+3. **auth.callback hoặc app.tsx**: sau session, đọc storage → `invoke('referral-claim')` một lần → clear storage; map `error_code` → toast tối thiểu.
+4. **signOut**: clear `ngaytot_pending_referral`.
+5. **Cài đặt**: hiển thị mã + copy; link `VITE_APP_URL/dang-ky?ref=...`.
+6. **Types**: `supabase gen types`; cấu hình body Edge trong client types nếu cần.
+
+## Kiểm thử tay (mở rộng audit)
+
+- Email + mã hợp lệ → hai balance + 2 ledger + `referred_by`.
+- Mã sai / rỗng → chỉ starter.
+- **Không** PATCH trực tiếp `credits_balance` / `referred_by` / `referral_code` qua PostgREST với user JWT (expect lỗi).
+- `referral-claim` hai lần → idempotent / không double bonus.
+- OAuth + sessionStorage → bonus sau invoke.
+- Đổi `referral_bonus_credits` → **chỉ user sự kiện sau thay đổi** nhận số mới (không retroactive — ghi trong docs).
 
 ## Phạm vi không làm (v1)
 
-- Giới hạn số người giới thiệu / ngày; phát hiện gian lận nâng cao.
-- Tự động invalidate khi admin đổi bonus (chỉ áp user sau thay đổi).
+- Giới hạn referral/ngày; chống abuse nâng cao.
+- Bonus chỉ sau xác nhận email (đã chọn: bonus ngay insert).
+- Retroactive khi admin đổi bonus.
+

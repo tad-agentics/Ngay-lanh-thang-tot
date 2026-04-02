@@ -1,6 +1,7 @@
 import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import { GrainOverlay } from "~/components/GrainOverlay";
+import { Button } from "~/components/ui/button";
 import type { DayType } from "~/lib/api-types";
 
 interface TodaySummaryCardProps {
@@ -10,6 +11,10 @@ interface TodaySummaryCardProps {
   isLoading?: boolean;
   aiReading?: string | null;
   aiReadingLoading?: boolean;
+  readingLocked?: boolean;
+  unlocking?: boolean;
+  unlockCost?: number;
+  onUnlockReading?: () => void;
 }
 
 export function TodaySummaryCard({
@@ -19,6 +24,10 @@ export function TodaySummaryCard({
   isLoading,
   aiReading = null,
   aiReadingLoading = false,
+  readingLocked = false,
+  unlocking = false,
+  unlockCost = 1,
+  onUnlockReading,
 }: TodaySummaryCardProps) {
   if (isLoading) {
     return (
@@ -87,12 +96,29 @@ export function TodaySummaryCard({
           {lunarDate}
         </p>
 
-        <AiReadingBlock
-          title="Luận giải"
-          variant="on-surface"
-          loading={aiReadingLoading}
-          text={aiReading}
-        />
+        {readingLocked ? (
+          <div className="mt-3 pt-3 border-t border-surface-foreground/12 space-y-2.5">
+            <p className="text-sm leading-relaxed text-surface-foreground/92">
+              Để xem luận giải cho ngày này, bạn cần mở khóa.
+            </p>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full sm:w-auto font-medium"
+              disabled={unlocking}
+              onClick={() => onUnlockReading?.()}
+            >
+              {unlocking ? "Đang mở khóa..." : `Mở khóa (${unlockCost} lượng)`}
+            </Button>
+          </div>
+        ) : (
+          <AiReadingBlock
+            title="Luận giải"
+            variant="on-surface"
+            loading={aiReadingLoading}
+            text={aiReading}
+          />
+        )}
       </div>
     </div>
   );
