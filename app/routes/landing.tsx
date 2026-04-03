@@ -14,9 +14,12 @@ import "~/styles/landing-marketing.css";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import { useAuth } from "~/lib/auth";
 import {
+  ddMmYyyyInputToIsoDate,
+  formatDdMmYyyyWithAutoSlash,
+} from "~/lib/bat-tu-birth";
+import {
   LANDING_GIO_SINH as GIO_SINH,
   landingSignupPrefillHasAny,
-  parseLandingDobDdMmYyyy,
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
 
@@ -217,9 +220,16 @@ function CTAForm({ id }: { id: string }) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setDobError(null);
-    const dobParsed = parseLandingDobDdMmYyyy(form.dob);
-    if (!dobParsed.ok) {
-      setDobError(dobParsed.message);
+    const dobTrim = form.dob.trim();
+    if (!dobTrim) {
+      setDobError("Vui lòng nhập ngày sinh.");
+      return;
+    }
+    const iso = ddMmYyyyInputToIsoDate(dobTrim);
+    if (!iso) {
+      setDobError(
+        "Nhập đúng DD/MM/YYYY và ngày phải có thật (ví dụ 20/05/1990).",
+      );
       return;
     }
     if (!form.name.trim() || !form.gender) return;
@@ -227,7 +237,7 @@ function CTAForm({ id }: { id: string }) {
 
     const params = new URLSearchParams({
       name: form.name.trim(),
-      dob: dobParsed.iso,
+      dob: iso,
       gio: form.gio,
       gender: form.gender,
     });
@@ -303,20 +313,29 @@ function CTAForm({ id }: { id: string }) {
               Ngày sinh
             </label>
             <p className="lp-form-hint">
-              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng. Nhập dd/mm/yyyy
-              (ví dụ 15/08/1990).
+              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng. Định dạng DD/MM/YYYY
+              (ví dụ 20/05/1990); gõ số sẽ tự thêm dấu / như trong app.
             </p>
             <input
               id={`${id}-dob`}
               type="text"
               name="birthday-ddmmyyyy"
               autoComplete="off"
-              placeholder="dd/mm/yyyy"
-              className={dobError ? "lp-form-input-invalid" : undefined}
+              placeholder="DD/MM/YYYY"
+              maxLength={10}
+              inputMode="numeric"
+              className={
+                dobError
+                  ? "lp-form-input-invalid lp-form-input-dob"
+                  : "lp-form-input-dob"
+              }
               value={form.dob}
               onChange={(e) => {
                 setDobError(null);
-                setForm((f) => ({ ...f, dob: e.target.value }));
+                setForm((f) => ({
+                  ...f,
+                  dob: formatDdMmYyyyWithAutoSlash(e.target.value),
+                }));
               }}
               aria-invalid={dobError ? true : undefined}
               aria-describedby={
@@ -324,8 +343,7 @@ function CTAForm({ id }: { id: string }) {
               }
             />
             <p id={`${id}-dob-hint`} className="sr-only">
-              Định dạng hai chữ số ngày, hai chữ số tháng, bốn chữ số năm, cách nhau bằng dấu gạch
-              chéo.
+              Định dạng DD/MM/YYYY; chỉ nhập chữ số, dấu gạch chéo tự chèn sau ngày và tháng.
             </p>
             {dobError ? (
               <p id={`${id}-dob-error`} className="lp-form-field-error" role="alert">

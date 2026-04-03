@@ -394,6 +394,10 @@
   border-color: rgba(139, 26, 26, 0.65);
 }
 
+#lp .lp-form-row input.lp-form-input-dob {
+  font-variant-numeric: tabular-nums;
+}
+
 #lp .lp-form-field-error {
   font-size: 0.78rem;
   color: var(--lp-red);
