@@ -124,6 +124,12 @@ function pickHours(obj: Record<string, unknown>): string {
   return "—";
 }
 
+function pickBestHourSlots(obj: Record<string, unknown>): unknown {
+  const v =
+    obj.gio_tot ?? obj.gio_hoang_dao ?? obj.time_slots ?? obj.timeSlots;
+  return Array.isArray(v) && v.length > 0 ? v : undefined;
+}
+
 function gradeFromIndex(i: number): ResultGrade {
   if (i === 0) return "A";
   if (i === 1) return "B";
@@ -166,6 +172,8 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
     if (prose !== "—") reasons.push(prose);
   }
 
+  const bestHourSlots = pickBestHourSlots(obj);
+
   return {
     grade,
     isoDate,
@@ -180,6 +188,7 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
     ]),
     truc: pickString(obj, ["truc", "truc_star", "truc_ngay"]),
     bestHour: pickHours(obj),
+    ...(bestHourSlots != null ? { bestHourSlots } : {}),
     reasons,
   };
 }

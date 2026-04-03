@@ -12,6 +12,8 @@ const ResultDayCard = lazy(() =>
     default: m.ResultDayCard,
   })),
 );
+import { AiReadingBlock } from "~/components/AiReadingBlock";
+import { ChonNgayMethodologyCollapsible } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { Button } from "~/components/ui/button";
@@ -22,16 +24,28 @@ import {
   mergeReasonsIntoDays,
 } from "~/lib/chon-ngay-result";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import type { ResultDay } from "~/lib/api-types";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { subscriptionActive } from "~/lib/subscription";
 
-function subscriptionActive(expires: string | null | undefined): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
+/** Gỡ **bold** / heading / bullet hay sót từ model — khối luận giải chung chỉ văn xuôi. */
+function sanitizeChonNgayOverviewText(raw: string | null): string | null {
+  if (!raw) return null;
+  let t = raw.trim();
+  if (!t) return null;
+  for (let i = 0; i < 8; i++) {
+    const next = t.replace(/\*\*([^*]+)\*\*/g, "$1");
+    if (next === t) break;
+    t = next;
+  }
+  t = t.replace(/^#{1,6}\s+/gm, "");
+  t = t.replace(/^\s*[-*•]\s+/gm, "");
+  return t.trim() || null;
 }
 
 type Phase = 0 | 1 | 2;
@@ -50,6 +64,13 @@ export default function AppChonNgayKetQua() {
   const [resultDays, setResultDays] = useState<ResultDay[]>([]);
   const [unlockedDetail, setUnlockedDetail] = useState(false);
   const [detailBusy, setDetailBusy] = useState(false);
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+  const [chonAiReading, setChonAiReading] = useState<string | null>(null);
+  const [chonAiLoading, setChonAiLoading] = useState(false);
+  const [chonDayReadings, setChonDayReadings] = useState<
+    Record<string, string>
+  >({});
+  const [chonDayReadingsLoading, setChonDayReadingsLoading] = useState(false);
 
   useEffect(() => {
     if (!state?.payload) {
@@ -69,7 +90,48 @@ export default function AppChonNgayKetQua() {
     setPhase(0);
     setShowResults(false);
     setShowShare(false);
+    setMethodologyOpen(false);
+    setChonAiReading(null);
+    setChonAiLoading(false);
+    setChonDayReadings({});
+    setChonDayReadingsLoading(false);
   }, [state?.payload, parsedDays]);
+
+  useEffect(() => {
+    if (!state?.payload) return;
+    let cancelled = false;
+    setChonAiLoading(true);
+    setChonDayReadingsLoading(true);
+    setChonAiReading(null);
+    setChonDayReadings({});
+    void Promise.all([
+      invokeGenerateReading({
+        endpoint: "chon-ngay",
+        data: state.payload,
+      }),
+      invokeGenerateReading({
+        endpoint: "chon-ngay-cards",
+        data: state.payload,
+      }),
+    ]).then(([main, cards]) => {
+      if (cancelled) return;
+      setChonAiReading(sanitizeChonNgayOverviewText(main.reading));
+      const allowedIso = new Set(
+        mapChonNgayPayloadToResultDays(state.payload, 5).map((d) => d.isoDate),
+      );
+      const raw = cards.dayReadings ?? {};
+      const filtered: Record<string, string> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        if (allowedIso.has(k)) filtered[k] = v;
+      }
+      setChonDayReadings(filtered);
+      setChonAiLoading(false);
+      setChonDayReadingsLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [state?.payload]);
 
   useEffect(() => {
     if (!state?.payload) return;
@@ -85,7 +147,7 @@ export default function AppChonNgayKetQua() {
     };
   }, [state?.payload]);
 
-  const perDetail = costs["chon_ngay_detail"]?.credit_cost ?? 2;
+  const perDetail = costs["chon_ngay_detail"]?.credit_cost ?? 4;
   const detailTotal = perDetail * Math.max(1, resultDays.length);
   const hasSub = subscriptionActive(profile?.subscription_expires_at);
   const canBulkDetail =
@@ -145,10 +207,11 @@ export default function AppChonNgayKetQua() {
       : null;
 
   return (
-    <div className="px-4 pb-8">
+    <div className="min-h-[50vh] px-4 pb-10 bg-[#E9E5DE]">
       <ScreenHeader
         title={state.intentLabel}
-        subtitle={`${state.daysInclusive} ngày trong khoảng`}
+        subtitle={`${state.daysInclusive} ngày tới`}
+        centerTitle
         className="pb-2"
       />
 
@@ -160,7 +223,7 @@ export default function AppChonNgayKetQua() {
           phase={phase}
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3.5">
           {parsedDays.length === 0 ? (
             <div className="space-y-3">
               <ErrorBanner message="Chưa đọc được danh sách ngày từ API — xem JSON gốc bên dưới để chỉnh mapper." />
@@ -170,12 +233,36 @@ export default function AppChonNgayKetQua() {
             </div>
           ) : (
             <>
-              <p
-                className="text-muted-foreground text-xs pb-1"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
+              <p className="text-[#6b6558] text-[13px] leading-relaxed pb-0.5">
                 {resultDays.length} ngày phù hợp — sắp theo độ ưu tiên
               </p>
+              <p className="text-[#6b6558] text-[12px] leading-relaxed pb-0.5 -mt-0.5">
+                <button
+                  type="button"
+                  id="ket-qua-methodology-toggle"
+                  aria-expanded={methodologyOpen}
+                  aria-controls="phuong-phap-chon-ngay-panel"
+                  onClick={() => setMethodologyOpen((o) => !o)}
+                  className="underline font-medium text-[#5c574a] hover:text-foreground text-left"
+                >
+                  Cách chúng tôi chọn ngày cho bạn
+                </button>
+                {" "}
+                — lọc ngày dữ chung, đối chiếu lá số, rồi xếp hạng theo mệnh.
+              </p>
+              <ChonNgayMethodologyCollapsible
+                hideTrigger
+                open={methodologyOpen}
+                onOpenChange={setMethodologyOpen}
+                className="-mt-0.5"
+              />
+
+              <AiReadingBlock
+                title="Luận giải"
+                variant="on-card"
+                loading={chonAiLoading}
+                text={chonAiReading}
+              />
 
               <Suspense
                 fallback={
@@ -192,61 +279,64 @@ export default function AppChonNgayKetQua() {
                     lunarLabel={day.lunarLabel}
                     truc={day.truc}
                     bestHour={day.bestHour}
+                    bestHourSlots={day.bestHourSlots}
                     reasons={unlockedDetail ? day.reasons : []}
                     animationIndex={i}
                     detailHref={`/app/ngay/${day.isoDate}`}
                     menh={menhLabel ?? undefined}
+                    dayReading={chonDayReadings[day.isoDate] ?? null}
+                    dayReadingLoading={chonDayReadingsLoading}
                   />
                 ))}
               </Suspense>
 
               {!unlockedDetail && anyNeedsDetail ? (
                 <div
-                  className="border border-border bg-card px-4 py-4"
-                  style={{ borderRadius: "var(--radius-lg)" }}
+                  className="border border-[#D8D4CC] bg-white px-4 py-5 rounded-[18px] shadow-sm"
                 >
                   {profileLoading ? (
-                    <p className="text-muted-foreground text-sm">Đang tải hồ sơ…</p>
+                    <p className="text-muted-foreground text-sm text-center">
+                      Đang tải hồ sơ…
+                    </p>
                   ) : canBulkDetail ? (
                     <>
-                      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                        Xem lý do chi tiết cho các ngày trên —{" "}
-                        <span
-                          className="text-foreground"
-                          style={{ fontFamily: "var(--font-ibm-mono)" }}
-                        >
-                          {detailTotal} lượng
-                        </span>{" "}
-                        ({perDetail} lượng × {resultDays.length} ngày).
+                      <p className="text-foreground text-sm leading-relaxed text-center mb-4 px-1">
+                        Xem lý do chi tiết cho {resultDays.length} ngày trên
                       </p>
                       <Button
-                        size="cta_sm"
+                        type="button"
                         disabled={detailBusy}
                         onClick={() => void runDetailUnlock()}
+                        className="w-full min-h-12 rounded-2xl border-0 bg-[#C9A64A] font-bold text-black shadow-none hover:bg-[#B8943F] disabled:opacity-60"
                       >
-                        {detailBusy ? "Đang tải…" : `Mở lý do (${detailTotal} lượng)`}
+                        {detailBusy
+                          ? "Đang tải…"
+                          : `+${detailTotal} lượng`}
                       </Button>
+                      <p className="text-[11px] text-muted-foreground text-center mt-2.5">
+                        {perDetail} lượng × {resultDays.length} ngày
+                      </p>
                     </>
                   ) : (
                     <>
-                      <p className="text-muted-foreground text-sm leading-relaxed mb-4">
+                      <p className="text-muted-foreground text-sm leading-relaxed text-center mb-4">
                         Cần{" "}
-                        <span
-                          className="text-foreground"
-                          style={{ fontFamily: "var(--font-ibm-mono)" }}
-                        >
+                        <span className="text-foreground font-medium tabular-nums">
                           {detailTotal} lượng
                         </span>{" "}
-                        để xem lý do cho {resultDays.length} ngày. Số dư:{" "}
-                        <span
-                          className="text-foreground"
-                          style={{ fontFamily: "var(--font-ibm-mono)" }}
-                        >
-                          {profile?.credits_balance ?? 0} lượng
+                        để xem lý do. Số dư:{" "}
+                        <span className="text-foreground font-medium">
+                          {subscriptionActive(profile?.subscription_expires_at)
+                            ? "Không giới hạn lượng"
+                            : `${profile?.credits_balance ?? 0} lượng`}
                         </span>
                         .
                       </p>
-                      <Button size="cta_sm" asChild>
+                      <Button
+                        size="cta_sm"
+                        asChild
+                        className="w-full rounded-2xl border-0 bg-[#C9A64A] font-bold text-black shadow-none hover:bg-[#B8943F]"
+                      >
                         <Link to="/app/mua-luong">Mua thêm lượng</Link>
                       </Button>
                     </>
@@ -275,7 +365,7 @@ export default function AppChonNgayKetQua() {
                         grade: bestDay.grade,
                       }}
                     >
-                      Chia sẻ ngày tốt
+                      Chia sẻ ngày lành
                     </Link>
                   </Button>
                 </div>

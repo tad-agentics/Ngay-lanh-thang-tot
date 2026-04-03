@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ const LasoRevealSequence = lazy(() =>
     default: m.LasoRevealSequence,
   })),
 );
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { ScreenHeader } from "~/components/ScreenHeader";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
@@ -20,17 +21,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { useProfile } from "~/hooks/useProfile";
-import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
+  ddMmYyyyInputToBatTuBirthDate,
+  formatDdMmYyyyWithAutoSlash,
   gioiTinhToBatTuGender,
   gioSinhToBatTuBirthTime,
-  ngaySinhToBatTuBirthDate,
+  isoYmdToDdMmYyyyInput,
+  isPartialDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { toDbFeatureKey } from "~/lib/constants";
+import { invokeGenerateReading } from "~/lib/generate-reading";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { cn } from "~/components/ui/utils";
 
@@ -66,11 +69,8 @@ function labelForBirthTimeCode(code: string): string {
   return opt?.label ?? code;
 }
 
-const LA_SO_FEATURE = toDbFeatureKey("la_so");
-
 export default function AppLaSo() {
   const { profile, loading, refresh } = useProfile();
-  const { costs, loading: costsLoading } = useFeatureCosts();
 
   const [phase, setPhase] = useState<Phase>("form");
   const [form, setForm] = useState({
@@ -81,10 +81,11 @@ export default function AppLaSo() {
   const [reveal, setReveal] = useState<ReturnType<
     typeof laSoJsonToRevealProps
   > | null>(null);
+  const [tuTruAiReading, setTuTruAiReading] = useState<string | null>(null);
+  const [tuTruAiLoading, setTuTruAiLoading] = useState(false);
+  const tuTruAiGenRef = useRef(0);
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
-  const costRow = costs[LA_SO_FEATURE];
-  const cost = costRow?.credit_cost ?? 15;
 
   useEffect(() => {
     if (!profile || loading) return;
@@ -94,7 +95,7 @@ export default function AppLaSo() {
     }
     const code = gioSinhToBatTuBirthTime(profile.gio_sinh);
     setForm({
-      ngaySinh: profile.ngay_sinh?.slice(0, 10) ?? "",
+      ngaySinh: isoYmdToDdMmYyyyInput(profile.ngay_sinh),
       birthTimeCode: code !== undefined ? String(code) : UNSET,
       gioiTinh: profile.gioi_tinh ?? "",
     });
@@ -106,11 +107,11 @@ export default function AppLaSo() {
   }
 
   async function runTuTru() {
-    const birth_date = ngaySinhToBatTuBirthDate(
-      form.ngaySinh.trim() ? form.ngaySinh.trim() : null,
-    );
+    const birth_date = ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim());
     if (!birth_date) {
-      toast.error("Ngày sinh không hợp lệ.");
+      toast.error(
+        "Ngày sinh cần đúng DD/MM/YYYY và là ngày có thật trên lịch.",
+      );
       return;
     }
     const body: Record<string, unknown> = {
@@ -125,12 +126,25 @@ export default function AppLaSo() {
     if (g !== undefined) body.gender = g;
 
     setPhase("loading");
+    setTuTruAiReading(null);
+    setTuTruAiLoading(false);
     const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
     if (!res.ok) {
       toast.error(res.message);
       setPhase("confirm");
       return;
     }
+
+    const tuTruGen = ++tuTruAiGenRef.current;
+    setTuTruAiLoading(true);
+    void invokeGenerateReading({
+      endpoint: "tu-tru",
+      data: res.data,
+    }).then((r) => {
+      if (tuTruGen !== tuTruAiGenRef.current) return;
+      setTuTruAiReading(r.reading);
+      setTuTruAiLoading(false);
+    });
 
     const props =
       laSoJsonToRevealProps(res.data) ??
@@ -148,7 +162,12 @@ export default function AppLaSo() {
     setPhase("revealing");
   }
 
-  if (loading || costsLoading) {
+  const laSoNgayInvalid =
+    form.ngaySinh.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null &&
+    !isPartialDdMmYyyyInput(form.ngaySinh);
+
+  if (loading) {
     return (
       <div className="min-h-[40vh] bg-background px-4 pb-8 py-10">
         <p className="text-sm text-muted-foreground">Đang tải…</p>
@@ -187,7 +206,12 @@ export default function AppLaSo() {
 
   const core = (
       <div className="min-h-[60vh] bg-background px-4 pb-24">
-        <ScreenHeader title="Lá số tứ trụ" centerTitle />
+        <ScreenHeader
+          title="Lá số tứ trụ"
+          showBack={false}
+          appScreenTitle
+          endAdornment={<CreditsHeaderChip />}
+        />
 
         {phase === "done" && displaySummary ? (
           <div className="flex flex-col gap-4">
@@ -268,6 +292,13 @@ export default function AppLaSo() {
               </div>
             </div>
 
+            <AiReadingBlock
+              title="Luận giải"
+              variant="on-card"
+              loading={tuTruAiLoading}
+              text={tuTruAiReading}
+            />
+
             <Button
               size="default"
               asChild
@@ -320,16 +351,13 @@ export default function AppLaSo() {
               </div>
 
               <p className="text-muted-foreground text-xs mb-4">
-                Lập lá số cần{" "}
-                <span className="text-foreground" style={{ fontFamily: "var(--font-ibm-mono)" }}>
-                  {cost} lượng
-                </span>
-                . Gói đăng ký hoặc số lượng đủ sẽ được kiểm tra khi bạn xác nhận.
+                Dựng lá số lần đầu không trừ lượng — giống một phần của việc có tài khoản. Sau
+                khi xác nhận, thông tin sinh sẽ khóa theo quy định ứng dụng.
               </p>
             </div>
 
             <Button type="button" className="w-full" onClick={() => void runTuTru()}>
-              Xác nhận — lập lá số ({cost} lượng)
+              Xác nhận — lập lá số
             </Button>
             <Button type="button" variant="secondary" className="w-full" onClick={() => setPhase("form")}>
               Xem lại thông tin
@@ -350,10 +378,33 @@ export default function AppLaSo() {
               </p>
               <Input
                 id="la-ngay"
-                type="date"
+                type="text"
+                name="la-so-ngay-ddmmyyyy"
+                autoComplete="off"
+                placeholder="DD/MM/YYYY"
+                aria-invalid={laSoNgayInvalid}
+                maxLength={10}
+                className="tabular-nums"
                 value={form.ngaySinh}
-                onChange={(e) => setForm((f) => ({ ...f, ngaySinh: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
+                  }))
+                }
               />
+              {laSoNgayInvalid ? (
+                <p
+                  className="text-[11px] text-destructive leading-relaxed"
+                  role="alert"
+                >
+                  Nhập đúng DD/MM/YYYY và ngày phải có thật (ví dụ 20/05/1990).
+                </p>
+              ) : (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Định dạng DD/MM/YYYY.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -413,7 +464,11 @@ export default function AppLaSo() {
             <Button
               type="button"
               className="w-full"
-              disabled={!form.ngaySinh || !form.gioiTinh}
+              disabled={
+                !form.ngaySinh?.trim() ||
+                !form.gioiTinh ||
+                ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null
+              }
               onClick={handleToConfirm}
             >
               Tiếp tục
@@ -423,12 +478,7 @@ export default function AppLaSo() {
       </div>
   );
 
-  const gateForm = !hasLaso && (phase === "form" || phase === "confirm");
-  return gateForm ? (
-    <CreditGate featureKey={LA_SO_FEATURE}>{core}</CreditGate>
-  ) : (
-    core
-  );
+  return core;
 }
 
 function LasoRevealBridge({

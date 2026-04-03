@@ -10,3 +10,7 @@ declare const Deno: {
     handler: (request: Request) => Response | Promise<Response>,
   ): void;
 };
+
+declare module "npm:@supabase/supabase-js@2.49.1" {
+  export * from "@supabase/supabase-js";
+}

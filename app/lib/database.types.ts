@@ -20,6 +20,8 @@ export interface Database {
           gioi_tinh: "nam" | "nu" | null;
           la_so: Json | null;
           credits_balance: number;
+          referral_code: string;
+          referred_by: string | null;
           subscription_expires_at: string | null;
           birth_data_locked_at: string | null;
           onboarding_completed_at: string | null;
@@ -36,6 +38,8 @@ export interface Database {
           gioi_tinh?: "nam" | "nu" | null;
           la_so?: Json | null;
           credits_balance?: number;
+          referral_code?: string;
+          referred_by?: string | null;
           subscription_expires_at?: string | null;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
@@ -52,6 +56,8 @@ export interface Database {
           gioi_tinh?: "nam" | "nu" | null;
           la_so?: Json | null;
           credits_balance?: number;
+          referral_code?: string;
+          referred_by?: string | null;
           subscription_expires_at?: string | null;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
@@ -184,9 +190,57 @@ export interface Database {
         };
         Relationships: [];
       };
+      tieu_van_unlocks: {
+        Row: {
+          id: string;
+          user_id: string;
+          year_month: string;
+          identity_key: string;
+          payload: Json;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          year_month: string;
+          identity_key: string;
+          payload: Json;
+          id?: string;
+          created_at?: string;
+        };
+        Update: {
+          payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      reading_cache: {
+        Row: {
+          cache_key: string;
+          reading: string;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          cache_key: string;
+          reading: string;
+          created_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          reading?: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      apply_referral_pair: {
+        Args: { p_referee_id: string; p_referrer_id: string };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
   };
 }

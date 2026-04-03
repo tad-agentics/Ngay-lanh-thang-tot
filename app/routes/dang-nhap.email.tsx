@@ -1,14 +1,30 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { useMemo, useState, type FormEvent } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  referralParamFromSearchParams,
+  stashPendingReferralCode,
+} from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
 export default function DangNhapEmail() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralFromUrl = useMemo(
+    () => referralParamFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const backHref = referralFromUrl
+    ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}`
+    : "/dang-nhap";
+  const signUpHref = referralFromUrl
+    ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
+    : "/dang-ky";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,6 +41,7 @@ export default function DangNhapEmail() {
       toast.error(error.message);
       return;
     }
+    stashPendingReferralCode(referralFromUrl);
     toast.success("Đã đăng nhập");
     navigate("/app", { replace: true });
   }
@@ -35,6 +52,15 @@ export default function DangNhapEmail() {
         onSubmit={(e) => void onSubmit(e)}
         className="w-full max-w-sm space-y-5"
       >
+        <Link
+          to="/"
+          className="flex flex-col items-center gap-2 no-underline text-foreground hover:opacity-90"
+        >
+          <BrandLogoMark size={56} />
+          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+            Ngày Lành Tháng Tốt
+          </span>
+        </Link>
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
             Email & mật khẩu
@@ -77,11 +103,11 @@ export default function DangNhapEmail() {
           Đăng nhập
         </Button>
         <p className="text-center text-sm text-muted-foreground">
-          <Link to="/dang-nhap" className="underline-offset-4 hover:underline">
+          <Link to={backHref} className="underline-offset-4 hover:underline">
             Quay lại
           </Link>
           {" · "}
-          <Link to="/dang-ky" className="underline-offset-4 hover:underline">
+          <Link to={signUpHref} className="underline-offset-4 hover:underline">
             Đăng ký
           </Link>
         </p>

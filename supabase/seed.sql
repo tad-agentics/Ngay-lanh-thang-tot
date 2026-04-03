@@ -7,7 +7,9 @@
 -- App config
 insert into public.app_config (config_key, value) values
   ('starter_credits', '20'),
-  ('credit_expiry_months', '12')
+  ('referral_bonus_credits', '10'),
+  ('credit_expiry_months', '12'),
+  ('site_banner', '{"enabled":true,"message":"Đây là vị trí thông báo sticky — sửa trong bảng app_config (site_banner) hoặc admin Edge Function.","href":null}')
 on conflict (config_key) do update set value = excluded.value, updated_at = now();
 
 -- Feature costs — align with Make `FEATURE_COSTS` + northstar §11 (single DB source; UI loads via query)
@@ -16,16 +18,18 @@ insert into public.feature_credit_costs (feature_key, credit_cost, is_free) valu
   ('weekly_summary', 0, true),
   ('convert_date', 0, true),
   ('lich_thang_overview', 0, true),
-  ('chon_ngay_30', 5, false),
-  ('chon_ngay_60', 7, false),
-  ('chon_ngay_90', 10, false),
-  ('chon_ngay_detail', 2, false),
-  ('day_detail', 2, false),
-  ('tu_tru', 15, false),
-  ('tieu_van', 3, false),
-  ('hop_tuoi', 8, false),
-  ('phong_thuy', 5, false),
-  ('share_card', 1, false)
+  ('chon_ngay_30', 10, false),
+  ('chon_ngay_60', 14, false),
+  ('chon_ngay_90', 20, false),
+  ('chon_ngay_detail', 4, false),
+  ('day_detail', 0, true),
+  ('tu_tru', 0, true),
+  ('tieu_van', 24, false),
+  ('hop_tuoi', 24, false),
+  ('phong_thuy', 10, false),
+  ('la_so_diengiai', 0, true),
+  ('share_card', 2, false),
+  ('ai_reading_unlock', 1, false)
 on conflict (feature_key) do update set
   credit_cost = excluded.credit_cost,
   is_free = excluded.is_free,

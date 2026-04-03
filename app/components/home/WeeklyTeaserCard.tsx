@@ -28,10 +28,10 @@ export function WeeklyTeaserCard({
   const message =
     goodDayCount != null
       ? hasLaso && menh
-        ? `Tuần này có ${goodDayCount} ngày tốt theo mệnh ${menh} của bạn`
+        ? `Tuần này có ${goodDayCount} ngày lành theo mệnh ${menh} của bạn`
         : `Tuần này có ${goodDayCount} ngày Hoàng Đạo`
       : hasLaso && menh
-        ? `Tuần này — xem ngày tốt theo mệnh ${menh}`
+        ? `Tuần này — xem ngày lành theo mệnh ${menh}`
         : "Tuần này — xem các ngày Hoàng Đạo và gợi ý";
 
   const sub = hasLaso

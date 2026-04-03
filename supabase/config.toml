@@ -402,7 +402,18 @@ verify_jwt = false
 
 # JWT is validated inside the handler via auth.getUser() (Bearer access token).
 # Avoids gateway 401 when the platform JWT check and client invoke headers disagree.
+[functions.referral-claim]
+verify_jwt = false
+
+# Bearer + getUser() in handler; optional dry_run (no charge).
+[functions.reading-unlock]
+verify_jwt = false
+
 [functions.payos-create-checkout]
+verify_jwt = false
+
+# Same as payos-create-checkout: Bearer + getUser() inside handler.
+[functions.create-share-token]
 verify_jwt = false
 
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
@@ -411,9 +422,20 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
+# Anthropic + DB cache. `ngay-hom-nay` / `day-detail` require Bearer + unlock check in handler; other endpoints unchanged.
+[functions.generate-reading]
+verify_jwt = false
+
 # Public share preview + OG HTML (anon `apikey` only).
 [functions.share-resolve]
 verify_jwt = false
 
 [functions.share-og]
+verify_jwt = false
+
+# Validate JWT + ADMIN_EMAILS allowlist inside handler (same pattern as create-share-token).
+[functions.admin-dashboard-stats]
+verify_jwt = false
+
+[functions.admin-site-banner]
 verify_jwt = false

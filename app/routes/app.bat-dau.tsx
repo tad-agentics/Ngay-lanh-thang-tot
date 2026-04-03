@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
+import { subscriptionActive } from "~/lib/subscription";
 import { supabase } from "~/lib/supabase";
 
 export default function AppBatDau() {
@@ -30,24 +32,17 @@ export default function AppBatDau() {
   }
 
   const credits = profile?.credits_balance ?? null;
+  const subOn = subscriptionActive(profile?.subscription_expires_at);
 
   return (
     <main className="flex flex-col min-h-svh bg-background px-4 pb-8">
       <div className="flex flex-col items-center justify-center flex-1 pb-4 pt-10">
         <div className="mb-8 flex flex-col items-center">
           <div
-            className="border border-accent/30 flex items-center justify-center mb-5"
+            className="border border-accent/30 flex items-center justify-center mb-5 overflow-hidden"
             style={{ width: 64, height: 64, borderRadius: "var(--radius-md)" }}
           >
-            <span
-              style={{
-                fontFamily: "var(--font-noto)",
-                fontSize: 32,
-                color: "var(--accent)",
-              }}
-            >
-              吉
-            </span>
+            <BrandLogoMark size={64} />
           </div>
 
           <h1
@@ -68,8 +63,8 @@ export default function AppBatDau() {
             className="text-muted-foreground text-sm text-center leading-relaxed"
             style={{ maxWidth: 280 }}
           >
-            Chọn ngày, hợp tuổi, xem vận — gắn với bản mệnh của bạn, tiếng Việt rõ
-            ràng.
+            Chọn ngày lành, hợp tuổi, xem vận — cá nhân hoá hoàn toàn theo bản mệnh của
+            bạn.
           </p>
         </div>
 
@@ -80,6 +75,12 @@ export default function AppBatDau() {
           <p className="text-foreground text-xs leading-relaxed text-center">
             {loading ? (
               "Đang tải số dư…"
+            ) : subOn ? (
+              <>
+                Gói của bạn đang{" "}
+                <strong className="text-foreground">không giới hạn lượng</strong>
+                — dùng tra cứu và chọn ngày thoải mái trong thời hạn gói.
+              </>
             ) : credits != null ? (
               <>
                 Tài khoản của bạn có{" "}
@@ -109,10 +110,24 @@ export default function AppBatDau() {
 
       <div className="pb-8 pt-4 text-center">
         <p className="text-muted-foreground text-xs leading-relaxed">
-          Điều khoản và chính sách sẽ có trong mục pháp lý (Wave cross-cutting).
-          Trang chủ công khai:{" "}
+          Điều khoản và chính sách:{" "}
+          <Link to="/dieu-khoan" className="text-accent underline-offset-2 underline">
+            Điều khoản sử dụng
+          </Link>
+          {" · "}
+          <Link
+            to="/chinh-sach-bao-mat"
+            className="text-accent underline-offset-2 underline"
+          >
+            Chính sách bảo mật
+          </Link>
+          . Trong app:{" "}
+          <Link to="/app/cai-dat" className="text-accent underline-offset-2 underline">
+            Cài đặt
+          </Link>
+          . Trang giới thiệu:{" "}
           <Link to="/" className="text-accent underline-offset-2 underline">
-            /
+            ngaylanhthangtot.vn
           </Link>
         </p>
       </div>

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Moon, Sun } from "lucide-react";
+import { toast } from "sonner";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
-import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { ScreenHeader } from "~/components/ScreenHeader";
@@ -18,6 +20,8 @@ import {
   type DayDetailPurposeVerdict,
 } from "~/lib/day-detail-view";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { invokeGenerateReading } from "~/lib/generate-reading";
+import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
@@ -37,47 +41,6 @@ function gradeChipColor(grade: string): "success" | "warning" | "danger" | "defa
   return "default";
 }
 
-type BreakdownImpact = "thuan" | "can_luu_y" | "trung_tinh";
-
-function breakdownImpact(type: string, points: number): BreakdownImpact {
-  const t = type.toLowerCase();
-  if (t.includes("bonus") || t.includes("cat")) return "thuan";
-  if (t.includes("penalty") || t.includes("hung")) return "can_luu_y";
-  if (points > 0) return "thuan";
-  if (points < 0) return "can_luu_y";
-  return "trung_tinh";
-}
-
-function breakdownImpactLabel(impact: BreakdownImpact): string {
-  switch (impact) {
-    case "thuan":
-      return "Thuận";
-    case "can_luu_y":
-      return "Cần lưu ý";
-    case "trung_tinh":
-      return "Trung tính";
-    default: {
-      const _e: never = impact;
-      return _e;
-    }
-  }
-}
-
-function breakdownImpactPillClass(impact: BreakdownImpact): string {
-  switch (impact) {
-    case "thuan":
-      return "bg-success/15 text-success";
-    case "can_luu_y":
-      return "bg-destructive/12 text-destructive";
-    case "trung_tinh":
-      return "bg-muted text-muted-foreground";
-    default: {
-      const _e: never = impact;
-      return _e;
-    }
-  }
-}
-
 function purposeVerdictLabel(v: DayDetailPurposeVerdict): string {
   switch (v) {
     case "nen_lam":
@@ -91,6 +54,32 @@ function purposeVerdictLabel(v: DayDetailPurposeVerdict): string {
       return _x;
     }
   }
+}
+
+/** Hiển thị khi chi tiết ngày gắn nhãn Hắc Đạo — giải thích lớp lịch chung vs Bát Tự cá nhân. */
+const HAC_DAO_LASO_EXPLAINER_COPY =
+  "Ngày hắc đạo cũng có thể là ngày đẹp nhất cho một lá số. Theo thuật phong thủy truyền thống, đây là một quyết định có chủ ý — vì Bát Tự cá nhân (mệnh, dụng thần, kỵ thần) được coi là quan trọng hơn Hoàng Đạo/Hắc Đạo chung.";
+
+/** Một khối paywall: chỉ rào khi thiếu hồ sơ; không trừ lượng từng ngày. */
+function NgayChiTietProfilePaywall() {
+  return (
+    <div
+      className="border border-border bg-card px-4 py-5 space-y-4"
+      style={{ borderRadius: "var(--radius-lg)" }}
+    >
+      <div>
+        <p className="text-foreground text-sm font-medium mb-1">
+          Cần ngày sinh trên hồ sơ
+        </p>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Chi tiết ngày theo lá số cần ít nhất ngày sinh — mỗi lần xem không tốn lượng. Bổ sung trong Cài đặt rồi chọn lại ngày trên lịch.
+        </p>
+      </div>
+      <Button asChild className="w-full sm:w-auto">
+        <Link to="/app/cai-dat">Mở Cài đặt</Link>
+      </Button>
+    </div>
+  );
 }
 
 function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
@@ -108,6 +97,63 @@ function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
   }
 }
 
+function sanitizeDayDetailReading(raw: string | null): string | null {
+  if (!raw) return null;
+  let t = raw.trim();
+  if (!t) return null;
+  for (let i = 0; i < 8; i++) {
+    const next = t.replace(/\*\*([^*]+)\*\*/g, "$1");
+    if (next === t) break;
+    t = next;
+  }
+  t = t.replace(/^#{1,6}\s+/gm, "");
+  t = t.replace(/^\s*[-*•]\s+/gm, "");
+  t = t.replace(/\*\*([^*]*)$/g, "$1");
+  t = t.replace(/[_`~]{1,3}([^_`~]*)$/g, "$1");
+  t = t.replace(/\s{2,}/g, " ");
+  const sentenceChunks = t
+    .split(/(?<=[.!?…])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const zodiacHourRegex =
+    /(tý|sửu|dần|mão|thìn|tỵ|ngọ|mùi|thân|dậu|tuất|hợi)/gi;
+  const filteredChunks = sentenceChunks.filter((chunk) => {
+    const lower = chunk.toLowerCase();
+    if (
+      lower.includes("điểm số") ||
+      lower.includes("/100") ||
+      lower.includes("xếp hạng") ||
+      lower.includes("hạng a") ||
+      lower.includes("hạng b") ||
+      lower.includes("hạng c")
+    ) {
+      return false;
+    }
+    if (lower.includes("giờ tốt") || lower.includes("giờ xấu")) {
+      return false;
+    }
+    const hourMentions = chunk.match(zodiacHourRegex)?.length ?? 0;
+    if (hourMentions >= 5) {
+      return false;
+    }
+    return true;
+  });
+  t = (filteredChunks.length > 0 ? filteredChunks : sentenceChunks).join(" ");
+  t = t.trim();
+  if (!/[.!?…]["')\]]?\s*$/.test(t)) {
+    const lastBoundary = Math.max(
+      t.lastIndexOf("."),
+      t.lastIndexOf("!"),
+      t.lastIndexOf("?"),
+      t.lastIndexOf("…"),
+    );
+    if (lastBoundary > 40) {
+      t = t.slice(0, lastBoundary + 1).trim();
+    }
+  }
+  return t || null;
+}
+
 function DayDetailFetched({
   iso,
   profile,
@@ -117,11 +163,16 @@ function DayDetailFetched({
   profile: ProfileRow;
   onPayload?: (data: unknown | null) => void;
 }) {
-  const { costs } = useFeatureCosts();
   const [purposeExpanded, setPurposeExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [payload, setPayload] = useState<unknown>(null);
+  const [dayAiReading, setDayAiReading] = useState<string | null>(null);
+  const [dayAiLoading, setDayAiLoading] = useState(false);
+  const [dayReadingUnlocked, setDayReadingUnlocked] = useState(false);
+  const [unlockingDayReading, setUnlockingDayReading] = useState(false);
+  const { costs } = useFeatureCosts();
+  const unlockDayCost = costs.ai_reading_unlock?.credit_cost ?? 1;
   const onPayloadRef = useRef(onPayload);
   onPayloadRef.current = onPayload;
 
@@ -140,6 +191,17 @@ function DayDetailFetched({
     }
     setLoading(true);
     setErr(null);
+    setDayAiReading(null);
+    setDayAiLoading(false);
+    setUnlockingDayReading(false);
+    setDayReadingUnlocked(false);
+    try {
+      localStorage.removeItem(
+        `ngaytot_day_reading_unlock:${profile.id}:${iso}`,
+      );
+    } catch {
+      /* legacy client-only unlock flag */
+    }
     onPayloadRef.current?.(null);
     void (async () => {
       const res = await invokeBatTu({
@@ -156,11 +218,74 @@ function DayDetailFetched({
       }
       setPayload(res.data);
       onPayloadRef.current?.(res.data);
+      const unlock = await invokeReadingUnlock({
+        dry_run: true,
+        scope: "day_detail",
+        day_iso: iso,
+      });
+      if (cancelled) return;
+      const serverAllows = Boolean(
+        unlock.ok &&
+          (unlock.unlocked === true ||
+            unlock.already_unlocked === true ||
+            unlock.subscription_free === true),
+      );
+      setDayReadingUnlocked(serverAllows);
+      if (serverAllows) {
+        setDayAiLoading(true);
+        setDayAiReading(null);
+        void invokeGenerateReading({
+          endpoint: "day-detail",
+          data: res.data,
+        }).then((r) => {
+          if (!cancelled) {
+            setDayAiReading(sanitizeDayDetailReading(r.reading));
+            setDayAiLoading(false);
+          }
+        });
+      } else {
+        setDayAiReading(null);
+        setDayAiLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
     };
   }, [iso, profile]);
+
+  async function unlockDayReading() {
+    if (!payload || unlockingDayReading) return;
+    setUnlockingDayReading(true);
+    setDayAiLoading(true);
+    const unlock = await invokeReadingUnlock({
+      scope: "day_detail",
+      day_iso: iso,
+    });
+    if (!unlock.ok) {
+      toast.error(unlock.message);
+      setDayAiLoading(false);
+      setUnlockingDayReading(false);
+      return;
+    }
+    if (unlock.charged || unlock.subscription_free) {
+      window.dispatchEvent(new CustomEvent("ngaytot:profile-refresh"));
+    }
+    const r = await invokeGenerateReading({
+      endpoint: "day-detail",
+      data: payload,
+    });
+    setDayAiReading(sanitizeDayDetailReading(r.reading));
+    setDayAiLoading(false);
+    setUnlockingDayReading(false);
+    setDayReadingUnlocked(true);
+    toast.success(
+      unlock.charged
+        ? "Đã mở khóa luận giải ngày (đã trừ lượng)."
+        : unlock.subscription_free
+          ? "Đã mở khóa luận giải (gói đang hoạt động)."
+          : "Đã mở khóa luận giải ngày.",
+    );
+  }
 
   if (loading) {
     return <p className="text-sm text-muted-foreground py-4">Đang tải chi tiết…</p>;
@@ -180,17 +305,38 @@ function DayDetailFetched({
     );
   }
 
-  const dayDetailCost = costs.day_detail;
-  const showLuongCta =
-    dayDetailCost &&
-    !dayDetailCost.is_free &&
-    dayDetailCost.credit_cost > 0;
-
   const purposeSorted =
     view != null ? sortPurposeRowsForDisplay(view.purposeRows) : [];
   const purposeVisible = purposeExpanded
     ? purposeSorted
     : purposeSorted.slice(0, 3);
+
+  const readingBlock = dayReadingUnlocked ? (
+    <AiReadingBlock
+      title="Luận giải"
+      showTitle={false}
+      variant="on-card"
+      loading={dayAiLoading}
+      text={dayAiReading}
+    />
+  ) : (
+    <section className="mt-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5 space-y-3">
+      <p className="text-sm leading-relaxed text-foreground/90">
+        Mở khóa để xem luận giải riêng cho ngày này.
+      </p>
+      <Button
+        type="button"
+        variant="secondary"
+        className="border-0 bg-[#C9A64A] font-semibold text-black hover:bg-[#B8943F]"
+        disabled={unlockingDayReading}
+        onClick={() => void unlockDayReading()}
+      >
+        {unlockingDayReading
+          ? "Đang mở khóa..."
+          : `Mở khóa (${unlockDayCost} lượng)`}
+      </Button>
+    </section>
+  );
 
   return (
     <div className="space-y-4">
@@ -208,6 +354,11 @@ function DayDetailFetched({
             ) : (
               <p className="text-sm text-muted-foreground">—</p>
             )}
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
+            <p className="text-xs text-muted-foreground">Luận giải tổng quan</p>
+            {readingBlock}
           </section>
 
           <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
@@ -314,86 +465,34 @@ function DayDetailFetched({
                     : `Xem đầy đủ ${view.purposeRows.length} mục đích`}
                 </button>
               ) : null}
-              {showLuongCta ? (
-                <Button
-                  asChild
-                  className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Link to="/app/mua-luong">
-                    +{dayDetailCost.credit_cost} lượng
-                  </Link>
-                </Button>
-              ) : null}
             </section>
           ) : null}
-
-          {view.avoidFor.length > 0 ? (
-            <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <p className="text-xs text-muted-foreground mb-2">Nên tránh</p>
-              <ul className="list-disc pl-4 space-y-1 text-sm text-foreground">
-                {view.avoidFor.map((x) => (
-                  <li key={x}>{x}</li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {view.breakdown.length > 0 ? (
+        </>
+      ) : (
+        <>
+          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
+            <p className="text-xs text-muted-foreground">Luận giải tổng quan</p>
+            {readingBlock}
+          </section>
+          {dayReadingUnlocked && fallbackLines.length > 0 ? (
             <details className="rounded-xl border border-border bg-card p-4 shadow-sm group">
               <summary className="text-sm font-medium text-foreground cursor-pointer list-none flex items-center justify-between gap-2">
-                Luận theo từng yếu tố
+                Dữ liệu tham chiếu từ API
                 <span className="text-muted-foreground text-xs font-normal group-open:hidden">
-                  Xem thêm
+                  Xem chi tiết
                 </span>
                 <span className="text-muted-foreground text-xs font-normal hidden group-open:inline">
                   Thu gọn
                 </span>
               </summary>
-              <ul className="mt-3 space-y-3 text-sm border-t border-border pt-3">
-                {view.breakdown.map((row, i) => {
-                  const impact = breakdownImpact(row.type, row.points);
-                  return (
-                    <li
-                      key={`${row.source}-${i}`}
-                      className="border-b border-border/60 pb-3 last:border-0 last:pb-0"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-foreground font-medium min-w-0 flex-1">
-                          {row.source}
-                        </span>
-                        <span
-                          className={cn(
-                            "shrink-0 inline-flex px-2.5 py-1 text-xs font-medium rounded-full",
-                            breakdownImpactPillClass(impact),
-                          )}
-                        >
-                          {breakdownImpactLabel(impact)}
-                        </span>
-                      </div>
-                      <p className="text-muted-foreground text-sm leading-snug mt-1.5">
-                        {row.reasonVi}
-                      </p>
-                    </li>
-                  );
-                })}
+              <ul className="mt-3 list-disc pl-4 space-y-1.5 text-sm text-foreground border-t border-border pt-3">
+                {fallbackLines.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
               </ul>
             </details>
           ) : null}
         </>
-      ) : (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p
-            className="text-xs text-muted-foreground uppercase tracking-wider mb-2"
-            style={{ fontFamily: "var(--font-ibm-mono)" }}
-          >
-            Nhận xét
-          </p>
-          <ul className="list-disc pl-4 space-y-1.5 text-sm text-foreground">
-            {fallbackLines.map((line, i) => (
-              <li key={i}>{line}</li>
-            ))}
-          </ul>
-        </div>
       )}
     </div>
   );
@@ -434,6 +533,7 @@ export default function AppNgayChiTiet() {
             dark
             className="pt-2 pb-2"
             titleClassName="!text-primary"
+            endAdornment={<CreditsHeaderChip forDarkSurface />}
           />
           {headerMeta?.subline || headerMeta?.chip ? (
             <div className="flex items-center justify-between gap-2 mt-1 pb-1">
@@ -469,30 +569,30 @@ export default function AppNgayChiTiet() {
       </div>
 
       <div className="px-4 pt-4 space-y-4">
+        {headerMeta?.chip?.color === "danger" ? (
+          <aside
+            className="rounded-xl border border-border/80 bg-card/90 px-3.5 py-3 shadow-sm"
+            aria-label="Vì sao ngày Hắc Đạo vẫn có thể phù hợp lá số"
+          >
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {HAC_DAO_LASO_EXPLAINER_COPY}
+            </p>
+          </aside>
+        ) : null}
         {loading ? (
           <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
         ) : !profile?.ngay_sinh ? (
-          <div className="rounded-xl border border-border bg-card p-4 text-sm space-y-3">
-            <p className="text-muted-foreground">Cần ngày sinh trong hồ sơ.</p>
-            <Link
-              to="/app/cai-dat"
-              className="text-primary text-sm font-medium underline"
-            >
-              Mở Cài đặt
-            </Link>
-          </div>
+          <NgayChiTietProfilePaywall />
         ) : (
-          <CreditGate featureKey="day_detail">
-            <DayDetailFetched
-              iso={iso}
-              profile={profile}
-              onPayload={(data) =>
-                setHeaderMeta(
-                  data == null ? null : extractDayDetailHeaderMeta(data),
-                )
-              }
-            />
-          </CreditGate>
+          <DayDetailFetched
+            iso={iso}
+            profile={profile}
+            onPayload={(data) =>
+              setHeaderMeta(
+                data == null ? null : extractDayDetailHeaderMeta(data),
+              )
+            }
+          />
         )}
       </div>
     </div>

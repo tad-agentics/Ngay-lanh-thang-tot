@@ -2,8 +2,12 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
-      "source": "/((?!assets|icons|fonts|screenshots|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml).*)",
+      "source": "/",
       "destination": "/index.html"
+    },
+    {
+      "source": "/((?!assets|icons|fonts|screenshots|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml).*)",
+      "destination": "/__spa-fallback.html"
     }
   ]
 }

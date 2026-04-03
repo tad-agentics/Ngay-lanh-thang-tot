@@ -6,6 +6,8 @@ import { toast } from "sonner";
 
 import type { CreatePayosCheckoutResponse } from "~/lib/api-types";
 import { Button } from "~/components/ui/button";
+import { useProfile } from "~/hooks/useProfile";
+import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import {
   Collapsible,
   CollapsibleContent,
@@ -80,7 +82,17 @@ export function PayCheckoutSheet({
   payload: CreatePayosCheckoutResponse | null;
 }) {
   const navigate = useNavigate();
+  const { reload } = useProfile();
   const transfer = payload?.transfer ?? null;
+  const orderId = payload?.order_id;
+
+  usePollPaymentOrderPaid(orderId, open && Boolean(orderId), {
+    onPaid: async () => {
+      await reload();
+      toast.success("Thanh toán đã xác nhận — số dư đã cập nhật.");
+      onOpenChange(false);
+    },
+  });
 
   function confirmTransfer() {
     if (!payload) return;
@@ -233,8 +245,9 @@ export function PayCheckoutSheet({
             Tôi đã chuyển khoản
           </Button>
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
-            Sau khi chuyển khoản, nhấn nút trên để xác nhận. Hệ thống sẽ tự kiểm
-            tra giao dịch (webhook PayOS).
+            Sau khi chuyển khoản đúng số tiền và nội dung, hệ thống tự cộng lượng
+            khi PayOS gửi webhook. Trang này sẽ tự kiểm tra vài phút — bạn vẫn có
+            thể nhấn nút dưới để sang màn hình theo dõi.
           </p>
           {payload?.checkout_url ? (
             <Button

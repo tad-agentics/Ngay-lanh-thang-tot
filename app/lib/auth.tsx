@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
+import { clearPendingReferralCode } from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
 export type AuthContextValue = {
@@ -49,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    clearPendingReferralCode();
     await supabase.auth.signOut();
   }, []);
 

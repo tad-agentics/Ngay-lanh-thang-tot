@@ -1,8 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
 import { CalendarDays, CalendarSearch, Compass, Settings2 } from "lucide-react";
 
-import type { BottomNavTab } from "~/lib/nav-config";
 import { cn } from "~/components/ui/utils";
+import { prefetchCoreAppQueries } from "~/lib/prefetch-app-queries";
+import type { BottomNavTab } from "~/lib/nav-config";
 
 interface BottomNavProps {
   activeTab: BottomNavTab | null;
@@ -18,6 +20,9 @@ const TABS: { id: BottomNavTab; label: string; Icon: LucideIcon }[] = [
 ];
 
 export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavProps) {
+  const queryClient = useQueryClient();
+  const warmCache = () => prefetchCoreAppQueries(queryClient);
+
   const handleTabClick = (tab: BottomNavTab) => {
     if (tab === "kham-pha") {
       onExploreOpen();
@@ -40,6 +45,8 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
               key={id}
               type="button"
               onClick={() => handleTabClick(id)}
+              onPointerEnter={warmCache}
+              onTouchStart={warmCache}
               aria-label={label}
               style={{ borderRadius: "var(--radius-pill)", minHeight: 44, minWidth: 44 }}
               className={cn(

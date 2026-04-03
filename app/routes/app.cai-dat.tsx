@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronRight, ExternalLink, Lock } from "lucide-react";
+import { ChevronRight, Copy, ExternalLink, Lock } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -17,11 +17,19 @@ import { Switch } from "~/components/ui/switch";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
 import {
+  creditsBalanceFootnote,
+  creditsBalanceHeadline,
+} from "~/lib/subscription";
+import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   batTuBirthTimeCodeToGioSinh,
+  ddMmYyyyInputToBatTuBirthDate,
+  ddMmYyyyInputToIsoDate,
+  formatDdMmYyyyWithAutoSlash,
   gioSinhToBatTuBirthTime,
   gioiTinhToBatTuGender,
-  ngaySinhToBatTuBirthDate,
+  isoYmdToDdMmYyyyInput,
+  isPartialDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileHasLaso } from "~/lib/la-so-ui";
@@ -65,7 +73,7 @@ export default function AppCaiDat() {
 
   useEffect(() => {
     if (!profile || loading) return;
-    setNgaySinh(profile.ngay_sinh?.slice(0, 10) ?? "");
+    setNgaySinh(isoYmdToDdMmYyyyInput(profile.ngay_sinh));
     const code = gioSinhToBatTuBirthTime(profile.gio_sinh);
     setBirthTimeCode(code !== undefined ? String(code) : UNSET);
     setGioiTinh(profile.gioi_tinh ?? UNSET);
@@ -89,8 +97,37 @@ export default function AppCaiDat() {
   }, [user]);
 
   const birthLocked = Boolean(profile?.birth_data_locked_at);
+  const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const provider = authProviderBadge(user);
+
+  const inviteBase =
+    (import.meta.env.VITE_APP_URL as string | undefined)?.replace(/\/$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const inviteUrl =
+    profile?.referral_code && inviteBase
+      ? `${inviteBase}/dang-ky?ref=${encodeURIComponent(profile.referral_code)}`
+      : "";
+
+  async function copyReferralCode() {
+    if (!profile?.referral_code) return;
+    try {
+      await navigator.clipboard.writeText(profile.referral_code);
+      toast.success("Đã sao chép mã giới thiệu.");
+    } catch {
+      toast.error("Không sao chép được — thử chọn và copy thủ công.");
+    }
+  }
+
+  async function copyInviteLink() {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Đã sao chép link mời bạn.");
+    } catch {
+      toast.error("Không sao chép được — thử copy thủ công.");
+    }
+  }
 
   async function saveBirth() {
     if (!user || birthLocked) return;
@@ -105,10 +142,22 @@ export default function AppCaiDat() {
       setSaving(false);
       return;
     }
+    let ngayIso: string | null = null;
+    const rawNgay = ngaySinh.trim();
+    if (rawNgay.length > 0) {
+      ngayIso = ddMmYyyyInputToIsoDate(rawNgay);
+      if (!ngayIso) {
+        toast.error(
+          "Ngày sinh cần đúng DD/MM/YYYY và là ngày có thật trên lịch.",
+        );
+        setSaving(false);
+        return;
+      }
+    }
     const { error } = await supabase
       .from("profiles")
       .update({
-        ngay_sinh: ngaySinh.trim() ? ngaySinh.trim() : null,
+        ngay_sinh: ngayIso,
         gio_sinh: gioSinh,
         gioi_tinh: gioiTinh === UNSET ? null : (gioiTinh as "nam" | "nu"),
       })
@@ -121,13 +170,12 @@ export default function AppCaiDat() {
 
     let lasoBootstrapError: string | null = null;
     let lasoBootstrapOk = false;
-    if (!hadLaso && ngaySinh.trim() && gioiTinh !== UNSET) {
-      const birth_date = ngaySinhToBatTuBirthDate(ngaySinh.trim());
+    if (!hadLaso && ngayIso && gioiTinh !== UNSET) {
+      const birth_date = ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim());
       if (birth_date) {
         const body: Record<string, unknown> = {
           birth_date,
           tz: "Asia/Ho_Chi_Minh",
-          first_la_so_free: true,
         };
         if (birthTimeCode !== UNSET) {
           const bt = Number(birthTimeCode);
@@ -176,6 +224,11 @@ export default function AppCaiDat() {
   const ngayLabel = profile?.ngay_sinh
     ? formatNgaySinhDisplay(profile.ngay_sinh)
     : null;
+
+  const ngaySinhEditInvalid =
+    ngaySinh.trim().length > 0 &&
+    ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()) == null &&
+    !isPartialDdMmYyyyInput(ngaySinh);
 
   return (
     <div className="min-h-[60vh] bg-background pb-24">
@@ -257,9 +310,14 @@ export default function AppCaiDat() {
             <p className="text-sm text-muted-foreground">Đang tải…</p>
           ) : profile ? (
             <>
-              <p className="text-2xl font-bold text-foreground tabular-nums">
-                {profile.credits_balance} lượng
+              <p className="text-2xl font-bold text-foreground tabular-nums leading-snug">
+                {creditsBalanceHeadline(profile)}
               </p>
+              {creditsFootnote ? (
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  {creditsFootnote}
+                </p>
+              ) : null}
               <Button variant="outline" asChild className="w-full font-medium">
                 <Link to="/app/mua-luong">Mua thêm lượng</Link>
               </Button>
@@ -268,6 +326,64 @@ export default function AppCaiDat() {
             <p className="text-sm text-muted-foreground">Chưa đọc được hồ sơ.</p>
           )}
         </section>
+
+        {profile && !loading ? (
+          <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm space-y-3">
+            <p className="text-xs text-muted-foreground">Mời bạn</p>
+            <p className="text-sm text-foreground leading-snug">
+              Mỗi người bạn giới thiệu đăng ký — bạn và họ cùng nhận 10 lượng.
+            </p>
+            {profile.referral_code ? (
+              <>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <code className="flex-1 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm font-semibold tracking-wide text-foreground tabular-nums">
+                    {profile.referral_code}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0 gap-2 font-medium"
+                    onClick={() => void copyReferralCode()}
+                  >
+                    <Copy className="size-4" aria-hidden />
+                    Sao chép mã
+                  </Button>
+                </div>
+                {inviteUrl ? (
+                  <>
+                    <p className="text-[11px] text-muted-foreground break-all leading-relaxed">
+                      {inviteUrl}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full gap-2 font-medium"
+                      onClick={() => void copyInviteLink()}
+                    >
+                      <Copy className="size-4" aria-hidden />
+                      Sao chép link đăng ký
+                    </Button>
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Mã giới thiệu chưa sẵn sàng ở hồ sơ hiện tại. Bấm làm mới để đồng
+                  bộ lại dữ liệu.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full font-medium"
+                  onClick={() => void refresh()}
+                >
+                  Làm mới mã giới thiệu
+                </Button>
+              </>
+            )}
+          </section>
+        ) : null}
 
         <section className="rounded-[var(--radius-lg)] border border-border bg-card p-4 shadow-sm">
           <div className="flex items-start justify-between gap-4">
@@ -308,11 +424,30 @@ export default function AppCaiDat() {
                 <Label htmlFor="ngay-sinh">Ngày sinh</Label>
                 <Input
                   id="ngay-sinh"
-                  type="date"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="DD/MM/YYYY"
+                  aria-invalid={ngaySinhEditInvalid}
+                  maxLength={10}
+                  className="tabular-nums"
                   value={ngaySinh}
-                  onChange={(e) => setNgaySinh(e.target.value)}
+                  onChange={(e) =>
+                    setNgaySinh(formatDdMmYyyyWithAutoSlash(e.target.value))
+                  }
                   disabled={loading || !profile}
                 />
+                {ngaySinhEditInvalid ? (
+                  <p
+                    className="text-[11px] text-destructive leading-relaxed"
+                    role="alert"
+                  >
+                    Nhập đúng DD/MM/YYYY và ngày phải có thật (ví dụ 20/05/1990).
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Định dạng DD/MM/YYYY.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="gio-sinh">Giờ sinh (khung giờ)</Label>
@@ -354,7 +489,13 @@ export default function AppCaiDat() {
               <Button
                 type="button"
                 className="w-full"
-                disabled={saving || loading || !profile}
+                disabled={
+                  saving ||
+                  loading ||
+                  !profile ||
+                  (ngaySinh.trim().length > 0 &&
+                    ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()) == null)
+                }
                 onClick={() => void saveBirth()}
               >
                 {saving ? "Đang lưu…" : "Lưu thông tin sinh"}

@@ -1,14 +1,32 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { BrandLogoMark } from "~/components/BrandLogoMark";
 import { Button } from "~/components/ui/button";
+import {
+  referralParamFromSearchParams,
+  stashPendingReferralCode,
+} from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
 export default function DangNhap() {
+  const [searchParams] = useSearchParams();
+  const referralFromUrl = useMemo(
+    () => referralParamFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const signUpHref = referralFromUrl
+    ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
+    : "/dang-ky";
+  const emailHref = referralFromUrl
+    ? `/dang-nhap/email?ref=${encodeURIComponent(referralFromUrl)}`
+    : "/dang-nhap/email";
+
   const [busy, setBusy] = useState(false);
 
   async function signInGoogle() {
+    stashPendingReferralCode(referralFromUrl);
     setBusy(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -23,6 +41,15 @@ export default function DangNhap() {
   return (
     <main className="min-h-svh flex flex-col items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm space-y-6">
+        <Link
+          to="/"
+          className="flex flex-col items-center gap-2 no-underline text-foreground hover:opacity-90"
+        >
+          <BrandLogoMark size={56} />
+          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
+            Ngày Lành Tháng Tốt
+          </span>
+        </Link>
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
             Đăng nhập
@@ -40,11 +67,14 @@ export default function DangNhap() {
           Tiếp tục với Google
         </Button>
         <Button variant="outline" className="w-full" asChild>
-          <Link to="/dang-nhap/email">Đăng nhập bằng email</Link>
+          <Link to={emailHref}>Đăng nhập bằng email</Link>
         </Button>
         <p className="text-center text-sm text-muted-foreground">
           Chưa có tài khoản?{" "}
-          <Link to="/dang-ky" className="text-primary underline-offset-4 hover:underline">
+          <Link
+            to={signUpHref}
+            className="text-primary underline-offset-4 hover:underline"
+          >
             Đăng ký
           </Link>
         </p>

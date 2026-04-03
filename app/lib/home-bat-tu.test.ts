@@ -17,7 +17,7 @@ describe("parseNgayHomNayForHome", () => {
     });
     expect(v).not.toBeNull();
     expect(v!.dayType).toBe("hoang-dao");
-    expect(v!.hourRange).toBe("7–9 giờ sáng");
+    expect(v!.hourRange).toBe("7 - 9 giờ sáng");
     expect(v!.lunarLabel).toBe("6 tháng 2");
     expect(v!.solarDateVi).toMatch(/2026/);
   });
