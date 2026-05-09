@@ -105,7 +105,17 @@ export async function verifyWebhookSignature(
   }
   const dataQueryStr = parts.join("&");
   const computed = await hmacSha256Hex(checksumKey, dataQueryStr);
-  return computed.toLowerCase() === signature.toLowerCase();
+  return timingSafeEqual(computed.toLowerCase(), signature.toLowerCase());
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
 }
 
 export function generateOrderCode(): number {

@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { verifyWebhookSignature } from "../_shared/payos.ts";
+import { isPackageSku, PACKAGES, verifyWebhookSignature } from "../_shared/payos.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 function ok(body: unknown = { received: true }): Response {
@@ -92,6 +92,16 @@ Deno.serve(async (req) => {
   if (order.amount_vnd != null && amount !== order.amount_vnd) {
     console.error("amount mismatch", amount, order.amount_vnd);
     return ok({ amount_mismatch: true });
+  }
+  // Cross-check the stored order amount against the canonical package definition
+  // to catch any discrepancy introduced at checkout creation time.
+  if (
+    order.package_sku != null &&
+    isPackageSku(order.package_sku) &&
+    amount !== PACKAGES[order.package_sku].amountVnd
+  ) {
+    console.error("sku amount mismatch", order.package_sku, amount, PACKAGES[order.package_sku].amountVnd);
+    return ok({ sku_amount_mismatch: true });
   }
 
   // Single winner: pending → paid (PayOS retries get empty update)
