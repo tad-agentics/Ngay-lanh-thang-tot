@@ -5,6 +5,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import { subscriptionActive } from "../_shared/subscription.ts";
 
 const FEATURE_KEY = "ai_reading_unlock";
 
@@ -13,11 +14,6 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function subscriptionActive(expires: string | null): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
 }
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;

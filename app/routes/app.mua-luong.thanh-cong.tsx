@@ -19,6 +19,9 @@ export default function AppMuaLuongThanhCong() {
 
   usePollPaymentOrderPaid(orderId, Boolean(orderId), {
     onPaid: async () => {
+      // Brief delay to allow Postgres replication to propagate the balance
+      // update written by the webhook before we read it back.
+      await new Promise((r) => setTimeout(r, 600));
       await reload();
       toast.success("Đã xác nhận thanh toán — số dư đã cập nhật.");
       setLongWaitHint(false);

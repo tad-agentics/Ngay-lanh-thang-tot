@@ -5,6 +5,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import { subscriptionActive } from "../_shared/subscription.ts";
 
 const FEATURE_KEY = "share_card";
 
@@ -25,11 +26,6 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function subscriptionActive(expires: string | null): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
 }
 
 function sanitizePayload(input: unknown): Record<string, unknown> {
