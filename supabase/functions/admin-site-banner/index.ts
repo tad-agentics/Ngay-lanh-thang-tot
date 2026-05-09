@@ -10,14 +10,13 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { corsHeaders as baseCorsHeaders } from "../_shared/cors.ts";
 
 const CONFIG_KEY = "site_banner";
 const MAX_MESSAGE_LEN = 600;
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  ...baseCorsHeaders,
   "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
 };
 

@@ -11,7 +11,10 @@ import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
-import { referralParamFromSearchParams } from "~/lib/pending-referral";
+import {
+  referralParamFromSearchParams,
+  stashPendingReferralCode,
+} from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
 function formatDobVi(ymd: string): string {
@@ -44,6 +47,9 @@ export default function DangKy() {
       return;
     }
     setBusy(true);
+    // Stash to sessionStorage so tryConsumePendingReferralClaim (ProfileProvider)
+    // picks it up after the session is established — same mechanism as OAuth login.
+    stashPendingReferralCode(referralFromUrl);
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
