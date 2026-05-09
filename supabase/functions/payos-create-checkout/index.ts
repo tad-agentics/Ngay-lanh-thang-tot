@@ -7,12 +7,7 @@ import {
   PAYOS_API_BASE,
   signPaymentRequest,
 } from "../_shared/payos.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 function json(
   body: unknown,
@@ -22,6 +17,21 @@ function json(
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function isValidRedirectUrl(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (u.protocol === "https:") return true;
+  // Allow plain HTTP only for local development origins.
+  if (u.protocol === "http:") {
+    return u.hostname === "localhost" || u.hostname === "127.0.0.1";
+  }
+  return false;
 }
 
 Deno.serve(async (req) => {
@@ -101,6 +111,18 @@ Deno.serve(async (req) => {
         error: {
           code: "BAD_REQUEST",
           message: "package_sku, return_url, cancel_url required.",
+        },
+      },
+      400,
+    );
+  }
+
+  if (!isValidRedirectUrl(return_url) || !isValidRedirectUrl(cancel_url)) {
+    return json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "return_url and cancel_url must be https URLs.",
         },
       },
       400,

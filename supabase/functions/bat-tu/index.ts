@@ -10,12 +10,7 @@ import {
   redisRestConfigured,
   redisSetExString,
 } from "./redis-cache.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 /**
  * GET /v1/phong-thuy + `detail=teaser`: bỏ các key paywall khỏi JSON trả client

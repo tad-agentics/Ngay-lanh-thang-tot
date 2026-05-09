@@ -77,11 +77,7 @@ async function userHasPaidAiReadingAccess(
   );
 }
 
-const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt Nam, viết luận giải cho ứng dụng xem ngày và lá số.
 
