@@ -247,25 +247,28 @@ const MAX_BODY_CHARS = 180_000;
 const DEFAULT_LLM_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_API_BASE =
   "https://generativelanguage.googleapis.com/v1beta/models";
-const REQUEST_TIMEOUT_MS = 8_000;
+// Gemini 3.1 Flash-Lite p95 cho prompt ngắn ~5–10s (cao hơn Haiku ~1–2s).
+// Mọi timeout đặt rộng tay để cold start / queue không cắt request — EF vẫn
+// trả 200 với reading:null nếu vượt; UI rơi về empty state, không block.
+const REQUEST_TIMEOUT_MS = 25_000;
 /** hop-tuoi: 8–10 câu + toàn bộ tiêu chí — cần thời gian và token lớn hơn mặc định. */
-const HOP_TUOI_REQUEST_TIMEOUT_MS = 18_000;
+const HOP_TUOI_REQUEST_TIMEOUT_MS = 35_000;
 /** chon-ngay: nhiều ngày × vài câu — hơi cao hơn mặc định. */
-const CHON_NGAY_REQUEST_TIMEOUT_MS = 14_000;
+const CHON_NGAY_REQUEST_TIMEOUT_MS = 30_000;
 /** chon-ngay-cards: JSON nhiều ngày. */
-const CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS = 16_000;
+const CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS = 40_000;
 /** tieu-van / luu-nien: đoạn một khối dự phòng (dài hơn). */
-const TIEU_VAN_LUU_NIEN_TIMEOUT_MS = 20_000;
+const TIEU_VAN_LUU_NIEN_TIMEOUT_MS = 40_000;
 /** JSON 3 phần (tieu-van / luu-nien) — mỗi phần 6–7 câu. */
-const TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS = 32_000;
-const LA_SO_CHI_TIET_TIMEOUT_MS = 28_000;
+const TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS = 55_000;
+const LA_SO_CHI_TIET_TIMEOUT_MS = 45_000;
 
 const READING_MAX_TOKENS_DEFAULT = 512;
 const READING_MAX_TOKENS_HOP_TUOI = 1_536;
 const READING_MAX_TOKENS_CHON_NGAY = 1_024;
 const READING_MAX_TOKENS_CHON_NGAY_CARDS = 2_048;
 const READING_MAX_TOKENS_DAY_DETAIL = 2_560;
-const DAY_DETAIL_REQUEST_TIMEOUT_MS = 22_000;
+const DAY_DETAIL_REQUEST_TIMEOUT_MS = 40_000;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = 2048;
 const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON = 4096;
 
