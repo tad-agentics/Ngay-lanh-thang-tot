@@ -298,7 +298,23 @@ Update **`/.env.example`** to mirror (no values).
 
 ## 13–14. LLM / AI Module Inventory
 
-**Omitted.** Generative AI chatbot is **out of scope** (northstar §8). Deterministic engine only.
+### 13. AI Reading (Luận Giải) — first-class feature
+
+**AI Reading is in scope and first-class** (Direction B, FE-HANDOFF §8). Powered by **Gemini Flash** via the `generate-reading` Edge Function.
+
+| Item | Detail |
+|---|---|
+| Provider | Google Gemini Flash (via `generativelanguage.googleapis.com`) |
+| Edge Function | `supabase/functions/generate-reading/` |
+| Secrets | `GEMINI_API_KEY`, `GEMINI_MODEL` |
+| Credit gating | `feature_credit_costs` rows: `la_so_chi_tiet`, `tieu_van`, `hop_tuoi`, `chon_ngay`, `ai_reading_bulk_unlock` |
+| Cache | `reading_cache` table keyed on `(user_id, scope, cache_input_hash)` |
+| Browser boundary | Zero Gemini calls from the React app — all go through Edge proxy |
+| Chatbot | Not built. Not a free-form LLM. Deterministic prompts + structured JSON output only. |
+
+### 14. AI Boundary
+
+No AI SDK in the React app. No `@ai-sdk/*` or similar packages. The Edge Function is the only AI call point. RLS + credit ledger are the auth/payment boundary.
 
 ---
 
@@ -322,24 +338,24 @@ Use **Supabase** scheduling (pg_cron invoking Edge) as primary; `CRON_SECRET` fo
 
 ## 17. Not Building
 
-Copied from northstar §8 (summary — build agents must not implement):
+- Chatbot / free-form AI Q&A
+- Raw lịch tables / abbreviations as primary UI
+- Marketplace thầy / booking
+- Community / UGC
+- AI-personalized push (opt-in habit cadence only — 3x/day via `cron-push-habit`)
+- Non-Vietnamese locales
+- Admin dashboard (use Supabase + PayOS portals)
+- Credit gifting
+- Offline-first engine
+- Auto-renew subscription billing
+- **Self-serve birth data edit** — birth-data is set once at onboarding; no edit form exists anywhere in the app
+- **Multi-person stored "family profiles"** — dropped in Direction B entirely; not built at all, no schema
 
-- Chatbot / free-form AI Q&A  
-- Raw lịch tables / abbreviations as primary UI  
-- Marketplace thầy / booking  
-- Community / UGC  
-- AI-personalized push (only seasonal cron)  
-- Non-Vietnamese locales  
-- Admin dashboard (use Supabase + PayOS portals)  
-- Credit gifting  
-- Full query history / timeline (v1)  
-- Offline-first engine   
-- Auto-renew subscription billing  
-- Self-serve birth data edit  
-
-**Known shortcuts:** Dashboard admin; share OG server-side; seasonal-only push; temporary “other person” input without saving profile.
-
-**Northstar §12 W3 vs v1 scope:** The wave table mentions “Profile gia đình / lưu nhiều người”. **v1 does not** add a `family_profiles` (or equivalent) table. Behavior matches the **known shortcut**: another person’s birth data is **entered per session only** and is **not** persisted—see northstar §8 / shortcuts. Multi-person stored profiles are out of scope until a future version explicitly adds schema + spec.
+**Direction B changes (ADR-2026-05-10):**
+- AI Reading lifted from "omitted" to first-class (§13).
+- Opt-in query persistence added via `saved_picks` table.
+- Habit loop added (`daily_check_ins`, `streaks`, `tiet_khi` lookup, `cron-push-habit` cadence).
+- Family profiles removed entirely — not built in any form.
 
 ---
 

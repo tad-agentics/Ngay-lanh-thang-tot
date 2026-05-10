@@ -15,7 +15,7 @@ const ResultDayCard = lazy(() =>
 import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { ChonNgayMethodologyCollapsible } from "~/components/chon-ngay/ChonNgayMethodologyCollapsible";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
@@ -29,6 +29,7 @@ import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
+import { useSavedPicks } from "~/hooks/useSavedPicks";
 import type { ResultDay } from "~/lib/api-types";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { subscriptionActive } from "~/lib/subscription";
@@ -57,6 +58,8 @@ export default function AppChonNgayKetQua() {
 
   const { profile, loading: profileLoading, refresh } = useProfile();
   const { costs } = useFeatureCosts();
+  const { savePick } = useSavedPicks();
+  const [savingPick, setSavingPick] = useState(false);
 
   const [phase, setPhase] = useState<Phase>(0);
   const [showResults, setShowResults] = useState(false);
@@ -137,7 +140,16 @@ export default function AppChonNgayKetQua() {
     if (!state?.payload) return;
     const t1 = window.setTimeout(() => setPhase(1), 800);
     const t2 = window.setTimeout(() => setPhase(2), 1800);
-    const t3 = window.setTimeout(() => setShowResults(true), 2600);
+    const t3 = window.setTimeout(() => {
+      setShowResults(true);
+      // Redirect to NO_DATES error route if mapper produced 0 results
+      if (parsedDays.length === 0) {
+        navigate("/app/loi/khong-tim-thay-ngay", {
+          state: { intentLabel: state.intentLabel, daysInclusive: state.daysInclusive },
+          replace: true,
+        });
+      }
+    }, 2600);
     const t4 = window.setTimeout(() => setShowShare(true), 4600);
     return () => {
       window.clearTimeout(t1);
@@ -145,6 +157,7 @@ export default function AppChonNgayKetQua() {
       window.clearTimeout(t3);
       window.clearTimeout(t4);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state?.payload]);
 
   const perDetail = costs["chon_ngay_detail"]?.credit_cost ?? 4;
@@ -207,12 +220,13 @@ export default function AppChonNgayKetQua() {
       : null;
 
   return (
-    <div className="min-h-[50vh] px-4 pb-10 bg-[#E9E5DE]">
-      <ScreenHeader
+    <div
+      className="min-h-[50vh] px-4 pb-10"
+      style={{ background: "var(--paper, #f0ece2)" }}
+    >
+      <BackBar
         title={state.intentLabel}
         subtitle={`${state.daysInclusive} ngày tới`}
-        centerTitle
-        className="pb-2"
       />
 
       {!showResults ? (
@@ -282,17 +296,38 @@ export default function AppChonNgayKetQua() {
                     bestHourSlots={day.bestHourSlots}
                     reasons={unlockedDetail ? day.reasons : []}
                     animationIndex={i}
+                    isoDate={day.isoDate}
+                    score={null}
                     detailHref={`/app/ngay/${day.isoDate}`}
                     menh={menhLabel ?? undefined}
                     dayReading={chonDayReadings[day.isoDate] ?? null}
                     dayReadingLoading={chonDayReadingsLoading}
+                    onSave={i === 0 && bestDay ? () => {
+                      if (savingPick) return;
+                      setSavingPick(true);
+                      void savePick({
+                        source_endpoint: "chon-ngay",
+                        payload: state.payload,
+                        label: `${state.intentLabel} — ${bestDay.dateLabel}`,
+                        day_iso: bestDay.isoDate,
+                        score: bestDay.grade ? undefined : undefined,
+                      }).then((r) => {
+                        setSavingPick(false);
+                        if (r.ok) toast.success("Đã lưu vào sổ việc.");
+                        else toast.error(r.error ?? "Không thể lưu.");
+                      });
+                    } : undefined}
                   />
                 ))}
               </Suspense>
 
               {!unlockedDetail && anyNeedsDetail ? (
                 <div
-                  className="border border-[#D8D4CC] bg-white px-4 py-5 rounded-[18px] shadow-sm"
+                  style={{
+                    background: "rgba(154,124,34,0.08)",
+                    border: "1px dashed rgba(154,124,34,0.4)",
+                    padding: "14px 16px",
+                  }}
                 >
                   {profileLoading ? (
                     <p className="text-muted-foreground text-sm text-center">

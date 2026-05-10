@@ -1,102 +1,271 @@
-import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { Button } from "~/components/ui/button";
+import { BackBar, Mono } from "~/components/brand";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
 import {
   creditsBalanceFootnote,
-  creditsBalanceHeadline,
 } from "~/lib/subscription";
 
 export default function AppMuaLuongThanhCong() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get("order_id");
   const { profile, loading, reload } = useProfile();
-  const [longWaitHint, setLongWaitHint] = useState(false);
-  const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
+  const [confirmed, setConfirmed] = useState(false);
+  const [longWait, setLongWait] = useState(false);
+  const balanceBefore = useRef<number | null>(null);
+
+  if (!loading && profile && balanceBefore.current === null) {
+    balanceBefore.current = profile.credits_balance ?? 0;
+  }
 
   usePollPaymentOrderPaid(orderId, Boolean(orderId), {
     onPaid: async () => {
-      // Brief delay to allow Postgres replication to propagate the balance
-      // update written by the webhook before we read it back.
       await new Promise((r) => setTimeout(r, 600));
       await reload();
-      toast.success("Đã xác nhận thanh toán — số dư đã cập nhật.");
-      setLongWaitHint(false);
+      setConfirmed(true);
+      setLongWait(false);
+      toast.success("Đã nhận thanh toán — số dư đã cập nhật.");
     },
     onGiveUp: () => {
-      setLongWaitHint(true);
+      setLongWait(true);
     },
   });
 
+  const balanceAfter = profile?.credits_balance ?? 0;
+  const hasSub = profile?.subscription_expires_at
+    ? new Date(profile.subscription_expires_at) > new Date()
+    : false;
+  const creditsFootnote = profile ? creditsBalanceFootnote(profile) : null;
+
+  const shortOrderId = orderId ? orderId.slice(-8).toUpperCase() : null;
+
+  const CREAM = "var(--cream, #ede7d3)";
+  const CREAM60 = "rgba(237,231,211,0.6)";
+  const GOLD = "var(--gold, #c5a55a)";
+
   return (
-    <div className="px-4 pb-8 py-10 space-y-8 text-center">
-      <div>
-        <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-          Cảm ơn bạn
-        </h1>
-        <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-          Sau khi PayOS xác nhận giao dịch, số lượng hoặc gói được cập nhật qua
-          webhook (thường trong vài chục giây). Trang này tự kiểm tra khi có mã
-          đơn trên đường dẫn.
-        </p>
-        {orderId ? (
-          <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
-            Đơn: {orderId}
-          </p>
-        ) : (
-          <p className="mt-2 text-xs text-amber-800/90 dark:text-amber-200/90">
-            Không có mã đơn trên URL — mở lại từ bước &quot;Tôi đã chuyển
-            khoản&quot; hoặc nhấn tải lại số dư bên dưới.
-          </p>
-        )}
-        {longWaitHint ? (
-          <p className="mt-3 text-sm text-amber-800/90 dark:text-amber-200/90 text-left rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2">
-            Chưa thấy xác nhận tự động. Trên{" "}
-            <strong>my.payos.vn</strong> cần cấu hình webhook trỏ tới{" "}
-            <code className="text-xs break-all">
-              …/functions/v1/payos-webhook
-            </code>{" "}
-            của Supabase, và chạy{" "}
-            <code className="text-xs">supabase functions deploy payos-webhook</code>
-            . Kiểm tra chữ ký <code className="text-xs">PAYOS_CHECKSUM_KEY</code>{" "}
-            trùng kênh PayOS. Sau đó thanh toán lại hoặc liên hệ hỗ trợ kèm mã đơn.
-          </p>
-        ) : null}
-      </div>
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
-      ) : profile ? (
-        <div className="rounded-xl border border-border bg-card p-4 text-sm">
-          <p className="text-muted-foreground">Số dư hiện tại</p>
-          <p className="text-2xl font-semibold text-foreground mt-1 leading-snug">
-            {creditsBalanceHeadline(profile)}
-          </p>
-          {creditsFootnote ? (
-            <p className="text-muted-foreground mt-2 text-xs leading-relaxed">
-              {creditsFootnote}
-            </p>
+    <div
+      style={{
+        background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+        minHeight: "100svh",
+        color: CREAM,
+        fontFamily: "var(--serif)",
+      }}
+    >
+      <BackBar dark title="Thanh toán thành công" onBack={() => navigate("/app")} />
+
+      <div style={{ padding: "8px 20px 48px" }}>
+        {/* Kanji stamp */}
+        <div style={{ textAlign: "center", padding: "32px 0 12px" }}>
+          <span
+            style={{
+              fontFamily: "var(--hanzi)",
+              fontSize: 64,
+              color: GOLD,
+              fontWeight: 700,
+              opacity: 0.6,
+            }}
+          >
+            完
+          </span>
+        </div>
+
+        {/* Headline */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div
+            style={{
+              fontFamily: "var(--display-2)",
+              fontWeight: 800,
+              fontSize: 24,
+              textTransform: "uppercase",
+              letterSpacing: "-0.005em",
+              color: CREAM,
+            }}
+          >
+            Đã nhận thanh toán
+          </div>
+          {shortOrderId ? (
+            <Mono style={{ color: CREAM60, marginTop: 8, display: "block" }}>
+              {shortOrderId}
+            </Mono>
           ) : null}
         </div>
-      ) : null}
-      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => {
-            void reload().then(() => toast.message("Đã tải lại số dư."));
-          }}
-        >
-          Tải lại số dư
-        </Button>
-        <Button asChild>
-          <Link to="/app">Trang chủ app</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link to="/app/mua-luong">Mua thêm</Link>
-        </Button>
+
+        {/* Balance before → after */}
+        {!loading && profile ? (
+          <div
+            style={{
+              padding: "16px 0",
+              borderTop: `1px dashed rgba(197,165,90,0.35)`,
+              borderBottom: `1px dashed rgba(197,165,90,0.35)`,
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+              marginBottom: 28,
+            }}
+          >
+            {hasSub ? (
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontFamily: "var(--display-2)",
+                    fontWeight: 800,
+                    fontSize: 28,
+                    color: GOLD,
+                  }}
+                >
+                  ∞
+                </div>
+                <Mono style={{ color: CREAM60 }}>Gói đang hoạt động</Mono>
+              </div>
+            ) : (
+              <>
+                <div style={{ textAlign: "center" }}>
+                  <Mono style={{ color: CREAM60 }}>Trước</Mono>
+                  <div
+                    style={{
+                      fontFamily: "var(--display-2)",
+                      fontWeight: 800,
+                      fontSize: 20,
+                      color: CREAM60,
+                    }}
+                  >
+                    {balanceBefore.current ?? "—"}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    color: GOLD,
+                    fontFamily: "var(--display-2)",
+                    fontWeight: 800,
+                    fontSize: 20,
+                  }}
+                >
+                  →
+                </span>
+                <div style={{ textAlign: "center" }}>
+                  <Mono style={{ color: GOLD }}>Mới</Mono>
+                  <div
+                    style={{
+                      fontFamily: "var(--display-2)",
+                      fontWeight: 800,
+                      fontSize: 28,
+                      color: GOLD,
+                    }}
+                  >
+                    {balanceAfter}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        ) : loading ? (
+          <Mono style={{ color: CREAM60, display: "block", textAlign: "center", marginBottom: 28 }}>
+            Đang xác nhận…
+          </Mono>
+        ) : null}
+
+        {creditsFootnote ? (
+          <p
+            style={{
+              fontFamily: "var(--serif)",
+              fontStyle: "italic",
+              fontSize: 14,
+              color: CREAM60,
+              marginBottom: 20,
+              textAlign: "center",
+              lineHeight: 1.55,
+            }}
+          >
+            {creditsFootnote}
+          </p>
+        ) : null}
+
+        {!orderId ? (
+          <p
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 16,
+              color: CREAM60,
+              marginBottom: 20,
+              padding: "12px 16px",
+              background: "rgba(237,231,211,0.06)",
+              borderRadius: 8,
+              lineHeight: 1.55,
+            }}
+          >
+            Không tìm thấy mã đơn. Nếu bạn vừa chuyển khoản thành công, lượng sẽ tự cập nhật trong vài phút — hoặc nhấn &quot;Tải lại&quot; bên dưới.
+          </p>
+        ) : null}
+
+        {longWait && !confirmed ? (
+          <p
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 16,
+              color: CREAM,
+              marginBottom: 20,
+              padding: "12px 16px",
+              background: "rgba(237,231,211,0.06)",
+              border: "1px dashed rgba(197,165,90,0.45)",
+              borderRadius: 8,
+              lineHeight: 1.55,
+            }}
+          >
+            Chưa thấy cập nhật tự động. Vui lòng thử tải lại, hoặc liên hệ{" "}
+            <a href="mailto:hotro@ngaylanhthangtot.vn" style={{ color: GOLD, textDecoration: "underline" }}>
+              hotro@ngaylanhthangtot.vn
+            </a>{" "}
+            kèm mã đơn để được hỗ trợ trong vòng 2 giờ.
+          </p>
+        ) : null}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            type="button"
+            style={{
+              background: "rgba(237,231,211,0.12)",
+              color: CREAM,
+              border: `1px solid rgba(237,231,211,0.25)`,
+              borderRadius: 8,
+              padding: "12px 20px",
+              fontFamily: "var(--mono)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+            onClick={() => {
+              void reload().then(() => toast.message("Đã tải lại số dư."));
+            }}
+          >
+            Tải lại
+          </button>
+          <Link
+            to="/app"
+            style={{
+              display: "block",
+              textAlign: "center",
+              background: CREAM,
+              color: "var(--ink, #18150e)",
+              borderRadius: 8,
+              padding: "13px 20px",
+              fontFamily: "var(--mono)",
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: "none",
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}
+          >
+            Về trang chủ
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -26,6 +26,8 @@ export interface Database {
           birth_data_locked_at: string | null;
           onboarding_completed_at: string | null;
           push_enabled: boolean;
+          push_notifications_enabled: boolean;
+          push_token: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -44,6 +46,8 @@ export interface Database {
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
           push_enabled?: boolean;
+          push_notifications_enabled?: boolean;
+          push_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -62,6 +66,8 @@ export interface Database {
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
           push_enabled?: boolean;
+          push_notifications_enabled?: boolean;
+          push_token?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -233,12 +239,115 @@ export interface Database {
         };
         Relationships: [];
       };
+      streaks: {
+        Row: {
+          user_id: string;
+          current_count: number;
+          longest_count: number;
+          last_check_in: string | null;
+          started_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          current_count?: number;
+          longest_count?: number;
+          last_check_in?: string | null;
+          started_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          current_count?: number;
+          longest_count?: number;
+          last_check_in?: string | null;
+          started_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      daily_check_ins: {
+        Row: {
+          id: string;
+          user_id: string;
+          day_iso: string;
+          opened_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          day_iso: string;
+          opened_at?: string;
+        };
+        Update: {
+          day_iso?: string;
+          opened_at?: string;
+        };
+        Relationships: [];
+      };
+      saved_picks: {
+        Row: {
+          id: string;
+          user_id: string;
+          saved_at: string;
+          source_endpoint: string;
+          payload: Json;
+          label: string | null;
+          day_iso: string | null;
+          score: number | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          saved_at?: string;
+          source_endpoint: string;
+          payload: Json;
+          label?: string | null;
+          day_iso?: string | null;
+          score?: number | null;
+        };
+        Update: {
+          source_endpoint?: string;
+          payload?: Json;
+          label?: string | null;
+          day_iso?: string | null;
+          score?: number | null;
+        };
+        Relationships: [];
+      };
+      pinned_readings: {
+        Row: {
+          id: string;
+          user_id: string;
+          scope: string;
+          day_iso: string;
+          section: string;
+          reading_snapshot: string | null;
+          pinned_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          scope: string;
+          day_iso: string;
+          section?: string;
+          reading_snapshot?: string | null;
+          pinned_at?: string;
+        };
+        Update: {
+          reading_snapshot?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       apply_referral_pair: {
         Args: { p_referee_id: string; p_referrer_id: string };
         Returns: undefined;
+      };
+      record_daily_visit: {
+        Args: { p_user_id: string; p_day_iso: string };
+        Returns: Json;
       };
     };
     Enums: Record<string, never>;

@@ -93,43 +93,31 @@ export function ChonNgayMethodologyCollapsible({
         >
           <div className="rounded-[calc(var(--radius-lg)-4px)] border border-border/80 bg-muted/25 px-3 py-3 space-y-3 text-sm text-muted-foreground leading-relaxed">
             <h2 className="text-foreground text-sm font-semibold font-[family-name:var(--font-lora)]">
-              Chọn Ngày Lành - Cá Nhân Hoá Theo Bản Mệnh
+              Cách chúng tôi chọn ngày cho bạn — 4 bước
             </h2>
-            <p>Không phải ngày lành của người này là ngày lành của người kia.</p>
-            <p className="font-medium text-foreground/90">
-              Hệ thống chọn ngày của chúng tôi hoạt động qua 3 bước:
-            </p>
-            <ol className="list-decimal pl-4 space-y-2.5 marker:text-foreground marker:font-medium">
-              <li>
-                <span className="text-foreground font-medium">
-                  Bước 1: Loại ngày dữ
-                </span>
-                {" — "}
-                Tự động loại các ngày Nguyệt Kỵ, Tam Nương, Dương Công Kỵ mà ai
-                cũng nên tránh.
-              </li>
-              <li>
-                <span className="text-foreground font-medium">
-                  Bước 2: Đối chiếu lá số
-                </span>
-                {" — "}
-                So ngày với mệnh, Dụng Thần, Kỵ Thần riêng của bạn. Ngày lành
-                với người mệnh Kim có thể là ngày dữ với người mệnh Mộc.
-              </li>
-              <li>
-                <span className="text-foreground font-medium">
-                  Bước 3: Xếp hạng thông minh
-                </span>
-                {" — "}
-                Từ hàng chục ngày còn lại, hệ thống chấm điểm dựa trên Trực, sao
-                cát hung, ngũ hành tương sinh với mệnh bạn — chọn ra top 3
-                ngày đẹp nhất.
-              </li>
-            </ol>
-            <p className="pt-1 border-t border-border/60 text-foreground/95">
-              <span className="font-medium">Kết quả:</span> Những ngày được
-              chọn không chỉ &quot;không dữ&quot; — mà thực sự hợp mệnh với
-              riêng bạn.
+            <div className="space-y-3">
+              {(
+                [
+                  ["1", "Đối chiếu Bát Tự", "Lấy can chi 4 trụ (năm/tháng/ngày/giờ) từ lá số của bạn — xác định ngũ hành nhật chủ và đại vận hiện tại."],
+                  ["2", "Kiểm Trực · Hoàng Đạo", "12 trực + 28 sao + Hoàng/Hắc đạo. Loại sớm những ngày kỵ với việc bạn chọn."],
+                  ["3", "Tính điểm phù hợp", "Mỗi ngày được chấm theo công thức: tương sinh nhật chủ × hợp việc × giờ tốt sẵn có. Điểm 0–100."],
+                  ["4", "Sắp xếp & gợi ý", "Top ngày được luận giải dựa trên lá số riêng — không phải bản dịch chung."],
+                ] as [string, string, string][]
+              ).map(([n, h, d]) => (
+                <div key={n} className="flex gap-2.5">
+                  <div className="shrink-0 w-6 h-6 bg-[var(--gold,#c5a55a)] text-[var(--paper,#f0ece2)] flex items-center justify-center font-[family-name:var(--font-barlow-condensed)] font-bold text-xs">
+                    {n}
+                  </div>
+                  <div>
+                    <span className="text-foreground font-medium">{h}</span>
+                    {" — "}
+                    {d}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="pt-2 border-t border-border/60 text-foreground/70 text-xs italic">
+              Dữ liệu: Hiệp Kỷ Biện Phương Thư · Ngọc Hạp Thông Thư · phương pháp Trạch Cát truyền thống.
             </p>
           </div>
         </CollapsibleContent>

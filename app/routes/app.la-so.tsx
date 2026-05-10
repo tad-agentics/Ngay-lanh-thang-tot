@@ -9,7 +9,7 @@ const LasoRevealSequence = lazy(() =>
   })),
 );
 import { AiReadingBlock } from "~/components/AiReadingBlock";
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar } from "~/components/brand";
 import { GrainOverlay } from "~/components/GrainOverlay";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -205,11 +205,16 @@ export default function AppLaSo() {
     laSoJsonToRevealProps(profile?.la_so as never) ?? reveal;
 
   const core = (
-      <div className="min-h-[60vh] bg-background px-4 pb-24">
-        <ScreenHeader
+      <div
+        className="min-h-[60vh] px-4 pb-24"
+        style={{
+          background: "var(--paper, #f0ece2)",
+          color: "var(--ink, #1a1a1a)",
+          fontFamily: "var(--serif)",
+        }}
+      >
+        <BackBar
           title="Lá số tứ trụ"
-          showBack={false}
-          appScreenTitle
           endAdornment={<CreditsHeaderChip />}
         />
 
@@ -307,7 +312,7 @@ export default function AppLaSo() {
               <Link to="/app/la-so/chi-tiet">Xem lá số đầy đủ</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/app/van-thang">Vận tháng</Link>
+              <Link to="/app/tieu-van">Vận tháng</Link>
             </Button>
           </div>
         ) : null}

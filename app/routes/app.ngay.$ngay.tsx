@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Moon, Sun } from "lucide-react";
 import { toast } from "sonner";
@@ -7,8 +7,7 @@ import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { GrainOverlay } from "~/components/GrainOverlay";
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar } from "~/components/brand";
 import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
 import {
   type DayDetailHeaderMeta,
@@ -21,15 +20,13 @@ import {
 } from "~/lib/day-detail-view";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { invokeGenerateReading } from "~/lib/generate-reading";
+import { fetchIsPinned, invokePin } from "~/lib/pin-reading";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import type { Database } from "~/lib/database.types";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
-
-import { Button } from "~/components/ui/button";
-import { cn } from "~/components/ui/utils";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -64,32 +61,65 @@ const HAC_DAO_LASO_EXPLAINER_COPY =
 function NgayChiTietProfilePaywall() {
   return (
     <div
-      className="border border-border bg-card px-4 py-5 space-y-4"
-      style={{ borderRadius: "var(--radius-lg)" }}
+      style={{
+        background: "rgba(237,231,211,0.06)",
+        border: "1px solid rgba(197,165,90,0.3)",
+        borderRadius: 12,
+        padding: "16px 16px 20px",
+      }}
     >
-      <div>
-        <p className="text-foreground text-sm font-medium mb-1">
-          Cần ngày sinh trên hồ sơ
-        </p>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Chi tiết ngày theo lá số cần ít nhất ngày sinh — mỗi lần xem không tốn lượng. Bổ sung trong Cài đặt rồi chọn lại ngày trên lịch.
-        </p>
-      </div>
-      <Button asChild className="w-full sm:w-auto">
-        <Link to="/app/cai-dat">Mở Cài đặt</Link>
-      </Button>
+      <p
+        style={{
+          fontFamily: "var(--serif)",
+          fontSize: 16,
+          color: "var(--cream, #ede7d3)",
+          marginBottom: 8,
+          fontWeight: 600,
+        }}
+      >
+        Cần ngày sinh trên hồ sơ
+      </p>
+      <p
+        style={{
+          fontFamily: "var(--serif)",
+          fontSize: 16,
+          color: "rgba(237,231,211,0.72)",
+          lineHeight: 1.55,
+          marginBottom: 16,
+        }}
+      >
+        Chi tiết ngày theo lá số cần ít nhất ngày sinh — mỗi lần xem không tốn lượng. Bổ sung trong hồ sơ rồi chọn lại ngày trên lịch.
+      </p>
+      <Link
+        to="/app/toi"
+        style={{
+          display: "inline-block",
+          background: "var(--cream, #ede7d3)",
+          color: "var(--ink, #18150e)",
+          borderRadius: 8,
+          padding: "10px 18px",
+          fontFamily: "var(--mono)",
+          fontSize: 13,
+          fontWeight: 700,
+          textDecoration: "none",
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+        }}
+      >
+        Mở hồ sơ
+      </Link>
     </div>
   );
 }
 
-function purposeVerdictClass(v: DayDetailPurposeVerdict): string {
+function purposeVerdictStyle(v: DayDetailPurposeVerdict): CSSProperties {
   switch (v) {
     case "nen_lam":
-      return "bg-success/15 text-success";
+      return { background: "rgba(74,163,97,0.18)", color: "#6fcf97" };
     case "khong_nen":
-      return "bg-destructive/12 text-destructive";
+      return { background: "rgba(220,80,80,0.15)", color: "#f08080" };
     case "trung_lap":
-      return "bg-muted text-muted-foreground";
+      return { background: "rgba(237,231,211,0.1)", color: "rgba(237,231,211,0.55)" };
     default: {
       const _x: never = v;
       return _x;
@@ -171,6 +201,8 @@ function DayDetailFetched({
   const [dayAiLoading, setDayAiLoading] = useState(false);
   const [dayReadingUnlocked, setDayReadingUnlocked] = useState(false);
   const [unlockingDayReading, setUnlockingDayReading] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [pinBusy, setPinBusy] = useState(false);
   const { costs } = useFeatureCosts();
   const unlockDayCost = costs.ai_reading_unlock?.credit_cost ?? 1;
   const onPayloadRef = useRef(onPayload);
@@ -178,7 +210,13 @@ function DayDetailFetched({
 
   useEffect(() => {
     setPurposeExpanded(false);
+    setIsPinned(false);
   }, [iso]);
+
+  useEffect(() => {
+    if (!dayReadingUnlocked) return;
+    void fetchIsPinned({ scope: "day_detail", day_iso: iso }).then(setIsPinned);
+  }, [dayReadingUnlocked, iso]);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,6 +325,25 @@ function DayDetailFetched({
     );
   }
 
+  async function handlePin() {
+    if (pinBusy) return;
+    setPinBusy(true);
+    const action = isPinned ? "unpin" : "pin";
+    const result = await invokePin({
+      action,
+      scope: "day_detail",
+      day_iso: iso,
+      reading_snapshot: dayAiReading ?? undefined,
+    });
+    if (result.ok) {
+      setIsPinned(result.pinned);
+      toast.success(result.pinned ? "Đã ghim luận giải." : "Đã bỏ ghim.");
+    } else {
+      toast.error(result.message);
+    }
+    setPinBusy(false);
+  }
+
   if (loading) {
     return <p className="text-sm text-muted-foreground py-4">Đang tải chi tiết…</p>;
   }
@@ -311,6 +368,12 @@ function DayDetailFetched({
     ? purposeSorted
     : purposeSorted.slice(0, 3);
 
+  const CREAM = "var(--cream, #ede7d3)";
+  const CREAM60 = "rgba(237,231,211,0.6)";
+  const GOLD = "var(--gold, #c5a55a)";
+  const CARD_BG = "rgba(237,231,211,0.05)";
+  const CARD_BORDER = "rgba(197,165,90,0.22)";
+
   const readingBlock = dayReadingUnlocked ? (
     <AiReadingBlock
       title="Luận giải"
@@ -318,86 +381,111 @@ function DayDetailFetched({
       variant="on-card"
       loading={dayAiLoading}
       text={dayAiReading}
+      scope="day_detail"
+      dayIso={iso}
+      isPinned={isPinned}
+      onPin={() => void handlePin()}
+      pinBusy={pinBusy}
     />
   ) : (
-    <section className="mt-2 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5 space-y-3">
-      <p className="text-sm leading-relaxed text-foreground/90">
+    <div
+      style={{
+        marginTop: 8,
+        background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        borderRadius: 10,
+        padding: "12px 14px",
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "var(--serif)",
+          fontSize: 14,
+          color: CREAM60,
+          lineHeight: 1.6,
+          marginBottom: 12,
+        }}
+      >
         Mở khóa để xem luận giải riêng cho ngày này.
       </p>
-      <Button
+      <button
         type="button"
-        variant="secondary"
-        className="border-0 bg-[#C9A64A] font-semibold text-black hover:bg-[#B8943F]"
         disabled={unlockingDayReading}
         onClick={() => void unlockDayReading()}
+        style={{
+          background: unlockingDayReading ? "rgba(197,165,90,0.4)" : GOLD,
+          color: "var(--ink, #18150e)",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 16px",
+          fontFamily: "var(--mono)",
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: unlockingDayReading ? "not-allowed" : "pointer",
+          letterSpacing: "0.05em",
+          textTransform: "uppercase",
+        }}
       >
         {unlockingDayReading
-          ? "Đang mở khóa..."
+          ? "Đang mở khóa…"
           : `Mở khóa (${unlockDayCost} lượng)`}
-      </Button>
-    </section>
+      </button>
+    </div>
   );
 
+  const cardStyle: CSSProperties = {
+    background: CARD_BG,
+    border: `1px solid ${CARD_BORDER}`,
+    borderRadius: 14,
+    padding: "16px",
+  };
+
   return (
-    <div className="space-y-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       {view ? (
         <>
-          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
-            <p className="text-xs text-muted-foreground">Trực</p>
-            <h2 className="text-base font-semibold text-foreground leading-snug">
+          <section style={cardStyle}>
+            <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Trực</p>
+            <h2 style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: 17, color: CREAM, marginBottom: 6 }}>
               {view.trucTitle}
             </h2>
-            {view.trucDescription ? (
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {view.trucDescription}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">—</p>
-            )}
+            <p style={{ fontFamily: "var(--serif)", fontSize: 14, color: CREAM60, lineHeight: 1.6 }}>
+              {view.trucDescription || "—"}
+            </p>
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
-            <p className="text-xs text-muted-foreground">Luận giải tổng quan</p>
+          <section style={cardStyle}>
+            <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Luận giải tổng quan</p>
             {readingBlock}
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
-            <div className="flex gap-3 items-start">
-              <Sun
-                className="shrink-0 text-success mt-0.5"
-                size={20}
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground mb-0.5">Giờ tốt</p>
-                <p className="text-sm font-medium text-success">{view.gioTot}</p>
+          <section style={cardStyle}>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 14 }}>
+              <Sun size={18} color="#6fcf97" strokeWidth={1.75} aria-hidden />
+              <div>
+                <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Giờ tốt</p>
+                <p style={{ fontFamily: "var(--serif)", fontSize: 14, color: "#6fcf97", fontWeight: 600 }}>{view.gioTot}</p>
               </div>
             </div>
-            <div className="h-px bg-border" />
-            <div className="flex gap-3 items-start">
-              <Moon
-                className="shrink-0 text-destructive mt-0.5"
-                size={20}
-                strokeWidth={1.75}
-                aria-hidden
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground mb-0.5">Giờ xấu</p>
-                <p className="text-sm font-medium text-destructive">{view.gioXau}</p>
+            <div style={{ height: 1, background: "rgba(197,165,90,0.2)", marginBottom: 14 }} />
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <Moon size={18} color="#f08080" strokeWidth={1.75} aria-hidden />
+              <div>
+                <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 2 }}>Giờ xấu</p>
+                <p style={{ fontFamily: "var(--serif)", fontSize: 14, color: "#f08080", fontWeight: 600 }}>{view.gioXau}</p>
               </div>
             </div>
           </section>
 
           {view.catThanLabels.length > 0 || view.hungSatLabels.length > 0 ? (
-            <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-3">
-              <h2 className="text-base font-semibold text-foreground">Thần sát</h2>
+            <section style={cardStyle}>
+              <h2 style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: 16, color: CREAM, marginBottom: 12 }}>Thần sát</h2>
               {view.catThanLabels.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: view.hungSatLabels.length > 0 ? 12 : 0 }}>
                   {view.catThanLabels.map((label) => (
                     <span
                       key={label}
-                      className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-success/15 text-success"
+                      style={{ background: "rgba(74,163,97,0.18)", color: "#6fcf97", borderRadius: 999, padding: "4px 10px", fontFamily: "var(--mono)", fontSize: 12, fontWeight: 600 }}
                     >
                       {label}
                     </span>
@@ -405,27 +493,27 @@ function DayDetailFetched({
                 </div>
               ) : null}
               {view.hungSatLabels.length > 0 ? (
-                <div className="space-y-1.5">
-                  <p className="text-xs text-muted-foreground">Hung sát</p>
-                  <div className="flex flex-wrap gap-2">
+                <>
+                  <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 8 }}>Hung sát</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {view.hungSatLabels.map((label) => (
                       <span
                         key={label}
-                        className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-destructive/12 text-destructive"
+                        style={{ background: "rgba(220,80,80,0.15)", color: "#f08080", borderRadius: 999, padding: "4px 10px", fontFamily: "var(--mono)", fontSize: 12, fontWeight: 600 }}
                       >
                         {label}
                       </span>
                     ))}
                   </div>
-                </div>
+                </>
               ) : null}
             </section>
           ) : null}
 
           {view.purposeRows.length > 0 ? (
-            <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-semibold text-foreground flex-1 min-w-[12rem]">
+            <section style={cardStyle}>
+              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <h2 style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: 16, color: CREAM, flex: 1, minWidth: "12rem" }}>
                   Mục đích trong ngày
                 </h2>
                 {view.grade && view.grade !== "—" ? (
@@ -434,20 +522,25 @@ function DayDetailFetched({
                   </Chip>
                 ) : null}
               </div>
-              <ul className="space-y-2.5">
+              <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {purposeVisible.map((row, idx) => (
                   <li
                     key={`${row.label}-${idx}`}
-                    className="flex flex-wrap items-center justify-between gap-2 text-sm"
+                    style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 8 }}
                   >
-                    <span className="text-foreground font-medium min-w-0 flex-1">
+                    <span style={{ fontFamily: "var(--serif)", fontSize: 14, color: CREAM, fontWeight: 500, flex: 1, minWidth: 0 }}>
                       {row.label}
                     </span>
                     <span
-                      className={cn(
-                        "shrink-0 inline-flex px-2.5 py-1 text-xs font-medium rounded-full",
-                        purposeVerdictClass(row.verdict),
-                      )}
+                      style={{
+                        ...purposeVerdictStyle(row.verdict),
+                        borderRadius: 999,
+                        padding: "4px 10px",
+                        fontFamily: "var(--mono)",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        flexShrink: 0,
+                      }}
                     >
                       {purposeVerdictLabel(row.verdict)}
                     </span>
@@ -458,7 +551,7 @@ function DayDetailFetched({
                 <button
                   type="button"
                   onClick={() => setPurposeExpanded((e) => !e)}
-                  className="block w-full text-left text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                  style={{ marginTop: 12, background: "none", border: "none", padding: 0, fontFamily: "var(--serif)", fontSize: 13, color: CREAM60, textDecoration: "underline", cursor: "pointer" }}
                 >
                   {purposeExpanded
                     ? "Thu gọn"
@@ -470,24 +563,19 @@ function DayDetailFetched({
         </>
       ) : (
         <>
-          <section className="rounded-xl border border-border bg-card p-4 shadow-sm space-y-2">
-            <p className="text-xs text-muted-foreground">Luận giải tổng quan</p>
+          <section style={cardStyle}>
+            <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Luận giải tổng quan</p>
             {readingBlock}
           </section>
           {dayReadingUnlocked && fallbackLines.length > 0 ? (
-            <details className="rounded-xl border border-border bg-card p-4 shadow-sm group">
-              <summary className="text-sm font-medium text-foreground cursor-pointer list-none flex items-center justify-between gap-2">
-                Dữ liệu tham chiếu từ API
-                <span className="text-muted-foreground text-xs font-normal group-open:hidden">
-                  Xem chi tiết
-                </span>
-                <span className="text-muted-foreground text-xs font-normal hidden group-open:inline">
-                  Thu gọn
-                </span>
+            <details style={{ ...cardStyle }}>
+              <summary style={{ fontFamily: "var(--serif)", fontSize: 14, color: CREAM, cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                Dữ liệu tham chiếu
+                <span style={{ fontFamily: "var(--mono)", fontSize: 12, color: CREAM60 }}>Xem</span>
               </summary>
-              <ul className="mt-3 list-disc pl-4 space-y-1.5 text-sm text-foreground border-t border-border pt-3">
+              <ul style={{ marginTop: 12, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
                 {fallbackLines.map((line, i) => (
-                  <li key={i}>{line}</li>
+                  <li key={i} style={{ fontFamily: "var(--serif)", fontSize: 14, color: CREAM60, lineHeight: 1.55 }}>{line}</li>
                 ))}
               </ul>
             </details>
@@ -510,12 +598,27 @@ export default function AppNgayChiTiet() {
     setHeaderMeta(null);
   }, [iso]);
 
+  const CREAM = "var(--cream, #ede7d3)";
+  const CREAM60 = "rgba(237,231,211,0.6)";
+
   if (!iso) {
     return (
-      <div className="px-4 pb-8 pt-6 space-y-4">
+      <div
+        style={{
+          background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+          minHeight: "100svh",
+          padding: "24px 16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
         <ErrorBanner message="Đường dẫn ngày không hợp lệ (cần YYYY-MM-DD)." />
-        <Link to="/app" className="text-sm text-primary underline">
-          Về trang chủ app
+        <Link
+          to="/app"
+          style={{ fontFamily: "var(--serif)", fontSize: 14, color: CREAM60, textDecoration: "underline" }}
+        >
+          Về trang chủ
         </Link>
       </div>
     );
@@ -523,64 +626,74 @@ export default function AppNgayChiTiet() {
 
   const dayTitle = formatIsoDateLichHeader(iso);
 
+  const chipColorMap: Record<string, string> = {
+    success: "#6fcf97",
+    danger: "#f08080",
+    default: CREAM60,
+  };
+
   return (
-    <div className="pb-8">
-      <div className="relative overflow-hidden bg-surface text-surface-foreground px-4 pt-3 pb-5">
-        <GrainOverlay />
-        <div className="relative">
-          <ScreenHeader
-            title={dayTitle}
-            dark
-            className="pt-2 pb-2"
-            titleClassName="!text-primary"
-            endAdornment={<CreditsHeaderChip forDarkSurface />}
-          />
-          {headerMeta?.subline || headerMeta?.chip ? (
-            <div className="flex items-center justify-between gap-2 mt-1 pb-1">
-              {headerMeta.subline ? (
-                <p className="text-surface-foreground/70 text-xs min-w-0 flex-1 pr-2 leading-snug">
-                  {headerMeta.subline}
-                </p>
-              ) : (
-                <span className="flex-1 min-w-0" />
-              )}
-              {headerMeta.chip ? (
-                <Chip
-                  color={headerMeta.chip.color}
-                  variant="flat"
-                  size="sm"
-                  radius="pill"
-                  className={cn(
-                    "shrink-0 border-0",
-                    headerMeta.chip.color === "success" &&
-                      "bg-black/25 text-emerald-300",
-                    headerMeta.chip.color === "danger" &&
-                      "bg-black/25 text-red-300",
-                    headerMeta.chip.color === "default" &&
-                      "bg-black/20 text-surface-foreground/80",
-                  )}
-                >
-                  {headerMeta.chip.label}
-                </Chip>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+    <div
+      style={{
+        background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+        minHeight: "100svh",
+        color: CREAM,
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: "12px 16px 16px" }}>
+        <BackBar
+          title={dayTitle}
+          dark
+          endAdornment={<CreditsHeaderChip forDarkSurface />}
+        />
+        {headerMeta?.subline || headerMeta?.chip ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 4 }}>
+            {headerMeta.subline ? (
+              <p style={{ fontFamily: "var(--serif)", fontSize: 13, color: CREAM60, flex: 1, minWidth: 0, lineHeight: 1.5 }}>
+                {headerMeta.subline}
+              </p>
+            ) : (
+              <span style={{ flex: 1 }} />
+            )}
+            {headerMeta.chip ? (
+              <span
+                style={{
+                  background: "rgba(0,0,0,0.3)",
+                  color: chipColorMap[headerMeta.chip.color] ?? CREAM60,
+                  borderRadius: 999,
+                  padding: "4px 10px",
+                  fontFamily: "var(--mono)",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  flexShrink: 0,
+                }}
+              >
+                {headerMeta.chip.label}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      <div className="px-4 pt-4 space-y-4">
+      <div style={{ padding: "0 16px 32px", display: "flex", flexDirection: "column", gap: 14 }}>
         {headerMeta?.chip?.color === "danger" ? (
           <aside
-            className="rounded-xl border border-border/80 bg-card/90 px-3.5 py-3 shadow-sm"
+            style={{
+              background: "rgba(237,231,211,0.05)",
+              border: "1px solid rgba(197,165,90,0.2)",
+              borderRadius: 12,
+              padding: "12px 14px",
+            }}
             aria-label="Vì sao ngày Hắc Đạo vẫn có thể phù hợp lá số"
           >
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
+            <p style={{ fontFamily: "var(--serif)", fontSize: 13, color: CREAM60, lineHeight: 1.6 }}>
               {HAC_DAO_LASO_EXPLAINER_COPY}
             </p>
           </aside>
         ) : null}
         {loading ? (
-          <p className="text-sm text-muted-foreground">Đang tải hồ sơ…</p>
+          <p style={{ fontFamily: "var(--serif)", fontSize: 14, color: CREAM60 }}>Đang tải hồ sơ…</p>
         ) : !profile?.ngay_sinh ? (
           <NgayChiTietProfilePaywall />
         ) : (

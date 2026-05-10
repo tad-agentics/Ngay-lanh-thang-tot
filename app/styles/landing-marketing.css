@@ -988,3 +988,34 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── LandingV2 responsive helpers ── */
+@media (min-width: 1024px) {
+  #lp .lp-nav-desktop-link {
+    display: inline !important;
+  }
+  #lp .lp-sticky-bar {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  #lp .lp-hero-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #lp .lp-footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  #lp .lp-how-connector {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #lp .lp-footer-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #lp .lp-hero-form-wrapper {
+    max-width: 100% !important;
+  }
+}

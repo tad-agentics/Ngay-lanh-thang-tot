@@ -5,26 +5,38 @@ export const UI_PACKAGES: {
   title: string;
   subtitle: string;
   priceLabel: string;
+  creditsLabel: string;
+  mathNote: string;
+  featured: boolean;
 }[] = [
   {
     sku: "le",
-    title: "Gói lẻ 100 lượng",
+    title: "Lẻ — gói nhỏ",
     subtitle:
-      "Đủ để bạn tra đi tra lại cho tới khi thấy chắc: chọn ngày lành, xem vận tháng, hợp tuổi hay phong thủy — một gói cho nhiều việc, không tính tiền theo tháng. Mua một lần, không gia hạn tự động.",
+      "Mua một lần, dùng dần — không tự động nạp. Còn dư sau 12 tháng thì hết hiệu lực.",
     priceLabel: "99.000₫",
+    creditsLabel: "100 lượng",
+    mathNote: "≈ 10 lần chọn ngày · hoặc 12 lần hợp tuổi",
+    featured: false,
   },
   {
     sku: "goi_6thang",
-    title: "Gói 6 tháng không giới hạn lượng",
+    title: "Tháng An Cư",
     subtitle:
-      "Sáu tháng không giới hạn lượng — thoải mái thử nhiều ngày, nhiều tháng và đủ tính năng cho tới khi thấy ổn. Hợp giai đoạn bận: cưới hỏi, khai trương, nhà mới. Mua một lần cho trọn nửa năm, không gia hạn tự động.",
+      "6 tháng không trừ lượng từng việc — thoải mái thử nhiều ngày, nhiều tháng. Hợp giai đoạn bận: cưới hỏi, khai trương, nhà mới.",
     priceLabel: "789.000₫",
+    creditsLabel: "Dùng thoải mái",
+    mathNote: "≈ 131.500₫ / tháng · tiết kiệm so với gói lẻ",
+    featured: true,
   },
   {
     sku: "goi_12thang",
-    title: "Gói 12 tháng không giới hạn lượng",
+    title: "Năm Phú Quý",
     subtitle:
-      "Cả năm tra cứu không tính lượt — mỗi lần cần là có ngay chọn ngày, vận tháng, hợp tuổi, phong thủy. Một mức giá cho cả nhịp 12 tháng, hợp người xem lịch và lá số đều đặn. Mua một lần, không gia hạn tự động.",
+      "Cả năm tra cứu không tính lượt — chọn ngày, vận tháng, hợp tuổi, phong thủy. Giá mỗi tháng thấp hơn ~37% so với gói 6 tháng.",
     priceLabel: "989.000₫",
+    creditsLabel: "Dùng thoải mái",
+    mathNote: "≈ 82.400₫ / tháng · tiết kiệm nhất",
+    featured: false,
   },
 ];

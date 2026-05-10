@@ -215,7 +215,7 @@ const DAY_DETAIL_SYSTEM = `Bạn là chuyên gia phong thủy và lịch số Vi
 
 /** Thời hạn cache (ms) theo quy ước sản phẩm */
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
-const LA_SO_CHI_TIET_CACHE_VER = "2026-05-10-gemini";
+const LA_SO_CHI_TIET_CACHE_VER = "2026-05-10-gemini-ar07-sectioned";
 /** Bump khi đổi SYSTEM_PROMPT cho tieu-van/luu-nien — làm mới reading_cache. */
 const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi độ dài / hướng dẫn hop-tuoi trong SYSTEM_PROMPT — làm mới reading_cache. */
@@ -227,7 +227,7 @@ const CHON_NGAY_CARDS_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi cấu hình output cho day-detail (max token / format). */
 const DAY_DETAIL_PROMPT_VER = "2026-05-10-gemini";
 /** Version chung — bump khi đổi nhà cung cấp LLM hoặc model mặc định. Áp vào mọi cache key để vô hiệu hoá bản cũ. */
-const GLOBAL_LLM_VER = "2026-05-10-gemini";
+const GLOBAL_LLM_VER = "2026-05-10-gemini-ar07";
 
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,

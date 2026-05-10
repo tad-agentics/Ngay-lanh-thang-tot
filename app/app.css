@@ -5,3 +5,8 @@
 @source "./**/*.{ts,tsx}";
 
 @import "./theme.css";
+
+/* AR-02: cursor blink animation for AiReadingBlock typed reveal */
+@keyframes ar-blink {
+  50% { opacity: 0; }
+}

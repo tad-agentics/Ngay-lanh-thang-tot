@@ -219,7 +219,10 @@ export default function AppChonNgay() {
             })}
           </div>
           {days != null && creditHint && costRow ? (
-            <p className="text-xs text-muted-foreground pt-1">
+            <p
+              className="text-muted-foreground pt-1"
+              style={{ fontFamily: "var(--serif)", fontSize: 14, lineHeight: 1.45 }}
+            >
               Tìm ngày lành trong · {days} ngày tới ·{" "}
               {costRow.is_free || costRow.credit_cost <= 0 ? (
                 <>không trừ lượng</>

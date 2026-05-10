@@ -19,6 +19,10 @@ const PAYLOAD_STRING_KEYS = [
   "menh",
   "reason_short",
   "preview_image_path",
+  // AR-06: reading_only share type
+  "reading_text",
+  "scope",
+  "section_label",
 ] as const;
 
 function json(body: unknown, status = 200): Response {
@@ -123,8 +127,10 @@ Deno.serve(async (req) => {
   }
 
   const payload = sanitizePayload(bodyIn.payload);
+  const isReadingOnly = resultType === "reading_only";
+
   const headline = typeof payload.headline === "string" ? payload.headline.trim() : "";
-  if (!headline) {
+  if (!headline && !isReadingOnly) {
     return json(
       {
         error: {
@@ -135,7 +141,18 @@ Deno.serve(async (req) => {
       400,
     );
   }
-  payload.headline = headline;
+  if (headline) payload.headline = headline;
+  if (isReadingOnly && !payload.reading_text) {
+    return json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "payload.reading_text là bắt buộc cho reading_only.",
+        },
+      },
+      400,
+    );
+  }
 
   const admin = createClient(supabaseUrl, serviceKey);
 

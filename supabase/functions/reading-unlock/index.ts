@@ -7,7 +7,14 @@ import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
 import { subscriptionActive } from "../_shared/subscription.ts";
 
-const FEATURE_KEY = "ai_reading_unlock";
+const SINGLE_FEATURE_KEY = "ai_reading_unlock";
+const BULK_FEATURE_KEY = "ai_reading_bulk_unlock";
+
+/** Valid single-section scopes */
+const SINGLE_SCOPES = ["home", "day_detail"] as const;
+/** Bulk scope: unlocks all sections of la_so_chi_tiet at bundle price */
+const BULK_SCOPE = "la_so_chi_tiet_bulk";
+
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -60,16 +67,21 @@ Deno.serve(async (req) => {
   const dryRun = body.dry_run === true;
 
   const scope = typeof body.scope === "string" ? body.scope.trim() : "";
-  if (scope !== "home" && scope !== "day_detail") {
+  const isBulk = scope === BULK_SCOPE;
+  const isSingle = (SINGLE_SCOPES as readonly string[]).includes(scope);
+
+  if (!isSingle && !isBulk) {
     return json(
       {
         ok: false,
         error_code: "BAD_REQUEST",
-        message: "scope phải là home hoặc day_detail.",
+        message: `scope phải là ${SINGLE_SCOPES.join(", ")} hoặc ${BULK_SCOPE}.`,
       },
       400,
     );
   }
+
+  const FEATURE_KEY = isBulk ? BULK_FEATURE_KEY : SINGLE_FEATURE_KEY;
 
   const dayIso = typeof body.day_iso === "string" ? body.day_iso.trim() : "";
   if (!ISO_DAY.test(dayIso)) {
@@ -84,7 +96,9 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
-  const idempotencyKey = `ai_reading_unlock:${user.id}:${scope}:${dayIso}`;
+  const idempotencyKey = isBulk
+    ? `${BULK_FEATURE_KEY}:${user.id}:${dayIso}`
+    : `${SINGLE_FEATURE_KEY}:${user.id}:${scope}:${dayIso}`;
 
   const { data: existing } = await admin
     .from("credit_ledger")
@@ -176,10 +190,10 @@ Deno.serve(async (req) => {
     {
       p_user_id: user.id,
       p_cost: cost,
-      p_reason: "ai_reading_unlock",
+      p_reason: FEATURE_KEY,
       p_feature_key: FEATURE_KEY,
       p_idempotency_key: idempotencyKey,
-      p_metadata: { scope, day_iso: dayIso },
+      p_metadata: { scope, day_iso: dayIso, bulk: isBulk },
     },
   );
 

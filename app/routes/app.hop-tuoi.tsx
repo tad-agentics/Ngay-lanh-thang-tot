@@ -4,14 +4,12 @@ import { toast } from "sonner";
 
 import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
-import { GrainOverlay } from "~/components/GrainOverlay";
-
 const HopTuoiResultPanel = lazy(() =>
   import("~/components/hop-tuoi/HopTuoiResultPanel").then((m) => ({
     default: m.HopTuoiResultPanel,
   })),
 );
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar, Kanji, Mono } from "~/components/brand";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -186,8 +184,9 @@ export default function AppHopTuoi() {
 
   if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
-      <div className="px-4 pb-8 py-10 text-sm text-muted-foreground">
-        Đang tải…
+      <div style={{ background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)", minHeight: "100%" }}>
+        <BackBar dark title="Hợp tuổi" subtitle="Hai lá số · một mối duyên" endAdornment={<CreditsHeaderChip />} />
+        <p style={{ padding: "24px 20px", fontFamily: "var(--mono)", fontSize: 12, color: "#7a9a80" }}>Đang tải…</p>
       </div>
     );
   }
@@ -198,56 +197,37 @@ export default function AppHopTuoi() {
     : false;
 
   return (
-    <div className="px-4 pb-8">
-      <ScreenHeader
-        title="Hợp tuổi"
-        showBack={false}
-        appScreenTitle
-        endAdornment={<CreditsHeaderChip />}
-      />
+    <div style={{ background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)", minHeight: "100%", color: "var(--cream, #ede7d3)", fontFamily: "var(--serif)", position: "relative" }}>
+      <Kanji ch="合" size={460} style={{ position: "absolute", top: 60, right: -120, color: "rgba(197,165,90,0.05)", pointerEvents: "none" }} />
+      <BackBar dark title="Hợp tuổi" subtitle="Hai lá số · một mối duyên" endAdornment={<CreditsHeaderChip />} />
 
+      <div className="px-4 pb-8" style={{ position: "relative" }}>
       {!showResult ? (
         <CreditGate featureKey="hop_tuoi">
           <div className="flex flex-col gap-5">
             <div
-              className="relative overflow-hidden bg-surface text-surface-foreground px-4 py-3"
-              style={{ borderRadius: "var(--radius-lg)" }}
+              style={{
+                background: "rgba(197,165,90,0.08)",
+                border: "1px solid rgba(197,165,90,0.28)",
+                padding: "14px 16px",
+              }}
             >
-              <GrainOverlay />
-              <div className="relative">
-                <p
-                  className="text-surface-foreground/50 text-[10px] mb-2"
-                  style={{ fontFamily: "var(--font-ibm-mono)" }}
-                >
-                  BẠN
-                </p>
-                <p className="text-surface-foreground text-sm font-medium">
-                  Mệnh{" "}
-                  <span className="text-accent">{laso?.menh ?? "—"}</span>
-                  {laso?.nhatChu ? (
-                    <>
-                      {" "}
-                      · Nhật Chủ{" "}
-                      <span className="text-accent">{laso.nhatChu}</span>
-                    </>
-                  ) : null}
-                </p>
-                <p className="text-surface-foreground/50 text-xs mt-0.5">
-                  Từ lá số đã lưu
-                </p>
-              </div>
+              <Mono style={{ color: "rgba(197,165,90,0.7)", display: "block", marginBottom: 6 }}>Bạn</Mono>
+              <p style={{ fontSize: 14, color: "var(--cream, #ede7d3)", fontFamily: "var(--serif)" }}>
+                Mệnh{" "}
+                <span style={{ color: "var(--gold, #c5a55a)", fontWeight: 600 }}>{laso?.menh ?? "—"}</span>
+                {laso?.nhatChu ? (
+                  <>
+                    {" "}· Nhật Chủ{" "}
+                    <span style={{ color: "var(--gold, #c5a55a)", fontWeight: 600 }}>{laso.nhatChu}</span>
+                  </>
+                ) : null}
+              </p>
+              <Mono style={{ color: "#7a9a80", display: "block", marginTop: 4 }}>Từ lá số đã lưu</Mono>
             </div>
 
-            <div
-              className="bg-card border border-border px-4 py-4"
-              style={{ borderRadius: "var(--radius-lg)" }}
-            >
-              <p
-                className="text-muted-foreground text-[10px] mb-4"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Thông tin chỉ dùng cho lần xem này — không lưu
-              </p>
+            <div style={{ background: "rgba(237,231,211,0.04)", border: "1px solid rgba(197,165,90,0.22)", padding: "16px" }}>
+              <Mono style={{ color: "#7a9a80", display: "block", marginBottom: 16 }}>Thông tin chỉ dùng cho lần xem này — không lưu</Mono>
               <div className="flex flex-col gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="hop-relationship" className="text-xs">
@@ -478,6 +458,7 @@ export default function AppHopTuoi() {
           </Button>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }

@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { CreditGate } from "~/components/CreditGate";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
-import { GrainOverlay } from "~/components/GrainOverlay";
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar, Kanji, Mono } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -424,8 +423,9 @@ export default function AppPhongThuy() {
 
   if (profileLoading || costsLoading || !profile || !hasLaso) {
     return (
-      <div className="px-4 pb-8 py-10 text-sm text-muted-foreground">
-        Đang tải…
+      <div style={{ background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)", minHeight: "100%" }}>
+        <BackBar dark title="Phong thủy" subtitle="Hướng · màu · số theo mệnh" endAdornment={<CreditsHeaderChip />} />
+        <p style={{ padding: "24px 20px", fontFamily: "var(--mono)", fontSize: 12, color: "#7a9a80" }}>Đang tải…</p>
       </div>
     );
   }
@@ -453,35 +453,45 @@ export default function AppPhongThuy() {
   }
 
   return (
-    <div className="px-4 pb-8">
-      <ScreenHeader
-        title="Phong thủy"
-        showBack={false}
-        appScreenTitle
-        endAdornment={<CreditsHeaderChip />}
-      />
+    <div style={{
+      background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+      minHeight: "100%",
+      color: "var(--cream, #ede7d3)",
+      fontFamily: "var(--serif)",
+      position: "relative",
+      "--surface": "rgba(197,165,90,0.08)",
+      "--surface-foreground": "var(--cream, #ede7d3)",
+      "--accent": "var(--gold, #c5a55a)",
+      "--border": "rgba(197,165,90,0.25)",
+      "--muted-foreground": "rgba(237,231,211,0.55)",
+      "--foreground": "var(--cream, #ede7d3)",
+      "--card": "rgba(197,165,90,0.06)",
+    } as React.CSSProperties}>
+      <Kanji ch="風" size={460} style={{ position: "absolute", top: 60, right: -120, color: "rgba(197,165,90,0.05)", pointerEvents: "none" }} />
+      <BackBar dark title="Phong thủy" subtitle="Hướng · màu · số theo mệnh" endAdornment={<CreditsHeaderChip />} />
 
+      <div className="px-4 pb-8" style={{ position: "relative" }}>
       <div className="flex flex-col gap-4">
         {teaserBusy && !unlocked ? (
-          <p className="text-muted-foreground text-xs">Đang cập nhật gợi ý…</p>
+          <Mono style={{ color: "#7a9a80", display: "block" }}>Đang cập nhật gợi ý…</Mono>
         ) : null}
 
         <div
-          className="relative overflow-hidden bg-surface text-surface-foreground px-4 py-4"
-          style={{ borderRadius: "var(--radius-lg)" }}
+          style={{
+            background: "rgba(197,165,90,0.08)",
+            border: "1px solid rgba(197,165,90,0.28)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+          }}
         >
-          <GrainOverlay />
-          <div className="relative">
-            <p
-              className="text-surface-foreground/50 text-[10px] mb-3"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
+          <div>
+            <Mono style={{ color: "rgba(197,165,90,0.7)", display: "block", marginBottom: 12 }}>
               {display.userMenhLabel
-                ? `NẠP ÂM · ${display.userMenhLabel}`
+                ? `Nạp Âm · ${display.userMenhLabel}`
                 : menh
-                  ? `MỆNH ${menh.toUpperCase()}`
-                  : "PHONG THỦY"}
-            </p>
+                  ? `Mệnh ${menh}`
+                  : "Phong thủy"}
+            </Mono>
 
             {!unlocked && !teaserView ? (
               <p className="text-surface-foreground/80 text-sm leading-relaxed mb-4">
@@ -859,6 +869,7 @@ export default function AppPhongThuy() {
             </CreditGate>
           </div>
         ) : null}
+      </div>
       </div>
     </div>
   );

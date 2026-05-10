@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router";
-import { Bell } from "lucide-react";
 import { toast } from "sonner";
 
-import { ScreenHeader } from "~/components/ScreenHeader";
-import { Button } from "~/components/ui/button";
+import { BackBar, Kanji, Mono } from "~/components/brand";
 import { useAuth } from "~/lib/auth";
 import { supabase } from "~/lib/supabase";
 import { urlBase64ToUint8Array } from "~/lib/web-push";
 
+/**
+ * Push permission — forest ceremonial, aligned with b-habit.jsx HBNotifCadence / habit loop.
+ */
 export default function AppThongBaoQuyen() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -51,11 +52,7 @@ export default function AppThongBaoQuyen() {
       }
 
       const vapid = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
-      if (
-        vapid &&
-        "serviceWorker" in navigator &&
-        "PushManager" in window
-      ) {
+      if (vapid && "serviceWorker" in navigator && "PushManager" in window) {
         try {
           const reg = await navigator.serviceWorker.ready;
           const sub = await reg.pushManager.subscribe({
@@ -78,73 +75,135 @@ export default function AppThongBaoQuyen() {
     }
   };
 
+  const btnPrimary: CSSProperties = {
+    width: "100%",
+    minHeight: 48,
+    padding: "14px 20px",
+    background: "var(--gold, #c5a55a)",
+    color: "var(--ink, #18150e)",
+    border: "none",
+    fontFamily: "var(--display-2)",
+    fontWeight: 700,
+    fontSize: 13,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+  };
+
+  const btnSecondary: CSSProperties = {
+    width: "100%",
+    minHeight: 48,
+    padding: "12px 20px",
+    background: "transparent",
+    color: "rgba(237,231,211,0.85)",
+    border: "1px solid rgba(197,165,90,0.45)",
+    fontFamily: "var(--display-2)",
+    fontWeight: 700,
+    fontSize: 13,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+    cursor: "pointer",
+  };
+
   return (
-    <div className="px-4 pb-8">
-      <ScreenHeader title="Thông báo" />
+    <div
+      style={{
+        minHeight: "100%",
+        background:
+          "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+        color: "var(--cream, #ede7d3)",
+        fontFamily: "var(--serif)",
+        paddingBottom: 32,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <Kanji
+        ch="告"
+        size={160}
+        drift
+        style={{
+          position: "absolute",
+          right: "-40px",
+          top: "120px",
+          color: "rgba(197,165,90,0.08)",
+          pointerEvents: "none",
+        }}
+      />
 
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col items-center text-center py-4">
-          <div
-            className="border border-border flex items-center justify-center mb-5"
-            style={{ width: 60, height: 60, borderRadius: "var(--radius-lg)" }}
+      <BackBar dark title="Thông báo" />
+
+      <div className="px-5 pt-4" style={{ position: "relative" }}>
+        <Mono style={{ color: "rgba(237,231,211,0.55)" }}>Nhắc đúng lúc</Mono>
+        <h1
+          style={{
+            fontFamily: "var(--display-2)",
+            fontWeight: 800,
+            fontSize: 22,
+            letterSpacing: "-0.02em",
+            margin: "10px 0 14px",
+            lineHeight: 1.2,
+          }}
+        >
+          {state === "granted"
+            ? "Đã bật thông báo"
+            : state === "denied"
+              ? "Thông báo bị chặn"
+              : "Nhận nhắc đúng lúc"}
+        </h1>
+
+        {state === "granted" ? (
+          <p
+            style={{
+              fontSize: 16,
+              lineHeight: 1.55,
+              color: "rgba(237,231,211,0.82)",
+              margin: "0 0 28px",
+              maxWidth: "22rem",
+            }}
           >
-            <Bell size={26} className="text-foreground" strokeWidth={1.5} />
-          </div>
-
-          {state === "granted" ? (
-            <>
-              <p className="text-foreground text-sm font-medium mb-1">
-                Đã bật thông báo.
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-                Bạn sẽ nhận nhắc mùa cưới, Tết, đầu tháng.
-              </p>
-            </>
-          ) : state === "denied" ? (
-            <>
-              <p className="text-foreground text-sm font-medium mb-1">
-                Thông báo bị chặn.
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-                Vào Cài đặt hệ thống để bật lại cho ứng dụng.
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-foreground text-sm font-medium mb-2">
-                Nhận nhắc đúng lúc
-              </p>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-                Bật thông báo để nhận nhắc mùa cưới, Tết, đầu tháng — đúng lúc
-                cần chọn ngày.
-              </p>
-            </>
-          )}
-        </div>
+            Bạn sẽ nhận nhắc mùa cưới, Tết, đầu tháng.
+          </p>
+        ) : state === "denied" ? (
+          <p
+            style={{
+              fontSize: 16,
+              lineHeight: 1.55,
+              color: "rgba(237,231,211,0.75)",
+              margin: "0 0 28px",
+              maxWidth: "22rem",
+            }}
+          >
+            Vào cài đặt hệ thống để bật lại cho ứng dụng.
+          </p>
+        ) : (
+          <p
+            style={{
+              fontSize: 16,
+              lineHeight: 1.55,
+              color: "rgba(237,231,211,0.75)",
+              margin: "0 0 28px",
+              maxWidth: "22rem",
+            }}
+          >
+            Bật thông báo để nhận nhắc mùa cưới, Tết, đầu tháng — đúng lúc cần
+            chọn ngày.
+          </p>
+        )}
 
         {state === "idle" ? (
-          <div className="flex flex-col gap-3">
-            <Button size="lg" onClick={() => void handleAllow()}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <button type="button" onClick={() => void handleAllow()} style={btnPrimary}>
               Cho phép thông báo
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              type="button"
-              onClick={() => navigate(-1)}
-            >
+            </button>
+            <button type="button" onClick={() => navigate(-1)} style={btnSecondary}>
               Để sau
-            </Button>
+            </button>
           </div>
         ) : (
-          <Button
-            variant="secondary"
-            size="sm"
-            type="button"
-            onClick={() => navigate(-1)}
-          >
+          <button type="button" onClick={() => navigate(-1)} style={btnSecondary}>
             Quay lại
-          </Button>
+          </button>
         )}
       </div>
     </div>

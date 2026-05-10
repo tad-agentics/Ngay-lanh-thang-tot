@@ -8,7 +8,8 @@
     "preview": "npx serve build/client",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint:design": "bash scripts/check-forbidden-patterns.sh"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",

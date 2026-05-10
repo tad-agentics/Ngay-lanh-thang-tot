@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { BrandLogoMark } from "~/components/BrandLogoMark";
+import { Logo } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 import {
   referralParamFromSearchParams,
@@ -38,48 +38,115 @@ export default function DangNhap() {
     if (error) toast.error(error.message);
   }
 
+  const shell: CSSProperties = {
+    background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+    minHeight: "100svh",
+    color: "var(--cream, #ede7d3)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "48px 16px",
+    boxSizing: "border-box",
+  };
+
+  const btnPrimary: CSSProperties = {
+    width: "100%",
+    backgroundColor: "var(--cream, #ede7d3)",
+    color: "var(--ink, #18150e)",
+    fontFamily: "var(--display-2)",
+    fontWeight: 700,
+    fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    border: "none",
+    padding: "14px 20px",
+    borderRadius: "var(--radius-md, 6px)",
+  };
+
+  const btnOutline: CSSProperties = {
+    width: "100%",
+    backgroundColor: "transparent",
+    color: "var(--cream, #ede7d3)",
+    fontFamily: "var(--display-2)",
+    fontWeight: 700,
+    fontSize: 13,
+    textTransform: "uppercase",
+    letterSpacing: "0.1em",
+    border: "1px solid rgba(197, 165, 90, 0.35)",
+    padding: "14px 20px",
+    borderRadius: "var(--radius-md, 6px)",
+  };
+
+  const linkStyle: CSSProperties = {
+    color: "var(--gold, #c5a55a)",
+    textDecoration: "underline",
+    textUnderlineOffset: 4,
+  };
+
   return (
-    <main className="min-h-svh flex flex-col items-center justify-center bg-background px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
+    <main style={shell}>
+      <div style={{ width: "100%", maxWidth: 384, display: "flex", flexDirection: "column", gap: 24 }}>
         <Link
           to="/"
-          className="flex flex-col items-center gap-2 no-underline text-foreground hover:opacity-90"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+            textDecoration: "none",
+            color: "inherit",
+          }}
         >
-          <BrandLogoMark size={56} />
-          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
-            Ngày Lành Tháng Tốt
-          </span>
+          <Logo dark size={42} />
         </Link>
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
+        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 8 }}>
+          <h1
+            style={{
+              fontFamily: "var(--display-2)",
+              fontWeight: 800,
+              fontSize: 24,
+              textTransform: "uppercase",
+              letterSpacing: "-0.01em",
+              color: "var(--cream, #ede7d3)",
+              margin: 0,
+            }}
+          >
             Đăng nhập
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 16,
+              color: "rgba(237, 231, 211, 0.72)",
+              margin: 0,
+            }}
+          >
             Google (khuyên dùng) hoặc email.
           </p>
         </div>
         <Button
           type="button"
-          className="w-full"
           disabled={busy}
           onClick={() => void signInGoogle()}
+          className="w-full"
+          style={btnPrimary}
         >
           Tiếp tục với Google
         </Button>
-        <Button variant="outline" className="w-full" asChild>
-          <Link to={emailHref}>Đăng nhập bằng email</Link>
+        <Button variant="ghost" className="w-full p-0 h-auto hover:bg-transparent" asChild>
+          <Link to={emailHref} style={{ ...btnOutline, display: "block", textAlign: "center", boxSizing: "border-box" }}>
+            Đăng nhập bằng email
+          </Link>
         </Button>
-        <p className="text-center text-sm text-muted-foreground">
+        <p style={{ textAlign: "center", fontFamily: "var(--serif)", fontSize: 14, color: "rgba(237, 231, 211, 0.78)", margin: 0 }}>
           Chưa có tài khoản?{" "}
-          <Link
-            to={signUpHref}
-            className="text-primary underline-offset-4 hover:underline"
-          >
+          <Link to={signUpHref} style={linkStyle}>
             Đăng ký
           </Link>
         </p>
-        <p className="text-center text-xs text-muted-foreground">
-          <Link to="/" className="underline-offset-4 hover:underline">
+        <p style={{ textAlign: "center", fontFamily: "var(--serif)", fontSize: 12, color: "rgba(237, 231, 211, 0.55)", margin: 0 }}>
+          <Link to="/" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 4 }}>
             Về trang chủ
           </Link>
         </p>

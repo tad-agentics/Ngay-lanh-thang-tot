@@ -1,8 +1,8 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { BrandLogoMark } from "~/components/BrandLogoMark";
+import { Logo, Mono } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -11,6 +11,55 @@ import {
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
+
+const shell: CSSProperties = {
+  background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+  minHeight: "100svh",
+  color: "var(--cream, #ede7d3)",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "48px 16px",
+  boxSizing: "border-box",
+};
+
+const inputStyle: CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  background: "rgba(0,0,0,0.2)",
+  border: "1px solid rgba(197,165,90,0.3)",
+  borderRadius: "var(--radius-md, 6px)",
+  color: "var(--cream, #ede7d3)",
+  fontFamily: "var(--serif)",
+  fontSize: 16,
+  outline: "none",
+  boxSizing: "border-box",
+  caretColor: "var(--gold, #c5a55a)",
+};
+
+const btnPrimary: CSSProperties = {
+  width: "100%",
+  backgroundColor: "var(--cream, #ede7d3)",
+  color: "var(--ink, #18150e)",
+  fontFamily: "var(--display-2)",
+  fontWeight: 700,
+  fontSize: 13,
+  textTransform: "uppercase",
+  letterSpacing: "0.1em",
+  border: "none",
+  padding: "14px 20px",
+  borderRadius: "var(--radius-md, 6px)",
+};
+
+const linkMuted: CSSProperties = {
+  color: "var(--gold, #c5a55a)",
+  textDecoration: "underline",
+  textUnderlineOffset: 4,
+  fontFamily: "var(--serif)",
+  fontSize: 14,
+  fontStyle: "italic",
+};
 
 export default function DangNhapEmail() {
   const navigate = useNavigate();
@@ -47,30 +96,65 @@ export default function DangNhapEmail() {
   }
 
   return (
-    <main className="min-h-svh flex flex-col items-center justify-center bg-background px-4 py-12">
+    <main style={shell}>
       <form
         onSubmit={(e) => void onSubmit(e)}
-        className="w-full max-w-sm space-y-5"
+        style={{
+          width: "100%",
+          maxWidth: 384,
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+        }}
       >
         <Link
           to="/"
-          className="flex flex-col items-center gap-2 no-underline text-foreground hover:opacity-90"
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+            textDecoration: "none",
+            color: "inherit",
+          }}
         >
-          <BrandLogoMark size={56} />
-          <span className="text-xs font-medium tracking-[0.2em] uppercase text-muted-foreground">
-            Ngày Lành Tháng Tốt
-          </span>
+          <Logo dark size={36} />
         </Link>
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
+        <div style={{ padding: "6px 4px 0" }}>
+          <Mono style={{ color: "var(--gold, #c5a55a)" }} size={11}>
+            Đăng nhập
+          </Mono>
+          <div
+            style={{
+              fontFamily: "var(--display-2)",
+              fontWeight: 800,
+              fontSize: 24,
+              color: "var(--cream, #ede7d3)",
+              marginTop: 4,
+              letterSpacing: "-0.01em",
+              textTransform: "uppercase",
+            }}
+          >
             Email & mật khẩu
-          </h1>
-          <p className="text-sm text-muted-foreground">
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--serif)",
+              fontStyle: "italic",
+              fontSize: 13,
+              color: "rgba(200,188,152,0.7)",
+              marginTop: 4,
+            }}
+          >
             Đăng nhập bằng tài khoản đã tạo.
-          </p>
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <Label htmlFor="email" style={{ display: "block", margin: 0, padding: 0 }}>
+            <Mono style={{ color: "rgba(200,188,152,0.75)" }} size={11}>
+              Email
+            </Mono>
+          </Label>
           <Input
             id="email"
             type="email"
@@ -78,15 +162,18 @@ export default function DangNhapEmail() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            style={inputStyle}
+            className="min-w-0"
           />
         </div>
-        <div className="space-y-2">
-          <div className="flex justify-between gap-2">
-            <Label htmlFor="password">Mật khẩu</Label>
-            <Link
-              to="/quen-mat-khau"
-              className="text-xs text-primary underline-offset-4 hover:underline"
-            >
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+            <Label htmlFor="password" style={{ margin: 0, padding: 0 }}>
+              <Mono style={{ color: "rgba(200,188,152,0.75)" }} size={11}>
+                Mật khẩu
+              </Mono>
+            </Label>
+            <Link to="/quen-mat-khau" style={linkMuted}>
               Quên mật khẩu?
             </Link>
           </div>
@@ -97,17 +184,33 @@ export default function DangNhapEmail() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            style={inputStyle}
+            className="min-w-0"
           />
         </div>
-        <Button type="submit" className="w-full" disabled={busy}>
+        <Button type="submit" disabled={busy} className="w-full" style={btnPrimary}>
           Đăng nhập
         </Button>
-        <p className="text-center text-sm text-muted-foreground">
-          <Link to={backHref} className="underline-offset-4 hover:underline">
+        <p
+          style={{
+            textAlign: "center",
+            fontFamily: "var(--serif)",
+            fontSize: 14,
+            color: "rgba(237, 231, 211, 0.78)",
+            margin: 0,
+          }}
+        >
+          <Link
+            to={backHref}
+            style={{ color: "var(--cream, #ede7d3)", textDecoration: "underline", textUnderlineOffset: 4 }}
+          >
             Quay lại
           </Link>
           {" · "}
-          <Link to={signUpHref} className="underline-offset-4 hover:underline">
+          <Link
+            to={signUpHref}
+            style={{ color: "var(--cream, #ede7d3)", textDecoration: "underline", textUnderlineOffset: 4 }}
+          >
             Đăng ký
           </Link>
         </p>

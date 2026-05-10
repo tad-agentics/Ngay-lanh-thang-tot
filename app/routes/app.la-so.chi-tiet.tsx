@@ -1,18 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { AiReadingBlock } from "~/components/AiReadingBlock";
 import { Chip } from "~/components/Chip";
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
-import { ScreenHeader } from "~/components/ScreenHeader";
-import { GrainOverlay } from "~/components/GrainOverlay";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "~/components/ui/accordion";
-import { Button } from "~/components/ui/button";
+import { BackBar, Kanji, Mono } from "~/components/brand";
 import { cn } from "~/components/ui/utils";
 import { useProfile, type Profile } from "~/hooks/useProfile";
 import type { LaSoJson } from "~/lib/api-types";
@@ -169,62 +162,6 @@ function persistChiTietSession(
   }
 }
 
-function LaSoChiTietLuanAccordion({
-  sections,
-}: {
-  sections: LaSoChiTietSection[];
-}) {
-  const byId = new Map(sections.map((s) => [s.id, s]));
-  const singleTongHop =
-    sections.length === 1 && sections[0]?.id === TONG_HOP_SECTION_ID;
-
-  if (singleTongHop) {
-    const sec = sections[0]!;
-    return (
-      <Accordion type="multiple" defaultValue={[sec.id]} className="w-full">
-        <AccordionItem value={sec.id}>
-          <AccordionTrigger className="text-sm font-semibold py-3">
-            {sec.title}
-          </AccordionTrigger>
-          <AccordionContent>
-            <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-              {sec.text}
-            </p>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    );
-  }
-
-  const defaultOpen = LA_SO_CHI_TIET_ASPECT_ROWS.map((r) => r.id);
-  return (
-    <Accordion type="multiple" defaultValue={defaultOpen} className="w-full">
-      {LA_SO_CHI_TIET_ASPECT_ROWS.map(({ id, title }) => {
-        const sec = byId.get(id);
-        const body = sec?.text?.trim();
-        return (
-          <AccordionItem key={id} value={id}>
-            <AccordionTrigger className="text-sm font-semibold py-3">
-              {title}
-            </AccordionTrigger>
-            <AccordionContent>
-              {body ? (
-                <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
-                  {body}
-                </p>
-              ) : (
-                <p className="text-muted-foreground text-sm leading-relaxed italic">
-                  Chưa có luận giải cho mục này — phản hồi lá số thiếu dữ liệu cho khía cạnh
-                  đó, hoặc luận giải theo từng khía cạnh chưa tạo được.
-                </p>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
-    </Accordion>
-  );
-}
 
 export default function AppLaSoChiTiet() {
   const navigate = useNavigate();
@@ -487,8 +424,9 @@ export default function AppLaSoChiTiet() {
 
   if (loading || !profile?.la_so || !hasLaso) {
     return (
-      <div className="min-h-[40vh] bg-background px-4 pb-8 py-10">
-        <p className="text-sm text-muted-foreground">Đang tải…</p>
+      <div style={{ background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)", minHeight: "100%" }}>
+        <BackBar dark title="Lá số · Chi tiết" subtitle="5 mục · Tứ Trụ · Đại Vận" endAdornment={<CreditsHeaderChip />} />
+        <p style={{ padding: "24px 20px", fontFamily: "var(--mono)", fontSize: 12, color: "#7a9a80" }}>Đang tải…</p>
       </div>
     );
   }
@@ -529,46 +467,57 @@ export default function AppLaSoChiTiet() {
     detailBusy || luanSections.length > 0 || detailAiLoading;
 
   return (
-    <div className="min-h-[60vh] bg-background px-4 pb-24">
-      <ScreenHeader
-        title="Chi tiết lá số"
-        showBack={false}
-        appScreenTitle
-        endAdornment={<CreditsHeaderChip />}
-      />
+    <div style={{
+      background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+      minHeight: "100%",
+      color: "var(--cream, #ede7d3)",
+      fontFamily: "var(--serif)",
+      position: "relative",
+      "--surface": "rgba(197,165,90,0.08)",
+      "--surface-foreground": "var(--cream, #ede7d3)",
+      "--accent": "var(--gold, #c5a55a)",
+      "--border": "rgba(197,165,90,0.25)",
+      "--muted-foreground": "rgba(237,231,211,0.55)",
+      "--foreground": "var(--cream, #ede7d3)",
+      "--card": "rgba(237,231,211,0.95)",
+      "--card-foreground": "#18150e",
+    } as React.CSSProperties}>
+      <Kanji ch="命" size={400} style={{ position: "absolute", top: 80, right: -100, color: "rgba(197,165,90,0.05)", pointerEvents: "none" }} />
+      <BackBar dark title="Lá số · Chi tiết" subtitle="5 mục · Tứ Trụ · Đại Vận" endAdornment={<CreditsHeaderChip />} />
 
-      <div className="flex flex-col gap-4">
+      <div className="px-4 pb-24" style={{ position: "relative" }}>
+      <div className="flex flex-col gap-4 pt-4">
         <div
-          className="relative overflow-hidden bg-forest text-forest-foreground px-4 py-4 shadow-sm"
-          style={{ borderRadius: "var(--radius-lg)" }}
+          style={{
+            background: "rgba(197,165,90,0.09)",
+            border: "1px solid rgba(197,165,90,0.28)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+          }}
         >
-          <GrainOverlay />
-          <div className="relative">
-            <p
-              className="text-forest-foreground/55 text-[10px] font-medium tracking-widest mb-3"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
-              TỨ TRỤ
-            </p>
+          <Mono style={{ color: "rgba(197,165,90,0.65)", display: "block", marginBottom: 12 }}>
+            TỨ TRỤ
+          </Mono>
+          <div>
             <div className="grid grid-cols-4 gap-2 text-center">
               {(["Giờ", "Ngày", "Tháng", "Năm"] as const).map((label, i) => (
                 <div key={label}>
-                  <p className="text-forest-foreground/50 text-[10px] mb-2 font-medium">
+                  <p className="text-[10px] mb-2 font-medium" style={{ color: "rgba(197,165,90,0.6)" }}>
                     {label}
                   </p>
                   <div
-                    className="bg-forest-foreground/12 py-2 mb-1"
-                    style={{ borderRadius: "var(--radius-sm)" }}
+                    className="py-2 mb-1"
+                    style={{ background: "rgba(197,165,90,0.15)", borderRadius: "var(--radius-sm)" }}
                   >
-                    <p className="text-make-cta text-sm font-semibold">
+                    <p className="text-sm font-semibold text-center" style={{ color: "var(--cream, #ede7d3)" }}>
                       {detail.thienCan[i] ?? "—"}
                     </p>
                   </div>
                   <div
-                    className="bg-forest-foreground/8 py-2"
-                    style={{ borderRadius: "var(--radius-sm)" }}
+                    className="py-2"
+                    style={{ background: "rgba(197,165,90,0.08)", borderRadius: "var(--radius-sm)" }}
                   >
-                    <p className="text-make-cta/95 text-sm font-medium">
+                    <p className="text-sm font-medium text-center" style={{ color: "rgba(237,231,211,0.85)" }}>
                       {detail.diaChi[i] ?? "—"}
                     </p>
                   </div>
@@ -579,10 +528,14 @@ export default function AppLaSoChiTiet() {
         </div>
 
         <div
-          className="bg-card border border-border px-4 py-4 shadow-sm"
-          style={{ borderRadius: "var(--radius-lg)" }}
+          style={{
+            background: "rgba(197,165,90,0.08)",
+            border: "1px solid rgba(197,165,90,0.25)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+          }}
         >
-          <p className="text-foreground text-base font-semibold mb-3">Ngũ hành</p>
+          <Mono style={{ color: "rgba(197,165,90,0.65)", display: "block", marginBottom: 12 }}>NGŨ HÀNH</Mono>
           <div className="flex flex-col gap-2.5">
             {(Object.entries(nguHanh) as [string, number][]).map(([key, val]) => {
               const labels: Record<string, string> = {
@@ -598,12 +551,12 @@ export default function AppLaSoChiTiet() {
                   : 0;
               return (
                 <div key={key} className="flex items-center gap-3">
-                  <span className="text-foreground text-xs font-medium w-9 shrink-0">
+                  <span className="text-xs font-medium w-9 shrink-0" style={{ color: "var(--cream, #ede7d3)" }}>
                     {labels[key] ?? key}
                   </span>
                   <div
-                    className="flex-1 h-2 bg-make-cta/28 overflow-hidden min-w-0"
-                    style={{ borderRadius: "var(--radius-pill)" }}
+                    className="flex-1 h-2 overflow-hidden min-w-0"
+                    style={{ borderRadius: "var(--radius-pill)", background: "rgba(237,231,211,0.15)" }}
                   >
                     <div
                       className="h-full transition-all"
@@ -614,7 +567,7 @@ export default function AppLaSoChiTiet() {
                       }}
                     />
                   </div>
-                  <span className="text-muted-foreground text-xs w-9 text-right tabular-nums shrink-0">
+                  <span className="text-xs w-9 text-right tabular-nums shrink-0" style={{ color: "rgba(237,231,211,0.55)" }}>
                     {pct}%
                   </span>
                 </div>
@@ -624,10 +577,14 @@ export default function AppLaSoChiTiet() {
         </div>
 
         <div
-          className="bg-card border border-border px-4 py-4 shadow-sm"
-          style={{ borderRadius: "var(--radius-lg)" }}
+          style={{
+            background: "rgba(197,165,90,0.08)",
+            border: "1px solid rgba(197,165,90,0.25)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+          }}
         >
-          <p className="text-foreground text-base font-semibold mb-3">Cát thần</p>
+          <Mono style={{ color: "rgba(197,165,90,0.65)", display: "block", marginBottom: 10 }}>CÁT THẦN</Mono>
           <div className="flex flex-wrap gap-2">
             {detail.thanSat.map((ts) => (
               <Chip
@@ -644,30 +601,34 @@ export default function AppLaSoChiTiet() {
         </div>
 
         <div
-          className="bg-card border border-border px-4 py-4 shadow-sm"
-          style={{ borderRadius: "var(--radius-lg)" }}
+          style={{
+            background: "rgba(197,165,90,0.08)",
+            border: "1px solid rgba(197,165,90,0.25)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+          }}
         >
-          <p className="text-foreground text-base font-semibold mb-1">
-            Đại vận hiện tại
-          </p>
-          <p className="text-muted-foreground text-xs leading-relaxed mb-3">
+          <Mono style={{ color: "rgba(197,165,90,0.65)", display: "block", marginBottom: 6 }}>ĐẠI VẬN HIỆN TẠI</Mono>
+          <p style={{ fontFamily: "var(--serif)", fontSize: 12, color: "rgba(237,231,211,0.6)", lineHeight: 1.5, marginBottom: 10 }}>
             Theo dữ liệu lá số đã lưu — trụ và khoảng tuổi tương ứng giai đoạn đang vận.
           </p>
           {currentDaiVan ? (
             <div
-              className={cn(
-                "flex flex-col gap-1 py-3 px-3 rounded-[var(--radius-sm)]",
-                "bg-forest text-make-cta shadow-sm",
-              )}
+              className={cn("flex flex-col gap-1 py-3 px-3")}
+              style={{
+                background: "rgba(197,165,90,0.18)",
+                border: "1px solid rgba(197,165,90,0.35)",
+                borderRadius: "var(--radius-sm)",
+              }}
             >
               <div className="flex items-baseline justify-between gap-3 flex-wrap">
-                <span className="text-sm font-semibold text-make-cta min-w-0">
+                <span className="text-sm font-semibold min-w-0" style={{ color: "var(--cream, #ede7d3)" }}>
                   {currentDaiVan.label}
                 </span>
                 {currentDaiVan.years !== "—" ? (
                   <span
-                    className="text-xs tabular-nums shrink-0 text-make-cta/95"
-                    style={{ fontFamily: "var(--font-ibm-mono)" }}
+                    className="text-xs tabular-nums shrink-0"
+                    style={{ fontFamily: "var(--font-ibm-mono)", color: "rgba(237,231,211,0.7)" }}
                   >
                     Tuổi {currentDaiVan.years}
                   </span>
@@ -675,90 +636,158 @@ export default function AppLaSoChiTiet() {
               </div>
             </div>
           ) : (
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p style={{ fontFamily: "var(--serif)", fontSize: 13, color: "rgba(237,231,211,0.6)" }}>
               Chưa xác định được đại vận hiện tại từ dữ liệu. Kiểm tra lá số đã chốt có đủ
               thông tin đại vận.
             </p>
           )}
         </div>
 
-        {showLaSoFlowPanel ? (
-          <div
-            className="bg-card border border-border px-4 py-4 shadow-sm"
-            style={{ borderRadius: "var(--radius-lg)" }}
-          >
-            <p className="text-foreground text-base font-semibold mb-1">
-              Luận giải theo lá số
-            </p>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Luận giải từng khía cạnh
-            </p>
-            {(detailBusy || detailAiLoading) && luanSections.length === 0 ? (
-              <div className="space-y-2" aria-busy="true">
-                <div className="h-10 rounded-md bg-muted/40 animate-pulse" />
-                <div className="h-10 rounded-md bg-muted/40 animate-pulse w-[94%]" />
-              </div>
-            ) : luanSections.length > 0 ? (
-              <LaSoChiTietLuanAccordion sections={luanSections} />
-            ) : null}
-          </div>
-        ) : null}
+        <div>
+          <Mono style={{ color: "rgba(197,165,90,0.65)", display: "block", marginBottom: 10 }}>
+            Luận giải theo lá số
+          </Mono>
 
-        {showPaidUnlockCard ? (
-          <div
-            className="bg-card border border-border px-4 py-4 shadow-sm"
-            style={{ borderRadius: "var(--radius-lg)" }}
-          >
-            <p className="text-foreground text-base font-semibold mb-2">
-              Luận giải chi tiết
-            </p>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Bản đầy đủ theo tính cách, sự nghiệp, tài vận, sức khỏe và (khi có)
-              tình duyên — dựa trên lá số có cấu trúc, trình bày mạch lạc.
-            </p>
-            {needsBirthTime ? (
-              <p className="text-destructive text-xs leading-relaxed mb-3">
-                Thiếu khung giờ sinh trên hồ sơ — không lấy được lá số chi tiết từ
-                máy chủ. Cập nhật trong Cài đặt (hoặc lập lại lá số nếu được phép).
+          {showLaSoFlowPanel ? (
+            <AiReadingBlock
+              title="5 mục · Tính cách · Sự nghiệp · Tài vận · Sức khỏe · Tình duyên"
+              showTitle={false}
+              loading={detailBusy || (detailAiLoading && luanSections.length === 0)}
+              text={null}
+              sections={luanSections.length > 0 ? luanSections : null}
+              variant="forest"
+              onRetry={laSoPayloadRetry ? () => void retryReadingOnly() : undefined}
+              retryBusy={detailBusy || detailAiLoading}
+            />
+          ) : null}
+
+          {showPaidUnlockCard ? (
+            <div
+              style={{
+                background: "rgba(197,165,90,0.08)",
+                border: "1px solid rgba(197,165,90,0.3)",
+                borderRadius: "var(--radius-lg)",
+                padding: "16px",
+              }}
+            >
+              <Mono style={{ color: "rgba(197,165,90,0.65)", display: "block", marginBottom: 8 }}>
+                Luận giải chi tiết · 5 mục
+              </Mono>
+              <p
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: "rgba(237,231,211,0.8)",
+                  marginBottom: 14,
+                }}
+              >
+                Bản đầy đủ theo tính cách, sự nghiệp, tài vận, sức khỏe và tình duyên — dựa trên lá số có cấu trúc.
               </p>
-            ) : null}
-            <Button
-              type="button"
-              className="font-semibold"
-              disabled={detailBusy || needsBirthTime}
-              onClick={() => void runLaSoDetailReading()}
-            >
-              {detailCtaLabel}
-            </Button>
-          </div>
-        ) : null}
+              {needsBirthTime ? (
+                <p
+                  style={{
+                    fontFamily: "var(--serif)",
+                    fontStyle: "italic",
+                    fontSize: 12,
+                    color: "#c07070",
+                    marginBottom: 12,
+                    lineHeight: 1.55,
+                  }}
+                >
+                  Thiếu khung giờ sinh — không lấy được lá số chi tiết. Liên hệ hỗ trợ để cập nhật.
+                </p>
+              ) : null}
+              <button
+                type="button"
+                disabled={detailBusy || needsBirthTime}
+                onClick={() => void runLaSoDetailReading()}
+                style={{
+                  background: "var(--cream, #ede7d3)",
+                  color: "#18150e",
+                  border: "none",
+                  padding: "11px 20px",
+                  fontFamily: "var(--display-2, 'Barlow Condensed', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  cursor: detailBusy || needsBirthTime ? "default" : "pointer",
+                  opacity: detailBusy || needsBirthTime ? 0.6 : 1,
+                  width: "100%",
+                }}
+              >
+                {detailCtaLabel}
+              </button>
+            </div>
+          ) : null}
 
-        {showRetryReadingCard ? (
-          <div
-            className="bg-card border border-border px-4 py-4 shadow-sm"
-            style={{ borderRadius: "var(--radius-lg)" }}
-          >
-            <p className="text-foreground text-base font-semibold mb-2">
-              Luận giải chưa sẵn sàng
-            </p>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              Dữ liệu lá số đã lấy xong; bước luận giải gặp sự cố. Thử lại chỉ
-              tạo phần luận giải.
-            </p>
-            <Button
-              type="button"
-              variant="secondary"
-              className="font-semibold"
-              onClick={() => void retryReadingOnly()}
+          {showRetryReadingCard ? (
+            <div
+              style={{
+                background: "rgba(139,26,26,0.08)",
+                border: "1px solid rgba(139,26,26,0.35)",
+                borderRadius: "var(--radius-lg)",
+                padding: "16px",
+              }}
             >
-              Thử lại luận giải
-            </Button>
-          </div>
-        ) : null}
+              <Mono style={{ color: "#c07070", display: "block", marginBottom: 8 }}>
+                Luận giải chưa sẵn sàng
+              </Mono>
+              <p
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontStyle: "italic",
+                  fontSize: 12,
+                  color: "rgba(237,231,211,0.7)",
+                  marginBottom: 14,
+                  lineHeight: 1.55,
+                }}
+              >
+                Dữ liệu lá số đã lấy xong; bước luận giải gặp sự cố.
+              </p>
+              <button
+                type="button"
+                onClick={() => void retryReadingOnly()}
+                style={{
+                  background: "rgba(197,165,90,0.12)",
+                  border: "1px solid rgba(197,165,90,0.4)",
+                  color: "var(--cream, #ede7d3)",
+                  padding: "9px 18px",
+                  fontFamily: "var(--display-2, 'Barlow Condensed', sans-serif)",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                }}
+              >
+                Thử lại luận giải
+              </button>
+            </div>
+          ) : null}
+        </div>
 
-        <Button variant="outline" asChild className="w-full font-medium">
-          <Link to="/app/la-so">← Lá số tứ trụ</Link>
-        </Button>
+        <button
+          type="button"
+          onClick={() => navigate("/app/la-so")}
+          style={{
+            background: "transparent",
+            border: "1px solid rgba(197,165,90,0.25)",
+            color: "rgba(200,188,152,0.75)",
+            padding: "14px 16px",
+            minHeight: 48,
+            fontFamily: "var(--mono)",
+            fontSize: 12,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+            width: "100%",
+          }}
+        >
+          ← Lá số tứ trụ
+        </button>
+      </div>
       </div>
     </div>
   );

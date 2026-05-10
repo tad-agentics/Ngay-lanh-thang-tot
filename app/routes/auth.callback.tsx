@@ -101,8 +101,28 @@ export default function AuthCallback() {
   }, [navigate]);
 
   return (
-    <main className="min-h-svh flex items-center justify-center bg-background px-4">
-      <p className="text-sm text-muted-foreground">{message}</p>
+    <main
+      style={{
+        background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+        minHeight: "100svh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        boxSizing: "border-box",
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "var(--serif)",
+          fontSize: 16,
+          color: "rgba(237, 231, 211, 0.78)",
+          textAlign: "center",
+          margin: 0,
+        }}
+      >
+        {message}
+      </p>
     </main>
   );
 }

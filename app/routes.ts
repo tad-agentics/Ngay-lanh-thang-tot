@@ -13,7 +13,10 @@ export default [
   route("dang-ky", "routes/dang-ky.tsx"),
   route("quen-mat-khau", "routes/quen-mat-khau.tsx"),
   route("app", "routes/app.tsx", [
-    index("routes/app.home.tsx"),
+    index("routes/app._index.tsx"),
+    route("home", "routes/app.home.tsx"),
+    route("nhip/lich-su", "routes/app.nhip.lich-su.tsx"),
+    route("nhip/cai-dat", "routes/app.nhip.cai-dat.tsx"),
     route("hom-nay", "routes/app.hom-nay.tsx"),
     route("tuan-nay", "routes/app.tuan-nay.tsx"),
     route("chon-ngay", "routes/app.chon-ngay.tsx"),
