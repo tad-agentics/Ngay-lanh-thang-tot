@@ -1,5 +1,5 @@
 /**
- * Edge luận giải: JSON từ máy chủ → văn bản tiếng Việt (Haiku) + cache DB.
+ * Edge luận giải: JSON từ máy chủ → văn bản tiếng Việt (Gemini 3.1 Flash-Lite) + cache DB.
  * `la-so-chi-tiet`: một lần gọi → JSON nhiều khía cạnh (đoạn văn).
  * `tieu-van` / `luu-nien`: một lần gọi → JSON 3 phần (nhin_chung, thuc_tien, ung_xu); lỗi parse → một khối văn dự phòng.
  * `chon-ngay`: luận giải tổng (`CHON_NGAY_SYSTEM`) + cache version.
@@ -215,17 +215,19 @@ const DAY_DETAIL_SYSTEM = `Bạn là chuyên gia phong thủy và lịch số Vi
 
 /** Thời hạn cache (ms) theo quy ước sản phẩm */
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
-const LA_SO_CHI_TIET_CACHE_VER = "2026-03-27b";
+const LA_SO_CHI_TIET_CACHE_VER = "2026-05-10-gemini";
 /** Bump khi đổi SYSTEM_PROMPT cho tieu-van/luu-nien — làm mới reading_cache. */
-const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-04-02a";
+const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi độ dài / hướng dẫn hop-tuoi trong SYSTEM_PROMPT — làm mới reading_cache. */
-const HOP_TUOI_PROMPT_VER = "2026-03-28a";
+const HOP_TUOI_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi CHON_NGAY_SYSTEM — làm mới reading_cache. */
-const CHON_NGAY_PROMPT_VER = "2026-03-28d";
+const CHON_NGAY_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi CHON_NGAY_CARDS_JSON_SYSTEM — làm mới reading_cache thẻ ngày. */
-const CHON_NGAY_CARDS_PROMPT_VER = "2026-03-28b";
+const CHON_NGAY_CARDS_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi cấu hình output cho day-detail (max token / format). */
-const DAY_DETAIL_PROMPT_VER = "2026-04-02e";
+const DAY_DETAIL_PROMPT_VER = "2026-05-10-gemini";
+/** Version chung — bump khi đổi nhà cung cấp LLM hoặc model mặc định. Áp vào mọi cache key để vô hiệu hoá bản cũ. */
+const GLOBAL_LLM_VER = "2026-05-10-gemini";
 
 const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
@@ -241,8 +243,10 @@ const TTL_MS: Record<string, number> = {
 };
 
 const MAX_BODY_CHARS = 180_000;
-/** Mặc định Haiku 4.5 — 3.5 Haiku dated có thể đã retire. Ghi đè: secret ANTHROPIC_MODEL */
-const DEFAULT_LLM_MODEL = "claude-haiku-4-5";
+/** Mặc định Gemini 3.1 Flash-Lite (rẻ nhất họ Gemini 3). Ghi đè: secret GEMINI_MODEL. */
+const DEFAULT_LLM_MODEL = "gemini-3.1-flash-lite";
+const GEMINI_API_BASE =
+  "https://generativelanguage.googleapis.com/v1beta/models";
 const REQUEST_TIMEOUT_MS = 8_000;
 /** hop-tuoi: 8–10 câu + toàn bộ tiêu chí — cần thời gian và token lớn hơn mặc định. */
 const HOP_TUOI_REQUEST_TIMEOUT_MS = 18_000;
@@ -801,73 +805,110 @@ function ttlForEndpoint(endpoint: string): number {
   return TTL_MS[endpoint] ?? 24 * 60 * 60 * 1000;
 }
 
-async function anthropicCompletion(
+type GeminiCandidate = {
+  content?: { parts?: Array<{ text?: string }> };
+  finishReason?: string;
+};
+
+type GeminiResponse = {
+  candidates?: GeminiCandidate[];
+  promptFeedback?: { blockReason?: string; blockReasonMessage?: string };
+  error?: { code?: number; message?: string; status?: string };
+};
+
+async function geminiCompletion(
   system: string,
   userJson: string,
   maxTokens: number,
   timeoutMs: number,
 ): Promise<string | null> {
-  const key = Deno.env.get("ANTHROPIC_API_KEY");
+  const key = Deno.env.get("GEMINI_API_KEY");
   if (!key?.trim()) {
-    console.warn("[luận-giải] Thiếu biến môi trường ANTHROPIC_API_KEY");
+    console.warn("[luận-giải] Thiếu biến môi trường GEMINI_API_KEY");
     return null;
   }
 
-  const model =
-    Deno.env.get("ANTHROPIC_MODEL")?.trim() || DEFAULT_LLM_MODEL;
+  const model = Deno.env.get("GEMINI_MODEL")?.trim() || DEFAULT_LLM_MODEL;
+  // Gemini 3.x bật "thinking" mặc định, tính vào output tokens. Đặt 0 để
+  // giữ tốc độ + chi phí gần với Haiku. Có thể bật lại qua secret nếu cần.
+  const thinkingBudget = Number.parseInt(
+    Deno.env.get("GEMINI_THINKING_BUDGET") ?? "0",
+    10,
+  );
 
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const url = `${GEMINI_API_BASE}/${encodeURIComponent(
+      model,
+    )}:generateContent`;
+    const res = await fetch(url, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": key.trim(),
-        "anthropic-version": "2023-06-01",
+        "x-goog-api-key": key.trim(),
       },
       body: JSON.stringify({
-        model,
-        max_tokens: maxTokens,
-        system,
-        messages: [
-          {
-            role: "user",
-            content: userJson,
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: userJson }] }],
+        generationConfig: {
+          maxOutputTokens: maxTokens,
+          temperature: 0.7,
+          thinkingConfig: {
+            thinkingBudget: Number.isFinite(thinkingBudget)
+              ? thinkingBudget
+              : 0,
           },
-        ],
+        },
       }),
     });
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => "");
       console.warn(
-        "[luận-giải] Dịch vụ Anthropic trả HTTP",
+        "[luận-giải] Dịch vụ Gemini trả HTTP",
         res.status,
         errBody.slice(0, 500),
       );
       return null;
     }
-    const body = (await res.json()) as {
-      content?: Array<{ type?: string; text?: string }>;
-    };
-    const text = body.content?.find((c) => c.type === "text")?.text?.trim();
-    return text && text.length > 0 ? text : null;
+    const body = (await res.json()) as GeminiResponse;
+    if (body.promptFeedback?.blockReason) {
+      console.warn(
+        "[luận-giải] Gemini chặn prompt:",
+        body.promptFeedback.blockReason,
+        body.promptFeedback.blockReasonMessage ?? "",
+      );
+      return null;
+    }
+    const candidate = body.candidates?.[0];
+    const text = candidate?.content?.parts
+      ?.map((p) => p.text ?? "")
+      .join("")
+      .trim();
+    if (!text || text.length === 0) {
+      console.warn(
+        "[luận-giải] Gemini trả candidate rỗng. finishReason=",
+        candidate?.finishReason ?? "n/a",
+      );
+      return null;
+    }
+    return text;
   } catch (e) {
-    console.warn("[luận-giải] Lỗi khi gọi Anthropic:", e);
+    console.warn("[luận-giải] Lỗi khi gọi Gemini:", e);
     return null;
   } finally {
     clearTimeout(t);
   }
 }
 
-async function anthropicReading(
+async function geminiReading(
   userJson: string,
   maxTokens: number = READING_MAX_TOKENS_DEFAULT,
   timeoutMs: number = REQUEST_TIMEOUT_MS,
 ): Promise<string | null> {
-  return await anthropicCompletion(
+  return await geminiCompletion(
     SYSTEM_PROMPT,
     userJson,
     maxTokens,
@@ -875,8 +916,8 @@ async function anthropicReading(
   );
 }
 
-async function anthropicLaSoChiTiet(userJson: string): Promise<string | null> {
-  return await anthropicCompletion(
+async function geminiLaSoChiTiet(userJson: string): Promise<string | null> {
+  return await geminiCompletion(
     LA_SO_CHI_TIET_SYSTEM,
     userJson,
     2048,
@@ -889,10 +930,10 @@ const LA_SO_CHI_TIET_RETRY_SYSTEM =
 Các khóa bắt buộc (chuỗi tiếng Việt, văn xuôi, không gạch đầu dòng): tinh_cach, su_nghiep, tai_van, suc_khoe, tinh_duyen.
 Tạo đủ 5 khóa trừ khi dữ liệu đầu vào hoàn toàn không cho phép một mục (khi đó bỏ khóa đó hẳn).`;
 
-async function anthropicLaSoChiTietStructRetry(
+async function geminiLaSoChiTietStructRetry(
   userJson: string,
 ): Promise<string | null> {
-  return await anthropicCompletion(
+  return await geminiCompletion(
     LA_SO_CHI_TIET_RETRY_SYSTEM,
     userJson,
     2048,
@@ -974,20 +1015,23 @@ Deno.serve(async (req) => {
   }
 
   const dataJson = stableStringify(data);
-  const cacheInput =
+  const endpointVer =
     endpoint === "la-so-chi-tiet"
-      ? `${LA_SO_CHI_TIET_CACHE_VER}\n${endpoint}\n${dataJson}`
+      ? LA_SO_CHI_TIET_CACHE_VER
       : endpoint === "tieu-van" || endpoint === "luu-nien"
-        ? `${TIEU_VAN_LUU_NIEN_PROMPT_VER}\n${endpoint}\n${dataJson}`
+        ? TIEU_VAN_LUU_NIEN_PROMPT_VER
         : endpoint === "hop-tuoi"
-          ? `${HOP_TUOI_PROMPT_VER}\n${endpoint}\n${dataJson}`
+          ? HOP_TUOI_PROMPT_VER
           : endpoint === "day-detail"
-            ? `${DAY_DETAIL_PROMPT_VER}\n${endpoint}\n${dataJson}`
-          : endpoint === "chon-ngay"
-            ? `${CHON_NGAY_PROMPT_VER}\n${endpoint}\n${dataJson}`
-            : endpoint === "chon-ngay-cards"
-              ? `${CHON_NGAY_CARDS_PROMPT_VER}\n${endpoint}\n${dataJson}`
-              : `${endpoint}\n${dataJson}`;
+            ? DAY_DETAIL_PROMPT_VER
+            : endpoint === "chon-ngay"
+              ? CHON_NGAY_PROMPT_VER
+              : endpoint === "chon-ngay-cards"
+                ? CHON_NGAY_CARDS_PROMPT_VER
+                : "";
+  // GLOBAL_LLM_VER ép invalidate mọi cache cũ khi đổi nhà cung cấp LLM, kể
+  // cả endpoint chưa có per-endpoint version (ví dụ ngay-hom-nay).
+  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify({ endpoint, data });
@@ -1045,11 +1089,11 @@ Deno.serve(async (req) => {
   }
 
   if (endpoint === "la-so-chi-tiet") {
-    const raw = await anthropicLaSoChiTiet(payload);
+    const raw = await geminiLaSoChiTiet(payload);
     if (!raw) return ok(null, null);
     let sections = parseLaSoChiTietSections(raw);
     if (!sections?.length) {
-      const retryText = await anthropicLaSoChiTietStructRetry(payload);
+      const retryText = await geminiLaSoChiTietStructRetry(payload);
       if (retryText) {
         sections = parseLaSoChiTietSections(retryText);
       }
@@ -1059,7 +1103,7 @@ Deno.serve(async (req) => {
         "[luận-giải] la-so-chi-tiet: JSON rỗng hoặc không đọc được — thử luận giải một khối văn",
         raw.slice(0, 240),
       );
-      const plain = await anthropicReading(payload);
+      const plain = await geminiReading(payload);
       const t = plain?.trim() ?? "";
       if (!t) {
         console.warn(
@@ -1092,7 +1136,7 @@ Deno.serve(async (req) => {
   }
 
   if (endpoint === "tieu-van" || endpoint === "luu-nien") {
-    const rawJson = await anthropicCompletion(
+    const rawJson = await geminiCompletion(
       TIEU_VAN_LUU_NIEN_JSON_SYSTEM,
       payload,
       READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON,
@@ -1102,7 +1146,7 @@ Deno.serve(async (req) => {
       ? parseTieuVanLuuNienSections(rawJson, endpoint)
       : null;
     if (!sections?.length) {
-      const retry = await anthropicCompletion(
+      const retry = await geminiCompletion(
         TIEU_VAN_LUU_NIEN_JSON_RETRY,
         payload,
         READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON,
@@ -1118,7 +1162,7 @@ Deno.serve(async (req) => {
           sections.map((s) => [s.id, s.text]),
         ),
       });
-      const lengthRetry = await anthropicCompletion(
+      const lengthRetry = await geminiCompletion(
         TIEU_VAN_LUU_NIEN_JSON_LENGTH_RETRY,
         lengthUser,
         READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON,
@@ -1144,7 +1188,7 @@ Deno.serve(async (req) => {
         "[luận-giải] tieu-van/luu-nien: JSON 3 phần thất bại — dùng một khối văn",
         rawJson?.slice(0, 200),
       );
-      const reading = await anthropicReading(
+      const reading = await geminiReading(
         payload,
         READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN,
         TIEU_VAN_LUU_NIEN_TIMEOUT_MS,
@@ -1179,7 +1223,7 @@ Deno.serve(async (req) => {
   }
 
   if (endpoint === "chon-ngay") {
-    const reading = await anthropicCompletion(
+    const reading = await geminiCompletion(
       CHON_NGAY_SYSTEM,
       payload,
       READING_MAX_TOKENS_CHON_NGAY,
@@ -1203,7 +1247,7 @@ Deno.serve(async (req) => {
   }
 
   if (endpoint === "chon-ngay-cards") {
-    const raw = await anthropicCompletion(
+    const raw = await geminiCompletion(
       CHON_NGAY_CARDS_JSON_SYSTEM,
       payload,
       READING_MAX_TOKENS_CHON_NGAY_CARDS,
@@ -1211,7 +1255,7 @@ Deno.serve(async (req) => {
     );
     let map = raw ? parseChonNgayDayReadingsJson(raw) : null;
     if (!map || Object.keys(map).length === 0) {
-      const retry = await anthropicCompletion(
+      const retry = await geminiCompletion(
         CHON_NGAY_CARDS_JSON_RETRY,
         payload,
         READING_MAX_TOKENS_CHON_NGAY_CARDS,
@@ -1239,19 +1283,19 @@ Deno.serve(async (req) => {
 
   const reading =
     endpoint === "hop-tuoi"
-      ? await anthropicReading(
+      ? await geminiReading(
           payload,
           READING_MAX_TOKENS_HOP_TUOI,
           HOP_TUOI_REQUEST_TIMEOUT_MS,
         )
       : endpoint === "day-detail"
-        ? await anthropicCompletion(
+        ? await geminiCompletion(
             DAY_DETAIL_SYSTEM,
             payload,
             READING_MAX_TOKENS_DAY_DETAIL,
             DAY_DETAIL_REQUEST_TIMEOUT_MS,
           )
-      : await anthropicReading(payload);
+      : await geminiReading(payload);
   if (!reading) {
     return ok(null, null);
   }
