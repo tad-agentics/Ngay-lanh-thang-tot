@@ -819,11 +819,21 @@ type GeminiResponse = {
   error?: { code?: number; message?: string; status?: string };
 };
 
+type GeminiCompletionOptions = {
+  /**
+   * Khi true, ép Gemini trả MIME `application/json` — không markdown fence,
+   * không lời dẫn, không ```. Dùng cho endpoint phải parse JSON
+   * (`la-so-chi-tiet`, `tieu-van`/`luu-nien` JSON, `chon-ngay-cards`).
+   */
+  jsonMode?: boolean;
+};
+
 async function geminiCompletion(
   system: string,
   userJson: string,
   maxTokens: number,
   timeoutMs: number,
+  options: GeminiCompletionOptions = {},
 ): Promise<string | null> {
   const key = Deno.env.get("GEMINI_API_KEY");
   if (!key?.trim()) {
@@ -863,6 +873,9 @@ async function geminiCompletion(
               ? thinkingBudget
               : 0,
           },
+          ...(options.jsonMode
+            ? { responseMimeType: "application/json" }
+            : {}),
         },
       }),
     });
@@ -925,6 +938,7 @@ async function geminiLaSoChiTiet(userJson: string): Promise<string | null> {
     userJson,
     2048,
     LA_SO_CHI_TIET_TIMEOUT_MS,
+    { jsonMode: true },
   );
 }
 
@@ -941,6 +955,7 @@ async function geminiLaSoChiTietStructRetry(
     userJson,
     2048,
     LA_SO_CHI_TIET_TIMEOUT_MS,
+    { jsonMode: true },
   );
 }
 
@@ -1144,6 +1159,7 @@ Deno.serve(async (req) => {
       payload,
       READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON,
       TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS,
+      { jsonMode: true },
     );
     let sections = rawJson
       ? parseTieuVanLuuNienSections(rawJson, endpoint)
@@ -1154,6 +1170,7 @@ Deno.serve(async (req) => {
         payload,
         READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON,
         TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS,
+        { jsonMode: true },
       );
       sections = retry ? parseTieuVanLuuNienSections(retry, endpoint) : null;
     }
@@ -1170,6 +1187,7 @@ Deno.serve(async (req) => {
         lengthUser,
         READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON,
         TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS,
+        { jsonMode: true },
       );
       const expanded = lengthRetry
         ? parseTieuVanLuuNienSections(lengthRetry, endpoint)
@@ -1255,6 +1273,7 @@ Deno.serve(async (req) => {
       payload,
       READING_MAX_TOKENS_CHON_NGAY_CARDS,
       CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS,
+      { jsonMode: true },
     );
     let map = raw ? parseChonNgayDayReadingsJson(raw) : null;
     if (!map || Object.keys(map).length === 0) {
@@ -1263,6 +1282,7 @@ Deno.serve(async (req) => {
         payload,
         READING_MAX_TOKENS_CHON_NGAY_CARDS,
         CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS,
+        { jsonMode: true },
       );
       map = retry ? parseChonNgayDayReadingsJson(retry) : null;
     }
