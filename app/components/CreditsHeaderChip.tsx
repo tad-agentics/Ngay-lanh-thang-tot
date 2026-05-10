@@ -15,9 +15,12 @@ import { cn } from "~/components/ui/utils";
  */
 export function CreditsHeaderChip({
   forDarkSurface = false,
+  homeMaket = false,
   className,
 }: {
   forDarkSurface?: boolean;
+  /** Typography theo maket Hôm nay (11px / 600 / Montserrat). */
+  homeMaket?: boolean;
   className?: string;
 }) {
   const navigate = useNavigate();
@@ -46,9 +49,9 @@ export function CreditsHeaderChip({
       />
       <span
         style={{
-          fontFamily: "var(--font-ibm-mono)",
-          fontSize: 12,
-          fontWeight: 500,
+          fontFamily: homeMaket ? "var(--font-montserrat)" : "var(--font-ibm-mono)",
+          fontSize: homeMaket ? 11 : 12,
+          fontWeight: homeMaket ? 600 : 500,
         }}
       >
         {creditsBalanceChipLabel(profile)}

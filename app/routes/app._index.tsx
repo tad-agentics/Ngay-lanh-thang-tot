@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { Kanji, LogoMark, Mono, Stamp, Ticket } from "~/components/brand";
+import { LogoMark, Stamp, Ticket } from "~/components/brand";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
 import { addDaysToIso, useStreak } from "~/hooks/useStreak";
@@ -26,6 +26,7 @@ import {
   type NgayHomNayHome,
   type WeeklySummaryScreen,
 } from "~/lib/home-bat-tu";
+import { HM } from "~/lib/maket-tokens";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { getActiveSolarTerm } from "~/lib/tiet-khi";
 import {
@@ -42,12 +43,6 @@ function verdictText(dayType: DayType): string {
   return "BÌNH THƯỜNG";
 }
 
-function verdictKanji(dayType: DayType): string {
-  if (dayType === "hoang-dao") return "吉";
-  if (dayType === "hac-dao") return "凶";
-  return "中";
-}
-
 function verdictColor(dayType: DayType): string {
   if (dayType === "hoang-dao") return "#c5a55a";
   if (dayType === "hac-dao") return "#c57a5a";
@@ -58,6 +53,11 @@ function firstNameFromDisplay(name: string | null): string | null {
   if (!name?.trim()) return null;
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return parts.at(-1) ?? null;
+}
+
+function formatDaiVanArrow(s: string): string {
+  if (!s || s === "—") return s;
+  return s.replace(/(\d+)\s*[–-]\s*(\d+)/g, "$1 → $2");
 }
 
 // ─── Streak ribbon — matches b-habit.jsx HBStreakRibbon ───────────────────────
@@ -77,7 +77,7 @@ function StreakRibbon({
   const today = todayIsoInVn();
   const term = getActiveSolarTerm(today);
   return (
-    <div className="px-5 pt-3">
+    <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 12 }}>
       <Link
         to="/app/nhip/lich-su"
         style={{ textDecoration: "none", display: "block" }}
@@ -85,7 +85,8 @@ function StreakRibbon({
         <div
           style={{
             background: "rgba(197,165,90,0.08)",
-            border: "1px solid var(--gold, #c5a55a)",
+            border: `1px solid ${HM.gold}`,
+            borderRadius: 2,
             padding: "10px 14px",
             display: "flex",
             alignItems: "center",
@@ -94,10 +95,10 @@ function StreakRibbon({
         >
           <span
             style={{
-              fontFamily: "var(--display-2)",
+              fontFamily: HM.display,
               fontWeight: 800,
               fontSize: 22,
-              color: "var(--gold, #c5a55a)",
+              color: HM.gold,
               lineHeight: 1,
               letterSpacing: "-0.02em",
               flexShrink: 0,
@@ -106,10 +107,19 @@ function StreakRibbon({
             {currentCount}
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <Mono style={{ color: "var(--gold, #c5a55a)" }}>
+            <span
+              style={{
+                fontFamily: HM.mono,
+                fontSize: 11,
+                fontWeight: 400,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: HM.muted,
+              }}
+            >
               {`Liền · ${currentCount} ngày`}
               {term?.name ? ` · ${term.name}` : ""}
-            </Mono>
+            </span>
             <div style={{ display: "flex", gap: 3, marginTop: 5 }}>
               {[...Array(RIBBON_TOTAL)].map((_, i) => (
                 <span
@@ -349,76 +359,121 @@ export default function AppIndex() {
 
   const todayType = todayHome?.dayType ?? "neutral";
   const upcomingDays = weekly?.rows.slice(0, 3) ?? [];
+  const readingInForestCard = !hasLaso || !menh;
 
   return (
     <div
-      style={{ background: "var(--paper, #f0ece2)", minHeight: "100%", color: "var(--ink, #1a1a1a)", fontFamily: "var(--serif)" }}
+      style={{
+        background: HM.paper,
+        minHeight: "100%",
+        color: HM.ink,
+        fontFamily: HM.serif,
+      }}
     >
+      <div style={{ maxWidth: HM.frame, margin: "0 auto" }}>
       {/* Header: LogoMark + greeting + credits chip */}
       <div
-        className="flex items-center justify-between px-5 pt-3 pb-3"
-        style={{ borderBottom: "1px solid rgba(154,124,34,0.18)" }}
+        className="flex items-center justify-between"
+        style={{
+          padding: `10px ${HM.pxPage}px`,
+          borderBottom: `1px solid ${HM.borderSection}`,
+        }}
       >
         <div className="flex items-center gap-3">
           <LogoMark size={26} />
           <div style={{ lineHeight: 1.05 }}>
             <div
               style={{
-                fontFamily: "var(--display-2)",
+                fontFamily: HM.display,
                 fontWeight: 800,
                 fontSize: 14,
                 textTransform: "uppercase",
-                letterSpacing: "0.02em",
+                letterSpacing: "0.28px",
+                lineHeight: "14.7px",
+                color: HM.ink,
               }}
             >
               {displayName ? `${displayName} · Hôm nay` : "Hôm nay"}
             </div>
             {todayHome ? (
-              <Mono style={{ color: "#7a7050", marginTop: 1, display: "block" }}>
-                {todayHome.solarDateVi.toUpperCase()}
-                {todayHome.lunarLabel ? ` · ${todayHome.lunarLabel.toUpperCase()}` : ""}
-              </Mono>
+              <span
+                style={{
+                  display: "block",
+                  marginTop: 1,
+                  fontFamily: HM.mono,
+                  fontSize: 9.5,
+                  fontWeight: 400,
+                  letterSpacing: "1.52px",
+                  textTransform: "uppercase",
+                  lineHeight: "9.975px",
+                  color: HM.muted,
+                }}
+              >
+                {todayHome.headerSubline}
+              </span>
             ) : (
-              <Mono style={{ color: "#7a7050", marginTop: 1, display: "block" }}>
+              <span
+                style={{
+                  display: "block",
+                  marginTop: 1,
+                  fontFamily: HM.mono,
+                  fontSize: 9.5,
+                  letterSpacing: "1.52px",
+                  textTransform: "uppercase",
+                  color: HM.muted,
+                }}
+              >
                 ĐỌC NGÀY…
-              </Mono>
+              </span>
             )}
           </div>
         </div>
-        <CreditsHeaderChip />
+        <CreditsHeaderChip homeMaket />
       </div>
 
       <StreakRibbon currentCount={streakCount} loading={streakLoading} />
 
       <div className="pb-8">
         {summaryErr ? (
-          <div className="px-5 pt-4"><ErrorBanner message={summaryErr} /></div>
+          <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 16 }}>
+            <ErrorBanner message={summaryErr} />
+          </div>
         ) : null}
 
         {/* Onboarding CTA */}
         {!profileLoading && !canBatTu ? (
-          <div className="px-5 pt-4">
+          <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 16 }}>
             <div
               style={{
                 background: "#fff",
-                border: "1px solid rgba(154,124,34,0.22)",
-                padding: "18px 18px",
+                border: `1px solid ${HM.borderSection}`,
+                borderRadius: HM.radM,
+                padding: "14px 16px",
               }}
             >
               <div
                 style={{
-                  fontFamily: "var(--display-2)",
+                  fontFamily: HM.display,
                   fontWeight: 700,
                   fontSize: 14,
                   textTransform: "uppercase",
-                  letterSpacing: "-0.005em",
+                  letterSpacing: "0.28px",
+                  lineHeight: "14.7px",
+                  color: HM.ink,
                   marginBottom: 8,
                 }}
               >
                 Lập lá số Bát Tự
               </div>
               <p
-                style={{ fontFamily: "var(--serif)", fontSize: 16, color: "#3a3220", lineHeight: 1.55, marginBottom: 14 }}
+                style={{
+                  fontFamily: HM.serif,
+                  fontSize: 16,
+                  color: HM.body,
+                  lineHeight: 1.55,
+                  marginBottom: 14,
+                  marginTop: 0,
+                }}
               >
                 Lá số Bát Tự chưa có. Lập ngay để xem lịch Hôm nay, tuần này và tháng này theo đúng mệnh và Dụng Thần của bạn.
               </p>
@@ -426,17 +481,18 @@ export default function AppIndex() {
                 to="/app/la-so"
                 style={{
                   display: "inline-block",
-                  padding: "12px 20px",
-                  background: "var(--forest, #2d5a3d)",
-                  color: "#ede7d3",
-                  fontFamily: "var(--display-2)",
+                  padding: "14px 20px",
+                  background: HM.forest,
+                  color: HM.cream,
+                  fontFamily: HM.display,
                   fontWeight: 700,
-                  fontSize: 13,
-                  letterSpacing: "0.08em",
+                  fontSize: 14,
+                  letterSpacing: "0.84px",
                   textTransform: "uppercase",
                   textDecoration: "none",
-                  minHeight: 44,
+                  minHeight: 45,
                   lineHeight: 1.2,
+                  borderRadius: HM.radM,
                 }}
               >
                 Lập lá số ngay →
@@ -447,33 +503,34 @@ export default function AppIndex() {
 
         {/* Today verdict card — forest dark */}
         {canBatTu ? (
-          <div className="px-5 pt-4">
-            <Mono style={{ color: "#9a7c22" }}>Phán định cho hôm nay</Mono>
-            <div
+          <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 16 }}>
+            <span
               style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 16,
-                marginTop: 10,
-                padding: "20px 22px",
-                background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
-                color: "#ede7d3",
-                position: "relative",
-                overflow: "hidden",
-                minHeight: 110,
+                display: "block",
+                fontFamily: HM.mono,
+                fontSize: 11,
+                fontWeight: 400,
+                letterSpacing: "1.32px",
+                textTransform: "uppercase",
+                color: HM.goldDeep,
               }}
             >
-              <Kanji
-                ch={verdictKanji(todayType)}
-                size={140}
-                drift
-                style={{
-                  position: "absolute",
-                  right: -20,
-                  top: -20,
-                  color: "rgba(197,165,90,0.10)",
-                }}
-              />
+              Phán định cho hôm nay
+            </span>
+            <div
+              style={{
+                marginTop: 12,
+                padding: "20px 22px",
+                maxWidth: HM.inner,
+                marginLeft: "auto",
+                marginRight: "auto",
+                background: HM.forest,
+                color: HM.cream,
+                position: "relative",
+                overflow: "hidden",
+                borderRadius: 0,
+              }}
+            >
               <div style={{ flex: 1, position: "relative" }}>
                 {summaryLoading ? (
                   <div
@@ -488,11 +545,11 @@ export default function AppIndex() {
                     <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
                       <span
                         style={{
-                          fontFamily: "var(--display-2)",
+                          fontFamily: HM.display,
                           fontWeight: 800,
-                          fontSize: 42,
+                          fontSize: 48,
                           color: verdictColor(todayType),
-                          lineHeight: 0.9,
+                          lineHeight: "43.2px",
                         }}
                       >
                         {verdictText(todayType)}
@@ -501,18 +558,98 @@ export default function AppIndex() {
                     {todayHome?.lunarLabel ? (
                       <div
                         style={{
+                          fontFamily: HM.serif,
                           fontSize: 13,
+                          fontWeight: 400,
                           color: "rgba(237,231,211,0.72)",
                           marginTop: 6,
-                          lineHeight: 1.55,
+                          lineHeight: "19.5px",
                         }}
                       >
                         {todayHome.lunarLabel}
                       </div>
                     ) : null}
 
-                    {/* AI Reading */}
-                    {todayReadingUnlocked ? (
+                    {todayHome && todayHome.trucDisplay && todayHome.trucDisplay !== "—" ? (
+                      <div style={{ marginTop: 4 }}>
+                        <span
+                          style={{
+                            display: "block",
+                            fontFamily: HM.serif,
+                            fontSize: 13,
+                            fontWeight: 400,
+                            color: "rgba(237,231,211,0.75)",
+                            lineHeight: "19.5px",
+                          }}
+                        >
+                          Trực
+                        </span>
+                        <span
+                          style={{
+                            display: "block",
+                            fontFamily: HM.serif,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: HM.gold,
+                            lineHeight: "19.5px",
+                          }}
+                        >
+                          {todayHome.trucDisplay}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {todayHome ? (
+                      <div
+                        style={{
+                          fontFamily: HM.serif,
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: HM.gold,
+                          marginTop: 8,
+                          lineHeight: "19.5px",
+                        }}
+                      >
+                        {`· Sao tốt: ${todayHome.saoTotCsv} · Sao xấu: ${todayHome.saoXauCsv}`}
+                      </div>
+                    ) : null}
+
+                    {todayHome && todayHome.goodForChips.length > 0 ? (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 6,
+                          marginTop: 10,
+                        }}
+                      >
+                        {todayHome.goodForChips.slice(0, 6).map((label) => (
+                          <span
+                            key={label}
+                            style={{
+                              background: HM.chipBg,
+                              border: `1px solid ${HM.borderChip}`,
+                              borderRadius: 9999,
+                              padding: "5px 10px",
+                              fontFamily: HM.serif,
+                              fontSize: 11,
+                              fontWeight: 400,
+                              letterSpacing: "0.44px",
+                              color: HM.gold,
+                              height: 26,
+                              boxSizing: "border-box",
+                              display: "inline-flex",
+                              alignItems: "center",
+                            }}
+                          >
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {/* Luận giải — trong thẻ rừng khi chưa có lá số đủ (maket đưa lên thẻ Đại Vận). */}
+                    {readingInForestCard && todayReadingUnlocked ? (
                       todayAiReadingLoading ? (
                         <div
                           style={{
@@ -545,6 +682,7 @@ export default function AppIndex() {
                         >
                           <p
                             style={{
+                              fontFamily: HM.serif,
                               fontSize: 16,
                               color: "rgba(237,231,211,0.88)",
                               lineHeight: 1.6,
@@ -567,12 +705,13 @@ export default function AppIndex() {
                                 : "rgba(197,165,90,0.08)",
                               border: `1px solid ${homePinned ? "rgba(139,26,26,0.5)" : "rgba(197,165,90,0.3)"}`,
                               padding: "6px 12px",
+                              borderRadius: HM.radM,
                               cursor: homePinBusy ? "default" : "pointer",
                               opacity: homePinBusy ? 0.65 : 1,
-                              fontFamily: "var(--mono)",
+                              fontFamily: HM.mono,
                               fontSize: 10,
                               color: homePinned ? "#c07070" : "rgba(197,165,90,0.85)",
-                              letterSpacing: "0.14em",
+                              letterSpacing: "1.4px",
                               textTransform: "uppercase",
                             }}
                           >
@@ -581,22 +720,23 @@ export default function AppIndex() {
                           </button>
                         </div>
                       ) : null
-                    ) : todayHome && !todayAiReadingLoading ? (
+                    ) : readingInForestCard && todayHome && !todayAiReadingLoading ? (
                       <button
                         type="button"
                         onClick={() => void onUnlockTodayReading()}
                         disabled={unlockingTodayReading}
                         style={{
                           marginTop: 12,
-                          padding: "12px 16px",
-                          minHeight: 44,
+                          padding: "14px 16px",
+                          minHeight: 45,
                           background: "rgba(197,165,90,0.15)",
-                          border: "1px solid rgba(197,165,90,0.4)",
-                          color: "var(--gold, #c5a55a)",
-                          fontFamily: "var(--mono)",
-                          fontSize: 12,
-                          letterSpacing: "0.1em",
+                          border: `1px solid ${HM.borderChip}`,
+                          color: HM.gold,
+                          fontFamily: HM.mono,
+                          fontSize: 11,
+                          letterSpacing: "1.32px",
                           textTransform: "uppercase",
+                          borderRadius: HM.radM,
                           cursor: "pointer",
                         }}
                       >
@@ -610,70 +750,315 @@ export default function AppIndex() {
           </div>
         ) : null}
 
-        {/* Best hours */}
-        {canBatTu && todayHome?.hourRange ? (
-          <div className="px-5 pt-4">
-            <Mono style={{ color: "#7a7050" }}>Giờ tốt hôm nay</Mono>
-            <div
-              style={{
-                marginTop: 8,
-                background: "#fff",
-                border: "1px solid rgba(154,124,34,0.2)",
-                padding: "12px 14px",
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: "var(--serif)",
-                  fontSize: 16,
-                  color: "var(--ink, #1a1a1a)",
-                  lineHeight: 1.55,
-                  margin: 0,
-                }}
-              >
-                {todayHome.hourRange}
-              </p>
-            </div>
+        {/* Giờ tốt / Giờ xấu — pill Địa Chi theo maket */}
+        {canBatTu && todayHome &&
+        (todayHome.gioTotChis.length > 0 ||
+          todayHome.gioXauChis.length > 0 ||
+          (todayHome.hourRange && todayHome.hourRange !== "—")) ? (
+          <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 16 }}>
+            {todayHome.gioTotChis.length > 0 || (todayHome.hourRange && todayHome.hourRange !== "—") ? (
+              <div style={{ marginBottom: todayHome.gioXauChis.length > 0 ? 14 : 0 }}>
+                <span
+                  style={{
+                    display: "block",
+                    fontFamily: HM.mono,
+                    fontSize: 11,
+                    fontWeight: 400,
+                    letterSpacing: "1.32px",
+                    textTransform: "uppercase",
+                    color: HM.muted,
+                  }}
+                >
+                  Giờ tốt
+                  {todayHome.gioTotChis.length > 0
+                    ? ` — ${todayHome.gioTotChis.length} hoàng đạo`
+                    : ""}
+                </span>
+                <div
+                  style={{
+                    marginTop: 8,
+                    background: "#fff",
+                    border: `1px solid ${HM.borderHourGood}`,
+                    borderRadius: HM.radM,
+                    padding: "10px 4px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  {todayHome.gioTotChis.length > 0 ? (
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                        gap: 5,
+                      }}
+                    >
+                      {todayHome.gioTotChis.map((chi) => (
+                        <div
+                          key={chi}
+                          style={{
+                            background: "#fff",
+                            border: `1px solid ${HM.borderHourGood}`,
+                            borderRadius: HM.radM,
+                            padding: "10px 4px",
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontFamily: HM.display,
+                              fontSize: 13,
+                              fontWeight: 800,
+                              textTransform: "uppercase",
+                              textAlign: "center",
+                              color: HM.ink,
+                              lineHeight: 1.2,
+                            }}
+                          >
+                            {chi}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p
+                      style={{
+                        fontFamily: HM.serif,
+                        fontSize: 16,
+                        color: HM.ink,
+                        lineHeight: 1.55,
+                        margin: 0,
+                        padding: "2px 10px",
+                      }}
+                    >
+                      {todayHome.hourRange}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+            {todayHome.gioXauChis.length > 0 ? (
+              <div>
+                <span
+                  style={{
+                    display: "block",
+                    fontFamily: HM.mono,
+                    fontSize: 11,
+                    fontWeight: 400,
+                    letterSpacing: "1.32px",
+                    textTransform: "uppercase",
+                    color: HM.red,
+                  }}
+                >
+                  Giờ xấu
+                </span>
+                <div
+                  style={{
+                    marginTop: 8,
+                    background: "#fff",
+                    border: `1px solid ${HM.borderHourGood}`,
+                    borderRadius: HM.radM,
+                    padding: "10px 4px",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+                      gap: 5,
+                    }}
+                  >
+                    {todayHome.gioXauChis.map((chi) => (
+                      <div
+                        key={chi}
+                        style={{
+                          background: "#fff",
+                          border: `1px solid ${HM.borderHourBad}`,
+                          borderRadius: HM.radM,
+                          padding: "10px 4px",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontFamily: HM.display,
+                            fontSize: 13,
+                            fontWeight: 800,
+                            textTransform: "uppercase",
+                            textAlign: "center",
+                            color: HM.red,
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {chi}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        {/* Personal layer — Mệnh + Lá số link */}
+        {/* Đại Vận + luận giải (maket) / lá số */}
         {hasLaso && menh ? (
-          <div className="px-5 pt-4">
+          <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 16 }}>
             <div
               style={{
                 background: "#fff",
-                border: "1px solid rgba(154,124,34,0.2)",
+                border: `1px solid ${HM.borderSection}`,
+                borderRadius: HM.radM,
                 padding: "14px 16px",
               }}
             >
-              <div className="flex items-center justify-between">
-                <Mono style={{ color: "#9a7c22" }}>Lá số của bạn · Mệnh {menh}</Mono>
-              </div>
-              {laso?.daiVan ? (
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginTop: 8 }}>
+              <span
+                style={{
+                  display: "block",
+                  fontFamily: HM.mono,
+                  fontSize: 11,
+                  fontWeight: 400,
+                  letterSpacing: "1.32px",
+                  textTransform: "uppercase",
+                  color: HM.goldDeep,
+                }}
+              >
+                {laso?.daiVan && laso.daiVan !== "—"
+                  ? `Đại Vận của bạn · ${formatDaiVanArrow(laso.daiVan)}`
+                  : `Lá số của bạn · Mệnh ${menh}`}
+              </span>
+              {laso?.daiVan && laso.daiVan !== "—" ? (
+                <div style={{ marginTop: 6 }}>
                   <span
                     style={{
-                      fontFamily: "var(--display-2)",
+                      fontFamily: HM.display,
                       fontWeight: 800,
                       fontSize: 15,
-                      color: "var(--ink, #1a1a1a)",
-                      letterSpacing: "0.02em",
+                      color: HM.ink,
+                      letterSpacing: "0.3px",
+                      lineHeight: 1.2,
                     }}
                   >
-                    {laso.daiVan}
+                    {laso?.nhatChu && laso.nhatChu !== "—"
+                      ? `${laso.nhatChu}${laso?.hanh && laso.hanh !== "—" ? ` · ${laso.hanh}` : ""}`
+                      : `Mệnh ${menh}`}
                   </span>
                 </div>
               ) : null}
+              {todayHome?.homeSummaryLine && todayHome.homeSummaryLine !== "—" && !todayReadingUnlocked ? (
+                <p
+                  style={{
+                    fontFamily: HM.serif,
+                    fontSize: 16,
+                    color: HM.body,
+                    lineHeight: 1.55,
+                    marginTop: 10,
+                    marginBottom: 0,
+                  }}
+                >
+                  {todayHome.homeSummaryLine}
+                </p>
+              ) : null}
+
+              {!readingInForestCard && todayReadingUnlocked ? (
+                todayAiReadingLoading ? (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      height: 3,
+                      background: "rgba(197,165,90,0.35)",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        height: "100%",
+                        width: "40%",
+                        background: "rgba(197,165,90,0.75)",
+                        animation: "shimmer 1.2s infinite",
+                      }}
+                    />
+                  </div>
+                ) : todayAiReading ? (
+                  <div style={{ marginTop: 12 }}>
+                    <p
+                      style={{
+                        fontFamily: HM.serif,
+                        fontSize: 16,
+                        color: HM.body,
+                        lineHeight: 1.6,
+                        margin: 0,
+                      }}
+                    >
+                      {todayAiReading}
+                    </p>
+                    <button
+                      type="button"
+                      disabled={homePinBusy}
+                      onClick={() => void handleHomePin()}
+                      style={{
+                        marginTop: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 5,
+                        background: homePinned
+                          ? "rgba(139,26,26,0.12)"
+                          : "rgba(197,165,90,0.1)",
+                        border: `1px solid ${homePinned ? "rgba(139,26,26,0.45)" : "rgba(197,165,90,0.35)"}`,
+                        padding: "6px 12px",
+                        borderRadius: HM.radM,
+                        cursor: homePinBusy ? "default" : "pointer",
+                        opacity: homePinBusy ? 0.65 : 1,
+                        fontFamily: HM.mono,
+                        fontSize: 10,
+                        color: homePinned ? "#a05050" : HM.goldDeep,
+                        letterSpacing: "1.4px",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      <span style={{ fontFamily: "var(--hanzi)", fontSize: 12, fontWeight: 700 }}>留</span>
+                      <span>{homePinned ? "Bỏ ghim" : "Ghim"}</span>
+                    </button>
+                  </div>
+                ) : null
+              ) : null}
+              {!readingInForestCard && todayHome && !todayReadingUnlocked && !todayAiReadingLoading ? (
+                <button
+                  type="button"
+                  onClick={() => void onUnlockTodayReading()}
+                  disabled={unlockingTodayReading}
+                  style={{
+                    marginTop: 12,
+                    padding: "14px 16px",
+                    minHeight: 45,
+                    background: "rgba(197,165,90,0.12)",
+                    border: `1px solid ${HM.borderChip}`,
+                    color: HM.goldDeep,
+                    fontFamily: HM.mono,
+                    fontSize: 11,
+                    letterSpacing: "1.32px",
+                    textTransform: "uppercase",
+                    borderRadius: HM.radM,
+                    cursor: "pointer",
+                  }}
+                >
+                  {unlockingTodayReading ? "Đang mở…" : `Đọc luận giải · ${unlockReadingCost} lượng`}
+                </button>
+              ) : null}
+
               <Link
                 to="/app/la-so/chi-tiet"
                 style={{
                   display: "inline-block",
-                  marginTop: 10,
-                  fontFamily: "var(--mono)",
-                  fontSize: 12,
-                  color: "var(--gold-deep, #7d6219)",
-                  letterSpacing: "0.1em",
+                  marginTop: 12,
+                  fontFamily: HM.mono,
+                  fontSize: 11,
+                  color: HM.goldDeep,
+                  letterSpacing: "1.32px",
                   textTransform: "uppercase",
                   textDecoration: "underline",
                   textUnderlineOffset: 3,
@@ -687,10 +1072,20 @@ export default function AppIndex() {
 
         {/* 3 upcoming auspicious days */}
         {canBatTu ? (
-          <div className="px-5 pt-4">
-            <Mono style={{ color: "#7a7050" }}>
+          <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 16 }}>
+            <span
+              style={{
+                display: "block",
+                fontFamily: HM.mono,
+                fontSize: 11,
+                fontWeight: 400,
+                letterSpacing: "1.32px",
+                textTransform: "uppercase",
+                color: HM.muted,
+              }}
+            >
               {weeklyLoading ? "Đang tải ngày lành…" : weekly?.rows.length ? "3 ngày lành sắp tới" : "Ngày lành tuần này"}
-            </Mono>
+            </span>
             <div style={{ marginTop: 10 }}>
               {weeklyLoading ? (
                 <div className="space-y-2">
@@ -700,14 +1095,15 @@ export default function AppIndex() {
                       style={{
                         height: 60,
                         background: "#fff",
-                        border: "1px solid rgba(154,124,34,0.15)",
+                        border: `1px solid ${HM.borderCard}`,
+                        borderRadius: HM.radM,
                         animation: "pulse 1.5s infinite",
                       }}
                     />
                   ))}
                 </div>
               ) : upcomingDays.length ? (
-                upcomingDays.map((row, i) => (
+                upcomingDays.map((row) => (
                   <Link
                     key={row.isoDate}
                     to={`/app/ngay/${row.isoDate}`}
@@ -717,18 +1113,21 @@ export default function AppIndex() {
                       gap: 12,
                       padding: "12px 14px",
                       background: "#fff",
-                      border: "1px solid rgba(154,124,34,0.18)",
+                      border: `1px solid ${HM.borderCard}`,
+                      borderRadius: HM.radM,
                       marginBottom: 8,
                       textDecoration: "none",
+                      color: "inherit",
                     }}
                   >
                     <div
                       style={{
-                        fontFamily: "var(--display-2)",
+                        fontFamily: HM.display,
                         fontWeight: 800,
                         fontSize: 22,
-                        color: "var(--gold-deep, #7d6219)",
-                        minWidth: 54,
+                        color: HM.goldDeep,
+                        minWidth: 64,
+                        lineHeight: 1,
                       }}
                     >
                       {row.score ?? "—"}
@@ -736,26 +1135,37 @@ export default function AppIndex() {
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
-                          fontFamily: "var(--display-2)",
+                          fontFamily: HM.display,
                           fontWeight: 700,
                           fontSize: 13,
                           textTransform: "uppercase",
-                          color: "var(--ink, #1a1a1a)",
-                          letterSpacing: "-0.005em",
+                          color: HM.ink,
+                          letterSpacing: "0.26px",
                           marginBottom: 2,
+                          lineHeight: 1.2,
                         }}
                       >
                         {row.grade}
                       </div>
-                      <Mono style={{ color: "#7a7050" }}>
-                        {row.dateLabelVi}
-                      </Mono>
+                      <span
+                        style={{
+                          display: "block",
+                          fontFamily: HM.mono,
+                          fontSize: 11,
+                          fontWeight: 400,
+                          letterSpacing: "1.32px",
+                          textTransform: "uppercase",
+                          color: HM.muted,
+                        }}
+                      >
+                        {row.dateShortVi}
+                      </span>
                       {row.oneLiner ? (
                         <p
                           style={{
-                            fontFamily: "var(--serif)",
+                            fontFamily: HM.serif,
                             fontSize: 15,
-                            color: "#3a3220",
+                            color: HM.body,
                             lineHeight: 1.45,
                             marginTop: 3,
                             overflow: "hidden",
@@ -768,11 +1178,11 @@ export default function AppIndex() {
                         </p>
                       ) : null}
                     </div>
-                    <span style={{ color: "#9a7c22", fontSize: 18 }}>→</span>
+                    <span style={{ color: HM.goldDeep, fontSize: 18, lineHeight: 1 }}>→</span>
                   </Link>
                 ))
               ) : (
-                <p style={{ fontFamily: "var(--serif)", fontSize: 16, color: "#7a7050", lineHeight: 1.55 }}>
+                <p style={{ fontFamily: HM.serif, fontSize: 16, color: HM.muted, lineHeight: 1.55, margin: 0 }}>
                   Chưa có gợi ý tuần này. Hãy thêm ngày sinh trong hồ sơ.
                 </p>
               )}
@@ -781,28 +1191,31 @@ export default function AppIndex() {
         ) : null}
 
         {/* Primary CTA */}
-        <div className="px-5 pt-2">
+        <div style={{ paddingLeft: HM.pxPage, paddingRight: HM.pxPage, paddingTop: 8, paddingBottom: 8 }}>
           <button
             type="button"
             onClick={() => void navigate("/app/chon-ngay")}
             style={{
               width: "100%",
               padding: "14px",
-              background: "#1d3129",
-              color: "#ede7d3",
+              background: HM.forest,
+              color: HM.cream,
               border: "none",
-              fontFamily: "var(--display-2)",
+              fontFamily: HM.display,
               fontWeight: 700,
-              fontSize: 15,
-              letterSpacing: "0.06em",
+              fontSize: 14,
+              letterSpacing: "0.84px",
               textTransform: "uppercase",
               cursor: "pointer",
-              minHeight: 48,
+              minHeight: 45,
+              borderRadius: HM.radM,
+              boxSizing: "border-box",
             }}
           >
             + Chọn ngày cho việc khác
           </button>
         </div>
+      </div>
       </div>
 
       {day7ModalOpen ? (
@@ -814,22 +1227,31 @@ export default function AppIndex() {
             position: "fixed",
             inset: 0,
             zIndex: 50,
-            background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+            background: `radial-gradient(ellipse at 50% 0%, #2a4738 0%, ${HM.forest} 50%, #131f1a 100%)`,
             display: "flex",
             flexDirection: "column",
-            padding: "0 20px 32px",
+            alignItems: "center",
             overflowY: "auto",
+            paddingBottom: 32,
           }}
         >
-          {/* Large floating "7" — Barlow Condensed per b-habit.jsx HBStreak7 */}
+          <div
+            style={{
+              width: "100%",
+              maxWidth: HM.frame,
+              boxSizing: "border-box",
+              paddingLeft: HM.pxPage,
+              paddingRight: HM.pxPage,
+            }}
+          >
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 0 24px" }}>
             <span
               aria-hidden
               style={{
-                fontFamily: "var(--display-2)",
+                fontFamily: HM.display,
                 fontSize: 96,
                 fontWeight: 900,
-                color: "var(--gold, #c5a55a)",
+                color: HM.gold,
                 lineHeight: 1,
                 letterSpacing: "-0.04em",
               }}
@@ -838,39 +1260,50 @@ export default function AppIndex() {
             </span>
           </div>
 
-          {/* Ticket with celebration content */}
-          <Ticket holeColor="#1d3129">
+          <Ticket holeColor={HM.forest}>
             <div style={{ padding: "28px 22px 22px", textAlign: "center", position: "relative" }}>
               <Stamp ch="圓滿" style={{ position: "absolute", top: 14, right: 14, fontSize: 18 }} />
-              <Mono style={{ color: "#7a7050" }}>Nhịp liên · 7 ngày</Mono>
+              <span
+                style={{
+                  fontFamily: HM.mono,
+                  fontSize: 11,
+                  fontWeight: 400,
+                  letterSpacing: "1.32px",
+                  textTransform: "uppercase",
+                  color: HM.muted,
+                }}
+              >
+                Nhịp liên · 7 ngày
+              </span>
               <h2
                 id="day7-streak-title"
                 style={{
-                  fontFamily: "var(--display-2)",
+                  fontFamily: HM.display,
                   fontWeight: 900,
                   fontSize: 28,
                   letterSpacing: "-0.02em",
                   textTransform: "uppercase",
                   margin: "8px 0 4px",
-                  color: "#18150e",
+                  color: HM.ink,
+                  lineHeight: 1.1,
                 }}
               >
                 Đủ 7 ngày
               </h2>
               <p
                 style={{
-                  fontFamily: "var(--serif)",
+                  fontFamily: HM.serif,
                   fontStyle: "italic",
                   fontSize: 16,
-                  color: "#5a4f30",
+                  color: HM.bodyMuted,
                   marginBottom: 16,
                   lineHeight: 1.55,
+                  marginTop: 0,
                 }}
               >
                 Bạn đã giữ thói quen suốt một tuần.
               </p>
 
-              {/* 7 checkmark dots */}
               <div
                 style={{
                   display: "flex",
@@ -888,12 +1321,12 @@ export default function AppIndex() {
                       width: 28,
                       height: 28,
                       borderRadius: "50%",
-                      background: "#9a7c22",
-                      color: "#ede7d3",
+                      background: HM.goldDeep,
+                      color: HM.cream,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontFamily: "var(--display-2)",
+                      fontFamily: HM.display,
                       fontSize: 14,
                       fontWeight: 700,
                     }}
@@ -913,16 +1346,19 @@ export default function AppIndex() {
                   }}
                   style={{
                     width: "100%",
-                    background: "var(--gold, #c5a55a)",
-                    color: "#18150e",
+                    background: HM.gold,
+                    color: HM.ink,
                     border: "none",
                     padding: "14px 20px",
-                    fontFamily: "var(--display-2)",
+                    fontFamily: HM.display,
                     fontWeight: 700,
-                    fontSize: 13,
+                    fontSize: 14,
                     textTransform: "uppercase",
-                    letterSpacing: "0.1em",
+                    letterSpacing: "0.84px",
                     cursor: "pointer",
+                    minHeight: 45,
+                    borderRadius: HM.radM,
+                    boxSizing: "border-box",
                   }}
                 >
                   Tiếp tục
@@ -930,6 +1366,7 @@ export default function AppIndex() {
               </div>
             </div>
           </Ticket>
+          </div>
         </div>
       ) : null}
 
@@ -942,19 +1379,29 @@ export default function AppIndex() {
             position: "fixed",
             inset: 0,
             zIndex: 50,
-            background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+            background: `radial-gradient(ellipse at 50% 0%, #2a4738 0%, ${HM.forest} 50%, #131f1a 100%)`,
             display: "flex",
             flexDirection: "column",
-            padding: "0 20px 32px",
+            alignItems: "center",
             overflowY: "auto",
+            paddingBottom: 32,
           }}
         >
-          {/* Broken ribbon */}
+          <div
+            style={{
+              width: "100%",
+              maxWidth: HM.frame,
+              boxSizing: "border-box",
+              paddingLeft: HM.pxPage,
+              paddingRight: HM.pxPage,
+            }}
+          >
           <div style={{ paddingTop: 64 }}>
             <div
               style={{
                 background: "rgba(139,26,26,0.12)",
                 border: "1px solid rgba(196,77,77,0.45)",
+                borderRadius: 2,
                 padding: "10px 14px",
                 display: "flex",
                 alignItems: "center",
@@ -964,10 +1411,10 @@ export default function AppIndex() {
             >
               <span
                 style={{
-                  fontFamily: "var(--display-2)",
+                  fontFamily: HM.display,
                   fontSize: 22,
                   fontWeight: 800,
-                  color: "#e58a5c",
+                  color: HM.accentWarm,
                   lineHeight: 1,
                   letterSpacing: "-0.02em",
                   flexShrink: 0,
@@ -975,19 +1422,29 @@ export default function AppIndex() {
               >
                 —
               </span>
-              <Mono style={{ color: "#e58a5c" }}>Liền · gián đoạn</Mono>
+              <span
+                style={{
+                  fontFamily: HM.mono,
+                  fontSize: 11,
+                  fontWeight: 400,
+                  letterSpacing: "1.32px",
+                  textTransform: "uppercase",
+                  color: HM.accentWarm,
+                }}
+              >
+                Liền · gián đoạn
+              </span>
             </div>
           </div>
 
-          {/* Ticket with restart content */}
-          <Ticket holeColor="#1d3129">
+          <Ticket holeColor={HM.forest}>
             <div style={{ padding: "24px 22px 20px", textAlign: "center", position: "relative" }}>
               <span
                 aria-hidden
                 style={{
-                  fontFamily: "var(--display-2)",
+                  fontFamily: HM.display,
                   fontSize: 64,
-                  color: "#7a7050",
+                  color: HM.muted,
                   fontWeight: 800,
                   lineHeight: 1,
                   opacity: 0.4,
@@ -999,24 +1456,26 @@ export default function AppIndex() {
               <h2
                 id="restart-streak-title"
                 style={{
-                  fontFamily: "var(--display-2)",
+                  fontFamily: HM.display,
                   fontWeight: 800,
                   fontSize: 22,
                   margin: "10px 0 4px",
-                  letterSpacing: "-0.005em",
-                  color: "#18150e",
+                  letterSpacing: "0.26px",
+                  color: HM.ink,
+                  lineHeight: 1.15,
                 }}
               >
                 Nhịp đã ngắt
               </h2>
               <p
                 style={{
-                  fontFamily: "var(--serif)",
+                  fontFamily: HM.serif,
                   fontStyle: "italic",
                   fontSize: 16,
-                  color: "#5a4f30",
+                  color: HM.bodyMuted,
                   lineHeight: 1.55,
                   marginBottom: 16,
+                  marginTop: 0,
                 }}
               >
                 Cuộc đời nhiều việc — chuyện thường.<br />
@@ -1031,7 +1490,18 @@ export default function AppIndex() {
                   marginBottom: 14,
                 }}
               >
-                <Mono style={{ color: "#7a7050" }}>Nhịp hiện tại · 0 ngày</Mono>
+                <span
+                  style={{
+                    fontFamily: HM.mono,
+                    fontSize: 11,
+                    fontWeight: 400,
+                    letterSpacing: "1.32px",
+                    textTransform: "uppercase",
+                    color: HM.muted,
+                  }}
+                >
+                  Nhịp hiện tại · 0 ngày
+                </span>
               </div>
 
               <button
@@ -1044,22 +1514,26 @@ export default function AppIndex() {
                 }}
                 style={{
                   width: "100%",
-                  background: "var(--gold, #c5a55a)",
-                  color: "#18150e",
+                  background: HM.gold,
+                  color: HM.ink,
                   border: "none",
                   padding: "14px 20px",
-                  fontFamily: "var(--display-2)",
+                  fontFamily: HM.display,
                   fontWeight: 700,
-                  fontSize: 13,
+                  fontSize: 14,
                   textTransform: "uppercase",
-                  letterSpacing: "0.1em",
+                  letterSpacing: "0.84px",
                   cursor: "pointer",
+                  minHeight: 45,
+                  borderRadius: HM.radM,
+                  boxSizing: "border-box",
                 }}
               >
                 Bắt đầu lại · ngày 1 / 7
               </button>
             </div>
           </Ticket>
+          </div>
         </div>
       ) : null}
     </div>

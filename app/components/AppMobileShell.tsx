@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { AppShellViewport } from "~/components/AppShellViewport";
@@ -27,12 +27,12 @@ export function AppMobileShell({
   };
 
   // Redirect ?explore=open to /app/tra-cuu (legacy Explore sheet links)
-  if (typeof window !== "undefined") {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("explore") === "open") {
       void navigate("/app/tra-cuu", { replace: true });
     }
-  }
+  }, [location.search, navigate]);
 
   return (
     <AppShellViewport>

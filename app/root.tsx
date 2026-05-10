@@ -16,6 +16,10 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap",
+  },
   { rel: "manifest", href: "/manifest.json" },
   {
     rel: "icon",

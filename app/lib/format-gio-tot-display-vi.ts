@@ -203,6 +203,20 @@ export function formatHourRangeStringCompactVi(text: string): string | null {
   return out.length ? out.join(", ") : null;
 }
 
+/** Lấy tên Địa Chi từ mảng slot `gio_tot` / `gio_hoang_dao` (thứ tự giữ nguyên). */
+export function extractChiLabelsFromGioSlots(raw: unknown): string[] {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  const out: string[] = [];
+  for (const item of raw) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const chi = pickStr(o, ["chi_name", "label", "name"]);
+    if (!chi) continue;
+    out.push(chi);
+  }
+  return out;
+}
+
 export function formatHourRangeForDisplayVi(
   textFallback: string,
   slots?: unknown,

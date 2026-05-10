@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 
 import { prefetchCoreAppQueries } from "~/lib/prefetch-app-queries";
+import { HM } from "~/lib/maket-tokens";
 import type { BottomNavTab } from "~/lib/nav-config";
 
 interface BottomNavProps {
@@ -17,11 +18,7 @@ interface BottomNavProps {
   onExploreOpen?: () => void;
 }
 
-const GOLD = "var(--gold, #c5a55a)";
-const FOREST = "var(--forest, #1d3129)";
 const CREAM_MUTED = "rgba(212,200,154,0.5)";
-const CREAM = "var(--cream, #ede7d3)";
-const FOREST_DEEP = "var(--forest-deep, #15241e)";
 
 function NavIcon({ name, size = 22 }: { name: string; size?: number }) {
   const s: React.SVGProps<SVGSVGElement> = {
@@ -85,7 +82,7 @@ function PerfDots() {
         padding: "0 8px",
         height: 6,
         alignItems: "center",
-        background: FOREST,
+        background: HM.forest,
       }}
     >
       {Array.from({ length: 28 }).map((_, i) => (
@@ -137,8 +134,8 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
     <div
       style={{
         position: "relative",
-        background: FOREST,
-        borderTop: "1px solid rgba(197,165,90,0.32)",
+        background: HM.forest,
+        borderTop: `1px solid ${HM.borderChip}`,
         flexShrink: 0,
       }}
     >
@@ -168,14 +165,14 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
                 textAlign: "center",
                 background: "transparent",
                 border: "none",
-                borderTop: on ? `2px solid ${GOLD}` : "2px solid transparent",
+                borderTop: on ? `2px solid ${HM.gold}` : "2px solid transparent",
                 marginTop: -6,
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 3,
-                color: on ? GOLD : CREAM_MUTED,
+                color: on ? HM.gold : CREAM_MUTED,
                 transition: "color 0.15s ease",
                 minHeight: 44,
                 minWidth: 44,
@@ -184,12 +181,12 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
               <NavIcon name={t.ic} size={20} />
               <span
                 style={{
-                  fontFamily: "var(--mono)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: on ? CREAM : "rgba(122,154,128,0.9)",
+                  fontFamily: HM.mono,
+                  fontSize: 11,
+                  fontWeight: 400,
+                  letterSpacing: "1.32px",
+                  color: on ? HM.cream : HM.muted,
                   textTransform: "uppercase",
-                  letterSpacing: "0.12em",
                 }}
               >
                 {t.vi}
@@ -213,12 +210,12 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
             style={{
               position: "absolute",
               top: -34,
-              fontFamily: "var(--mono)",
-              fontSize: 12,
+              fontFamily: HM.display,
+              fontSize: 11,
               fontWeight: 700,
-              color: GOLD,
+              color: HM.gold,
               textTransform: "uppercase",
-              letterSpacing: "0.12em",
+              letterSpacing: "1.32px",
               whiteSpace: "nowrap",
             }}
           >
@@ -233,13 +230,13 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
               width: 52,
               height: 52,
               borderRadius: "50%",
-              background: GOLD,
+              background: HM.gold,
               border: "none",
-              boxShadow: "0 6px 14px rgba(0,0,0,0.35), 0 0 0 4px " + FOREST,
+              boxShadow: `0 6px 14px rgba(0,0,0,0.35), 0 0 0 4px ${HM.forest}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: FOREST_DEEP,
+              color: HM.forestDeep,
               cursor: "pointer",
               transition: "transform 0.12s ease, box-shadow 0.12s ease",
               flexShrink: 0,
@@ -275,14 +272,14 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
                 textAlign: "center",
                 background: "transparent",
                 border: "none",
-                borderTop: on ? `2px solid ${GOLD}` : "2px solid transparent",
+                borderTop: on ? `2px solid ${HM.gold}` : "2px solid transparent",
                 marginTop: -6,
                 cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 gap: 3,
-                color: on ? GOLD : CREAM_MUTED,
+                color: on ? HM.gold : CREAM_MUTED,
                 transition: "color 0.15s ease",
                 minHeight: 44,
                 minWidth: 44,
@@ -291,12 +288,12 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
               <NavIcon name={t.ic} size={20} />
               <span
                 style={{
-                  fontFamily: "var(--mono)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: on ? CREAM : "rgba(122,154,128,0.9)",
+                  fontFamily: HM.mono,
+                  fontSize: 11,
+                  fontWeight: 400,
+                  letterSpacing: "1.32px",
+                  color: on ? HM.cream : HM.muted,
                   textTransform: "uppercase",
-                  letterSpacing: "0.12em",
                 }}
               >
                 {t.vi}

@@ -307,6 +307,8 @@
   --font-lora: 'Lora', Georgia, serif;
   --font-noto: 'Noto Serif SC', serif;
   --font-ibm-mono: 'IBM Plex Mono', monospace;
+  /* Maket / Figma export (Hôm nay) — display dùng Montserrat; Barlow giữ cho phần còn lại */
+  --font-montserrat: 'Montserrat', system-ui, sans-serif;
   --font-barlow: 'Barlow Condensed', sans-serif;
 
   /* Direction B semantic font stack (used by brand primitives + all new screens) */
