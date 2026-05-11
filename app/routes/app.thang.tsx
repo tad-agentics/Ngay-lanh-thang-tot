@@ -10,15 +10,143 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Chip } from "~/components/Chip";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { Mono } from "~/components/brand";
+import { LogoMark, Mono } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
+  buildCalendarDaysForMonth,
   parseWeeklySummaryForScreen,
   type WeeklySummaryScreen,
 } from "~/lib/home-bat-tu";
+import { HM } from "~/lib/maket-tokens";
+import type { CalendarDay } from "~/lib/api-types";
 import { useProfile } from "~/hooks/useProfile";
+
+const WEEKDAY_SHORT_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] as const;
+
+function dayCellSurface(day: CalendarDay): { bg: string; border: string } {
+  if (day.dayType === "hoang-dao") {
+    return {
+      bg: "rgba(111, 168, 120, 0.14)",
+      border: "rgba(111, 168, 120, 0.35)",
+    };
+  }
+  if (day.dayType === "hac-dao") {
+    return {
+      bg: "rgba(197, 122, 90, 0.12)",
+      border: "rgba(197, 122, 90, 0.38)",
+    };
+  }
+  return { bg: "#fff", border: HM.borderCard };
+}
+
+function MonthCalendarGrid({ days, year, month }: { days: CalendarDay[]; year: number; month: number }) {
+  const lead = new Date(year, month - 1, 1).getDay();
+  const cells: (CalendarDay | null)[] = [...Array(lead).fill(null), ...days];
+  while (cells.length % 7 !== 0) cells.push(null);
+  const rows: (CalendarDay | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    rows.push(cells.slice(i, i + 7));
+  }
+
+  return (
+    <div>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: 4,
+          marginBottom: 8,
+        }}
+      >
+        {WEEKDAY_SHORT_VI.map((w) => (
+          <div
+            key={w}
+            style={{
+              fontFamily: HM.mono,
+              fontSize: 12,
+              fontWeight: 600,
+              textAlign: "center",
+              color: HM.muted,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              padding: "4px 0",
+            }}
+          >
+            {w}
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {rows.map((row, ri) => (
+          <div
+            key={ri}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(7, 1fr)",
+              gap: 4,
+            }}
+          >
+            {row.map((day, ci) => {
+              if (!day) {
+                return <div key={`e-${ri}-${ci}`} style={{ minHeight: 48 }} />;
+              }
+              const solar = Number(day.isoDate.slice(8, 10));
+              const surf = dayCellSurface(day);
+              const todayStyle = day.isToday ? { boxShadow: `0 0 0 2px ${HM.goldDeep}` } : {};
+
+              return (
+                <Link
+                  key={day.isoDate}
+                  to={`/app/ngay/${day.isoDate}`}
+                  style={{
+                    minHeight: 48,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 2,
+                    textDecoration: "none",
+                    background: surf.bg,
+                    border: `1px solid ${surf.border}`,
+                    borderRadius: HM.radM,
+                    padding: "4px 2px",
+                    ...todayStyle,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: HM.display,
+                      fontWeight: 800,
+                      fontSize: 15,
+                      lineHeight: 1,
+                      color: HM.ink,
+                    }}
+                  >
+                    {solar}
+                  </span>
+                  {day.lunarDay > 0 ? (
+                    <span
+                      style={{
+                        fontFamily: HM.mono,
+                        fontSize: 10,
+                        color: HM.muted,
+                        lineHeight: 1,
+                      }}
+                    >
+                      Âm {day.lunarDay}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type View = "thang" | "tuan";
 
@@ -125,17 +253,22 @@ function MonthView({ profile, profileLoading }: { profile: ReturnType<typeof use
 
       {loading || profileLoading ? (
         <div className="px-5 space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-12 border border-border bg-card animate-pulse" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 border border-border bg-card animate-pulse rounded-[10px]" />
           ))}
         </div>
       ) : err ? (
         <div className="px-5"><ErrorBanner message={err} /></div>
       ) : payload != null ? (
-        <div className="px-5">
-          <pre className="text-xs bg-card border border-border p-4 overflow-x-auto whitespace-pre-wrap break-words" style={{ fontSize: 11 }}>
-            {JSON.stringify(payload, null, 2)}
-          </pre>
+        <div className="px-5 pb-2">
+          <MonthCalendarGrid
+            days={buildCalendarDaysForMonth(m, y, payload)}
+            year={y}
+            month={m}
+          />
+          <Mono style={{ color: HM.muted, display: "block", marginTop: 12, textAlign: "center" }} size={12}>
+            Chạm ô để mở chi tiết ngày · màu theo Hoàng / Hắc đạo
+          </Mono>
         </div>
       ) : (
         <p className="px-5 text-sm text-muted-foreground">Chưa có dữ liệu tháng này.</p>
@@ -243,31 +376,34 @@ export default function AppThang() {
   return (
     <div
       className="pb-8"
-      style={{ background: "var(--paper, #f0ece2)", minHeight: "100%" }}
+      style={{ background: HM.paper, minHeight: "100%" }}
     >
       {/* Header */}
       <div
         className="px-5 pt-4 pb-2"
-        style={{ borderBottom: "1px solid rgba(154,124,34,0.18)" }}
+        style={{ borderBottom: `1px solid ${HM.borderSection}` }}
       >
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <LogoMark size={26} className="shrink-0 mt-0.5" />
+            <div className="min-w-0">
             <h1
               style={{
-                fontFamily: "var(--display-2)",
+                fontFamily: HM.display,
                 fontWeight: 800,
                 fontSize: 16,
                 textTransform: "uppercase",
                 letterSpacing: "-0.005em",
-                color: "var(--ink, #1a1a1a)",
+                color: HM.ink,
                 lineHeight: 1.1,
               }}
             >
               Tháng
             </h1>
-            <Mono style={{ color: "#7a7050", marginTop: 2, display: "block" }} size={12}>
+            <Mono style={{ color: HM.muted, marginTop: 2, display: "block" }} size={12}>
               Lịch · ngày nổi bật · cá nhân hoá
             </Mono>
+            </div>
           </div>
         </div>
 
@@ -276,8 +412,9 @@ export default function AppThang() {
           className="flex mt-3"
           style={{
             background: "rgba(154,124,34,0.08)",
-            border: "1px solid rgba(154,124,34,0.2)",
+            border: `1px solid ${HM.borderSection}`,
             padding: 3,
+            borderRadius: HM.radM,
           }}
         >
           {(["thang", "tuan"] as const).map((v) => {
@@ -290,14 +427,15 @@ export default function AppThang() {
                 style={{
                   flex: 1,
                   padding: "7px 0",
-                  fontFamily: "var(--mono)",
+                  fontFamily: HM.mono,
                   fontSize: 12,
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.1em",
-                  background: active ? "var(--paper-warm, #ebe4d2)" : "transparent",
-                  color: active ? "var(--ink, #1a1a1a)" : "#7a7050",
-                  border: active ? "1px solid rgba(154,124,34,0.3)" : "1px solid transparent",
+                  background: active ? HM.cream : "transparent",
+                  color: active ? HM.ink : HM.muted,
+                  border: active ? `1px solid ${HM.borderChip}` : "1px solid transparent",
+                  borderRadius: 8,
                   cursor: "pointer",
                   transition: "background 0.15s ease, color 0.15s ease",
                   minHeight: 44,

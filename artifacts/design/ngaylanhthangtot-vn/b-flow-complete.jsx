@@ -7,6 +7,16 @@ const { useState: useStateFC, useEffect: useEffectFC } = React;
 const FC_FOREST = { background: 'radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)', minHeight: '100%', padding: '0 20px 32px', position: 'relative', overflow: 'hidden' };
 const FC_PAPER = { background: '#ede7d3', minHeight: '100%', padding: '0 20px 32px', position: 'relative', overflow: 'hidden', color: '#18150e' };
 
+/** Motion keyframes for flow-complete only — do not depend on `ARStyles` from b-ai-reading.jsx. Namespaced `fc-*` to avoid colliding with AI reading artboards. */
+function FCFlowMotionStyles() {
+  return (
+    <style>{`
+      @keyframes fc-pulse-dot { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.4); opacity: 1; } }
+      @keyframes fc-glyph-fade { 0% { opacity: 0; transform: scale(0.8) translateY(8px); } 30%, 70% { opacity: 0.95; transform: scale(1) translateY(0); } 100% { opacity: 0; transform: scale(1.05) translateY(-6px); } }
+    `}</style>
+  );
+}
+
 // ─── Reusable bits ───
 function FCTopBar({ kicker, title, sub, dark = true }) {
   const b = useB();
@@ -420,6 +430,7 @@ function FCPaymentSuccess({ state = 'paid' }) {
   const b = useB();
   return (
     <div style={FC_FOREST}>
+      <FCFlowMotionStyles />
       <div style={{ paddingTop: 60 }} />
       <FCTopBar kicker="Cảm ơn bạn" title={state === 'pending' ? 'Đang chờ xác nhận' : 'Đã nhận thanh toán'} sub={state === 'pending' ? 'PayOS đang gửi xác nhận — thường < 30 giây.' : 'Lượng đã được cộng vào tài khoản.'} />
 
@@ -438,7 +449,7 @@ function FCPaymentSuccess({ state = 'paid' }) {
           {state === 'pending' ? (
             <div style={{ marginTop: 18, padding: '14px 0', borderTop: '1px dashed rgba(122,112,80,0.4)', borderBottom: '1px dashed rgba(122,112,80,0.4)' }}>
               <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 10 }}>
-                {[0, 1, 2].map(k => <span key={k} style={{ width: 8, height: 8, borderRadius: '50%', background: b.accent, animation: `ar-pulse-dot 1.4s ease-in-out ${k * 0.2}s infinite` }} />)}
+                {[0, 1, 2].map(k => <span key={k} style={{ width: 8, height: 8, borderRadius: '50%', background: b.accent, animation: `fc-pulse-dot 1.4s ease-in-out ${k * 0.2}s infinite` }} />)}
               </div>
               <div style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 13, color: '#3a3220' }}>Đang đợi xác nhận từ ngân hàng…</div>
             </div>
@@ -483,6 +494,7 @@ function FCAuthCallback() {
   const b = useB();
   return (
     <div style={FC_FOREST}>
+      <FCFlowMotionStyles />
       <div style={{ paddingTop: 60 }} />
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
         <Logo dark size={36} />
@@ -490,7 +502,7 @@ function FCAuthCallback() {
 
       <Ticket>
         <div style={{ padding: '40px 22px', textAlign: 'center' }}>
-          <span style={{ fontFamily: 'var(--hanzi)', fontSize: 80, color: b.accentDeep, fontWeight: 700, lineHeight: 1, animation: 'ar-glyph-fade 1.6s ease-in-out infinite' }}>門</span>
+          <span style={{ fontFamily: 'var(--hanzi)', fontSize: 80, color: b.accentDeep, fontWeight: 700, lineHeight: 1, animation: 'fc-glyph-fade 1.6s ease-in-out infinite' }}>門</span>
           <div style={{ fontFamily: 'var(--display-2)', fontWeight: 800, fontSize: 18, marginTop: 16, textTransform: 'uppercase', letterSpacing: '-0.005em' }}>
             Đang mở cửa…
           </div>
@@ -498,7 +510,7 @@ function FCAuthCallback() {
             Xác thực với Google
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 16 }}>
-            {[0, 1, 2].map(k => <span key={k} style={{ width: 6, height: 6, borderRadius: '50%', background: b.accent, animation: `ar-pulse-dot 1.4s ease-in-out ${k * 0.2}s infinite` }} />)}
+            {[0, 1, 2].map(k => <span key={k} style={{ width: 6, height: 6, borderRadius: '50%', background: b.accent, animation: `fc-pulse-dot 1.4s ease-in-out ${k * 0.2}s infinite` }} />)}
           </div>
         </div>
       </Ticket>

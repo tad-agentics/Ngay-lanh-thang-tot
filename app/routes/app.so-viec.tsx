@@ -45,7 +45,7 @@ export default function AppSoViec() {
     >
       <BackBar
         title="Sổ việc"
-        subtitle={`${upcoming.length} việc · ${upcoming.length} sắp tới`}
+        subtitle={`${dated.length} việc · ${upcoming.length} sắp tới · ${past.length} đã qua`}
         onBack={() => void navigate(-1)}
       />
 
@@ -152,7 +152,7 @@ export default function AppSoViec() {
                     >
                       {days}
                     </div>
-                    <Mono style={{ color: "#7a7050", marginTop: 2 }} size={9}>
+                    <Mono style={{ color: "#7a7050", marginTop: 2 }} size={12}>
                       còn ngày
                     </Mono>
                   </div>
@@ -240,7 +240,7 @@ export default function AppSoViec() {
                     {it.day_iso}{it.score != null ? ` · ${it.score}/100` : ""}
                   </Mono>
                 </div>
-                <Mono style={{ color: "#7a7050" }} size={9}>
+                <Mono style={{ color: "#7a7050" }} size={12}>
                   cách {days} ngày
                 </Mono>
                 <button
@@ -269,7 +269,7 @@ export default function AppSoViec() {
             <p style={{ fontFamily: "var(--serif)", fontSize: 14, color: "#7a7050" }}>
               {tab === "upcoming" ? "Chưa có việc sắp tới." : "Chưa có việc nào đã qua."}
             </p>
-            <p style={{ fontFamily: "var(--mono)", fontSize: 10, color: "#9a7050", marginTop: 6, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "#9a7050", marginTop: 6, letterSpacing: "0.08em", textTransform: "uppercase", lineHeight: 1.45 }}>
               Lưu ngày lành từ kết quả chọn ngày để thêm vào sổ.
             </p>
           </div>

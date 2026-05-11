@@ -2,6 +2,15 @@
 /* global React, useB, Ticket, Kanji, Mono, Logo, Stamp, StatusBar, HomeIndicator */
 const { useState: uS } = React;
 
+/** Splash progress bar rotation — defined here so Splash works when b-screens `LoadingResult` (which injects `spin`) has not mounted yet. */
+function Flow2SplashMotionStyles() {
+  return (
+    <style>{`
+      @keyframes flow2-splash-spin { to { transform: rotate(360deg); } }
+    `}</style>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════
 // Persistent bottom nav — almanac-styled, 4 tabs + centre FAB
 // Lives on the four "rooms": Hôm nay · Tháng · Sổ việc · Tôi
@@ -381,6 +390,7 @@ function Splash() {
   const b = useB();
   return (
     <div style={{ width: 390, height: 800, background: '#1d3129', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+      <Flow2SplashMotionStyles />
       <Kanji ch="日" size={420} style={{ position: 'absolute', top: 80, left: -110, animation: 'b-drift 18s ease-in-out infinite' }} />
       <Kanji ch="月" size={320} style={{ position: 'absolute', bottom: 100, right: -80, animation: 'b-drift 22s ease-in-out infinite reverse' }} />
       <div style={{ position: 'relative', textAlign: 'center' }}>
@@ -391,7 +401,7 @@ function Splash() {
         <Mono style={{ color: '#7a9a80' }}>Niên giám điện tử · 2026</Mono>
         <div style={{ marginTop: 50, fontFamily: 'var(--mono)', fontSize: 10, color: '#7a9a80', letterSpacing: '0.18em', textTransform: 'uppercase' }}>Đang tải lá số…</div>
         <div style={{ width: 140, height: 2, background: 'rgba(197,165,90,0.2)', margin: '12px auto 0', overflow: 'hidden' }}>
-          <div style={{ width: '60%', height: '100%', background: b.accent, animation: 'spin 1.4s ease-in-out infinite' }} />
+          <div style={{ width: '60%', height: '100%', background: b.accent, animation: 'flow2-splash-spin 1.4s ease-in-out infinite' }} />
         </div>
       </div>
     </div>

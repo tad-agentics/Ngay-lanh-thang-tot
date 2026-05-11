@@ -95,7 +95,7 @@ export function ResultDayCard({
             flexShrink: 0,
           }}
         >
-          <Mono size={11} style={{ color: isFirst ? "rgba(237,231,211,0.7)" : "#7a7050", letterSpacing: "0.1em" }}>
+          <Mono size={12} style={{ color: isFirst ? "rgba(237,231,211,0.7)" : "#7a7050", letterSpacing: "0.1em" }}>
             {dow}
           </Mono>
           <div
@@ -108,7 +108,7 @@ export function ResultDayCard({
           >
             {day}
           </div>
-          <Mono size={9} style={{ color: isFirst ? "rgba(237,231,211,0.55)" : "#7a7050", opacity: 0.8 }}>
+          <Mono size={11} style={{ color: isFirst ? "rgba(237,231,211,0.55)" : "#7a7050", opacity: 0.85 }}>
             tháng {month}
           </Mono>
           <div
@@ -132,7 +132,7 @@ export function ResultDayCard({
               >
                 {score}
               </div>
-              <Mono size={9} style={{ color: isFirst ? "rgba(237,231,211,0.55)" : "#7a7050", opacity: 0.8 }}>
+              <Mono size={11} style={{ color: isFirst ? "rgba(237,231,211,0.55)" : "#7a7050", opacity: 0.85 }}>
                 /100
               </Mono>
             </>
@@ -160,7 +160,7 @@ export function ResultDayCard({
             >
               {grade}
             </span>
-            <Mono size={9.5} style={{ color: "#7a7050", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+            <Mono size={12} style={{ color: "#7a7050", letterSpacing: "0.1em", textTransform: "uppercase" }}>
               {positionLabel}
             </Mono>
           </div>
@@ -180,7 +180,7 @@ export function ResultDayCard({
             {dateLabel}
           </div>
           {lunarLabel ? (
-            <Mono size={9.5} style={{ color: "#7a7050", marginBottom: 6 }}>
+            <Mono size={12} style={{ color: "#7a7050", marginBottom: 6 }}>
               {lunarLabel}
             </Mono>
           ) : null}

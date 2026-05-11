@@ -399,13 +399,13 @@ export default function AppIndex() {
               <span
                 style={{
                   display: "block",
-                  marginTop: 1,
+                  marginTop: 2,
                   fontFamily: HM.mono,
-                  fontSize: 9.5,
+                  fontSize: 12,
                   fontWeight: 400,
-                  letterSpacing: "1.52px",
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
-                  lineHeight: "9.975px",
+                  lineHeight: 1.25,
                   color: HM.muted,
                 }}
               >
@@ -415,11 +415,12 @@ export default function AppIndex() {
               <span
                 style={{
                   display: "block",
-                  marginTop: 1,
+                  marginTop: 2,
                   fontFamily: HM.mono,
-                  fontSize: 9.5,
-                  letterSpacing: "1.52px",
+                  fontSize: 12,
+                  letterSpacing: "0.12em",
                   textTransform: "uppercase",
+                  lineHeight: 1.25,
                   color: HM.muted,
                 }}
               >

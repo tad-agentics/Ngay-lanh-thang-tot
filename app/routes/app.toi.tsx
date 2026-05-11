@@ -642,7 +642,7 @@ export default function AppToi() {
               marginTop: 14,
               textAlign: "center",
               fontFamily: "var(--mono)",
-              fontSize: 9,
+              fontSize: 12,
               color: "#7a7050",
               letterSpacing: "0.16em",
               textTransform: "uppercase",
@@ -700,7 +700,7 @@ function SettingsRowItem({ row, index }: { row: SettingsRow; index: number }) {
         <div
           style={{
             fontFamily: "var(--mono)",
-            fontSize: 9,
+            fontSize: 12,
             color: "#7a7050",
             letterSpacing: "0.1em",
             marginTop: 3,

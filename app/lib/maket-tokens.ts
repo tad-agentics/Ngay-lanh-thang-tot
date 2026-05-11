@@ -3,6 +3,22 @@
  * (`--paper`, Montserrat display, IBM Plex Mono labels, etc.).
  */
 
+/** Marketing / landing: tie paper + ink to `app/theme.css` Direction B vars; hairlines + labels from maket hex. */
+export const LANDING_TOK = {
+  paper: "var(--paper)",
+  paperWarm: "var(--paper-warm)",
+  ink: "var(--ink)",
+  ink2: "var(--ink-2)",
+  forest: "#1d3129",
+  forestDeep: "var(--forest-deep)",
+  cream: "var(--cream)",
+  gold: "var(--gold)",
+  goldDeep: "var(--gold-deep)",
+  border: "rgba(154, 124, 34, 0.18)",
+  borderStrong: "var(--border-strong)",
+  muted: "#6a5f3f",
+} as const;
+
 export const HM = {
   paper: "#f1ece1",
   /** Wide-viewport gutter behind the app column (export `--bg`). */

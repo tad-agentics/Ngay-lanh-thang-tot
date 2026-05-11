@@ -21,8 +21,8 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 
 | Rule | Current risk |
 |------|----------------|
-| Body text ≥ 16px on mobile | ⚠️ Hôm nay header subline uses **9.5px** mono; design doc §8 asks **≥12px** for mono kickers (prefer 12px floor for 30+ audience). |
-| Mono kickers ≥ 12px | ⚠️ Same subline; credits chip / small labels to audit per screen. |
+| Body text ≥ 16px on mobile | ✅ Hôm nay header subline raised to **12px** mono (2026-05-11). |
+| Mono kickers ≥ 12px | ✅ Home subline; Sổ việc / Tôi / kết quả chọn ngày labels bumped; 🔍 remaining 9–10px in AI block + utilities. |
 | No `--gold` as text on paper | ✅ Recent maket pass uses `#9a7c22` / ink for text on paper. |
 | No `gold-deep` as text on forest | 🔍 spot-check forest cards. |
 | `LogoMark` in app chrome (not full `Logo`) | ✅ Home header; 🔍 other tab roots. |
@@ -68,7 +68,7 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 | Sections vs `b-landing-v2.jsx` | ⚠️ Structure claims parity in file header; **verify** Compare / How / Method / Pricing / Testimonials / FAQ / CTA / Footer against canvas. |
 | Sticky mobile CTA | 🔍 Confirm mobile-only sticky bar per §2 Phase 2. |
 | Canonical copy | ❌ **VERIFY PRODUCT:** FE-HANDOFF §6 cites **Lẻ — gói nhỏ** **49k · 30 lượng**; `PACKAGES_V2` in code uses **99.000₫ · 100 lượng** for `le` and different 6m/12m prices than doc examples (89k/749k). Align copy with **business** source of truth, then refresh design doc or code. |
-| Tokens | ⚠️ Local `TOK` in `landing.tsx` vs `app/theme.css` / `maket-tokens` — consider one source to avoid drift (`#f0ece2` paper vs maket `#f1ece1`). |
+| Tokens | ✅ `LANDING_TOK` in `app/lib/maket-tokens.ts` — paper/ink from `theme.css` vars; borders/muted aligned with maket. `landing.tsx` imports it. |
 
 ### Auth surfaces (`dang-nhap`, `dang-nhap/email`, `dang-ky`, `quen-mat-khau`, `auth.callback`)
 
@@ -92,7 +92,7 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 | Check | Result |
 |------|--------|
 | Canvas **07** fields | ✅ Hoàng đạo verdict, giờ tốt/xấu grid, Đại Vận strip, weekly rows, primary CTA — implemented per recent maket pass. |
-| Typography vs §8 | ⚠️ **Header subline** `fontSize: 9.5` — below FE-HANDOFF minimum for mono; bump to **≥11–12px** or swap role to caption 12px. |
+| Typography vs §8 | ✅ Header subline **12px** mono, §8-compliant. |
 | Display font | ✅ Montserrat for maket display (per export); note FE-HANDOFF §2.2 still lists Barlow Condensed for `--display-2` — **design doc vs product** resolution may be needed. |
 | Streak ribbon | ✅ Aligned to `b-habit` ribbon pattern; 🔍 compare Tiết khí wheel if design adds **39** artboard extras. |
 | Day-7 / restart modals | ✅ Updated to shared `HM` tokens + ticket pattern. |
@@ -104,26 +104,26 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 
 ### `/app/thang`
 
-🔍 Segmented **Tháng | Tuần**; paper-default; grid/list density + chip grades vs `b-tabs` + canvas.
+✅ **Tháng | Tuần** segmented control + **LogoMark** header; month view renders **7× calendar grid** from `buildCalendarDaysForMonth` (Hoàng/Hắc tint, links to `/app/ngay/:iso`), not raw JSON. Tuần: existing weekly rows + chips. 🔍 Pixel polish vs `b-tabs` canvas.
 
 ### `/app/chon-ngay` & `/app/chon-ngay/ket-qua`
 
-🔍 Light-default pick flow vs **11**; loading dopamine (`ChonNgayLoadingPanel`); result cards vs `PickResultLight`.
+🔍 Light-default pick flow vs **11**; loading (`ChonNgayLoadingPanel`). ✅ **ResultDayCard** mono labels ≥12px where audit flagged 9.5px.
 
 ### `/app/loi/khong-tim-thay-ngay`
 
-🔍 Forest `ErrorNoDates` pattern from `b-flow3.jsx` canvas **29**.
+✅ Forest + `BackBar` + `Kanji` + CTA pattern implemented. 🔍 Visual QA vs canvas **29**.
 
 ### `/app/so-viec`
 
-🔍 **13** ViecListLight — list rows on paper, ticket edges, saved-picks empty states.
+✅ Paper list + left accent strip; ✅ BackBar subtitle counts fixed; ✅ mono **12px** on key labels / empty helper. 🔍 Optional **Ticket** perforation on rows vs **13** ViecListLight.
 
 ---
 
 ## Batch 4+ — Tab hub, profile, billing, lookups (outline)
 
 - **`/app/tra-cuu`:** 4-up grid + “Sổ ngày đã chọn” vs `TraCuuHub`.  
-- **`/app/toi`:** Identity card, pillars, credits, settings links vs `ToiProfile`.  
+- **`/app/toi`:** Identity card, pillars, credits, settings links vs `ToiProfile`. ✅ Settings mono/footer **12px** (readability).  
 - **`/app/mua-luong`:** Plan names **Lẻ — gói nhỏ** / **Tháng An Cư** / **Năm Phú Quý** + anchored math row vs `MuaLuongV2`.  
 - **Lookup utilities:** BackBar dark, mono-dense aesthetic per §4.  
 - **AI Reading:** Sectioned cards, pin/share, loading phases vs `b-ai-reading.jsx`.
@@ -144,4 +144,5 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 
 | Date | Change |
 |------|--------|
+| 2026-05-12 | **Implemented:** `LANDING_TOK` + landing import; Hôm nay header 12px mono; **Tháng** real calendar grid + LogoMark/HM; Sổ việc subtitle + mono sizes; **ResultDayCard** / **Tôi** mono readability; audit doc updated. |
 | 2026-05-11 | Initial inventory + batches 1–3 notes; registered missing `app/routes.ts` children; home typography / pricing discrepancies flagged. |

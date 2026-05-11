@@ -15,25 +15,13 @@ import type { Route } from "./+types/landing";
 
 import "~/styles/landing-marketing.css";
 import { Kanji, Logo, LogoMark, Mono, Stamp } from "~/components/brand";
+import { LANDING_TOK } from "~/lib/maket-tokens";
 
 const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
 
 export const links: Route.LinksFunction = () => [];
 
-const TOK = {
-  paper: "#f0ece2",
-  paperWarm: "#ede7d3",
-  ink: "#18150e",
-  ink2: "#3a3220",
-  forest: "#1d3129",
-  forestDeep: "#0e1c14",
-  cream: "#ede7d3",
-  gold: "#c5a55a",
-  goldDeep: "#7d6219",
-  border: "rgba(125,98,25,0.26)",
-  borderStrong: "rgba(125,98,25,0.5)",
-  muted: "#6a5f3f",
-};
+const TOK = LANDING_TOK;
 
 const PACKAGES_V2 = [
   {
