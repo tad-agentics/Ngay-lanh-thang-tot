@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 
 import { AppMobileShell } from "~/components/AppMobileShell";
+import { AppShellViewport } from "~/components/AppShellViewport";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { FeatureCostsProvider } from "~/hooks/useFeatureCosts";
@@ -23,9 +24,11 @@ export default function AppShellLayout() {
 
   if (authLoading) {
     return (
-      <div className="min-h-svh flex items-center justify-center bg-background text-muted-foreground text-sm">
-        Đang tải…
-      </div>
+      <AppShellViewport>
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          Đang tải…
+        </div>
+      </AppShellViewport>
     );
   }
 
@@ -55,9 +58,11 @@ function AppShellWithProfile({
 
   if (profileLoading) {
     return (
-      <div className="min-h-svh flex items-center justify-center bg-background text-muted-foreground text-sm">
-        Đang tải hồ sơ…
-      </div>
+      <AppShellViewport>
+        <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+          Đang tải hồ sơ…
+        </div>
+      </AppShellViewport>
     );
   }
 
@@ -67,26 +72,28 @@ function AppShellWithProfile({
       profileError ??
       "Không tìm thấy hồ sơ tài khoản. Thử tải lại hoặc đăng xuất và đăng nhập lại.";
     return (
-      <main className="px-4 pb-8 py-10 space-y-6">
-        <ErrorBanner message={message} />
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            type="button"
-            className="w-full sm:w-auto"
-            onClick={() => void retryProfile()}
-          >
-            Thử tải lại
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => void signOut()}
-          >
-            Đăng xuất
-          </Button>
-        </div>
-      </main>
+      <AppShellViewport>
+        <main className="flex-1 space-y-6 overflow-y-auto px-4 py-10 pb-8">
+          <ErrorBanner message={message} />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              onClick={() => void retryProfile()}
+            >
+              Thử tải lại
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => void signOut()}
+            >
+              Đăng xuất
+            </Button>
+          </div>
+        </main>
+      </AppShellViewport>
     );
   }
 

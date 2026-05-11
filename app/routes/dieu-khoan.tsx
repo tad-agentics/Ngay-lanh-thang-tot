@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar } from "~/components/brand";
 
 const SECTIONS = [
   {
@@ -45,7 +45,7 @@ export default function DieuKhoanRoute() {
   return (
     <main className="min-h-svh bg-background pb-8">
       <div className="px-4">
-        <ScreenHeader title="Điều khoản sử dụng" />
+        <BackBar title="Điều khoản sử dụng" />
       </div>
       <div className="px-4 flex flex-col gap-5 max-w-lg mx-auto">
         <p className="text-muted-foreground text-xs">

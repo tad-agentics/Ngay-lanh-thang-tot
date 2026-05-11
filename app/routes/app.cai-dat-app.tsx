@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, ExternalLink, Smartphone } from "lucide-react";
 import { Link } from "react-router";
 
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar, Mono } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -81,25 +81,31 @@ export default function AppCaiDatApp() {
   function IosSteps() {
     return (
       <div className="flex flex-col gap-2.5 mt-3">
-        <p
-          className="text-surface-foreground/60 text-[10px] uppercase tracking-wider mb-1"
-          style={{ fontFamily: "var(--font-ibm-mono)" }}
-        >
+        <Mono style={{ color: "var(--muted-foreground)", marginBottom: 8, display: "block" }}>
           Safari · iOS
-        </p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        </Mono>
+        <p
+          className="text-muted-foreground leading-relaxed"
+          style={{ fontFamily: "var(--serif)", fontSize: 16, lineHeight: 1.55 }}
+        >
           1. Nhấn nút{" "}
           <span className="text-foreground font-medium">Chia sẻ</span> (hình vuông
           có mũi tên lên) ở thanh dưới Safari.
         </p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p
+          className="text-muted-foreground leading-relaxed"
+          style={{ fontFamily: "var(--serif)", fontSize: 16, lineHeight: 1.55 }}
+        >
           2. Cuộn xuống chọn{" "}
           <span className="text-foreground font-medium">
             Thêm vào Màn hình chính
           </span>
           .
         </p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p
+          className="text-muted-foreground leading-relaxed"
+          style={{ fontFamily: "var(--serif)", fontSize: 16, lineHeight: 1.55 }}
+        >
           3. Nhấn <span className="text-foreground font-medium">Thêm</span> ở góc
           trên phải.
         </p>
@@ -110,24 +116,30 @@ export default function AppCaiDatApp() {
   function AndroidSteps() {
     return (
       <div className="flex flex-col gap-2.5 mt-3">
-        <p
-          className="text-surface-foreground/60 text-[10px] uppercase tracking-wider mb-1"
-          style={{ fontFamily: "var(--font-ibm-mono)" }}
-        >
+        <Mono style={{ color: "var(--muted-foreground)", marginBottom: 8, display: "block" }}>
           Chrome · Android
-        </p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        </Mono>
+        <p
+          className="text-muted-foreground leading-relaxed"
+          style={{ fontFamily: "var(--serif)", fontSize: 16, lineHeight: 1.55 }}
+        >
           1. Nhấn nút <span className="text-foreground font-medium">⋮</span> (ba
           chấm) góc trên phải Chrome.
         </p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p
+          className="text-muted-foreground leading-relaxed"
+          style={{ fontFamily: "var(--serif)", fontSize: 16, lineHeight: 1.55 }}
+        >
           2. Chọn{" "}
           <span className="text-foreground font-medium">
             Thêm vào màn hình chính
           </span>
           .
         </p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p
+          className="text-muted-foreground leading-relaxed"
+          style={{ fontFamily: "var(--serif)", fontSize: 16, lineHeight: 1.55 }}
+        >
           3. Nhấn <span className="text-foreground font-medium">Thêm</span> để xác
           nhận.
         </p>
@@ -136,8 +148,16 @@ export default function AppCaiDatApp() {
   }
 
   return (
-    <div className="px-4 pb-8">
-      <ScreenHeader title="Cài đặt ứng dụng" />
+    <div
+      className="px-4 pb-8"
+      style={{
+        background: "var(--paper, #f0ece2)",
+        minHeight: "100%",
+        color: "var(--ink, #1a1a1a)",
+        fontFamily: "var(--serif)",
+      }}
+    >
+      <BackBar title="Cài đặt ứng dụng" />
 
       <div className="flex flex-col gap-4">
         {!dismissed ? (
@@ -162,10 +182,13 @@ export default function AppCaiDatApp() {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-foreground text-sm font-medium mb-0.5">
+        <p className="text-foreground font-medium mb-0.5" style={{ fontSize: 16 }}>
                   Thêm vào màn hình chính
                 </p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p
+                  className="text-muted-foreground leading-relaxed"
+                  style={{ fontSize: 16, lineHeight: 1.55 }}
+                >
                   Thêm vào màn hình chính để mở nhanh — không cần nhớ đường link.
                 </p>
               </div>
@@ -227,10 +250,13 @@ export default function AppCaiDatApp() {
           className="bg-card border border-border px-4 py-4 space-y-3"
           style={{ borderRadius: "var(--radius-lg)" }}
         >
-          <p className="text-foreground text-sm font-medium">
+          <p className="text-foreground font-medium" style={{ fontSize: 16 }}>
             Quyền với dữ liệu cá nhân
           </p>
-          <p className="text-muted-foreground text-xs leading-relaxed">
+          <p
+            className="text-muted-foreground leading-relaxed"
+            style={{ fontSize: 16, lineHeight: 1.55 }}
+          >
             Để xóa lá số hoặc dữ liệu đã lưu theo chính sách bảo mật, gửi yêu cầu
             qua email — chúng tôi sẽ xử lý trong thời hạn luật định.
           </p>
@@ -253,9 +279,9 @@ export default function AppCaiDatApp() {
           </a>
         </div>
 
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground" style={{ fontSize: 16 }}>
           <Link
-            to="/app/cai-dat"
+            to="/app/toi"
             className="text-primary underline underline-offset-4"
           >
             ← Quay lại Cài đặt

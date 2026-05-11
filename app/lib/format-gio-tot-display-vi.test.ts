@@ -13,8 +13,8 @@ describe("formatGioTotArrayDisplayVi", () => {
       { chi_name: "Thìn", range: "07:00-09:00" },
       { chi_name: "Mùi", range: "13:00-15:00" },
     ]);
-    expect(s).toContain("7–9 giờ sáng");
-    expect(s).toContain("13–15 giờ chiều");
+    expect(s).toContain("7 - 9 giờ sáng");
+    expect(s).toContain("13 - 15 giờ chiều");
     expect(s).toContain(" · ");
     expect(s).not.toContain("Thìn");
   });
@@ -43,7 +43,7 @@ describe("formatHourRangeForDisplayVi", () => {
     const s = formatHourRangeForDisplayVi("ignored", [
       { range: "09:00-11:00" },
     ]);
-    expect(s).toContain("9–11 giờ sáng");
+    expect(s).toContain("9 - 11 giờ sáng");
   });
 });
 

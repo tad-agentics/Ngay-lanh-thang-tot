@@ -3,12 +3,7 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { publicCorsHeaders as corsHeaders } from "../_shared/cors.ts";
 
 function escHtml(s: string): string {
   return s
@@ -58,7 +53,7 @@ Deno.serve(async (req) => {
 
   let title = "Ngày Lành Tháng Tốt";
   let desc =
-    "Xem gợi ý ngày tốt theo Bát Tự — dùng thử miễn phí.";
+    "Xem gợi ý ngày lành theo Bát Tự — dùng thử miễn phí.";
 
   if (row) {
     const exp = row.expires_at as string | null;

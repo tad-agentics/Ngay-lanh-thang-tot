@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar } from "~/components/brand";
 
 const SECTIONS = [
   {
@@ -44,7 +44,7 @@ export default function ChinhSachBaoMatRoute() {
   return (
     <main className="min-h-svh bg-background pb-8">
       <div className="px-4">
-        <ScreenHeader title="Chính sách bảo mật" />
+        <BackBar title="Chính sách bảo mật" />
       </div>
       <div className="px-4 flex flex-col gap-5 max-w-lg mx-auto">
         <p className="text-muted-foreground text-xs">

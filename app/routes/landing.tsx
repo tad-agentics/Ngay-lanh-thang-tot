@@ -1,137 +1,112 @@
+/**
+ * Landing page v2 — LandingV2 per b-landing-v2.jsx.
+ * Desktop ≥1024px: header + hero + compare + how + method + pricing + testi + FAQ + CTA + footer.
+ * Mobile <1024px: same sections stacked + sticky bottom CTA bar.
+ * SEO meta + JSON-LD preserved and updated for new copy.
+ */
+
 import {
   useEffect,
   useState,
-  type ChangeEvent,
-  type FormEvent,
 } from "react";
 import { Link } from "react-router";
 
 import type { Route } from "./+types/landing";
 
 import "~/styles/landing-marketing.css";
-
-import { LANDING_GIO_SINH as GIO_SINH } from "~/lib/landing-cta-constants";
+import { Kanji, Logo, LogoMark, Mono, Stamp } from "~/components/brand";
+import { LANDING_TOK } from "~/lib/maket-tokens";
 
 const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
 
-export const links: Route.LinksFunction = () => [
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Noto+Serif+SC:wght@400;600;700&display=swap",
-  },
-];
+export const links: Route.LinksFunction = () => [];
 
-const PAINS = [
+const TOK = LANDING_TOK;
+
+const PACKAGES_V2 = [
   {
-    title: "Lịch vạn niên số hóa",
-    desc: "Giống tờ lịch treo tường nhưng nằm trong điện thoại — ký hiệu viết tắt chẳng ai giải thích hộ. Chẳng nói được gì về tuổi của bạn hay việc bạn sắp làm.",
+    id: "le",
+    name: "Lẻ — gói nhỏ",
+    kicker: "Dùng thử",
+    credits: "100 lượng",
+    price: "99.000₫",
+    period: "một lần",
+    items: ["100 lượng dùng dần", "Đủ cho 10–12 việc chọn ngày", "Không tự động nạp"],
+    cta: "Mua lượng",
+    featured: false,
   },
   {
-    title: "Kết quả không cá nhân hóa",
-    desc: '"Ngày này tốt" — tốt cho ai? Chẳng rõ bạn sinh năm nào, đang lo chuyện gì. Một câu dùng chung cho mọi tuổi không phải câu cho riêng bạn.',
+    id: "goi_6thang",
+    name: "Tháng An Cư",
+    kicker: "Phổ biến",
+    credits: "Dùng thoải mái",
+    price: "789.000₫",
+    period: "/ 6 tháng",
+    items: [
+      "Không trừ lượng từng việc",
+      "Lá số tứ trụ chi tiết",
+      "Cảnh báo Tam Tai · Tuế Phá",
+      "Nhắc trước 7 ngày",
+    ],
+    cta: "Đăng ký 6 tháng",
+    featured: true,
   },
   {
-    title: "Không giải thích lý do",
-    desc: "Biết là ngày \"tốt\" mà không hiểu vì sao — chưa đủ để chốt việc, cũng khó kể cho người nhà nghe cho ra lẽ.",
-  },
-  {
-    title: "Tìm thầy vừa tốn thời gian, vừa đắt",
-    desc: "Một lần hỏi đã vài trăm nghìn tới cả triệu, lại phải hẹn trước. Nửa đêm cần quyết ngay thì chẳng kịp.",
+    id: "goi_12thang",
+    name: "Năm Phú Quý",
+    kicker: "Tiết kiệm ~37%",
+    credits: "Dùng thoải mái",
+    price: "989.000₫",
+    period: "/ 12 tháng",
+    items: [
+      "Không trừ lượng từng việc",
+      "Mọi tính năng Tháng An Cư",
+      "Hỗ trợ ưu tiên",
+      "Hóa đơn VAT",
+    ],
+    cta: "Đăng ký 12 tháng",
+    featured: false,
   },
 ] as const;
 
-const OFFERS = [
-  {
-    tag: "Cốt lõi",
-    title: "Chọn ngày theo tuổi",
-    desc: "Hai mươi sáu lựa chọn theo từng việc. Rà trong khoảng từ ba mươi tới chín mươi ngày. Những ngày đứng đầu theo từng mức điểm, có giờ đẹp cụ thể, lý do ghi thẳng tiếng Việt.",
-    cr: "5–10 lượng",
-    free: false,
-  },
-  {
-    tag: "Nền tảng",
-    title: "Lá số Tứ Trụ cá nhân",
-    desc: "Nhật Chủ, Dụng Thần, Kỵ Thần, Đại Vận — làm một lần, các kết quả sau bám theo đúng mệnh của bạn.",
-    cr: "15 lượng · lưu vĩnh viễn",
-    free: false,
-  },
-  {
-    tag: "Hàng ngày",
-    title: "Lịch hôm nay và tuần này",
-    desc: "Ngày nào nên tránh, giờ nào đẹp — theo lá số của bạn. Mỗi sáng mở ra xem như dự báo trong ngày.",
-    cr: "",
-    free: true,
-  },
-  {
-    tag: "Hôn nhân",
-    title: "Hợp tuổi hai người",
-    desc: "Coi Can Chi, Nạp Âm, ngũ hành đủ bề. Kết quả rõ ràng, gửi bà con trong nhóm Zalo cũng được.",
-    cr: "8 lượng",
-    free: false,
-  },
-  {
-    tag: "Vận khí",
-    title: "Dự báo vận tháng",
-    desc: "Tháng này nên đẩy việc hay thu lại? Dựa trên trụ tháng và lá số — gợi ý ngắn gọn, không vòng vo.",
-    cr: "3 lượng / tháng",
-    free: false,
-  },
-  {
-    tag: "Không gian",
-    title: "Hướng và màu theo mệnh",
-    desc: "Hướng kê bàn làm việc, màu sơn có kèm mã cho thợ — bám theo Dụng Thần của bạn. Đưa thẳng tay thợ, khỏi phiên dịch.",
-    cr: "5 lượng",
-    free: false,
-  },
+const FAQS_V2 = [
+  [
+    "Có cần biết tử vi không?",
+    "Không. Bạn nhập ngày giờ sinh, app tự tính tứ trụ. Phần luận giải viết bằng tiếng Việt thường ngày — không có Hán Việt nặng nếu bạn không bật.",
+  ],
+  [
+    "Có chính xác không?",
+    "Hệ thống đối chiếu 4 nguồn: Hiệp Kỷ Biện Phương, Ngọc Hạp Thông Thư, Bộ Tứ Trụ Hồ Điểu, Lịch Vạn Niên 2026. Mỗi điểm số đều có thể bấm vào xem câu nguyên văn.",
+  ],
+  [
+    "Lượng có hết hạn không?",
+    "Không. Mua một lần, dùng dần. Không tự gia hạn — bạn không bị trừ tiền nếu không chủ động mua thêm.",
+  ],
+  [
+    "App có cài không?",
+    "Có. Cài 1 chạm trên iPhone/Android (PWA — không qua App Store). Hoặc dùng trên web. Lá số đồng bộ.",
+  ],
+  [
+    "Hợp tuổi cần tài khoản người kia không?",
+    "Không. Trong Tra cứu → Hợp tuổi, nhập ngày sinh của người kia (không cần tài khoản của họ). Kết quả hiện ngay.",
+  ],
 ] as const;
 
-const PACKAGES = [
+const TESTIMONIALS = [
   {
-    name: "Mua lẻ",
-    cr: "100 lượng",
-    price: "99.000đ",
-    desc: "Dùng đến đâu tính đến đó — hết thì mua thêm. Mỗi gói lượng có hiệu lực mười hai tháng.",
-    tag: "",
-    hot: false,
+    name: "Chị Hằng · Đà Nẵng",
+    body: "Tiệm tôi khai trương 17/06 đúng theo phiếu, ngày đó gấp đôi lượt khách so với hôm thử bán.",
+    ev: "Khai trương cửa hàng",
   },
   {
-    name: "Gói 6 tháng",
-    cr: "Dùng thoải mái",
-    price: "789.000đ",
-    desc: "Sáu tháng không trừ lượng — mọi tính năng cần dùng đều mở.",
-    tag: "",
-    hot: false,
+    name: "Anh Tuấn · TP.HCM",
+    body: "Mẹ vợ là người tin tử vi nặng nề. Tôi gửi phiếu qua Zalo, bà cụ duyệt liền — đỡ phải đi xem thầy.",
+    ev: "Cưới hỏi",
   },
   {
-    name: "Gói 12 tháng",
-    cr: "Dùng thoải mái",
-    price: "989.000đ",
-    desc: "Mười hai tháng không trừ lượng — tiền chia ra tháng rẻ hơn khoảng ba bảy phần trăm so với gói sáu tháng.",
-    tag: "Nhiều người chọn",
-    hot: true,
-  },
-] as const;
-
-const FAQS = [
-  {
-    q: "Làm sao biết ngày được chọn có đúng không?",
-    a: "Chúng tôi bám theo Ngọc Hạp Thông Thư — sách lịch pháp người Việt dùng quen từ lâu. Hơn năm mươi công thức sao ngày, mười hai Trực, hai mươi tám Tú được cài cố định — không kiểu đoán bừa khiến lần này khác lần khác. Kết quả nhất quán và kể được từng bước cho bạn nghe.",
-  },
-  {
-    q: "Tứ trụ là gì, có cần không?",
-    a: "Tứ trụ còn gọi bát tự — lấy từ ngày, tháng, năm, giờ sinh, ra hành gốc của bạn (Nhật Chủ), hành nên bổ sung (Dụng Thần), hành nên tránh (Kỵ Thần). Có lá số rồi thì bộ tính toán ưu tiên những ngày Can Chi thuận với Dụng Thần của bạn — sâu hơn hẳn chỉ tra theo năm tuổi.",
-  },
-  {
-    q: "Lượng có hết hạn không?",
-    a: "Mỗi lần mua lượng, dùng trong mười hai tháng kể từ ngày mua. Mở tài khoản mới được hai mươi lượng — đủ làm lá số tứ trụ (mười lăm lượng) và thử chọn ngày lần đầu (năm lượng).",
-  },
-  {
-    q: "Một tài khoản dùng cho cả nhà được không?",
-    a: "Được. Sau khi có lá số của mình, bạn thêm hồ sơ ông bà, bố mẹ, chồng con… trong cùng tài khoản. Coi hợp tuổi hai người hay chọn ngày cho từng người đều làm được.",
-  },
-  {
-    q: "Tại sao ngày giờ sinh không đổi được?",
-    a: "Mọi thứ từ chọn ngày tới phong thủy đều bám theo lá số đã dựng. Đổi giờ sinh là đổi cả bộ lá và mọi kết quả sau đó. Để khớp với lúc bạn đã bấm xác nhận, thông tin khóa lại sau khi xác nhận. Lỡ nhập sai thì nhắn bộ phận trợ giúp để xử lý.",
+    name: "Chị Linh · Hà Nội",
+    body: "Lý do ghi tiếng Việt rõ — không phải đoán. Đặt cọc nhà 26/06 đúng giờ Mùi đã yên tâm.",
+    ev: "Mua nhà",
   },
 ] as const;
 
@@ -144,18 +119,19 @@ function landingJsonLd() {
         name: "Ngày Lành Tháng Tốt",
         url: SITE_ORIGIN,
         description:
-          "Ứng dụng chọn ngày tốt bám theo lá số tứ trụ của bạn. Khai trương, cưới hỏi, nhập trạch — tra theo đúng mệnh, không theo lịch chung.",
+          "Ứng dụng chọn ngày lành bám theo lá số tứ trụ của bạn. Khai trương, cưới hỏi, nhập trạch — tra theo đúng mệnh, không theo lịch chung.",
         applicationCategory: "LifestyleApplication",
         inLanguage: "vi",
-        offers: {
+        offers: PACKAGES_V2.map((p) => ({
           "@type": "Offer",
-          price: "0",
+          name: p.name,
+          price: p.price.replace(/[₫.]/g, ""),
           priceCurrency: "VND",
-        },
+        })),
       },
       {
         "@type": "FAQPage",
-        mainEntity: FAQS.map(({ q, a }) => ({
+        mainEntity: FAQS_V2.map(([q, a]) => ({
           "@type": "Question",
           name: q,
           acceptedAnswer: { "@type": "Answer", text: a },
@@ -167,9 +143,7 @@ function landingJsonLd() {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    {
-      title: "Ngày Lành Tháng Tốt — chọn ngày tốt theo lá số tứ trụ",
-    },
+    { title: "Ngày Lành Tháng Tốt — chọn ngày lành theo lá số tứ trụ" },
     {
       name: "description",
       content:
@@ -178,8 +152,7 @@ export function meta({}: Route.MetaArgs) {
     { property: "og:title", content: "Ngày Lành Tháng Tốt" },
     {
       property: "og:description",
-      content:
-        "Theo lá số của bạn — không phải lịch in để chung. Nửa phút là có khung.",
+      content: "Theo lá số của bạn — không phải lịch in để chung. Nửa phút là có khung.",
     },
     { property: "og:type", content: "website" },
     { property: "og:url", content: SITE_ORIGIN + "/" },
@@ -188,173 +161,57 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-type CTAFormFields = { name: string; dob: string; gio: string; gender: string };
 
-function CTAForm({ id }: { id: string }) {
-  const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState<CTAFormFields>({
-    name: "",
-    dob: "",
-    gio: GIO_SINH[0]!,
-    gender: "",
-  });
-
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!form.name || !form.dob || !form.gender) return;
-    setSubmitted(true);
-  }
-
-  const set =
-    (k: keyof CTAFormFields) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const signupSearch = new URLSearchParams({
-    name: form.name,
-    dob: form.dob,
-    gio: form.gio,
-    gender: form.gender,
-  }).toString();
-
-  if (submitted) {
-    return (
-      <div className="lp-cta-card">
-        <div className="lp-cta-card-inner" style={{ textAlign: "center", padding: "1rem 0" }}>
-          <div
-            style={{
-              fontFamily: "var(--font-noto), 'Noto Serif SC', serif",
-              fontSize: "2rem",
-              color: "var(--lp-gold)",
-              marginBottom: "1rem",
-            }}
-          >
-            吉
-          </div>
-          <h2 className="lp-cta-heading" style={{ marginBottom: "0.75rem" }}>
-            Lá số cho {form.name} đã dựng xong
-          </h2>
-          <p className="lp-cta-sub" style={{ marginBottom: "1.5rem" }}>
-            Mở tài khoản để xem Nhật Chủ, Dụng Thần và các ngày tốt bám theo mệnh của
-            bạn.
-          </p>
-          <Link
-            to={{ pathname: "/dang-ky", search: `?${signupSearch}` }}
-            className="lp-btn-submit"
-          >
-            Đăng ký và xem lá số →
-          </Link>
-          <div className="lp-form-note">Hai mươi lượng tặng khi mở tài khoản</div>
-        </div>
-        <div className="lp-kanji-bg" aria-hidden>
-          吉
-        </div>
-      </div>
-    );
-  }
-
+function FaqItem({ q, a, index, open, onToggle }: { q: string; a: string; index: number; open: boolean; onToggle: () => void }) {
   return (
-    <div className="lp-cta-card" id={id === "hero-form" ? "main-form" : undefined}>
-      <div className="lp-cta-card-inner">
-        <div className="lp-cta-label">Lá số tứ trụ của bạn</div>
-        <h2 className="lp-cta-heading">
-          Ngày lành tháng tốt
-          <br />
-          khớp mệnh của bạn
-        </h2>
-        <p className="lp-cta-sub">
-          Cho biết ngày giờ sinh — dựng lá số một lần, rồi mỗi lần chọn ngày đều bám
-          theo đó.
+    <div
+      onClick={onToggle}
+      style={{ borderTop: `1px solid ${TOK.border}`, padding: "20px 0", cursor: "pointer" }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <Mono size={11} style={{ color: TOK.muted, letterSpacing: "0.14em", minWidth: 32 }}>
+          {String(index + 1).padStart(2, "0")}
+        </Mono>
+        <span
+          style={{
+            flex: 1,
+            fontFamily: "var(--display-2)",
+            fontWeight: 700,
+            fontSize: "clamp(15px, 2.2vw, 20px)",
+            textTransform: "uppercase",
+            color: TOK.ink,
+            letterSpacing: "-0.005em",
+          }}
+        >
+          {q}
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: 16,
+            color: TOK.goldDeep,
+            transform: open ? "rotate(45deg)" : "rotate(0deg)",
+            transition: "transform 0.2s ease",
+            flexShrink: 0,
+          }}
+        >
+          +
+        </span>
+      </div>
+      {open ? (
+        <p
+          style={{
+            fontFamily: "var(--serif)",
+            fontSize: 15,
+            lineHeight: 1.65,
+            marginTop: 12,
+            color: TOK.ink2,
+            paddingLeft: "clamp(0px, 4vw, 48px)",
+          }}
+        >
+          {a}
         </p>
-        <form onSubmit={handleSubmit} aria-label="Nhập thông tin để dựng lá số tứ trụ">
-          <div className="lp-form-row">
-            <label className="lp-form-label" htmlFor={`${id}-name`}>
-              Họ tên
-            </label>
-            <p className="lp-form-hint">Hiển thị trên lá số và lời chào của bạn.</p>
-            <input
-              id={`${id}-name`}
-              type="text"
-              placeholder="Nguyễn Thị Minh"
-              value={form.name}
-              onChange={set("name")}
-              required
-              autoComplete="name"
-            />
-          </div>
-          <div className="lp-form-row">
-            <label className="lp-form-label" htmlFor={`${id}-dob`}>
-              Ngày sinh
-            </label>
-            <p className="lp-form-hint">
-              Tính Can Chi và toàn bộ trụ — theo lịch dương bạn hay dùng.
-            </p>
-            <input id={`${id}-dob`} type="date" value={form.dob} onChange={set("dob")} required />
-          </div>
-          <div className="lp-form-row lp-form-row-2">
-            <div>
-              <label className="lp-form-label" htmlFor={`${id}-gio`}>
-                Giờ sinh
-              </label>
-              <p className="lp-form-hint">Theo khung mười hai giờ địa chi.</p>
-              <select id={`${id}-gio`} value={form.gio} onChange={set("gio")}>
-                {GIO_SINH.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="lp-form-label" htmlFor={`${id}-gender`}>
-                Giới tính
-              </label>
-              <p className="lp-form-hint">Dùng trong công thức bát tự khi đọc lá.</p>
-              <select
-                id={`${id}-gender`}
-                value={form.gender}
-                onChange={set("gender")}
-                required
-              >
-                <option value="">Chọn</option>
-                <option value="nam">Nam</option>
-                <option value="nu">Nữ</option>
-              </select>
-            </div>
-          </div>
-          <button type="submit" className="lp-btn-submit">
-            Xem ngày lành cho tôi →
-          </button>
-        </form>
-        <div className="lp-form-note">
-          Ngày giờ sinh được mã hóa — không bán cho bên ngoài
-          <br />
-          Hai mươi lượng tặng · Dùng trong mười hai tháng
-        </div>
-      </div>
-      <div className="lp-kanji-bg" aria-hidden>
-        吉
-      </div>
-    </div>
-  );
-}
-
-function LandingFaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="lp-faq-item">
-      <button
-        type="button"
-        className="lp-faq-btn"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
-        <span>{q}</span>
-        <span className={`lp-faq-icon${open ? " lp-open" : ""}`}>+</span>
-      </button>
-      <div className={`lp-faq-ans${open ? " lp-open" : ""}`}>
-        <div>{a}</div>
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -363,16 +220,21 @@ function readStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-      true
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
   );
 }
 
 export default function Landing() {
   const [isStandalone, setIsStandalone] = useState(false);
+  const [openFaq, setOpenFaq] = useState(0);
+  const [showStickyBar, setShowStickyBar] = useState(false);
 
   useEffect(() => {
     setIsStandalone(readStandalonePwa());
+    // Sticky bottom bar appears after user scrolls 200px on mobile
+    const handleScroll = () => setShowStickyBar(window.scrollY > 200);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
@@ -382,248 +244,873 @@ export default function Landing() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(landingJsonLd()) }}
       />
 
-      <div id="lp">
-        <nav className="lp-nav" aria-label="Chính">
-          <Link to="/" className="lp-nav-logo">
-            Ngày Lành <span>Tháng Tốt</span>
-          </Link>
-          <div className="lp-nav-actions">
-            <Link to="/dang-nhap" className="lp-nav-login">
+      <div id="lp" style={{ background: TOK.paper, fontFamily: "var(--serif)", color: TOK.ink }}>
+        {/* ── Sticky header ── */}
+        <header
+          style={{
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
+            background: "rgba(240,236,226,0.92)",
+            backdropFilter: "blur(16px) saturate(140%)",
+            WebkitBackdropFilter: "blur(16px) saturate(140%)",
+            borderBottom: `1px solid ${TOK.border}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px clamp(18px, 5vw, 64px)",
+          }}
+        >
+          <Logo size={42} />
+          <nav style={{ display: "flex", alignItems: "center", gap: "clamp(12px, 3vw, 32px)" }}>
+            {([["Vì sao", "#compare"], ["Cách dùng", "#how"], ["Bảng giá", "#pricing"], ["Hỏi đáp", "#faq"]] as const).map(([n, href]) => (
+              <a
+                key={n}
+                href={href}
+                style={{
+                  fontFamily: "var(--display-2)",
+                  fontWeight: 600,
+                  fontSize: 13,
+                  color: TOK.ink2,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  textDecoration: "none",
+                  display: "none",
+                }}
+                className="lp-nav-desktop-link"
+              >
+                {n}
+              </a>
+            ))}
+            <Link
+              to="/dang-nhap"
+              style={{
+                fontFamily: "var(--display-2)",
+                fontWeight: 600,
+                fontSize: 12,
+                color: TOK.goldDeep,
+                textTransform: "uppercase",
+                letterSpacing: "0.04em",
+                textDecoration: "none",
+              }}
+            >
               Đăng nhập
             </Link>
             {isStandalone ? (
-              <Link to="/app" className="lp-nav-cta">
-                <span className="lp-nav-cta-long">Mở ứng dụng</span>
-                <span className="lp-nav-cta-short">Vào ngay</span>
-              </Link>
+              <Link to="/app" className="lp-nav-cta">Vào ngay</Link>
             ) : (
-              <a href="#main-form" className="lp-nav-cta">
-                <span className="lp-nav-cta-long">Dựng lá số miễn phí</span>
-                <span className="lp-nav-cta-short">Thử ngay</span>
+              <a
+                href="#main-form"
+                style={{
+                  padding: "9px 16px",
+                  background: TOK.forest,
+                  color: TOK.cream,
+                  border: "none",
+                  fontFamily: "var(--display-2)",
+                  fontWeight: 700,
+                  fontSize: 11,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  textDecoration: "none",
+                  borderRadius: 999,
+                }}
+              >
+                Mở quẻ — 30 giây
               </a>
             )}
-          </div>
-        </nav>
+          </nav>
+        </header>
 
-        <section className="lp-hero" aria-labelledby="hero-h1">
-          <div>
-            <div className="lp-hero-kicker lp-au">
-              Theo lá số tứ trụ · Hai mươi sáu kiểu việc
+        {/* ── Hero ── */}
+        <section
+          style={{
+            background: TOK.paper,
+            padding: "clamp(32px,6vw,64px) clamp(18px,5vw,64px) clamp(48px,8vw,96px)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Kanji
+            ch="吉"
+            size={680}
+            drift
+            style={{
+              position: "absolute",
+              right: "clamp(-40px,-5vw,-120px)",
+              top: -40,
+              color: "rgba(197,165,90,0.06)",
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "clamp(280px,55%,1fr) 1fr",
+              gap: "clamp(24px,4vw,64px)",
+              alignItems: "center",
+              position: "relative",
+              maxWidth: 1280,
+              margin: "0 auto",
+            }}
+            className="lp-hero-grid"
+          >
+            <div>
+              <Mono style={{ color: TOK.goldDeep, letterSpacing: "0.22em", fontSize: 11 }}>
+                —— Niên giám điện tử · 2026 Bính Ngọ
+              </Mono>
+              <h1
+                style={{
+                  fontFamily: "var(--display-2)",
+                  fontWeight: 800,
+                  fontSize: "clamp(42px,7vw,88px)",
+                  lineHeight: 0.92,
+                  letterSpacing: "-0.025em",
+                  textTransform: "uppercase",
+                  color: TOK.ink,
+                  margin: "20px 0 12px",
+                }}
+              >
+                Một ngày<br />
+                <span style={{ color: TOK.goldDeep, fontStyle: "italic", fontWeight: 700 }}>cho riêng</span>
+                <br />
+                mệnh của bạn.
+              </h1>
+              <p
+                style={{
+                  fontSize: "clamp(14px,1.8vw,19px)",
+                  lineHeight: 1.7,
+                  color: TOK.ink2,
+                  maxWidth: 520,
+                  margin: "22px 0 32px",
+                  fontFamily: "var(--serif)",
+                }}
+              >
+                Lịch in chung nói "ngày này lành" — lành cho ai? Ở đây mỗi gợi ý đứng trên ngày giờ sinh của bạn, kèm lý do gửi được cho cả nhà.
+              </p>
+              <div style={{ display: "flex", gap: 22, alignItems: "center", flexWrap: "wrap" }}>
+                <a
+                  href="#main-form"
+                  style={{
+                    padding: "16px 28px",
+                    background: TOK.forest,
+                    color: TOK.cream,
+                    textDecoration: "none",
+                    fontFamily: "var(--display-2)",
+                    fontWeight: 800,
+                    fontSize: "clamp(12px,1.4vw,15px)",
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
+                    boxShadow: "0 12px 24px rgba(29,49,41,0.22)",
+                  }}
+                >
+                  Mở quẻ — 30 giây →
+                </a>
+                <div>
+                  <Mono style={{ color: TOK.goldDeep, fontSize: 11 }}>★★★★★   1.842 hộ</Mono>
+                  <p style={{ fontFamily: "var(--serif)", fontSize: 12, color: TOK.muted, marginTop: 2 }}>Đã dựng lá số tứ trụ tuần qua</p>
+                </div>
+              </div>
             </div>
-            <h1 id="hero-h1" className="lp-au lp-d1">
-              Chọn ngày đúng
-              <br />
-              <span className="lp-g">mệnh của bạn.</span>
-              <br />
-              Chừng nửa phút.
-            </h1>
-            <p className="lp-hero-sub lp-au lp-d2">
-              Khai trương, cưới hỏi, nhập trạch, ký kết… đều tính trên{" "}
-              <strong>lá số riêng của bạn</strong>, không phải lịch chung cho cả làng.
-              Lý do ghi tiếng Việt, kèm giờ đẹp — gửi Zalo trong nhà cũng được.
-            </p>
-            <div className="lp-hero-social-proof lp-au lp-d3">
-              {[
-                "Bám Ngọc Hạp Thông Thư",
-                "Hai mươi sáu kiểu việc",
-                "Ba lớp luận chồng nhau",
-                "Lời giải dễ đọc",
-              ].map((t) => (
-                <span className="lp-proof-tag" key={t}>
-                  {t}
-                </span>
-              ))}
+
+            {/* Hero phiếu artifact */}
+            <div style={{ position: "relative", height: "clamp(280px,40vw,540px)" }}>
+              <div style={{ position: "absolute", top: 30, left: 30, right: 0, bottom: 0, background: "#e1d8b8", boxShadow: "0 18px 30px rgba(0,0,0,0.12)", transform: "rotate(-3deg)" }} />
+              <div style={{ position: "absolute", top: 14, left: 14, right: 14, bottom: 14, background: "#e8dec1", boxShadow: "0 14px 28px rgba(0,0,0,0.1)", transform: "rotate(-1.5deg)" }} />
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 14,
+                  bottom: 14,
+                  background: TOK.paperWarm,
+                  boxShadow: "0 30px 50px rgba(0,0,0,0.18)",
+                  overflow: "hidden",
+                }}
+              >
+                <div style={{ height: 12, background: "repeating-linear-gradient(90deg, transparent 0 6px, rgba(122,112,80,0.08) 6px 10px)", borderBottom: "1px dashed rgba(122,112,80,0.45)" }} />
+                <div style={{ position: "absolute", top: 38, left: -7, width: 14, height: 14, borderRadius: "50%", background: TOK.paper }} />
+                <div style={{ position: "absolute", top: 38, right: -7, width: 14, height: 14, borderRadius: "50%", background: TOK.paper }} />
+                <div style={{ padding: "18px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <Mono style={{ color: TOK.goldDeep, fontSize: 9 }}>Phiếu chọn ngày · v.1</Mono>
+                    <div style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: "clamp(16px,2.5vw,24px)", lineHeight: 1, marginTop: 6, textTransform: "uppercase" }}>Khai trương</div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: TOK.muted, marginTop: 4 }}>NGUYỄN MINH ANH · 1992</div>
+                  </div>
+                  <Stamp ch="吉日" style={{ fontSize: 18 }} />
+                </div>
+                <div style={{ padding: "0 24px", display: "flex", alignItems: "flex-end", gap: 14 }}>
+                  <div style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: "clamp(72px,10vw,132px)", color: TOK.goldDeep, lineHeight: 0.85, letterSpacing: "-0.04em" }}>15</div>
+                  <div style={{ paddingBottom: 14 }}>
+                    <div style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: "clamp(14px,2vw,22px)", lineHeight: 1, textTransform: "uppercase" }}>Tháng năm</div>
+                    <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: TOK.muted, marginTop: 4 }}>2026 · Bính Ngọ</div>
+                    <div style={{ fontFamily: "var(--hanzi)", fontWeight: 700, fontSize: 16, color: TOK.goldDeep, marginTop: 4 }}>三月二十八</div>
+                  </div>
+                </div>
+                <div style={{ padding: "14px 24px 0" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, fontFamily: "var(--mono)", fontSize: 10, color: TOK.muted }}>
+                    {[["Trực", "Định"], ["Sao", "Thiên Đức"], ["Giờ", "7–9h Thìn"], ["Điểm", "92/100"]].map(([k, v]) => (
+                      <div key={k} style={{ borderTop: `1px solid ${TOK.border}`, paddingTop: 6 }}>
+                        <div style={{ letterSpacing: "0.14em", textTransform: "uppercase" }}>{k}</div>
+                        <div style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: 13, color: TOK.ink, marginTop: 2, letterSpacing: "0.02em" }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Bottom perforation + stub */}
+                <div style={{ position: "absolute", bottom: 56, left: 0, right: 0, height: 1, borderTop: "1px dashed rgba(122,112,80,0.45)" }} />
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "14px 24px", background: "rgba(122,112,80,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Mono style={{ color: TOK.muted }}>Đối chiếu · NLTT-2026-0042</Mono>
+                  <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: TOK.goldDeep, letterSpacing: "0.18em" }}>·11/05·</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  top: -16,
+                  right: -16,
+                  width: 86,
+                  height: 86,
+                  borderRadius: "50%",
+                  background: TOK.forest,
+                  color: TOK.gold,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 12px 24px rgba(29,49,41,0.3)",
+                  border: `2px solid ${TOK.gold}`,
+                }}
+              >
+                <span style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: 32, lineHeight: 1 }}>92</span>
+                <Mono size={8.5}>/100</Mono>
+              </div>
             </div>
-            <div className="lp-scroll-hint lp-au lp-d4">Điền khung bên cạnh để dựng lá</div>
           </div>
 
-          <div className="lp-au lp-d2">
-            <CTAForm id="hero-form" />
+          {/* Trust band */}
+          <div
+            style={{
+              marginTop: 48,
+              paddingTop: 24,
+              borderTop: `1px solid ${TOK.border}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+              flexWrap: "wrap",
+              maxWidth: 1280,
+              margin: "48px auto 0",
+              position: "relative",
+            }}
+          >
+            <Mono style={{ color: TOK.muted, fontSize: 10 }}>Đối chiếu với</Mono>
+            {["Hiệp Kỷ Biện Phương", "Ngọc Hạp Thông Thư", "Bộ Tứ Trụ Hồ Điểu", "Lịch Vạn Niên 2026"].map((n, i) => (
+              <span key={i} style={{ fontFamily: "var(--display-2)", fontWeight: 600, fontSize: "clamp(11px,1.4vw,14px)", color: TOK.ink2, textTransform: "uppercase", letterSpacing: "0.06em", opacity: 0.7 }}>
+                {n}
+              </span>
+            ))}
+          </div>
+
+          {/* Hero CTA button */}
+          <div style={{ marginTop: 48 }} id="main-form">
+            <Link
+              to="/dang-ky"
+              style={{
+                display: "inline-block",
+                padding: "20px 36px",
+                background: TOK.gold,
+                color: TOK.forest,
+                textDecoration: "none",
+                borderRadius: 8,
+                fontFamily: "var(--display-2)",
+                fontWeight: 800,
+                fontSize: "clamp(13px,1.5vw,16px)",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                boxShadow: "0 16px 32px rgba(197,165,90,0.25)",
+              }}
+            >
+              Mở quẻ ngay →
+            </Link>
           </div>
         </section>
 
-        <div className="lp-pains" aria-label="Vấn đề hiện tại">
-          <div className="lp-pains-inner">
-            <div className="lp-pains-head">
-              Xem ngày kiểu cũ
-              <br />
-              <span>vẫn thiếu điều gì?</span>
+        {/* ── Compare 3-up ── */}
+        <section
+          id="compare"
+          style={{
+            background: TOK.paper,
+            padding: "clamp(48px,6vw,72px) clamp(18px,5vw,64px)",
+            borderTop: `1px solid ${TOK.border}`,
+          }}
+        >
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 32 }}>
+              <Mono style={{ color: TOK.goldDeep, letterSpacing: "0.22em", fontSize: 11 }}>Vì sao</Mono>
+              <span style={{ flex: 1, height: 1, background: TOK.border }} />
+              <Mono style={{ color: TOK.muted, fontSize: 10 }}>Lịch chung nói "ngày này lành" — lành cho ai?</Mono>
             </div>
-            <ul className="lp-pain-list">
-              {PAINS.map(({ title, desc }, i) => (
-                <li className="lp-pain-item" key={i}>
-                  <span className="lp-pain-x" aria-hidden>
-                    ✕
-                  </span>
-                  <div>
-                    <div className="lp-pain-title">{title}</div>
-                    <div className="lp-pain-desc">{desc}</div>
-                  </div>
-                </li>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 24 }}>
+              {[
+                {
+                  tag: "Lịch in",
+                  title: "Một câu trả lời cho 90 triệu người",
+                  body: "Lịch in của các nhà xuất bản gộp chung mọi tuổi để vừa quyển sách — không sai, nhưng cũng không đủ.",
+                  items: ['"Ngày 17/06 hợp khai trương"', "Không biết mệnh của bạn", "Không có giờ đẹp riêng", "Không lý giải được"],
+                  pro: false,
+                  featured: false,
+                },
+                {
+                  tag: "Thầy bốc",
+                  title: "Đắt, chậm, khó kiểm chứng",
+                  body: "500k–2tr một lần, đợi 2–7 ngày, ngồi nghe 2 tiếng. Một việc — một lần.",
+                  items: ["Khó hẹn lịch", "Mỗi thầy một kiểu", "Trả tiền theo việc", "Không lưu lại được"],
+                  pro: false,
+                  featured: false,
+                },
+                {
+                  tag: "Ngày Lành Tháng Tốt",
+                  title: "Một câu trả lời cho riêng bạn",
+                  body: "Lá số tứ trụ bám theo ngày giờ sinh — mọi gợi ý sau đều tự khớp với mệnh của bạn.",
+                  items: ["92/100 với mệnh Quý Thủy", "Lý do tiếng Việt rõ ràng", "Giờ đẹp kèm phiếu", "Lưu và gửi cho cả nhà"],
+                  pro: true,
+                  featured: true,
+                },
+              ].map((c, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "relative",
+                    background: c.featured ? TOK.forest : TOK.paperWarm,
+                    color: c.featured ? TOK.cream : TOK.ink,
+                    padding: "32px 28px",
+                    border: c.featured ? `1px solid ${TOK.gold}` : `1px solid ${TOK.border}`,
+                    boxShadow: c.featured ? "0 24px 48px rgba(29,49,41,0.2)" : "0 4px 12px rgba(0,0,0,0.04)",
+                    transform: c.featured ? "translateY(-8px)" : "none",
+                    overflow: "hidden",
+                    transition: "transform 0.2s ease",
+                  }}
+                >
+                  {c.featured ? (
+                    <Kanji ch="新" size={220} style={{ position: "absolute", right: -40, bottom: -60, color: "rgba(197,165,90,0.08)" }} />
+                  ) : null}
+                  <Mono style={{ color: c.featured ? TOK.gold : TOK.goldDeep, fontSize: 10 }}>{c.tag}</Mono>
+                  <h3
+                    style={{
+                      fontFamily: "var(--display-2)",
+                      fontWeight: 800,
+                      fontSize: "clamp(16px,2vw,24px)",
+                      lineHeight: 1.1,
+                      marginTop: 10,
+                      textTransform: "uppercase",
+                      letterSpacing: "-0.005em",
+                      position: "relative",
+                    }}
+                  >
+                    {c.title}
+                  </h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 12, color: c.featured ? "rgba(237,231,211,0.78)" : TOK.ink2, position: "relative" }}>
+                    {c.body}
+                  </p>
+                  <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 0", position: "relative" }}>
+                    {c.items.map((x, j) => (
+                      <li key={j} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "6px 0", fontSize: 13, fontFamily: "var(--mono)", color: c.featured ? "rgba(237,231,211,0.85)" : TOK.ink2, borderBottom: j < c.items.length - 1 ? `1px dashed ${c.featured ? "rgba(197,165,90,0.2)" : TOK.border}` : "none" }}>
+                        <span style={{ color: c.pro ? TOK.gold : "#b34a3a", flexShrink: 0 }}>{c.pro ? "✓" : "×"}</span>
+                        <span>{x}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <section className="lp-how" aria-labelledby="how-h2">
-          <div className="lp-sec-label">Cách hoạt động</div>
-          <h2 className="lp-sec-h2" id="how-h2">
-            Ba bước — từ ngày sinh
-            <br />
-            tới ngày lành
-          </h2>
-          <div className="lp-steps">
+        {/* ── How it works (dark) ── */}
+        <section
+          id="how"
+          style={{
+            background: TOK.forest,
+            color: TOK.cream,
+            padding: "clamp(48px,6vw,72px) clamp(18px,5vw,64px)",
+            borderTop: "1px solid rgba(197,165,90,0.15)",
+          }}
+        >
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 48 }}>
+              <Mono style={{ color: TOK.gold, letterSpacing: "0.22em", fontSize: 11 }}>Cách dùng</Mono>
+              <span style={{ flex: 1, height: 1, background: "rgba(197,165,90,0.25)" }} />
+              <Mono style={{ color: "rgba(237,231,211,0.55)", fontSize: 10 }}>30 giây đến phiếu đầu tiên</Mono>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: 32,
+                position: "relative",
+              }}
+            >
+              {/* Connecting dotted line between circles */}
+              <div style={{ position: "absolute", top: 64, left: "14%", right: "14%", height: 1, backgroundImage: "repeating-linear-gradient(90deg, transparent 0 4px, rgba(197,165,90,0.4) 4px 8px)", pointerEvents: "none" }} className="lp-how-connector" />
+              {[
+                { n: "01", ch: "命", t: "Dựng lá số", d: "Ngày, tháng, năm, giờ sinh — chúng tôi tính tứ trụ và mệnh." },
+                { n: "02", ch: "事", t: "Chọn việc", d: "Khai trương, cưới hỏi, ký kết… 26 kiểu việc, mỗi kiểu có quy tắc riêng." },
+                { n: "03", ch: "吉", t: "Nhận phiếu", d: "Top 1 + lý do tiếng Việt + giờ đẹp. Lưu lịch hoặc gửi cả nhà." },
+              ].map((s, i) => (
+                <div key={i} style={{ position: "relative", textAlign: "center", padding: "0 12px" }}>
+                  <div
+                    style={{
+                      width: "clamp(80px,12vw,128px)",
+                      height: "clamp(80px,12vw,128px)",
+                      borderRadius: "50%",
+                      background: TOK.forestDeep,
+                      border: `2px solid ${TOK.gold}`,
+                      margin: "0 auto",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "relative",
+                    }}
+                  >
+                    <span style={{ fontFamily: "var(--hanzi)", fontWeight: 700, fontSize: "clamp(36px,6vw,60px)", color: TOK.gold, lineHeight: 1 }}>{s.ch}</span>
+                    <span style={{ position: "absolute", bottom: -12, left: "50%", transform: "translateX(-50%)", padding: "3px 14px", background: TOK.gold, color: TOK.forest, fontFamily: "var(--mono)", fontWeight: 700, fontSize: 11, letterSpacing: "0.18em", borderRadius: 999, whiteSpace: "nowrap" }}>
+                      Bước {s.n}
+                    </span>
+                  </div>
+                  <h3 style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: "clamp(18px,2.5vw,28px)", marginTop: 28, textTransform: "uppercase", color: TOK.cream }}>{s.t}</h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.6, marginTop: 10, color: "rgba(237,231,211,0.7)" }}>{s.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Methodology ── */}
+        <section
+          style={{
+            background: TOK.paper,
+            padding: "clamp(48px,6vw,72px) clamp(18px,5vw,64px)",
+            borderTop: `1px solid ${TOK.border}`,
+          }}
+        >
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 40 }}>
+              <Mono style={{ color: TOK.goldDeep, letterSpacing: "0.22em", fontSize: 11 }}>Cách tính</Mono>
+              <span style={{ flex: 1, height: 1, background: TOK.border }} />
+              <Mono style={{ color: TOK.muted, fontSize: 10 }}>Đối chiếu được — không phải hộp đen</Mono>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr clamp(240px,45%,560px)", gap: "clamp(24px,4vw,56px)", alignItems: "center" }}>
+              <div>
+                <h2
+                  style={{
+                    fontFamily: "var(--display-2)",
+                    fontWeight: 800,
+                    fontSize: "clamp(28px,5vw,56px)",
+                    lineHeight: 1.04,
+                    textTransform: "uppercase",
+                    letterSpacing: "-0.015em",
+                  }}
+                >
+                  Mỗi điểm số đều{" "}
+                  <span style={{ color: TOK.goldDeep, fontStyle: "italic", fontWeight: 700 }}>trỏ về</span>{" "}
+                  một câu trong sách cũ.
+                </h2>
+                <p style={{ fontSize: 15, lineHeight: 1.65, color: TOK.ink2, marginTop: 18, maxWidth: 480 }}>
+                  Hệ chấm điểm theo 4 lớp:{" "}
+                  <strong>trực ngày</strong> (Hiệp Kỷ),{" "}
+                  <strong>nhị thập bát tú</strong>,{" "}
+                  <strong>can chi tương sinh tương khắc</strong> với tứ trụ của bạn, và{" "}
+                  <strong>thần sát</strong> (Thiên Đức, Nguyệt Đức, Tam Sát…).
+                </p>
+                <p style={{ fontSize: 14, lineHeight: 1.65, color: TOK.muted, marginTop: 14, fontStyle: "italic" }}>
+                  1 lần chọn ngày (30 ngày tìm kiếm) = 10 lượng. Dựng lá số lần đầu = 0 lượng.
+                </p>
+              </div>
+              <div style={{ background: TOK.paperWarm, border: `1px solid ${TOK.border}`, padding: "28px 28px" }}>
+                <Mono style={{ color: TOK.goldDeep }}>Bóc tách điểm 92/100</Mono>
+                <div style={{ marginTop: 18 }}>
+                  {[
+                    { label: "Trực Định", src: "Hiệp Kỷ Biện Phương · q.4", score: "+24" },
+                    { label: "Sao Thiên Đức", src: "Ngọc Hạp Thông Thư", score: "+20" },
+                    { label: "Can chi tương sinh", src: "Bính Tuất → Nhâm Thân", score: "+28" },
+                    { label: "Giờ Thìn 7–9h", src: "Tứ trụ chủ — Mộc vượng", score: "+20" },
+                  ].map((r, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < 3 ? `1px dashed ${TOK.border}` : "none" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: 14, textTransform: "uppercase" }}>{r.label}</div>
+                        <Mono size={10} style={{ color: TOK.muted, marginTop: 2 }}>{r.src}</Mono>
+                      </div>
+                      <span style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: 18, color: TOK.goldDeep }}>{r.score}</span>
+                    </div>
+                  ))}
+                  <div style={{ marginTop: 14, padding: "10px 0 2px", borderTop: `2px solid ${TOK.ink}`, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: 16, textTransform: "uppercase" }}>Tổng</span>
+                    <span style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: 36, color: TOK.goldDeep }}>92<span style={{ fontSize: 14, color: TOK.muted }}>/100</span></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Pricing ── */}
+        <section
+          id="pricing"
+          style={{
+            background: TOK.paperWarm,
+            padding: "clamp(48px,6vw,72px) clamp(18px,5vw,64px)",
+            borderTop: `1px solid ${TOK.border}`,
+          }}
+        >
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 40 }}>
+              <Mono style={{ color: TOK.goldDeep, letterSpacing: "0.22em", fontSize: 11 }}>Bảng giá</Mono>
+              <span style={{ flex: 1, height: 1, background: TOK.border }} />
+              <Mono style={{ color: TOK.muted, fontSize: 10 }}>Trả theo lượng · không gói nào ép buộc</Mono>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+              {PACKAGES_V2.map((p) => (
+                <div
+                  key={p.id}
+                  style={{
+                    position: "relative",
+                    background: p.featured ? TOK.forest : "#fff",
+                    color: p.featured ? TOK.cream : TOK.ink,
+                    padding: "28px 22px",
+                    border: p.featured ? `1px solid ${TOK.gold}` : `1px solid ${TOK.border}`,
+                    overflow: "hidden",
+                  }}
+                >
+                  {p.featured ? (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -10,
+                        left: 22,
+                        padding: "3px 10px",
+                        background: TOK.gold,
+                        color: TOK.forest,
+                        fontFamily: "var(--display-2)",
+                        fontWeight: 800,
+                        fontSize: 9,
+                        letterSpacing: "0.18em",
+                      }}
+                    >
+                      PHỔ BIẾN
+                    </span>
+                  ) : null}
+                  <Mono style={{ color: p.featured ? "rgba(197,165,90,0.7)" : TOK.goldDeep, marginTop: p.featured ? 10 : 0 }}>{p.kicker}</Mono>
+                  <div style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: "clamp(16px,2vw,22px)", marginTop: 8, textTransform: "uppercase" }}>{p.name}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 14 }}>
+                    <span style={{ fontFamily: "var(--display-2)", fontWeight: 800, fontSize: "clamp(28px,4vw,44px)", lineHeight: 1, color: p.featured ? TOK.gold : TOK.goldDeep }}>{p.price}</span>
+                    <Mono style={{ color: p.featured ? "rgba(197,165,90,0.7)" : TOK.muted }}>{p.period}</Mono>
+                  </div>
+                  <Mono style={{ color: p.featured ? "rgba(197,165,90,0.7)" : TOK.muted, fontSize: 11, marginTop: 4 }}>{p.credits}</Mono>
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: p.featured ? "1px solid rgba(197,165,90,0.2)" : `1px solid ${TOK.border}` }}>
+                    {p.items.map((it, j) => (
+                      <div key={j} style={{ display: "flex", gap: 8, padding: "5px 0", fontSize: 13, fontFamily: "var(--mono)", color: p.featured ? "rgba(237,231,211,0.85)" : TOK.ink2 }}>
+                        <span style={{ color: p.featured ? TOK.gold : TOK.goldDeep }}>✓</span>{it}
+                      </div>
+                    ))}
+                  </div>
+                  <Link
+                    to="/dang-ky"
+                    style={{
+                      display: "block",
+                      marginTop: 20,
+                      padding: "12px",
+                      background: p.featured ? TOK.gold : "transparent",
+                      color: p.featured ? TOK.forest : TOK.ink,
+                      border: p.featured ? "none" : `1px solid ${TOK.borderStrong}`,
+                      fontFamily: "var(--display-2)",
+                      fontWeight: 800,
+                      fontSize: 12,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
+                      textAlign: "center",
+                    }}
+                  >
+                    {p.cta} →
+                  </Link>
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                marginTop: 24,
+                padding: "16px 20px",
+                background: "rgba(125,98,25,0.06)",
+                borderLeft: `3px solid ${TOK.goldDeep}`,
+                fontFamily: "var(--serif)",
+                fontSize: 14,
+                color: TOK.ink2,
+                lineHeight: 1.65,
+              }}
+            >
+              <strong>Mở tài khoản — được 20 lượng tặng.</strong> Dựng lá số tứ trụ không trừ lượng. Gói theo tháng/năm thì không trừ lượng từng việc — dùng trong thời hạn gói. Lượng mua lẻ có hiệu lực 12 tháng kể từ ngày mua.
+            </div>
+          </div>
+        </section>
+
+        {/* ── Testimonials (dark) ── */}
+        <section
+          style={{
+            background: TOK.forest,
+            color: TOK.cream,
+            padding: "clamp(48px,6vw,72px) clamp(18px,5vw,64px)",
+            borderTop: "1px solid rgba(197,165,90,0.15)",
+          }}
+        >
+          <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 40 }}>
+              <Mono style={{ color: TOK.gold, letterSpacing: "0.22em", fontSize: 11 }}>Khách nói gì</Mono>
+              <span style={{ flex: 1, height: 1, background: "rgba(197,165,90,0.25)" }} />
+              <Mono style={{ color: "rgba(237,231,211,0.55)", fontSize: 10 }}>1.842 hộ đã dựng lá số · từ tháng 3 / 2025</Mono>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 24 }}>
+              {TESTIMONIALS.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: TOK.forestDeep,
+                    border: "1px solid rgba(197,165,90,0.18)",
+                    padding: "28px 26px",
+                    position: "relative",
+                  }}
+                >
+                  <span style={{ position: "absolute", top: 12, right: 14, fontFamily: "var(--hanzi)", fontWeight: 700, fontSize: 56, color: "rgba(197,165,90,0.1)", lineHeight: 1 }}>"</span>
+                  <Mono style={{ color: TOK.gold }}>{t.ev}</Mono>
+                  <p style={{ fontSize: 15, lineHeight: 1.65, marginTop: 14, color: "rgba(237,231,211,0.88)", fontStyle: "italic", position: "relative", fontFamily: "var(--serif)" }}>
+                    "{t.body}"
+                  </p>
+                  <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px dashed rgba(197,165,90,0.2)", fontFamily: "var(--mono)", fontSize: 11, color: "rgba(237,231,211,0.6)", letterSpacing: "0.06em" }}>
+                    {t.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section
+          id="faq"
+          style={{
+            background: TOK.paper,
+            padding: "clamp(48px,6vw,72px) clamp(18px,5vw,64px)",
+            borderTop: `1px solid ${TOK.border}`,
+          }}
+        >
+          <div style={{ maxWidth: 800, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 40 }}>
+              <Mono style={{ color: TOK.goldDeep, letterSpacing: "0.22em", fontSize: 11 }}>Hỏi đáp</Mono>
+              <span style={{ flex: 1, height: 1, background: TOK.border }} />
+              <Mono style={{ color: TOK.muted, fontSize: 10 }}>5 câu hay gặp nhất</Mono>
+            </div>
+            {FAQS_V2.map(([q, a], i) => (
+              <FaqItem
+                key={i}
+                q={q}
+                a={a}
+                index={i}
+                open={openFaq === i}
+                onToggle={() => setOpenFaq((prev) => (prev === i ? -1 : i))}
+              />
+            ))}
+            <div style={{ borderTop: `1px solid ${TOK.border}`, paddingTop: 20 }} />
+          </div>
+        </section>
+
+        {/* ── Bottom CTA (forest) ── */}
+        <section
+          style={{
+            background: TOK.forest,
+            color: TOK.cream,
+            padding: "clamp(64px,8vw,96px) clamp(18px,5vw,64px)",
+            textAlign: "center",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <Kanji ch="日" size={520} drift style={{ position: "absolute", left: -100, top: "50%", transform: "translateY(-50%)", color: "rgba(197,165,90,0.06)", pointerEvents: "none" }} />
+          <Kanji ch="月" size={520} style={{ position: "absolute", right: -100, top: "50%", transform: "translateY(-50%)", color: "rgba(197,165,90,0.06)", pointerEvents: "none" }} />
+          <div style={{ position: "relative", maxWidth: 800, margin: "0 auto" }}>
+            <Mono style={{ color: TOK.gold }}>Bắt đầu</Mono>
+            <h2
+              style={{
+                fontFamily: "var(--display-2)",
+                fontWeight: 800,
+                fontSize: "clamp(36px,7vw,88px)",
+                lineHeight: 0.96,
+                marginTop: 16,
+                textTransform: "uppercase",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Phiếu đầu tiên
+              <br />
+              <span style={{ color: TOK.gold }}>miễn phí — 30 giây.</span>
+            </h2>
+            <p style={{ fontSize: "clamp(14px,1.8vw,18px)", color: "rgba(237,231,211,0.72)", marginTop: 18 }}>
+              20 lượng tặng · không cần thẻ
+            </p>
+            <Link
+              to="/dang-ky"
+              style={{
+                display: "inline-block",
+                marginTop: 32,
+                padding: "20px 36px",
+                background: TOK.gold,
+                color: TOK.forest,
+                textDecoration: "none",
+                borderRadius: 8,
+                fontFamily: "var(--display-2)",
+                fontWeight: 800,
+                fontSize: "clamp(13px,1.5vw,16px)",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                boxShadow: "0 16px 32px rgba(197,165,90,0.25)",
+              }}
+            >
+              Mở quẻ ngay →
+            </Link>
+          </div>
+        </section>
+
+        {/* ── Footer ── */}
+        <footer
+          style={{
+            background: TOK.forestDeep,
+            color: "rgba(237,231,211,0.6)",
+            padding: "clamp(32px,5vw,48px) clamp(18px,5vw,64px) clamp(20px,3vw,32px)",
+            borderTop: "1px solid rgba(197,165,90,0.15)",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "clamp(160px,30%,320px) repeat(auto-fit, minmax(120px, 1fr))",
+              gap: "clamp(24px,4vw,48px)",
+              maxWidth: 1280,
+              margin: "0 auto",
+            }}
+            className="lp-footer-grid"
+          >
+            <div>
+              <Logo dark size={32} showUrl />
+              <p style={{ marginTop: 18, fontFamily: "var(--serif)", fontSize: 13, lineHeight: 1.65, maxWidth: 320 }}>
+                Niên giám điện tử cho người Việt — chọn ngày dựa trên lá số tứ trụ, không phải lịch chung.
+              </p>
+            </div>
             {[
-              {
-                n: "01",
-                title: "Dựng lá số một lần",
-                desc: "Cho ngày giờ sinh — Nhật Chủ, Dụng Thần, Kỵ Thần hiện ra. Lưu trong hồ sơ, khỏi nhập lại.",
-              },
-              {
-                n: "02",
-                title: "Chọn việc sắp làm",
-                desc: "Khai trương, cưới hỏi, nhập trạch, ký kết… hai mươi sáu kiểu, mỗi kiểu một bộ luật riêng.",
-              },
-              {
-                n: "03",
-                title: "Nhận kết quả và gửi đi",
-                desc: "Ngày đứng đầu theo từng mức điểm, có giờ đẹp, lý do viết dễ hiểu. Chia Zalo cho nhà chồng cũng tiện.",
-              },
-            ].map(({ n, title, desc }) => (
-              <div className="lp-step" key={n}>
-                <span className="lp-step-n">{n}</span>
-                <div className="lp-step-title">{title}</div>
-                <p className="lp-step-desc">{desc}</p>
+              ["Sản phẩm", [
+                { label: "Mở quẻ hôm nay", to: "/dang-ky" },
+                { label: "Lá số tứ trụ", to: "/dang-ky" },
+                { label: "Bảng giá", href: "#pricing" },
+                { label: "PWA — cài lên điện thoại", href: undefined },
+              ]],
+              ["Công ty", [
+                { label: "Vì sao NLTT", href: "#compare" },
+                { label: "Câu hỏi thường gặp", href: "#faq" },
+                { label: "Liên hệ", href: "mailto:hotro@ngaylanhthangtot.vn" },
+                { label: "Tuyển dụng", href: "mailto:hotro@ngaylanhthangtot.vn" },
+              ]],
+              ["Pháp lý", [
+                { label: "Điều khoản", to: "/dieu-khoan" },
+                { label: "Bảo mật dữ liệu", to: "/chinh-sach-bao-mat" },
+                { label: "Chính sách hoàn tiền", href: "mailto:hotro@ngaylanhthangtot.vn" },
+                { label: "GPKD 0317…", href: undefined },
+              ]],
+            ].map(([title, links]) => (
+              <div key={title as string}>
+                <Mono style={{ color: TOK.gold }}>{title as string}</Mono>
+                <ul style={{ listStyle: "none", padding: 0, margin: "14px 0 0" }}>
+                  {(links as { label: string; to?: string; href?: string }[]).map((x) => (
+                    <li key={x.label} style={{ padding: "4px 0" }}>
+                      {x.to ? (
+                        <Link to={x.to} style={{ fontSize: 13, fontFamily: "var(--serif)", color: "rgba(237,231,211,0.6)", textDecoration: "none" }}>{x.label}</Link>
+                      ) : x.href ? (
+                        <a href={x.href} style={{ fontSize: 13, fontFamily: "var(--serif)", color: "rgba(237,231,211,0.6)", textDecoration: "none" }}>{x.label}</a>
+                      ) : (
+                        <span style={{ fontSize: 13, fontFamily: "var(--serif)" }}>{x.label}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
-        </section>
-
-        <div className="lp-offerings" aria-labelledby="offer-h2">
-          <div className="lp-offerings-inner">
-            <div className="lp-sec-label" style={{ color: "var(--lp-green-muted)" }}>
-              Tính năng
-            </div>
-            <h2
-              className="lp-sec-h2"
-              id="offer-h2"
-              style={{ color: "var(--lp-cream)", marginBottom: 0 }}
-            >
-              Mọi quyết định gắn
-              <br />
-              <span style={{ color: "var(--lp-gold)" }}>với ngày tháng</span>
-            </h2>
-            <div className="lp-offerings-grid">
-              {OFFERS.map(({ tag, title, desc, cr, free }) => (
-                <article className="lp-offer-cell" key={title}>
-                  <div className="lp-offer-tag">{tag}</div>
-                  <div className="lp-offer-title">{title}</div>
-                  <p className="lp-offer-desc">{desc}</p>
-                  {free ? (
-                    <div className="lp-offer-free">Miễn phí</div>
-                  ) : (
-                    <div className="lp-offer-cr">{cr}</div>
-                  )}
-                </article>
-              ))}
-            </div>
+          <div
+            style={{
+              marginTop: "clamp(24px,3vw,40px)",
+              paddingTop: 24,
+              borderTop: "1px solid rgba(197,165,90,0.12)",
+              display: "flex",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8,
+              fontFamily: "var(--mono)",
+              fontSize: 10,
+              color: "rgba(237,231,211,0.5)",
+              letterSpacing: "0.08em",
+              maxWidth: 1280,
+              margin: "clamp(24px,3vw,40px) auto 0",
+            }}
+          >
+            <span>© 2026 Ngày Lành Tháng Tốt — ngaylanhthangtot.vn</span>
+            <span>Made in Sài Gòn · với lá số của bạn</span>
           </div>
-        </div>
-
-        <section className="lp-pricing" aria-labelledby="price-h2">
-          <div className="lp-sec-label">Bảng giá</div>
-            <h2 className="lp-sec-h2" id="price-h2">
-            Trả khi dùng.
-            <br />
-            Không bắt buộc đăng ký gói tháng.
-          </h2>
-          <div className="lp-pkg-grid">
-            {PACKAGES.map(({ name, cr, price, desc, hot, tag }) => (
-              <article className={`lp-pkg${hot ? " lp-hot" : ""}`} key={name}>
-                {tag ? (
-                  <div className="lp-pkg-badge">
-                    ★ {tag}
-                  </div>
-                ) : null}
-                <div className="lp-pkg-name">{name}</div>
-                <div className="lp-pkg-cr">{cr}</div>
-                <div className="lp-pkg-price">{price}</div>
-                <p className="lp-pkg-desc">{desc}</p>
-              </article>
-            ))}
-          </div>
-          <div className="lp-khoi-dau-box">
-            <strong>Mở tài khoản — được hai mươi lượng tặng.</strong> Đủ dựng lá số (mười
-            lăm lượng) và thử chọn ngày một lần (năm lượng). Gói theo tháng thì không trừ
-            lượng từng việc — dùng trong thời hạn gói.
-          </div>
-        </section>
-
-        <div className="lp-faq-section" aria-labelledby="faq-h2">
-          <div className="lp-faq-inner">
-            <div className="lp-sec-label" style={{ color: "var(--lp-green-muted)" }}>
-              Câu hỏi thường gặp
-            </div>
-            <h2
-              className="lp-sec-h2"
-              id="faq-h2"
-              style={{ color: "var(--lp-cream)", marginBottom: 0 }}
-            >
-              Câu hỏi thường gặp
-            </h2>
-            <div className="lp-faq-list">
-              {FAQS.map((item, i) => (
-                <LandingFaqItem key={i} {...item} />
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <section className="lp-bottom-cta" aria-labelledby="bcta-h2">
-          <div className="lp-bottom-cta-inner">
-            <div className="lp-bottom-cta-text">
-              <h2 id="bcta-h2">
-                Việc sắp tới
-                <br />
-                của bạn cũng nên
-                <br />
-                <span>chọn ngày cho chắc.</span>
-              </h2>
-              <p>
-                Dựng lá số tứ trụ không mất phí — từ đó mỗi ngày tốt đều bám theo mệnh của
-                bạn.
-              </p>
-            </div>
-            <CTAForm id="bottom-form" />
-          </div>
-        </section>
-
-        <footer>
-          <Link to="/" className="lp-ft-logo">
-            Ngày Lành Tháng Tốt
-          </Link>
-          <nav className="lp-ft-links" aria-label="Liên kết chân trang">
-            <a href="#offer-h2" className="lp-ft-link">
-              Tính năng
-            </a>
-            <a href="#price-h2" className="lp-ft-link">
-              Bảng giá
-            </a>
-            <Link to="/chinh-sach-bao-mat" className="lp-ft-link">
-              Chính sách
-            </Link>
-            <Link to="/dieu-khoan" className="lp-ft-link">
-              Điều khoản
-            </Link>
-            <Link to="/dang-ky" className="lp-ft-link">
-              Đăng ký
-            </Link>
-            <Link to="/dang-nhap" className="lp-ft-link">
-              Đăng nhập
-            </Link>
-          </nav>
-          <span className="lp-ft-note">© 2026 ngaylanhthangtot.vn</span>
         </footer>
+
+        {/* ── Sticky mobile bottom bar ── */}
+        <div
+          aria-hidden={!showStickyBar}
+          style={{
+            position: "fixed",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 100,
+            background: "rgba(240,236,226,0.95)",
+            backdropFilter: "blur(12px) saturate(140%)",
+            WebkitBackdropFilter: "blur(12px) saturate(140%)",
+            borderTop: `1px solid ${TOK.border}`,
+            padding: "12px 18px",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            transform: showStickyBar ? "translateY(0)" : "translateY(100%)",
+            transition: "transform 0.3s cubic-bezier(0.4,0,0.2,1)",
+          }}
+          className="lp-sticky-bar"
+        >
+          <LogoMark size={24} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "var(--display-2)", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.02em" }}>Ngày Lành Tháng Tốt</div>
+            <Mono style={{ color: TOK.muted, display: "block" }} size={9}>20 lượng tặng · không cần thẻ</Mono>
+          </div>
+          <a
+            href="#main-form"
+            onClick={() => setShowStickyBar(false)}
+            style={{
+              padding: "11px 18px",
+              background: TOK.forest,
+              color: TOK.cream,
+              fontFamily: "var(--display-2)",
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              textDecoration: "none",
+              flexShrink: 0,
+              borderRadius: 999,
+            }}
+          >
+            Mở quẻ →
+          </a>
+        </div>
       </div>
     </>
   );

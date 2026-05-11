@@ -1,8 +1,7 @@
 import { motion } from "motion/react";
-import { Share2, Download } from "lucide-react";
 
 import { Chip } from "~/components/Chip";
-import { GrainOverlay } from "~/components/GrainOverlay";
+import { Kanji, Mono, Ticket } from "~/components/brand";
 
 interface ShareCardCanvasProps {
   eventLabel: string;
@@ -16,7 +15,7 @@ interface ShareCardCanvasProps {
   onSaveImage: () => void;
 }
 
-/** D4: spring scale-in + shadow on card. */
+/** Share phiếu — Direction B Ticket on forest (caller provides page chrome). */
 export function ShareCardCanvas({
   eventLabel,
   date,
@@ -34,105 +33,202 @@ export function ShareCardCanvas({
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        className="relative overflow-hidden bg-surface text-surface-foreground p-5 shadow-xl"
-        style={{ borderRadius: "var(--radius-lg)" }}
+        style={{ position: "relative" }}
       >
-        <GrainOverlay />
-        <div className="relative">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p
-                className="text-accent text-xs mb-1 tracking-widest uppercase"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
-              >
-                Ngày Lành Tháng Tốt
-              </p>
-              <h2
-                className="text-surface-foreground"
+        <Ticket holeColor="#1d3129">
+          <div
+            style={{
+              padding: "20px 18px 22px",
+              position: "relative",
+              color: "var(--ink, #18150e)",
+            }}
+          >
+            <Kanji
+              ch="吉"
+              size={120}
+              drift
+              style={{
+                position: "absolute",
+                right: -16,
+                top: -8,
+                color: "rgba(197,165,90,0.12)",
+                pointerEvents: "none",
+              }}
+            />
+            <div style={{ position: "relative" }}>
+              <div
                 style={{
-                  fontFamily: "var(--font-lora)",
-                  fontWeight: 700,
-                  fontSize: "var(--text-lg)",
-                  lineHeight: 1.3,
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  marginBottom: 14,
                 }}
               >
-                {eventLabel}
-              </h2>
+                <div>
+                  <Mono style={{ color: "var(--gold-deep, #7d6219)", marginBottom: 6 }}>
+                    Ngày lành tháng tốt
+                  </Mono>
+                  <h2
+                    style={{
+                      fontFamily: "var(--display-2)",
+                      fontWeight: 800,
+                      fontSize: 22,
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.2,
+                      margin: 0,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {eventLabel}
+                  </h2>
+                </div>
+                {grade ? (
+                  <Chip color="accent" variant="flat" size="sm" radius="sm">
+                    Hạng {grade}
+                  </Chip>
+                ) : null}
+              </div>
+
+              <div
+                style={{
+                  borderTop: "1px dashed rgba(122,112,80,0.4)",
+                  paddingTop: 12,
+                  marginBottom: 12,
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: "var(--serif)",
+                    fontWeight: 600,
+                    fontSize: 22,
+                    color: "var(--gold-deep, #7d6219)",
+                    lineHeight: 1.25,
+                    margin: 0,
+                  }}
+                >
+                  {date}
+                </p>
+                {lunarDate ? (
+                  <p
+                    style={{
+                      fontFamily: "var(--mono)",
+                      fontSize: 12,
+                      color: "var(--muted, #6a5f3f)",
+                      margin: "6px 0 0",
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {lunarDate}
+                  </p>
+                ) : null}
+              </div>
+
+              <p
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontSize: 16,
+                  lineHeight: 1.55,
+                  color: "var(--ink-2, #3a3a3a)",
+                  margin: "0 0 14px",
+                }}
+              >
+                {reasonShort}
+              </p>
+
+              {shareUrl ? (
+                <p
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 12,
+                    color: "var(--muted, #6a5f3f)",
+                    wordBreak: "break-all",
+                    margin: "0 0 12px",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {shareUrl}
+                </p>
+              ) : null}
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 8,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 12,
+                    color: "var(--muted, #6a5f3f)",
+                  }}
+                >
+                  Mệnh {menh}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--mono)",
+                    fontSize: 12,
+                    color: "var(--muted, #6a5f3f)",
+                  }}
+                >
+                  ngaylanhthangtot.vn
+                </span>
+              </div>
             </div>
-            {grade ? (
-              <Chip color="accent" variant="flat" size="sm" radius="sm">
-                Hạng {grade}
-              </Chip>
-            ) : null}
           </div>
-
-          <div className="border-t border-surface-foreground/10 pt-3 mb-3">
-            <p
-              className="text-accent"
-              style={{
-                fontFamily: "var(--font-lora)",
-                fontWeight: 600,
-                fontSize: "var(--text-xl)",
-                lineHeight: 1.3,
-              }}
-            >
-              {date}
-            </p>
-            <p
-              className="text-surface-foreground/60 text-xs mt-0.5"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
-              {lunarDate}
-            </p>
-          </div>
-
-          <p className="text-surface-foreground/80 text-sm leading-relaxed mb-4">
-            {reasonShort}
-          </p>
-
-          {shareUrl ? (
-            <p
-              className="text-surface-foreground/50 text-[11px] break-all mb-3"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
-              {shareUrl}
-            </p>
-          ) : null}
-
-          <div className="flex items-center justify-between">
-            <span
-              className="text-surface-foreground/40 text-xs"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
-              Mệnh {menh}
-            </span>
-            <span
-              className="text-surface-foreground/40 text-xs"
-              style={{ fontFamily: "var(--font-ibm-mono)" }}
-            >
-              ngaylanhthangtot.vn
-            </span>
-          </div>
-        </div>
+        </Ticket>
       </motion.div>
 
-      <div className="flex gap-3">
+      <div style={{ display: "flex", gap: 12 }}>
         <button
           type="button"
           onClick={onShare}
-          className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 text-sm font-medium"
-          style={{ borderRadius: "var(--radius-md)" }}
+          style={{
+            flex: 1,
+            minHeight: 48,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            background: "var(--gold, #c5a55a)",
+            color: "var(--ink, #18150e)",
+            border: "none",
+            fontFamily: "var(--display-2)",
+            fontWeight: 700,
+            fontSize: 13,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
         >
-          <Share2 size={16} strokeWidth={1.5} />
           Chia sẻ
         </button>
         <button
           type="button"
           onClick={onSaveImage}
-          className="flex items-center justify-center gap-2 border border-border text-foreground px-4 py-3 text-sm font-medium"
-          style={{ borderRadius: "var(--radius-md)" }}
+          style={{
+            minHeight: 48,
+            padding: "0 18px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            background: "transparent",
+            border: "1px solid rgba(197,165,90,0.45)",
+            color: "var(--cream, #ede7d3)",
+            fontFamily: "var(--display-2)",
+            fontWeight: 700,
+            fontSize: 13,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            cursor: "pointer",
+          }}
         >
-          <Download size={16} strokeWidth={1.5} />
           Lưu ảnh
         </button>
       </div>

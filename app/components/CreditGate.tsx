@@ -4,11 +4,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { useFeatureCosts } from "~/hooks/useFeatureCosts";
 import { useProfile } from "~/hooks/useProfile";
-
-function hasActiveSubscription(subscriptionExpiresAt: string | null): boolean {
-  if (!subscriptionExpiresAt) return false;
-  return new Date(subscriptionExpiresAt) > new Date();
-}
+import { subscriptionActive } from "~/lib/subscription";
 
 export function CreditGate({
   featureKey,
@@ -72,7 +68,7 @@ export function CreditGate({
     return <>{children}</>;
   }
 
-  if (profile && hasActiveSubscription(profile.subscription_expires_at)) {
+  if (profile && subscriptionActive(profile.subscription_expires_at)) {
     return <>{children}</>;
   }
 

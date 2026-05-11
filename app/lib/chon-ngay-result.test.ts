@@ -36,7 +36,7 @@ describe("mapChonNgayPayloadToResultDays", () => {
           score: 73,
           grade: "B",
           truc: "Kiến",
-          reason_vi: "Trực Kiến — ngày tốt.",
+          reason_vi: "Trực Kiến — ngày lành.",
           time_slots: [{ chi_name: "Tý", range: "23:00-01:00" }],
         },
       ],

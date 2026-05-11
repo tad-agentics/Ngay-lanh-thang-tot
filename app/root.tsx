@@ -7,6 +7,8 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { QueryProvider } from "~/components/QueryProvider";
+import { SiteBanner } from "~/components/SiteBanner";
 import { Toaster } from "~/components/ui/sonner";
 import { AuthProvider } from "~/lib/auth";
 
@@ -14,12 +16,25 @@ import type { Route } from "./+types/root";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap",
+  },
   { rel: "manifest", href: "/manifest.json" },
+  {
+    rel: "icon",
+    href: "/favicon.svg",
+    type: "image/svg+xml",
+  },
   {
     rel: "icon",
     href: "/icons/icon-192.png",
     sizes: "192x192",
     type: "image/png",
+  },
+  {
+    rel: "apple-touch-icon",
+    href: "/icons/icon-192.png",
   },
 ];
 
@@ -43,10 +58,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Outlet />
-      <Toaster richColors position="top-center" />
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <SiteBanner />
+        <Outlet />
+        <Toaster richColors position="top-center" />
+      </AuthProvider>
+    </QueryProvider>
   );
 }
 

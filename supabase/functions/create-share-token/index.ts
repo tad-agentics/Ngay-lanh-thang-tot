@@ -4,12 +4,8 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "../_shared/cors.ts";
+import { subscriptionActive } from "../_shared/subscription.ts";
 
 const FEATURE_KEY = "share_card";
 
@@ -23,6 +19,10 @@ const PAYLOAD_STRING_KEYS = [
   "menh",
   "reason_short",
   "preview_image_path",
+  // AR-06: reading_only share type
+  "reading_text",
+  "scope",
+  "section_label",
 ] as const;
 
 function json(body: unknown, status = 200): Response {
@@ -30,11 +30,6 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function subscriptionActive(expires: string | null): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
 }
 
 function sanitizePayload(input: unknown): Record<string, unknown> {
@@ -132,8 +127,10 @@ Deno.serve(async (req) => {
   }
 
   const payload = sanitizePayload(bodyIn.payload);
+  const isReadingOnly = resultType === "reading_only";
+
   const headline = typeof payload.headline === "string" ? payload.headline.trim() : "";
-  if (!headline) {
+  if (!headline && !isReadingOnly) {
     return json(
       {
         error: {
@@ -144,9 +141,27 @@ Deno.serve(async (req) => {
       400,
     );
   }
-  payload.headline = headline;
+  if (headline) payload.headline = headline;
+  if (isReadingOnly && !payload.reading_text) {
+    return json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "payload.reading_text là bắt buộc cho reading_only.",
+        },
+      },
+      400,
+    );
+  }
 
   const admin = createClient(supabaseUrl, serviceKey);
+
+  // Generate the token first so it can anchor the idempotency key for credit
+  // deduction. This prevents double-charging when a client retries on timeout.
+  const token = randomToken();
+  const idempotencyKey = `share_token:${user.id}:${token}`;
+  const expiresAt = new Date(Date.now() + 90 * 864e5).toISOString();
+
   let chargedAmount = 0;
   let previousBalance = 0;
 
@@ -177,60 +192,55 @@ Deno.serve(async (req) => {
     }
 
     if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
-      previousBalance = profile.credits_balance as number;
-      if (previousBalance < cost) {
-        return json(
+      // Check idempotency: if a ledger entry already exists for this token,
+      // the deduction already happened (client retry after network timeout).
+      const { data: existingLedger } = await admin
+        .from("credit_ledger")
+        .select("id")
+        .eq("idempotency_key", idempotencyKey)
+        .maybeSingle();
+
+      if (!existingLedger) {
+        const { data: deductResult, error: deductErr } = await admin.rpc(
+          "deduct_credits_atomic",
           {
-            error: {
-              code: "INSUFFICIENT_CREDITS",
-              message: "Không đủ lượng để tạo thẻ chia sẻ.",
-            },
+            p_user_id: user.id,
+            p_cost: cost,
+            p_reason: "share_token",
+            p_feature_key: FEATURE_KEY,
+            p_idempotency_key: idempotencyKey,
+            p_metadata: { result_type: resultType },
           },
-          402,
         );
+
+        if (deductErr) {
+          console.error("create-share-token deduct_credits_atomic", deductErr);
+          return json(
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
+            500,
+          );
+        }
+
+        const result = deductResult as { ok: boolean; error_code?: string; credits_balance: number };
+
+        if (!result.ok) {
+          if (result.error_code === "INSUFFICIENT_CREDITS") {
+            return json(
+              { error: { code: "INSUFFICIENT_CREDITS", message: "Không đủ lượng để tạo thẻ chia sẻ." } },
+              402,
+            );
+          }
+          return json(
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
+            500,
+          );
+        }
+
+        chargedAmount = cost;
+        previousBalance = result.credits_balance + cost;
       }
-
-      const newBal = previousBalance - cost;
-      const { error: uErr } = await admin
-        .from("profiles")
-        .update({ credits_balance: newBal })
-        .eq("id", user.id);
-
-      if (uErr) {
-        console.error("create-share-token deduct", uErr);
-        return json(
-          { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-          500,
-        );
-      }
-
-      const { error: lErr } = await admin.from("credit_ledger").insert({
-        user_id: user.id,
-        delta: -cost,
-        balance_after: newBal,
-        reason: "share_token",
-        feature_key: FEATURE_KEY,
-        metadata: { result_type: resultType },
-      });
-
-      if (lErr) {
-        console.error("create-share-token ledger", lErr);
-        await admin
-          .from("profiles")
-          .update({ credits_balance: previousBalance })
-          .eq("id", user.id);
-        return json(
-          { error: { code: "DB_ERROR", message: "Ghi sổ lượng thất bại." } },
-          500,
-        );
-      }
-
-      chargedAmount = cost;
     }
   }
-
-  const token = randomToken();
-  const expiresAt = new Date(Date.now() + 90 * 864e5 * 1000).toISOString();
 
   const { error: insErr } = await admin.from("share_tokens").insert({
     token,

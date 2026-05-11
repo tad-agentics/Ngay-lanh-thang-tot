@@ -1,5 +1,8 @@
 import type { CalendarDay, DayType } from "~/lib/api-types";
-import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
+import {
+  extractChiLabelsFromGioSlots,
+  formatHourRangeForDisplayVi,
+} from "~/lib/format-gio-tot-display-vi";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -14,6 +17,74 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
     if (typeof v === "string" && v.trim()) return v.trim();
   }
   return "";
+}
+
+function labelsFromMixedArray(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const x of raw) {
+    if (typeof x === "string" && x.trim()) out.push(x.trim());
+    else {
+      const o = asRecord(x);
+      if (o) {
+        const n = pickStr(o, ["name", "label", "title"]);
+        if (n) out.push(n);
+      }
+    }
+  }
+  return out;
+}
+
+function dedupeLabels(labels: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const l of labels) {
+    const k = l.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(l);
+  }
+  return out;
+}
+
+function stringGoodForList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((s) => s.trim());
+}
+
+const WEEKDAY_SHORT_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] as const;
+
+/** Nhãn kiểu maket: `T6 15/05/2026`. */
+export function formatViWeekdayShortDayMonth(iso: string): string {
+  const parts = iso.trim().slice(0, 10).split("-");
+  if (parts.length !== 3) return iso;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (![y, m, d].every((n) => Number.isFinite(n))) return iso;
+  const dt = new Date(y, m - 1, d);
+  if (Number.isNaN(dt.getTime())) return iso;
+  const wd = WEEKDAY_SHORT_VI[dt.getDay()] ?? "";
+  return `${wd} ${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+}
+
+/** Dòng phụ đầu trang Hôm nay: `T2 · 11/05/2026 · Bính Tuất`. */
+export function formatHomeHeaderSubline(iso: string, canChi: string): string {
+  const parts = iso.trim().slice(0, 10).split("-");
+  if (parts.length !== 3) return canChi.trim() || "—";
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (![y, m, d].every((n) => Number.isFinite(n))) {
+    return canChi.trim() || "—";
+  }
+  const dt = new Date(y, m - 1, d);
+  if (Number.isNaN(dt.getTime())) return canChi.trim() || "—";
+  const wd = WEEKDAY_SHORT_VI[dt.getDay()] ?? "";
+  const datePart = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+  const head = `${wd} · ${datePart}`;
+  const cc = canChi.trim();
+  return cc ? `${head} · ${cc}` : head;
 }
 
 function parseToIsoDate(raw: string): string | null {
@@ -203,8 +274,19 @@ function pickIsoFromDayRow(obj: Record<string, unknown>): string | null {
 export interface NgayHomNayHome {
   dayType: DayType;
   solarDateVi: string;
+  /** Maket header: `T2 · DD/MM/YYYY · Can Chi`. */
+  headerSubline: string;
   lunarLabel: string;
   hourRange: string;
+  canChi: string;
+  /** Tên trực (không lặp tiền tố "Trực "). */
+  trucDisplay: string;
+  saoTotCsv: string;
+  saoXauCsv: string;
+  goodForChips: string[];
+  gioTotChis: string[];
+  gioXauChis: string[];
+  homeSummaryLine: string;
 }
 
 /** Map engine /v1/ngay-hom-nay JSON → home cards (flexible keys). */
@@ -220,6 +302,9 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
   })();
 
   const iso = pickIsoFromUnknown(nested) ?? pickIsoFromUnknown(root);
+  const canChi =
+    pickStr(nested, ["can_chi", "canChi", "can_chi_day", "can_chi_ngay"]) ||
+    pickStr(root, ["can_chi", "canChi"]);
   let solarDateVi = iso
     ? formatViDateFromIso(iso)
     : pickStr(nested, [
@@ -271,11 +356,62 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     nested.gio_tot ?? nested.gio_hoang_dao ?? root.gio_tot;
   const hourDisplay = formatHourRangeForDisplayVi(hourRange, slotSources);
 
+  const headerIso = iso ?? fallbackIso;
+  const headerSubline = formatHomeHeaderSubline(headerIso, canChi);
+
+  const trucRaw =
+    pickStr(nested, ["truc_name", "truc"]) ||
+    pickStr(asRecord(nested.truc) ?? {}, ["name"]);
+  const trucDisplay =
+    (trucRaw.replace(/^trực\s+/i, "").trim() || trucRaw.trim()) || "—";
+
+  const catThanLabels = dedupeLabels([
+    ...labelsFromMixedArray(nested.cat_than ?? nested.catThan),
+    ...labelsFromMixedArray(nested.than_sat ?? nested.thanSat),
+    ...labelsFromMixedArray(nested.cai_than ?? nested.caiThan),
+  ]);
+  const hungSatLabels = dedupeLabels(
+    labelsFromMixedArray(
+      nested.hung_ngay ?? nested.hungNgay ?? nested.hung_sat ?? nested.hungSat,
+    ),
+  );
+  const saoTotCsv = catThanLabels.length ? catThanLabels.join(", ") : "—";
+  const saoXauCsv = hungSatLabels.length ? hungSatLabels.join(", ") : "—";
+
+  const goodForChips = stringGoodForList(nested.good_for ?? nested.goodFor ?? nested.nen_lam);
+
+  const gioTotChis = extractChiLabelsFromGioSlots(
+    nested.gio_tot ?? nested.gioTot ?? nested.gio_hoang_dao ?? nested.gioHoangDao,
+  );
+  const gioXauChis = extractChiLabelsFromGioSlots(
+    nested.gio_xau ?? nested.gioXau ?? nested.bad_hours ?? nested.gio_hung,
+  );
+
+  const homeSummaryLine =
+    pickStr(nested, [
+      "summary_vi",
+      "summaryVi",
+      "one_liner",
+      "oneLiner",
+      "reason_vi",
+      "reasonVi",
+      "hint_vi",
+    ]) || pickStr(root, ["summary_vi", "one_liner"]);
+
   return {
     dayType,
     solarDateVi,
+    headerSubline,
     lunarLabel: lunarLabel || "—",
     hourRange: hourDisplay || "—",
+    canChi: canChi || "—",
+    trucDisplay,
+    saoTotCsv,
+    saoXauCsv,
+    goodForChips,
+    gioTotChis,
+    gioXauChis,
+    homeSummaryLine,
   };
 }
 
@@ -333,6 +469,8 @@ export function parseWeeklyGoodDayCount(raw: unknown): number | null {
 export interface WeeklyTopDateRow {
   isoDate: string;
   dateLabelVi: string;
+  /** Maket: `T6 15/05/2026`. */
+  dateShortVi: string;
   grade: string;
   score: number | null;
   oneLiner: string;
@@ -433,6 +571,7 @@ export function parseWeeklySummaryForScreen(raw: unknown): WeeklySummaryScreen |
       rows.push({
         isoDate: iso,
         dateLabelVi: formatViDateFromIso(iso),
+        dateShortVi: formatViWeekdayShortDayMonth(iso),
         grade: g,
         score,
         oneLiner,

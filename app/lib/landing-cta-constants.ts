@@ -56,6 +56,58 @@ export type LandingSignupPrefill = {
 
 const MAX_NAME = 200;
 
+export type LandingDobParseResult =
+  | { ok: true; iso: string }
+  | { ok: false; message: string };
+
+const DOB_DD_MM_YYYY = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+/**
+ * Parse user-typed `dd/mm/yyyy` (calendar Gregorian) to `YYYY-MM-DD` for profile / query.
+ * Uses local date components so it matches `new Date(\`${iso}T12:00:00\`)` style checks elsewhere.
+ */
+export function parseLandingDobDdMmYyyy(input: string): LandingDobParseResult {
+  const t = input.trim();
+  if (!t) {
+    return { ok: false, message: "Vui lòng nhập ngày sinh." };
+  }
+  const m = DOB_DD_MM_YYYY.exec(t);
+  if (!m) {
+    return {
+      ok: false,
+      message: "Nhập theo dd/mm/yyyy (ví dụ 15/08/1990).",
+    };
+  }
+  const dd = Number(m[1]);
+  const mm = Number(m[2]);
+  const yyyy = Number(m[3]);
+  if (yyyy < 1900 || yyyy > 2100) {
+    return {
+      ok: false,
+      message: "Năm sinh nên từ 1900 đến 2100.",
+    };
+  }
+  if (mm < 1 || mm > 12) {
+    return { ok: false, message: "Tháng phải từ 01 đến 12." };
+  }
+  if (dd < 1 || dd > 31) {
+    return { ok: false, message: "Ngày phải từ 01 đến 31." };
+  }
+  const d = new Date(yyyy, mm - 1, dd);
+  if (
+    d.getFullYear() !== yyyy ||
+    d.getMonth() !== mm - 1 ||
+    d.getDate() !== dd
+  ) {
+    return {
+      ok: false,
+      message: "Ngày không tồn tại trong lịch (kiểm tra tháng và năm nhuận).",
+    };
+  }
+  const iso = `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+  return { ok: true, iso };
+}
+
 /** Read `?name=&dob=&gio=&gender=` from the landing CTA (or bookmarks). */
 export function parseLandingSignupPrefill(
   sp: URLSearchParams,

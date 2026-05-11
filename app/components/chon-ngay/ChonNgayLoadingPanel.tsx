@@ -38,8 +38,7 @@ export function ChonNgayLoadingPanel({
                 key={`chon-ngay-loading-line-${i}`}
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: phase === i ? 1 : 0.35 }}
-                className="text-muted-foreground text-sm"
-                style={{ fontFamily: "var(--font-ibm-mono)" }}
+                className="text-[#6b6558] text-sm"
               >
                 {phase === 2 && i === 2 ? (
                   <span className="text-success font-medium">{text}</span>

@@ -1,12 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { verifyWebhookSignature } from "../_shared/payos.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import { isPackageSku, PACKAGES, verifyWebhookSignature } from "../_shared/payos.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 function ok(body: unknown = { received: true }): Response {
   return new Response(JSON.stringify(body), {
@@ -98,6 +93,16 @@ Deno.serve(async (req) => {
     console.error("amount mismatch", amount, order.amount_vnd);
     return ok({ amount_mismatch: true });
   }
+  // Cross-check the stored order amount against the canonical package definition
+  // to catch any discrepancy introduced at checkout creation time.
+  if (
+    order.package_sku != null &&
+    isPackageSku(order.package_sku) &&
+    amount !== PACKAGES[order.package_sku].amountVnd
+  ) {
+    console.error("sku amount mismatch", order.package_sku, amount, PACKAGES[order.package_sku].amountVnd);
+    return ok({ sku_amount_mismatch: true });
+  }
 
   // Single winner: pending → paid (PayOS retries get empty update)
   const { data: claimed, error: claimErr } = await admin
@@ -133,27 +138,23 @@ Deno.serve(async (req) => {
   }
 
   if (order.credits_to_add != null && order.credits_to_add > 0) {
-    const newBal = profile.credits_balance + order.credits_to_add;
-    const { error: u1 } = await admin.from("profiles").update({
-      credits_balance: newBal,
-    }).eq("id", order.user_id);
-    if (u1) {
-      console.error("credit update", u1);
+    const { data: creditResult, error: creditErr } = await admin.rpc(
+      "add_credits_atomic",
+      {
+        p_user_id: order.user_id,
+        p_credits_to_add: order.credits_to_add,
+        p_idempotency_key: `payos:${eventId}:credits`,
+        p_order_id: order.id,
+        p_package_sku: order.package_sku ?? "",
+      },
+    );
+    if (creditErr) {
+      console.error("add_credits_atomic", creditErr);
       return new Response("DB error", { status: 500 });
     }
-    const { error: l1 } = await admin.from("credit_ledger").insert({
-      user_id: order.user_id,
-      delta: order.credits_to_add,
-      balance_after: newBal,
-      reason: "payos_purchase",
-      idempotency_key: `payos:${eventId}:credits`,
-      metadata: {
-        order_id: order.id,
-        package_sku: order.package_sku,
-      },
-    });
-    if (l1 && (l1 as { code?: string }).code !== "23505") {
-      console.error("ledger", l1);
+    const cr = creditResult as { ok: boolean; error_code?: string };
+    if (!cr.ok) {
+      console.error("add_credits_atomic result", cr);
       return new Response("DB error", { status: 500 });
     }
   }

@@ -134,10 +134,10 @@ function verdictFromApiObject(
   const explicit = pickStr(o, ["verdict", "recommendation", "suitability", "ket_luan"]);
   if (explicit) {
     const e = explicit.toLowerCase();
-    if (/không nên|tránh|hạn chế|kém|xấu|bad|avoid|no\b/.test(e)) {
+    if (/không nên|tránh|hạn chế|kém|xấu|ngày dữ|bad|avoid|no\b/.test(e)) {
       return "khong_nen";
     }
-    if (/nên|tốt|phù hợp|good|ok|recommended|yes/.test(e)) {
+    if (/nên|ngày lành|tốt|phù hợp|good|ok|recommended|yes/.test(e)) {
       return "nen_lam";
     }
   }

@@ -172,7 +172,7 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
 password_requirements = ""
@@ -206,7 +206,7 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -402,7 +402,18 @@ verify_jwt = false
 
 # JWT is validated inside the handler via auth.getUser() (Bearer access token).
 # Avoids gateway 401 when the platform JWT check and client invoke headers disagree.
+[functions.referral-claim]
+verify_jwt = false
+
+# Bearer + getUser() in handler; optional dry_run (no charge).
+[functions.reading-unlock]
+verify_jwt = false
+
 [functions.payos-create-checkout]
+verify_jwt = false
+
+# Same as payos-create-checkout: Bearer + getUser() inside handler.
+[functions.create-share-token]
 verify_jwt = false
 
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
@@ -411,9 +422,27 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
+# Anthropic + DB cache. `ngay-hom-nay` / `day-detail` require Bearer + unlock check in handler; other endpoints unchanged.
+[functions.generate-reading]
+verify_jwt = false
+
 # Public share preview + OG HTML (anon `apikey` only).
 [functions.share-resolve]
 verify_jwt = false
 
 [functions.share-og]
+verify_jwt = false
+
+# Validate JWT + ADMIN_EMAILS allowlist inside handler (same pattern as create-share-token).
+[functions.admin-dashboard-stats]
+verify_jwt = false
+
+[functions.admin-site-banner]
+verify_jwt = false
+
+# Habit reminders — invoke via Dashboard Cron or pg_cron + pg_net (see Supabase "Schedule Functions").
+# Set Edge secret CRON_SECRET and send Authorization: Bearer <CRON_SECRET> on each invoke.
+# Schedules (UTC → ICT): 0 23 * * * → 06:00+1 ICT; 0 6 * * * → 13:00 ICT; 0 13 * * * → 20:00 ICT.
+# CLI config.toml does not support a [crons] table (invalid keys as of supabase CLI 2.75).
+[functions.cron-push-habit]
 verify_jwt = false

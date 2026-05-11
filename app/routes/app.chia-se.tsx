@@ -8,8 +8,9 @@ const ShareCardCanvas = lazy(() =>
   })),
 );
 import { CreditGate } from "~/components/CreditGate";
+import { CreditsHeaderChip } from "~/components/CreditsHeaderChip";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { ScreenHeader } from "~/components/ScreenHeader";
+import { BackBar } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { createShareToken } from "~/lib/share-token";
@@ -132,7 +133,14 @@ function ChiaSeCard({
 
   if (!token) {
     return (
-      <p className="text-sm text-muted-foreground py-6">
+      <p
+        style={{
+          fontSize: 16,
+          color: "rgba(237,231,211,0.65)",
+          padding: "24px 0",
+          lineHeight: 1.55,
+        }}
+      >
         Đang tạo liên kết chia sẻ…
       </p>
     );
@@ -142,7 +150,15 @@ function ChiaSeCard({
     <>
       <Suspense
         fallback={
-          <p className="text-muted-foreground text-sm py-8">Đang tải thẻ…</p>
+          <p
+            style={{
+              fontSize: 16,
+              color: "rgba(237,231,211,0.65)",
+              padding: "32px 0",
+            }}
+          >
+            Đang tải thẻ…
+          </p>
         }
       >
         <ShareCardCanvas
@@ -159,8 +175,14 @@ function ChiaSeCard({
       </Suspense>
       {sent ? (
         <p
-          className="text-muted-foreground text-xs text-center mt-4"
-          style={{ fontFamily: "var(--font-ibm-mono)" }}
+          className="text-center mt-4"
+          style={{
+            fontFamily: "var(--mono)",
+            fontSize: 12,
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: "rgba(237,231,211,0.55)",
+          }}
         >
           Đã gửi.
         </p>
@@ -184,12 +206,27 @@ export default function AppChiaSe() {
   if (!state) return null;
 
   return (
-    <div className="px-4 pb-8">
-      <ScreenHeader title="Chia sẻ ngày tốt" />
+    <div
+      style={{
+        minHeight: "100%",
+        background:
+          "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+        color: "var(--cream, #ede7d3)",
+        fontFamily: "var(--serif)",
+        paddingBottom: 32,
+      }}
+    >
+      <BackBar
+        dark
+        title="Chia sẻ ngày lành"
+        endAdornment={<CreditsHeaderChip />}
+      />
 
-      <CreditGate featureKey="share_card">
-        <ChiaSeCard state={state} />
-      </CreditGate>
+      <div className="px-4 pt-2">
+        <CreditGate featureKey="share_card">
+          <ChiaSeCard state={state} />
+        </CreditGate>
+      </div>
     </div>
   );
 }

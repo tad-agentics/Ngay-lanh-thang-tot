@@ -1,11 +1,57 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { LogoMark } from "~/components/brand";
 import { Button } from "~/components/ui/button";
 import { useAuth } from "~/lib/auth";
 import { useProfile } from "~/hooks/useProfile";
+import { subscriptionActive } from "~/lib/subscription";
 import { supabase } from "~/lib/supabase";
+
+const shell: CSSProperties = {
+  background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
+  minHeight: "100svh",
+  color: "var(--cream, #ede7d3)",
+  display: "flex",
+  flexDirection: "column",
+  padding: "40px 16px 32px",
+  boxSizing: "border-box",
+};
+
+const btnPrimary: CSSProperties = {
+  width: "100%",
+  backgroundColor: "var(--cream, #ede7d3)",
+  color: "var(--ink, #18150e)",
+  fontFamily: "var(--display-2)",
+  fontWeight: 700,
+  fontSize: 13,
+  textTransform: "uppercase",
+  letterSpacing: "0.1em",
+  border: "none",
+  padding: "14px 20px",
+  borderRadius: "var(--radius-md, 6px)",
+};
+
+const btnOutline: CSSProperties = {
+  width: "100%",
+  backgroundColor: "transparent",
+  color: "var(--cream, #ede7d3)",
+  fontFamily: "var(--display-2)",
+  fontWeight: 700,
+  fontSize: 13,
+  textTransform: "uppercase",
+  letterSpacing: "0.1em",
+  border: "1px solid rgba(197, 165, 90, 0.35)",
+  padding: "14px 20px",
+  borderRadius: "var(--radius-md, 6px)",
+};
+
+const linkOnDark: CSSProperties = {
+  color: "var(--gold, #c5a55a)",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
+};
 
 export default function AppBatDau() {
   const navigate = useNavigate();
@@ -30,33 +76,53 @@ export default function AppBatDau() {
   }
 
   const credits = profile?.credits_balance ?? null;
+  const subOn = subscriptionActive(profile?.subscription_expires_at);
 
   return (
-    <main className="flex flex-col min-h-svh bg-background px-4 pb-8">
-      <div className="flex flex-col items-center justify-center flex-1 pb-4 pt-10">
-        <div className="mb-8 flex flex-col items-center">
+    <main style={shell}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          flex: 1,
+          paddingBottom: 16,
+          paddingTop: 24,
+          width: "100%",
+          maxWidth: 420,
+          margin: "0 auto",
+        }}
+      >
+        <div style={{ marginBottom: 28, display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div
-            className="border border-accent/30 flex items-center justify-center mb-5"
-            style={{ width: 64, height: 64, borderRadius: "var(--radius-md)" }}
+            style={{
+              border: "1px solid rgba(197,165,90,0.3)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 20,
+              overflow: "hidden",
+              width: 64,
+              height: 64,
+              borderRadius: "var(--radius-md, 6px)",
+              background: "rgba(0,0,0,0.2)",
+            }}
           >
-            <span
-              style={{
-                fontFamily: "var(--font-noto)",
-                fontSize: 32,
-                color: "var(--accent)",
-              }}
-            >
-              吉
-            </span>
+            <LogoMark dark size={64} />
           </div>
 
           <h1
-            className="text-foreground text-center mb-3"
             style={{
-              fontFamily: "var(--font-lora)",
-              fontWeight: 700,
-              fontSize: "var(--text-2xl)",
-              lineHeight: 1.3,
+              fontFamily: "var(--display-2)",
+              fontWeight: 800,
+              fontSize: 28,
+              textTransform: "uppercase",
+              letterSpacing: "-0.02em",
+              color: "var(--cream, #ede7d3)",
+              textAlign: "center",
+              margin: "0 0 12px",
+              lineHeight: 1.15,
             }}
           >
             Ngày Lành
@@ -65,25 +131,58 @@ export default function AppBatDau() {
           </h1>
 
           <p
-            className="text-muted-foreground text-sm text-center leading-relaxed"
-            style={{ maxWidth: 280 }}
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 14,
+              color: "rgba(237,231,211,0.78)",
+              textAlign: "center",
+              lineHeight: 1.55,
+              margin: 0,
+              maxWidth: 280,
+            }}
           >
-            Chọn ngày, hợp tuổi, xem vận — gắn với bản mệnh của bạn, tiếng Việt rõ
-            ràng.
+            Chọn ngày lành, hợp tuổi, xem vận — cá nhân hoá hoàn toàn theo bản mệnh của
+            bạn.
           </p>
         </div>
 
         <div
-          className="w-full border border-accent/20 bg-accent/5 px-4 py-3 mb-6"
-          style={{ borderRadius: "var(--radius-md)" }}
+          style={{
+            width: "100%",
+            border: "1px solid rgba(197,165,90,0.25)",
+            background: "rgba(0,0,0,0.18)",
+            padding: "14px 16px",
+            marginBottom: 24,
+            borderRadius: "var(--radius-md, 6px)",
+          }}
         >
-          <p className="text-foreground text-xs leading-relaxed text-center">
+          <p
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 12,
+              lineHeight: 1.55,
+              color: "rgba(237,231,211,0.88)",
+              textAlign: "center",
+              margin: 0,
+            }}
+          >
             {loading ? (
               "Đang tải số dư…"
+            ) : subOn ? (
+              <>
+                Gói của bạn đang{" "}
+                <strong style={{ color: "var(--cream, #ede7d3)", fontWeight: 700 }}>
+                  không giới hạn lượng
+                </strong>
+                — dùng tra cứu và chọn ngày thoải mái trong thời hạn gói.
+              </>
             ) : credits != null ? (
               <>
                 Tài khoản của bạn có{" "}
-                <strong className="text-foreground">{credits}</strong> lượng
+                <strong style={{ color: "var(--cream, #ede7d3)", fontWeight: 700 }}>
+                  {credits}
+                </strong>{" "}
+                lượng
                 — đủ để bắt đầu tra cứu và chọn ngày.
               </>
             ) : (
@@ -92,27 +191,50 @@ export default function AppBatDau() {
           </p>
         </div>
 
-        <div className="w-full flex flex-col gap-3">
+        <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
           <Button
             size="cta_sm"
             disabled={finishing || loading || !profile}
             onClick={() => void enterApp()}
+            style={btnPrimary}
+            className="border-0 shadow-none"
           >
             {finishing ? "Đang vào…" : "Vào trang chủ app"}
           </Button>
 
-          <Button variant="outline" size="cta_sm" asChild>
-            <Link to="/app/mua-luong">Mua thêm lượng / gói</Link>
+          <Button variant="ghost" size="cta_sm" className="h-auto p-0 hover:bg-transparent" asChild>
+            <Link to="/app/mua-luong" style={{ ...btnOutline, display: "block", textAlign: "center", boxSizing: "border-box" }}>
+              Mua thêm lượng / gói
+            </Link>
           </Button>
         </div>
       </div>
 
-      <div className="pb-8 pt-4 text-center">
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Điều khoản và chính sách sẽ có trong mục pháp lý (Wave cross-cutting).
-          Trang chủ công khai:{" "}
-          <Link to="/" className="text-accent underline-offset-2 underline">
-            /
+      <div style={{ paddingBottom: 8, paddingTop: 16, textAlign: "center" }}>
+        <p
+          style={{
+            fontFamily: "var(--serif)",
+            fontSize: 11,
+            lineHeight: 1.65,
+            color: "rgba(237,231,211,0.55)",
+            margin: 0,
+          }}
+        >
+          Điều khoản và chính sách:{" "}
+          <Link to="/dieu-khoan" style={linkOnDark}>
+            Điều khoản sử dụng
+          </Link>
+          {" · "}
+          <Link to="/chinh-sach-bao-mat" style={linkOnDark}>
+            Chính sách bảo mật
+          </Link>
+          . Trong app:{" "}
+          <Link to="/app/cai-dat" style={linkOnDark}>
+            Cài đặt
+          </Link>
+          . Trang giới thiệu:{" "}
+          <Link to="/" style={linkOnDark}>
+            ngaylanhthangtot.vn
           </Link>
         </p>
       </div>

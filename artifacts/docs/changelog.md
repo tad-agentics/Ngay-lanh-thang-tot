@@ -27,3 +27,4 @@
 
 | Feature | What changed | Resolved | Commit |
 |---|---|---|---|
+| Referral + lượng | `profiles.referral_code` / `referred_by`, `app_config.referral_bonus_credits`, `apply_referral_pair`, `handle_new_user` metadata `referral_code`/`ref`, Edge `referral-claim`, Cài đặt copy mã/link, `sessionStorage` OAuth + email đăng nhập, trigger chặn PATCH credits/referral từ client | 2026-04-01 | _(ghi hash sau commit)_ |

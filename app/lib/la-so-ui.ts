@@ -33,6 +33,52 @@ function pickStrOrFromNestedObject(
   return "—";
 }
 
+function numOrStrToInt(x: unknown): number | null {
+  if (typeof x === "number" && Number.isFinite(x)) return Math.trunc(x);
+  if (typeof x === "string" && x.trim()) {
+    const n = Number.parseInt(x.trim(), 10);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+/**
+ * Khoảng tuổi đại vận để hiển thị — ưu tiên số `start`/`end`, rồi tuổi mụ / âm lịch nếu API tách khỏi `age_range`.
+ */
+function pickDaiVanYearsFromObject(o: Record<string, unknown>): string {
+  const start = numOrStrToInt(
+    o.start_age ??
+      o.startAge ??
+      o.age_from ??
+      o.ageFrom ??
+      o.tuoi_tu ??
+      o.tuoiTu,
+  );
+  const end = numOrStrToInt(
+    o.end_age ??
+      o.endAge ??
+      o.age_to ??
+      o.ageTo ??
+      o.tuoi_den ??
+      o.tuoiDen,
+  );
+  if (start != null && end != null && start <= end) {
+    return `${start}-${end}`;
+  }
+  return pickStr(o, [
+    "age_range_lunar",
+    "age_range_muc",
+    "tuoi_muc_range",
+    "tuoi_range",
+    "age_range_vn",
+    "age_range",
+    "ageRange",
+    "years",
+    "range",
+    "nam",
+  ]);
+}
+
 function formatDaiVanField(daiVanRaw: unknown): string {
   if (typeof daiVanRaw === "string" && daiVanRaw.trim()) return daiVanRaw.trim();
   const o = asRecord(daiVanRaw);
@@ -40,11 +86,100 @@ function formatDaiVanField(daiVanRaw: unknown): string {
   const cur = asRecord(o.current);
   if (cur) {
     const display = pickStr(cur, ["display", "label", "name", "ten"]);
-    const range = pickStr(cur, ["age_range", "ageRange", "years", "nam"]);
+    const range = pickDaiVanYearsFromObject(cur);
     if (display !== "—" && range !== "—") return `${display} (${range})`;
     if (display !== "—") return display;
   }
+  const displayFlat = pickStr(o, ["display", "label", "name", "ten"]);
+  const rangeFlat = pickDaiVanYearsFromObject(o);
+  if (displayFlat !== "—" && rangeFlat !== "—") return `${displayFlat} (${rangeFlat})`;
+  if (displayFlat !== "—") return displayFlat;
   return pickStr(o, ["display", "label", "summary"]);
+}
+
+/** Chuẩn hóa khoảng tuổi để so khớp API (gạch ngang thống nhất). */
+function normalizeAgeRangeKey(s: string): string {
+  return s.replace(/[–—]/g, "-").replace(/\s/g, "").trim();
+}
+
+/** Gom ngữ cảnh đại vận: danh sách vận và/hoặc object `dai_van` có `current`/`cycles` từ root, data, result. */
+function getDaiVanContext(root: Record<string, unknown>): {
+  listRaw: unknown[] | null;
+  parentObj: Record<string, unknown> | null;
+} {
+  const layers = [root, asRecord(root.data), asRecord(root.result)].filter(
+    (x): x is Record<string, unknown> => x != null,
+  );
+  let listRaw: unknown[] | null = null;
+  let parentObj: Record<string, unknown> | null = null;
+  for (const layer of layers) {
+    const lr = layer.dai_van_list ?? layer.daiVanList;
+    if (Array.isArray(lr) && lr.length > 0 && !listRaw) listRaw = lr;
+    const po = asRecord(layer.dai_van) ?? asRecord(layer.daiVan);
+    if (po && (po.current != null || Array.isArray(po.cycles)) && !parentObj) {
+      parentObj = po;
+    }
+    if (!parentObj) {
+      const flat =
+        asRecord(layer.dai_van_current) ?? asRecord(layer.daiVanCurrent);
+      if (flat) {
+        const hasCur =
+          pickStr(flat, ["display", "label", "name", "ten"]) !== "—" ||
+          pickDaiVanYearsFromObject(flat) !== "—";
+        if (hasCur) parentObj = { current: flat };
+      }
+    }
+  }
+  return { listRaw, parentObj };
+}
+
+function applyCurrentToDaiVanRows(
+  rows: { label: string; years: string; isActive: boolean }[],
+  parentObj: Record<string, unknown> | null,
+): { label: string; years: string; isActive: boolean }[] {
+  const current = parentObj ? asRecord(parentObj.current) : null;
+  const curLabel = current ? pickStr(current, ["display", "label", "name", "pillar"]) : "—";
+  const curYears =
+    current != null ? pickDaiVanYearsFromObject(current) : "—";
+  const curYearsKey = curYears !== "—" ? normalizeAgeRangeKey(curYears) : "";
+
+  if (curLabel === "—" && !curYearsKey) return rows;
+
+  return rows.map((row) => {
+    const yearsKey = row.years !== "—" ? normalizeAgeRangeKey(row.years) : "";
+    const labelMatch =
+      curLabel !== "—" &&
+      row.label !== "—" &&
+      row.label.trim() === curLabel.trim();
+    const rangeMatch =
+      curYearsKey.length > 0 && yearsKey.length > 0 && yearsKey === curYearsKey;
+    return {
+      ...row,
+      isActive: row.isActive || labelMatch || rangeMatch,
+    };
+  });
+}
+
+/** Khi `dai_van.current` có khoảng tuổi chi tiết hơn `dai_van_list`, hiển thị theo `current`. */
+function preferCurrentYearsOnActiveRow(
+  rows: { label: string; years: string; isActive: boolean }[],
+  parentObj: Record<string, unknown> | null,
+): { label: string; years: string; isActive: boolean }[] {
+  const current = parentObj ? asRecord(parentObj.current) : null;
+  if (!current) return rows;
+  const curLabel = pickStr(current, ["display", "label", "name", "pillar"]);
+  const curYears = pickDaiVanYearsFromObject(current);
+  if (curLabel === "—" || curYears === "—") return rows;
+  return rows.map((row) => {
+    if (
+      !row.isActive ||
+      row.label === "—" ||
+      row.label.trim() !== curLabel.trim()
+    ) {
+      return row;
+    }
+    return { ...row, years: curYears };
+  });
 }
 
 function pickStrArr(obj: Record<string, unknown>, keys: string[]): string[] {
@@ -117,6 +252,38 @@ function extractNguHanhFromLayer(
   return null;
 }
 
+/**
+ * Trọng số ngũ hành từ engine (vd. tu-tru-api `_raw.element_counts`: Kim/Mộc/…).
+ * Chuẩn hóa thành %: 100 * v / sum(v) — không giả định đã là phần trăm.
+ */
+function extractNguHanhFromElementCounts(
+  counts: unknown,
+): Record<string, number> | null {
+  if (counts == null || typeof counts !== "object" || Array.isArray(counts)) {
+    return null;
+  }
+  const agg: Record<string, number> = {};
+  for (const [nk, nv] of Object.entries(counts as Record<string, unknown>)) {
+    const canon = canonNguHanhKey(nk);
+    if (!canon) continue;
+    const num =
+      typeof nv === "number" && Number.isFinite(nv)
+        ? nv
+        : parseNguHanhNumber(nv);
+    if (num == null || !Number.isFinite(num) || num < 0) continue;
+    agg[canon] = (agg[canon] ?? 0) + num;
+  }
+  const keys = Object.keys(agg);
+  if (keys.length === 0) return null;
+  const sum = keys.reduce((s, k) => s + agg[k]!, 0);
+  if (sum <= 0) return null;
+  const out: Record<string, number> = {};
+  for (const k of keys) {
+    out[k] = (agg[k]! / sum) * 100;
+  }
+  return out;
+}
+
 /** Luôn trả đủ 5 cột; thiếu từ API → 0. */
 function padFiveElements(hit: Record<string, number>): Record<string, number> {
   const base: Record<string, number> = {};
@@ -137,7 +304,9 @@ const NGU_HANH_PLACEHOLDER: Record<string, number> = {
 
 /**
  * Đọc phân bổ ngũ hành (%) từ JSON lá số.
- * Nếu không có trường hợp lệ → placeholder đều 20% (không phải dữ liệu API).
+ * Ưu tiên `element_counts` (thường trong `_raw` từ GET la-so): trọng số → % theo tổng.
+ * Sau đó các trường `ngu_hanh` / `five_elements` đã là %.
+ * Nếu không có dữ liệu → placeholder đều 20% (chỉ để không trống UI).
  */
 function pickNguHanh(root: Record<string, unknown>): Record<string, number> {
   const layers: Record<string, unknown>[] = [root];
@@ -145,7 +314,34 @@ function pickNguHanh(root: Record<string, unknown>): Record<string, number> {
     const n = asRecord(root[k]);
     if (n) layers.push(n);
   }
+
+  const seen = new Set<Record<string, unknown>>();
+  const all: Record<string, unknown>[] = [];
+  const push = (x: Record<string, unknown> | null) => {
+    if (!x || seen.has(x)) return;
+    seen.add(x);
+    all.push(x);
+  };
   for (const layer of layers) {
+    push(layer);
+    push(asRecord(layer._raw));
+    for (const ik of ["data", "result"] as const) {
+      push(asRecord(layer[ik]));
+    }
+  }
+
+  for (const layer of all) {
+    const raw = asRecord(layer._raw);
+    const fromCounts =
+      extractNguHanhFromElementCounts(layer.element_counts) ??
+      extractNguHanhFromElementCounts(
+        (layer as { elementCounts?: unknown }).elementCounts,
+      ) ??
+      extractNguHanhFromElementCounts(raw?.element_counts) ??
+      extractNguHanhFromElementCounts(
+        raw ? (raw as { elementCounts?: unknown }).elementCounts : undefined,
+      );
+    if (fromCounts) return padFiveElements(fromCounts);
     const hit = extractNguHanhFromLayer(layer);
     if (hit) return padFiveElements(hit);
   }
@@ -252,7 +448,12 @@ export function laSoJsonToRevealProps(raw: unknown): {
     ["element", "name", "label", "ten"],
   );
 
-  let daiVan = formatDaiVanField(nested.dai_van ?? nested.daiVan);
+  let daiVan = formatDaiVanField(
+    nested.dai_van ??
+      nested.daiVan ??
+      nested.dai_van_current ??
+      nested.daiVanCurrent,
+  );
   if (daiVan === "—") {
     daiVan = pickStr(nested, ["dai_van", "daiVan", "dai_van_hien_tai"]);
   }
@@ -337,33 +538,49 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
   }
   if (!thanSat.length) thanSat = ["—"];
 
-  const dvRaw = root.dai_van_list ?? root.daiVanList;
+  const { listRaw: dvRaw, parentObj: dvParent } = getDaiVanContext(root);
   let daiVanList: { label: string; years: string; isActive: boolean }[] = [];
   if (Array.isArray(dvRaw)) {
-    daiVanList = dvRaw.map((item, i) => {
+    daiVanList = dvRaw.map((item) => {
       const o = asRecord(item) ?? {};
       return {
         label: pickStr(o, ["label", "ten", "name", "pillar", "display"]),
-        years: pickStr(o, ["years", "nam", "range", "age_range"]),
-        isActive: Boolean(o.active) || Boolean(o.isActive) || i === 0,
+        years: pickDaiVanYearsFromObject(o),
+        isActive:
+          Boolean(o.active) ||
+          Boolean(o.isActive) ||
+          Boolean(o.is_current) ||
+          o.current === true,
       };
     });
+    daiVanList = applyCurrentToDaiVanRows(daiVanList, dvParent);
+    daiVanList = preferCurrentYearsOnActiveRow(daiVanList, dvParent);
+    if (!daiVanList.some((x) => x.isActive) && daiVanList.length === 1) {
+      daiVanList = [{ ...daiVanList[0], isActive: true }];
+    }
   }
   if (!daiVanList.length) {
-    const dvObj = asRecord(root.dai_van) ?? asRecord(root.daiVan);
-    const cycles = dvObj?.cycles;
+    const dvObj = dvParent;
+    const cycles = dvObj ? dvObj.cycles : undefined;
     const current = dvObj ? asRecord(dvObj.current) : null;
     const curLabel = current ? pickStr(current, ["display", "label"]) : "—";
-    const curYears = current ? pickStr(current, ["age_range", "years"]) : "—";
-    if (Array.isArray(cycles)) {
+    const curYears =
+      current != null ? pickDaiVanYearsFromObject(current) : "—";
+    if (dvObj && Array.isArray(cycles)) {
       daiVanList = cycles.map((item) => {
         const o = asRecord(item) ?? {};
         const label = pickStr(o, ["display", "label", "name"]);
-        const years = pickStr(o, ["age_range", "years", "range"]);
+        const years = pickDaiVanYearsFromObject(o);
         const isActive =
-          curLabel !== "—" && label !== "—" && label === curLabel;
+          (curLabel !== "—" &&
+            label !== "—" &&
+            label.trim() === curLabel.trim()) ||
+          (curYears !== "—" &&
+            years !== "—" &&
+            normalizeAgeRangeKey(years) === normalizeAgeRangeKey(curYears));
         return { label, years, isActive };
       });
+      daiVanList = preferCurrentYearsOnActiveRow(daiVanList, dvObj);
     }
     if (!daiVanList.length && (curLabel !== "—" || curYears !== "—")) {
       daiVanList = [
@@ -376,11 +593,126 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
     }
   }
   if (!daiVanList.length) {
-    const dv = pickStr(root, ["dai_van", "daiVan"]);
+    const layers = [root, asRecord(root.data), asRecord(root.result)].filter(
+      (x): x is Record<string, unknown> => x != null,
+    );
+    let dv = "—";
+    for (const layer of layers) {
+      dv = pickStr(layer, ["dai_van", "daiVan"]);
+      if (dv !== "—") break;
+      const po = asRecord(layer.dai_van) ?? asRecord(layer.daiVan);
+      if (po) {
+        const formatted = formatDaiVanField(po);
+        if (formatted !== "—") {
+          dv = formatted;
+          break;
+        }
+      }
+      const dvf =
+        asRecord(layer.dai_van_current) ?? asRecord(layer.daiVanCurrent);
+      if (dvf) {
+        const formatted = formatDaiVanField(dvf);
+        if (formatted !== "—") {
+          dv = formatted;
+          break;
+        }
+      }
+    }
     daiVanList = [{ label: dv === "—" ? "Đại Vận" : dv, years: "—", isActive: true }];
   }
 
   const nguHanh = pickNguHanh(root);
 
   return { thienCan, diaChi, thanSat, daiVanList, nguHanh };
+}
+
+function isPlainElementCounts(
+  v: unknown,
+): v is Record<string, unknown> {
+  return (
+    v != null && typeof v === "object" && !Array.isArray(v)
+  );
+}
+
+function pickElementCountsForEnrichment(
+  layer: Record<string, unknown>,
+): Record<string, unknown> | null {
+  const raw = asRecord(layer._raw);
+  const candidates: unknown[] = [
+    layer.element_counts,
+    (layer as { elementCounts?: unknown }).elementCounts,
+    raw?.element_counts,
+    raw ? (raw as { elementCounts?: unknown }).elementCounts : undefined,
+  ];
+  for (const c of candidates) {
+    if (isPlainElementCounts(c)) return c as Record<string, unknown>;
+  }
+  return null;
+}
+
+function tryLayerElementCountsEnrichment(
+  layer: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!layer) return null;
+  const counts = pickElementCountsForEnrichment(layer);
+  if (!counts) return null;
+  return { _raw: { element_counts: counts } };
+}
+
+/**
+ * Gói nhỏ `_raw.element_counts` (hoặc `element_counts`) từ phản hồi GET /v1/la-so
+ * để ghép vào `profile.la_so` khi hiển thị chi tiết — tránh chỉ có tứ trụ từ POST tu-tru.
+ */
+/** Các lớp envelope hay gặp từ GET /v1/la-so hoặc payload đã lột. */
+const LA_SO_ENRICH_NEST_KEYS = [
+  "data",
+  "result",
+  "payload",
+  "la_so",
+  "chart",
+  "detail",
+] as const;
+
+function tryNestedElementCountsEnrichment(
+  r: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!r) return null;
+  const direct = tryLayerElementCountsEnrichment(r);
+  if (direct) return direct;
+  for (const k of LA_SO_ENRICH_NEST_KEYS) {
+    const hit = tryLayerElementCountsEnrichment(asRecord(r[k]));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+export function extractLaSoChiTietEnrichment(
+  upstream: unknown,
+): Record<string, unknown> | null {
+  if (!upstream || typeof upstream !== "object" || Array.isArray(upstream)) {
+    return null;
+  }
+  const root = upstream as Record<string, unknown>;
+  return (
+    tryNestedElementCountsEnrichment(root) ??
+    tryNestedElementCountsEnrichment(asRecord(root.data)) ??
+    tryNestedElementCountsEnrichment(asRecord(root.result))
+  );
+}
+
+export function mergeLaSoJsonForChiTietDisplay(
+  stored: LaSoJson | null | undefined,
+  enrichment: Record<string, unknown> | null | undefined,
+): LaSoJson | null | undefined {
+  if (!stored) return stored;
+  if (!enrichment || Object.keys(enrichment).length === 0) return stored;
+  const s = stored as Record<string, unknown>;
+  const e = enrichment;
+  const out: Record<string, unknown> = { ...s, ...e };
+  const sRaw = asRecord(s._raw);
+  const eRaw = asRecord(e._raw);
+  if (sRaw && eRaw) {
+    out._raw = { ...sRaw, ...eRaw };
+  }
+  return out as LaSoJson;
 }

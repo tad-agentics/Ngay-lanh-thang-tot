@@ -17,7 +17,7 @@ describe("parseNgayHomNayForHome", () => {
     });
     expect(v).not.toBeNull();
     expect(v!.dayType).toBe("hoang-dao");
-    expect(v!.hourRange).toBe("7–9 giờ sáng");
+    expect(v!.hourRange).toBe("7 - 9 giờ sáng");
     expect(v!.lunarLabel).toBe("6 tháng 2");
     expect(v!.solarDateVi).toMatch(/2026/);
   });
@@ -39,6 +39,32 @@ describe("parseNgayHomNayForHome", () => {
     expect(v!.hourRange).toContain("giờ");
     expect(v!.hourRange).toMatch(/23|đêm/);
     expect(v!.hourRange).not.toContain("Tý");
+    expect(v!.gioTotChis).toEqual(["Tý", "Sửu"]);
+    expect(v!.headerSubline).toContain("2026");
+  });
+
+  it("parses maket-style trực, sao, việc nên làm, giờ xấu", () => {
+    const v = parseNgayHomNayForHome({
+      solar_date: "2026-05-11",
+      can_chi: "Bính Tuất",
+      truc_name: "Trực Định",
+      cat_than: [{ name: "Thiên Đức" }, "Nguyệt Đức"],
+      good_for: ["Khai trương", "Ký kết", "Đính hôn"],
+      gio_tot: [
+        { chi_name: "Tý", range: "23:00-01:00" },
+        { chi_name: "Sửu", range: "01:00-03:00" },
+      ],
+      gio_xau: [
+        { chi_name: "Dần", range: "03:00-05:00" },
+        { chi_name: "Ngọ", range: "11:00-13:00" },
+      ],
+    });
+    expect(v).not.toBeNull();
+    expect(v!.trucDisplay).toBe("Định");
+    expect(v!.saoTotCsv).toContain("Thiên Đức");
+    expect(v!.goodForChips[0]).toBe("Khai trương");
+    expect(v!.gioXauChis).toEqual(["Dần", "Ngọ"]);
+    expect(v!.headerSubline).toContain("Bính Tuất");
   });
 });
 
