@@ -155,7 +155,7 @@
   --font-size: 16px;
 
   /* ─── NLTT Core Palette ─── */
-  --background: oklch(0.91 0.01 80);
+  --background: #f0ece2;
   --foreground: oklch(0.12 0.02 80);
   --card: oklch(0.96 0.005 80);
   --card-foreground: oklch(0.12 0.02 80);
@@ -206,23 +206,27 @@
   --surface: var(--forest);
   --surface-foreground: var(--forest-foreground);
 
-  /* ─── Direction B Design Tokens ─── */
-  /* Paper surfaces (light-default app) */
-  --paper: #f0ece2;
+  /* ─── Direction B Design Tokens (align with `Direction B.html` :root) ─── */
+  /* Gutter behind centred phone column; paper = in-column surface; page chrome matches canvas body */
+  --bg: #e4dfd6;
+  --page-bg: #f0ece2;
+  --paper: #f1ece1;
   --paper-warm: #ebe4d2;
   --cream: #ede7d3;
 
-  /* Ink (text on paper) */
-  --ink: #1a1a1a;
-  --ink-2: #3a3a3a;
+  /* Ink (text on paper) — canvas uses #18150e */
+  --ink: #18150e;
+  --ink-2: #3a3220;
   --muted-warm: #6a5f3f;
+  --green-mute: #7a9a80;
 
   /* Forest deep accent */
   --forest-deep: #15241e;
 
-  /* Gold (accent on forest ONLY — never text on paper) */
+  /* Gold (accent on forest ONLY — never body text on paper) */
   --gold: #c5a55a;
-  --gold-deep: #7d6219;
+  /* Canvas + maket accent on paper (e.g. scores) */
+  --gold-deep: #9a7c22;
 
   /* Border variants */
   --border-strong: rgba(26, 26, 26, 0.45);
@@ -295,7 +299,8 @@
   --color-forest-deep: var(--forest-deep);
   --color-gold: var(--gold);
   --color-gold-deep: var(--gold-deep);
-  --color-border-strong: var(--border-strong);
+  --color-bg-gutter: var(--bg);
+  --color-green-mute: var(--green-mute);
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -311,9 +316,9 @@
   --font-montserrat: 'Montserrat', system-ui, sans-serif;
   --font-barlow: 'Barlow Condensed', sans-serif;
 
-  /* Direction B semantic font stack (used by brand primitives + all new screens) */
-  --display: 'Noto Serif SC', serif;
-  --display-2: 'Barlow Condensed', sans-serif;
+  /* Direction B.html: --display = Barlow (wordmark subline, tight labels); --display-2 = Montserrat (headlines) */
+  --display: 'Barlow Condensed', sans-serif;
+  --display-2: var(--font-montserrat);
   --serif: 'Lora', Georgia, serif;
   --mono: 'IBM Plex Mono', monospace;
   --hanzi: 'Noto Serif SC', serif;
@@ -326,7 +331,7 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: var(--serif);
   }
 
   html {

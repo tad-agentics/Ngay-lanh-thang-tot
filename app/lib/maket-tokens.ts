@@ -44,7 +44,8 @@ export const HM = {
   radM: 10,
   frame: 390,
   inner: 346,
-  display: "var(--font-montserrat)",
+  /** Montserrat headlines — matches `Direction B.html` `--display-2` */
+  display: "var(--display-2)",
   serif: "var(--serif)",
   mono: "var(--mono)",
 } as const;

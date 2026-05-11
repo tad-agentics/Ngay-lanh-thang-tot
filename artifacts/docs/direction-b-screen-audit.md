@@ -8,6 +8,12 @@ Audit started: 2026-05-11. Update this file as each batch is reviewed.
 
 ---
 
+## Engineering note (2026-05-12) — `Direction B.html` token parity
+
+`Direction B.html` inline `:root` (canvas entry) uses **Barlow** for `--display` and **Montserrat** for `--display-2`; maket paper **`#f1ece1`**, gutter **`#e4dfd6`**, ink **`#18150e`**, **`--gold-deep: #9a7c22`**. **`app/theme.css`** `:root` / `@theme` now mirror those semantics; **`Logo`** wordmark matches canvas (**Montserrat** “Ngày Lành”, **Barlow** “Tháng Tốt”); **`AppShellViewport`** uses **`var(--bg)`** / **`var(--paper)`**. FE-HANDOFF §2.2 still lists Barlow for `--display-2` — **product follows canvas + HTML entry** for headline vs label fonts.
+
+---
+
 ## Engineering note (2026-05-11)
 
 Several authenticated routes existed as `.tsx` files and were linked from `BottomNav` / `nav-config`, but were **not registered in `app/routes.ts`**, so they would not load in the SPA. **Fixed** by adding:
@@ -93,7 +99,7 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 |------|--------|
 | Canvas **07** fields | ✅ Hoàng đạo verdict, giờ tốt/xấu grid, Đại Vận strip, weekly rows, primary CTA — implemented per recent maket pass. |
 | Typography vs §8 | ✅ Header subline **12px** mono, §8-compliant. |
-| Display font | ✅ Montserrat for maket display (per export); note FE-HANDOFF §2.2 still lists Barlow Condensed for `--display-2` — **design doc vs product** resolution may be needed. |
+| Display font | ✅ Montserrat main lockup line / maket `HM.display` → `var(--display-2)`; Barlow subline per **`Direction B.html`**. FE-HANDOFF §2.2 Barlow-for-display-2 is superseded by canvas/HTML for shipped UI. |
 | Streak ribbon | ✅ Aligned to `b-habit` ribbon pattern; 🔍 compare Tiết khí wheel if design adds **39** artboard extras. |
 | Day-7 / restart modals | ✅ Updated to shared `HM` tokens + ticket pattern. |
 | Kanji watermarks | ⚠️ Verdict card Kanji removed for maket flat forest block — if §9 “at least one Kanji per ceremonial surface” applies to home, **confirm** with design intent (export vs rule). |
@@ -144,5 +150,6 @@ Several authenticated routes existed as `.tsx` files and were linked from `Botto
 
 | Date | Change |
 |------|--------|
+| 2026-05-12 | **`Direction B.html` parity:** theme tokens `--bg`, `--paper` `#f1ece1`, `--ink` `#18150e`, `--gold-deep` `#9a7c22`, `--green-mute`; `--display`/`--display-2` match canvas; body **`font-family: var(--serif)`**; Logo wordmark split; AppShell gutter/paper CSS vars; Montserrat weights in **`root.tsx`**. |
 | 2026-05-12 | **Implemented:** `LANDING_TOK` + landing import; Hôm nay header 12px mono; **Tháng** real calendar grid + LogoMark/HM; Sổ việc subtitle + mono sizes; **ResultDayCard** / **Tôi** mono readability; audit doc updated. |
 | 2026-05-11 | Initial inventory + batches 1–3 notes; registered missing `app/routes.ts` children; home typography / pricing discrepancies flagged. |

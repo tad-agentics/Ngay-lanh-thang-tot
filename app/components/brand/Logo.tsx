@@ -51,7 +51,7 @@ export function Logo({
         </span>
         <span
           style={{
-            fontFamily: "var(--display-2)",
+            fontFamily: "var(--display)",
             fontWeight: 600,
             fontSize: size * 0.16,
             letterSpacing: "0.36em",
