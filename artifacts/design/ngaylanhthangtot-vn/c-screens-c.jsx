@@ -1,7 +1,7 @@
 /* Direction C — screens part C. Auth, First-run, Deep, Commerce, Share, Empty.
    Depends on c-screens-a.jsx globals. */
 /* global React, useB, Logo, LogoMark, Mono, StatusBar, HomeIndicator,
-   CT, PROFILE, CTopStrip, CSegmented, CBottomNav, IconSearch */
+   CT, PROFILE, CTopStrip, CSegmented, CBottomNav, IconSearch, CTodayReasoning */
 const { useState: c3UseState } = React;
 
 // Small helper — back chevron header
@@ -295,11 +295,12 @@ function CDayDetail() {
             </div>
           </div>
 
-          <div style={{ padding: '10px 18px 14px' }}>
-            <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 13.5, lineHeight: 1.55, color: CT.ink2, margin: 0 }}>
-              "Kim sinh Thủy — Canh Thìn hợp với Quý Thủy của bạn. Đặc biệt thuận cho ký kết, khai trương, mở việc lớn."
-            </p>
-          </div>
+          {/* Luận giải — LLM streaming inline, same component as C12 Hôm nay */}
+          <CTodayReasoning
+            text="Ngày 17 tháng 6 là Canh Thìn — Kim sinh Thủy. Mệnh bạn Quý Thủy, được Canh sinh trợ trực tiếp, lực rất mạnh. Trụ giờ Thìn cũng là Thổ-Mộc, hoá khắc thành sinh. Đây là một trong các ngày đẹp nhất cho khai trương, ký kết lớn — đặc biệt giờ Tỵ và giờ Thân."
+            sources={['Hiệp Kỷ Biện Phương', 'Lịch Vạn Niên 2026']}
+            ctaLabel="Hỏi tiếp về ngày 17.06"
+          />
 
           <div style={{ padding: '12px 18px 14px', borderTop: `1px solid ${CT.hairline}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[

@@ -2,7 +2,7 @@
    Toned-down version: keep the lịch tờ centerfold + pill nav + identity strip,
    but reduce strata, lighten tints, drop redundant dividers. */
 /* global React, useB, Logo, LogoMark, Mono, StatusBar, HomeIndicator */
-const { useState: cUseState } = React;
+const { useState: cUseState, useEffect: cUseEffect } = React;
 
 // ─── Tokens (locked) ───
 const CT = {
@@ -145,16 +145,60 @@ function CSplash() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// 02 · Trang Hôm nay — Lịch [Hôm nay] · forest BG with lịch tờ inset
-// ═══════════════════════════════════════════════════════════════════
+// Today's LLM luận giải — inline typed reveal on Hôm nay (was screen 15)
+// Reused by CDayDetail (14) with day-specific text.
+function CTodayReasoning({ text, sources, ctaLabel = 'Hỏi tiếp về ngày này' } = {}) {
+  const fullText = text || "Hôm nay ngày Mậu Tuất — Thổ. Mệnh bạn là Quý Thủy, Thổ khắc Thủy, lẽ ra phải xấu. Nhưng giờ Thìn buổi sáng có Mộc khí vượng — Mộc khắc Thổ, hoá giải được. Sang chiều khi Mộc khí lui, Thổ vượng trở lại — không nên động thổ.";
+  const srcLine = sources || ['Hiệp Kỷ Biện Phương', 'Ngọc Hạp Thông Thư'];
+  const [n, setN] = cUseState(0);
+  cUseEffect(() => {
+    setN(0);
+  }, [fullText]);
+  cUseEffect(() => {
+    if (n >= fullText.length) return;
+    const id = setTimeout(() => setN(n + 1), 18);
+    return () => clearTimeout(id);
+  }, [n, fullText]);
+  const done = n >= fullText.length;
+  return (
+    <div style={{ padding: '12px 18px 14px' }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div style={{ width: 26, height: 26, borderRadius: '50%', background: CT.forest, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2, overflow: 'hidden' }}>
+          <img src="assets/logo-mark-reversed.svg" width="18" height="18" alt="" />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Mono style={{ color: CT.muted, fontSize: 9 }}>{done ? 'NLTT luận' : 'NLTT đang luận…'}</Mono>
+          <p style={{ marginTop: 4, marginBottom: 0, fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 13.5, lineHeight: 1.6, color: CT.ink2 }}>
+            {fullText.slice(0, n)}<span style={{ display: 'inline-block', width: 6, height: 13, background: CT.ink, marginLeft: 1, verticalAlign: '-2px', opacity: done ? 0 : 1, animation: 'b-cursor-blink 1s steps(2) infinite' }} />
+          </p>
+          <style>{`@keyframes b-cursor-blink { 50% { opacity: 0; } }`}</style>
+          {done && (
+            <div style={{ marginTop: 10, fontFamily: 'var(--serif)', fontSize: 11.5, color: CT.muted, lineHeight: 1.5 }}>
+              Đối chiếu: {srcLine.map((s, i) => (
+                <React.Fragment key={s}>{i > 0 && ' · '}<span style={{ color: CT.ink2 }}>{s}</span></React.Fragment>
+              ))}
+            </div>
+          )}
+          {done && (
+            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <span style={{ fontFamily: 'var(--display-2)', fontWeight: 700, fontSize: 11.5, color: CT.goldDeep, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{ctaLabel}</span>
+            <span style={{ fontFamily: 'var(--serif)', fontSize: 14, color: CT.goldDeep, lineHeight: 1 }}>›</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function CHomePage() {
   return (
     <div style={{ width: 390, height: 800, background: CT.paper, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <StatusBar />
       <CSegmented options={['Hôm nay', 'Tháng']} active={0} />
 
-      <div style={{ flex: 1, padding: '18px 22px 100px', overflow: 'hidden' }}>
-        {/* Trang lịch tờ — paper page on paper bg, white card with hairline border */}
+      <div style={{ flex: 1, padding: '18px 22px 100px', overflow: 'auto' }}>
+        {/* Trang lịch tờ — white card on warm paper, hairline border, soft shadow */}
         <div style={{ background: '#fff', color: CT.ink, position: 'relative', boxShadow: '0 6px 16px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.03)', border: `1px solid ${CT.hairline2}`, overflow: 'hidden' }}>
           {/* Date masthead — one line */}
           <div style={{ padding: '12px 18px 6px' }}>
@@ -174,11 +218,11 @@ function CHomePage() {
             Mùng 10 tháng Tư &nbsp;·&nbsp; ngày <strong style={{ color: CT.ink, fontWeight: 600 }}>Mậu Tuất</strong> &nbsp;·&nbsp; tiết Tiểu Mãn
           </div>
 
-          {/* Verdict — tappable → AI luận giải */}
-          <div style={{ padding: '14px 18px 4px', borderTop: `1px solid ${CT.hairline}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, cursor: 'pointer' }}>
+          {/* Verdict + score — 'tai sao' link removed; reasoning inline below */}
+          <div style={{ padding: '14px 18px 4px', borderTop: `1px solid ${CT.hairline}`, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
             <div>
               <div style={{ fontFamily: 'var(--display-2)', fontWeight: 700, fontSize: 17, color: CT.goldDeep, textTransform: 'uppercase', letterSpacing: '-0.005em' }}>Ngày khá</div>
-              <div style={{ fontFamily: 'var(--serif)', fontSize: 12, color: CT.muted, marginTop: 2 }}>cho mệnh {PROFILE.menh} · <span style={{ color: CT.goldDeep }}>tại sao? ›</span></div>
+              <div style={{ fontFamily: 'var(--serif)', fontSize: 12, color: CT.muted, marginTop: 2 }}>cho mệnh {PROFILE.menh}</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
               <span style={{ fontFamily: 'var(--display-2)', fontWeight: 800, fontSize: 38, color: CT.goldDeep, lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.015em' }}>76</span>
@@ -186,12 +230,8 @@ function CHomePage() {
             </div>
           </div>
 
-          {/* Luận giải */}
-          <div style={{ padding: '10px 18px 14px' }}>
-            <p style={{ fontFamily: 'var(--serif)', fontStyle: 'italic', fontSize: 13.5, lineHeight: 1.55, color: CT.ink2, margin: 0 }}>
-              "Mộc khí vượng đến trưa, hợp ký kết và mở việc. Sang chiều Thổ vượng — nên tránh động thổ, đào móng."
-            </p>
-          </div>
+          {/* Luận giải — LLM streaming inline (was screen 15, now inline on Hôm nay) */}
+          <CTodayReasoning />
 
           {/* Nên / tránh / giờ — labeled rows, no chips */}
           <div style={{ padding: '12px 18px 14px', borderTop: `1px solid ${CT.hairline}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -304,4 +344,4 @@ function CMonthSpread() {
   );
 }
 
-Object.assign(window, { CT, PROFILE, CTopStrip, CSegmented, CBottomNav, IconCalendar, IconSearch, IconUser, scoreDot, CSplash, CHomePage, CMonthSpread });
+Object.assign(window, { CT, PROFILE, CTopStrip, CSegmented, CBottomNav, IconCalendar, IconSearch, IconUser, scoreDot, CSplash, CHomePage, CMonthSpread, CTodayReasoning });

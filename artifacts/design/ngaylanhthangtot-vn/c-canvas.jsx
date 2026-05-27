@@ -355,12 +355,9 @@ function App() {
             </DCArtboard>
           </DCSection>
 
-          <DCSection id="ai" title="8 · LUẬN GIẢI (LLM)" subtitle="Streaming · có nguồn · lá số chi tiết">
-            <DCArtboard id="c-aityped" label="15 · Luận AI · streaming" width={420} height={830}>
+          <DCSection id="ai" title="8 · LUẬN GIẢI (LLM)" subtitle="Thoại + phân tích + nguồn trong cùng một màn · lá số chi tiết">
+            <DCArtboard id="c-aityped" label="15 · Luận AI · streaming + phân tích + nguồn" width={420} height={830}>
               <Phone><CAITyped /></Phone>
-            </DCArtboard>
-            <DCArtboard id="c-aisec" label="16 · Luận đầy đủ · có nguồn trích dẫn" width={420} height={830}>
-              <Phone><CAISectioned /></Phone>
             </DCArtboard>
             <DCArtboard id="c-laso" label="17 · Lá số chi tiết" width={420} height={830}>
               <Phone><CLaSoFull /></Phone>

@@ -118,9 +118,9 @@ function CNoDatesFound() {
   return (
     <div style={{ width: 390, height: 800, background: CT.paper, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <StatusBar />
-      <CSegmented options={['Ngày lành', 'Hợp tuổi']} active={0} />
+      <CBackBar title="Tra cứu · kết quả" />
 
-      <div style={{ flex: 1, padding: '20px 24px 100px', overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: '12px 24px 24px', overflow: 'auto' }}>
         {/* Query recap */}
         <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: CT.muted, lineHeight: 1.5 }}>
           Cho việc <strong style={{ color: CT.ink, fontWeight: 600 }}>cưới hỏi</strong> · từ 26.07 đến 26.08 · <span style={{ color: CT.goldDeep, cursor: 'pointer' }}>sửa</span>
@@ -160,7 +160,6 @@ function CNoDatesFound() {
         </div>
       </div>
 
-      <CBottomNav active={1} />
       <HomeIndicator />
     </div>
   );

@@ -28,24 +28,33 @@ FE-HANDOFF.md                 ← this file
 b-shared.jsx                  Tokens, Logo, LogoMark, Ticket, Stamp, Kanji, Mono,
                               Phone (iOS frame), StatusBar, HomeIndicator, BackBar
                               (still used; not renamed to c-shared)
-c-screens-a.jsx               CT tokens, CTopStrip, CSegmented, CBottomNav (3-tab),
-                              icons, CSplash, CHomePage (Tab1·Hôm nay),
-                              CMonthSpread (Tab1·Tháng)
-c-screens-b.jsx               CSearchEntry, CSearchResult, CHopTuoi, CMe (Tab3),
-                              CPricing (1 tháng / 6 tháng / 1 năm + add-ons)
-c-screens-c.jsx               CAuthChooser, CSignup, CBirthTime, CBuildingCalendar,
-                              CReveal (first-run "lịch đã mở")
-c-screens-d.jsx               CDayDetail, CEmptySo, CSharePublic
-c-screens-e.jsx               CPayConfirm, CPaySuccess
-c-screens-f.jsx               CInstallBanner, CEmailLogin, CForgotPwReq,
-                              CForgotPwSent, COAuthCallback
-c-screens-g.jsx               CPickLoading, CShareSender, CSoList, CHopTuoiResult,
-                              CPhongThuy, CTieuVan, CChuyenLich, CEditProfile
-c-screens-h.jsx               CAITyped, CAISectioned, CLaSoFull, CBaziReadingFull
-c-screens-i.jsx               CBaziLocked, CPayConfirmStandalone,
-                              CPaySuccessStandalone, CMeLocked, CSettings,
-                              CNotifPerm, CNoDatesFound, CPayFailure,
-                              CSubExpired, CConfirmDialog, COfflineHome
+c-screens-a.jsx               CT tokens, PROFILE, CTopStrip, CSegmented,
+                              CBottomNav (3-tab), icons, scoreDot, CSplash,
+                              CHomePage (12), CMonthSpread (13),
+                              **CTodayReasoning** — shared inline LLM typed-reveal
+                              block, reused by CDayDetail
+c-screens-b.jsx               CSearchEntry (19), CSearchResult (21), CHopTuoi (22),
+                              CMe (28), CPricing (25)
+c-screens-c.jsx               CBackBar, CAuthChooser (03), CSignup (08),
+                              CBirthTime (09), CBuildingCalendar (10), CReveal (11),
+                              CDayDetail (14) — uses CTodayReasoning,
+                              CEmptySo, CPayConfirm (26), CPaySuccess (27),
+                              CSharePublic
+c-screens-d.jsx               CInstallBanner (02), CEmailLogin (04),
+                              CForgotPwReq (05), CForgotPwSent (06),
+                              COAuthCallback (07)
+c-screens-e.jsx               CPickLoading (20), CShareSender, CSoList,
+                              CHopTuoiResult (23)
+c-screens-f.jsx               CPhongThuy, CTieuVan, CChuyenLich (24),
+                              CEditProfile (29)
+c-screens-g.jsx               CAITyped (15 — merged 15+16: thread + sectioned + chat),
+                              CAISectioned (deprecated, no route),
+                              CLaSoFull (17), CBaziReadingFull (18)
+c-screens-h.jsx               CSettings (30), CNotifPerm (31), CNoDatesFound (32),
+                              CPayFailure (37), CSubExpired (38),
+                              CConfirmDialog (39), COfflineHome (40)
+c-screens-i.jsx               CBaziLocked (33), CPayConfirmStandalone (35),
+                              CPaySuccessStandalone (36), CMeLocked (34)
 c-landing.jsx                 Landing site — Hero · Ritual · Personal · YearSpread ·
                               Pricing · FAQ · CTA · Footer · sticky-mobile CTA
 c-canvas.jsx                  Canvas assembly + 4 strategy artboards
@@ -132,11 +141,11 @@ Canvas numbers in the **#** column are the artboard labels from `c-canvas.jsx`.
 | 09 | `/gio-sinh` | Lập lịch · b2 (giờ sinh) | `CBirthTime` | 12-canh selector |
 | 10 | `/dang-dung-lich` | Đang dựng lịch | `CBuildingCalendar` | Animated progress, lá số computing |
 | 11 | `/lich-da-mo` | Lịch đã mở — trang đầu | `CReveal` | First-page reveal (forest, ceremonial) |
-| 12 | `/lich` | Tab 1 · Lịch · [Hôm nay] | `CHomePage` | **Tab 1 default**. Lịch-tờ home (forest BG) |
+| 12 | `/lich` | Tab 1 · Lịch · [Hôm nay] | `CHomePage` | **Tab 1 default**. Lịch-tờ home (paper, white card) · **luận giải LLM streaming inline** (typed reveal + nguồn) |
 | 13 | `/lich/thang` | Tab 1 · Lịch · [Tháng] | `CMonthSpread` | Inline segmented control toggles 12 ↔ 13 |
-| 14 | `/ngay/:ngay` | Chi tiết một ngày | `CDayDetail` | Reached from month grid. `:ngay = YYYY-MM-DD` |
-| 15 | `/luan-ai/:context` | Luận AI · streaming | `CAITyped` | Typed-reveal LLM panel |
-| 16 | `/luan-ai/:context/day-du` | Luận đầy đủ · trích dẫn | `CAISectioned` | Sectioned with citations |
+| 14 | `/ngay/:ngay` | Chi tiết một ngày | `CDayDetail` | Reached from month grid. `:ngay = YYYY-MM-DD`. **Same inline luận giải block as C12** (`<CTodayReasoning>` with day-specific text + sources + CTA → chat thread on C15) |
+| 15 | `/luan-ai/:context` | Luận AI · thread + phân tích | `CAITyped` | Merged 15+16. Anchor turn = typed answer + sectioned breakdown + nguồn; follow-ups append voice-only. Scope-locked + 10 câu/ngày — see §Phase 8 spec |
+| ~~16~~ | ~~`/luan-ai/:context/day-du`~~ | **Merged into 15** | — | `CAISectioned` left in source for now; delete after confirm |
 | 17 | `/toi/la-so` | Lá số chi tiết | `CLaSoFull` | Tứ trụ deep view |
 | 18 | `/toi/luan-bat-tu` | Luận giải Bát tự năm | `CBaziReadingFull` | Standalone luận; paywalled if not yearly |
 | 19 | `/tra-cuu` | Tab 2 · Tra cứu · entry | `CSearchEntry` | **Tab 2 default**. Pick wedge lives here |
@@ -307,14 +316,15 @@ Ship in this order. Each phase is independently deployable.
 - Mobile gets the sticky bottom CTA bar; desktop does not.
 
 ### Phase 3 — Auth band (½ day)
-- Source: `c-screens-c.jsx` (chooser/signup/birth-time/building/reveal) + `c-screens-f.jsx` (install banner, email login, forgot-password req/sent, OAuth callback).
+- Source: `c-screens-c.jsx` (chooser/signup/birth-time/building/reveal) + `c-screens-d.jsx` (install banner, email login, forgot-password req/sent, OAuth callback).
 - Targets: `/dang-nhap`, `/dang-nhap/email`, `/dang-ky`, `/quen-mat-khau`, `/quen-mat-khau/da-gui`, `/auth/callback`, `/gio-sinh`, `/dang-dung-lich`, `/lich-da-mo`.
 - Branches A–D in §3.2 must work end-to-end.
 
 ### Phase 4 — Daily loop (Tab 1) (1–2 days)
-- Source: `c-screens-a.jsx` → `CHomePage` (12), `CMonthSpread` (13); `c-screens-d.jsx` → `CDayDetail` (14).
+- Source: `c-screens-a.jsx` → `CHomePage` (12), `CMonthSpread` (13), **`CTodayReasoning`** (shared inline luận giải component); `c-screens-c.jsx` → `CDayDetail` (14).
 - Target: `app/routes/lich.tsx` with `<CSegmented>` switching `[Hôm nay | Tháng]` and a sub-route `/ngay/:ngay`.
-- Hôm nay is forest BG with a lịch-tờ inset card — **this is the brand metaphor**. Don't simplify it to a flat card.
+- Hôm nay is paper-default — the lịch-tờ is a white card on warm paper with a subtle shadow. **Don't flip to forest** — forest is reserved for ceremonial-only surfaces (§6). Daily-use surfaces stay paper for readability + continuity with C13/C14.
+- **Both C12 (Hôm nay) and C14 (ngày khác) embed `<CTodayReasoning text=… sources=… ctaLabel=… />`** — typed-reveal luận giải inline, gold-deep CTA opens C15 thread with this day's anchor question. Same component, different props; do not fork.
 
 ### Phase 5 — Pricing v3 (1 day)
 - Source: `c-screens-b.jsx` → `CPricing`.
@@ -329,28 +339,176 @@ Ship in this order. Each phase is independently deployable.
 - PayOS failure path → `CPayFailure` (37) with retry + alt method.
 
 ### Phase 6 — Search band (Tab 2) (1 day)
-- Source: `c-screens-b.jsx` → `CSearchEntry`, `CSearchResult`, `CHopTuoi`; `c-screens-g.jsx` → `CPickLoading`, `CHopTuoiResult`.
+- Source: `c-screens-b.jsx` → `CSearchEntry`, `CSearchResult`, `CHopTuoi`; `c-screens-e.jsx` → `CPickLoading`, `CHopTuoiResult`.
 - Target: `app/routes/tra-cuu.tsx` with `<CSegmented>` toggling `[Ngày tốt cho việc | Hợp tuổi]`.
 - Empty result → `CNoDatesFound` (32). Copy: "Khoảng này không có ngày hợp. Thử mở rộng phạm vi hoặc bỏ một số tiêu chí khắt khe."
 
 ### Phase 7 — Account band (Tab 3) (½ day)
-- Source: `c-screens-b.jsx` → `CMe`; `c-screens-g.jsx` → `CEditProfile`; `c-screens-i.jsx` → `CSettings`, `CMeLocked`.
+- Source: `c-screens-b.jsx` → `CMe`; `c-screens-f.jsx` → `CEditProfile`; `c-screens-h.jsx` → `CSettings`; `c-screens-i.jsx` → `CMeLocked`.
 - Targets: `/toi`, `/toi/sua-ho-so`, `/toi/cai-dat`.
 - Tab 3 holds lá số card + "Lịch hạn dùng đến DD.MM.YYYY" + Tiện ích (Bát tự + Chuyển lịch entry) + Cài đặt.
 
 ### Phase 8 — AI Luận Giải + Lá số (1–2 days)
-- Source: `c-screens-h.jsx` → `CAITyped` (streaming), `CAISectioned` (with citations), `CLaSoFull`, `CBaziReadingFull`.
-- Targets: `/luan-ai/:context`, `/luan-ai/:context/day-du`, `/toi/la-so`, `/toi/luan-bat-tu`.
-- Streaming uses `useEffect` + interval for typed cursor; sectioned view exposes a "Xem trích dẫn" link inline per claim.
+- Source: `c-screens-g.jsx` → `CAITyped` (merged 15+16: typed voice + sectioned breakdown + nguồn + threaded chat), `CLaSoFull`, `CBaziReadingFull`.
+- Targets: `/luan-ai/:context`, `/toi/la-so`, `/toi/luan-bat-tu`.
+- `CAISectioned` remains in source for now but has no route — its logic is folded into `CAITyped`. Delete after confirming no regressions.
 - Bát tự route paywalled — non-yearly subs see `CBaziLocked` (33) → `/luan/mua/xac-nhan` (35) → `/luan/mua/thanh-cong` (36).
 
+---
+
+#### Screen 15 spec — `CAITyped` (Luận giải · ngày `:ngay`)
+
+The single screen for every LLM interaction about a day. **Threaded conversation**, not single-shot — Q&A pairs append below previous turns.
+
+**Anatomy** (top → bottom, single scroll region between BackBar and Input):
+
+```
+StatusBar
+BackBar "Luận giải · ngày DD.MM"  ·  right kicker "AI · có nguồn"
+┌─ scroll region ─────────────────────────────────┐
+│ [Anchor Q]   pinned · gold-deep left-border     │  ← from CHomePage tap or auto-injected
+│ [Anchor A]   avatar + typed reveal (cursor)     │
+│ ───────────                                     │
+│ [Sectioned breakdown · 4 yếu tố]                │  ← anchor turn ONLY
+│   per row: Mono(title) · score chip (+N)        │
+│            display(verdict) · serif(body) · [n] │
+│ [Tổng điểm 76/100]   2px black top border       │
+│ [Nguồn đối chiếu]    [1]–[4] expanded list      │
+│ ───────────                                     │
+│ [Q2]  user-asked follow-up                      │  ← repeats per turn
+│ [A2]  voice-only, ~2–3 sentences + [n]          │
+│ ───────────                                     │
+│ [Q3 / A3 …]                                     │
+│ ───────────                                     │
+│ [Hỏi tiếp gợi ý] · remaining chips only         │
+└─────────────────────────────────────────────────┘
+[Input pill + send] · placeholder "Hỏi tiếp về ngày DD.MM…"
+[scope hint italic]    [quota mono "còn N/10 câu hôm nay"]
+HomeIndicator
+```
+
+**Anchor turn** (first turn on the screen, always):
+- Question comes from the calling context — `CHomePage` tap on "Hỏi tiếp ›" sends "Tại sao hôm nay được {score} điểm với mệnh của tôi?"; `CDayDetail` sends the same with the day's score.
+- Answer is typed with `setTimeout` at 18–22 ms/char (one char per tick). Cursor span blinks via `b-cursor-blink 1s steps(2) infinite`; hides on completion.
+- After typing completes (`n >= fullText.length`), the **sectioned breakdown** fades in: `@keyframes b-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }`, 320 ms ease-out.
+- Sectioned breakdown is **deterministic** (from the calendar engine, not the LLM) — it always shows the same 4 yếu tố for that day. The LLM is only responsible for the voice answer + follow-ups.
+- Sectioned breakdown shows **only on the anchor turn**. Follow-ups never re-render it.
+
+**Follow-up turns** (Q2, Q3, …):
+- Voice-only typed answer, 2–3 sentences, ~120–180 chars.
+- Must include at least one `[1]–[4]` citation linking back to the anchor's sources.
+- No sectioned breakdown, no separate Total/Sources block.
+- Appended below previous turns separated by a `1px solid ${CT.hairline}` top border.
+- Auto-scroll the scroll region to the new Q the moment it's submitted (before the typed answer starts).
+
+**Suggested chips** (below the latest turn):
+- Three seeded questions at anchor time: `["Giờ nào trong ngày tốt nhất?", "Hôm nay có nên ký hợp đồng không?", "So sánh với ngày mai"]`.
+- Filter out any chip whose text has been asked (case-insensitive substring match against thread Q's).
+- Hide the whole section when zero chips remain.
+- Tapping a chip = same as typing it + send: appends a new follow-up turn, decrements quota.
+
+**Input pill** (always pinned at bottom, never scrolls away):
+- Placeholder includes the date — `"Hỏi tiếp về ngày DD.MM…"` — to reinforce scope.
+- Below the pill (in the same border-top region), two lines side-by-side:
+  - **Left, italic muted serif 10.5px:** `"Chỉ trả lời về ngày này và lá số của bạn"`
+  - **Right, mono kicker 9px tabular-nums:** `"còn {10 - used}/10 câu hôm nay"` — the digit is `--gold-deep` weight 700.
+- Enter or send button submits.
+- When `used >= 10`: pill goes `pointer-events: none`, input greys to `CT.muted`, send button hides, scope hint replaces both lines with single centered: `"Hết câu hôm nay · quay lại sáng mai"`.
+
+**States:**
+
+| State | Trigger | UI |
+|---|---|---|
+| Anchor loading | Page mount before stream starts | Skeleton: avatar + 3 grey lines (`background: rgba(154,124,34,0.06)`); kicker `"NLTT đang luận…"` |
+| Anchor streaming | First token arrived | Typed reveal with cursor; kicker stays `"NLTT đang luận…"` |
+| Anchor done | `done === true` | Cursor hides; kicker → `"NLTT luận"`; sectioned breakdown fades in |
+| Follow-up loading | User submitted, no token yet | Q rendered immediately; A row shows avatar + cursor only |
+| Follow-up streaming | First token | Typed reveal |
+| Quota exhausted | `used >= 10` after a turn | Input disabled; quota chip → "Hết câu hôm nay…" |
+| Sub expired | `SUB_EXPIRED` from Edge | Replace whole screen body with `CSubExpired` (38) |
+| LLM error | Edge 5xx or timeout > 15s | Inline error card under the failed turn: `"Không kết nối được. Thử lại ›"` — retry stays in-place, doesn't decrement quota |
+| Off-topic refusal | Model returns `{refused: true}` | Render answer as muted serif "Câu này ngoài phạm vi ngày {DD.MM}. Bạn có thể: …" with 2 redirect chips. **Does NOT count against quota.** |
+
+**Backend contract — `generate-reading` Edge:**
+
+Request:
+```json
+{
+  "context": "day-2026-05-26",
+  "mode": "anchor" | "follow-up",
+  "question": "Tại sao hôm nay…",
+  "thread_id": "uuid",        // null on anchor; reused on follow-ups
+  "thread_history": [          // sent only on follow-up; max last 4 turns
+    {"role": "user", "content": "…"},
+    {"role": "assistant", "content": "…"}
+  ]
+}
+```
+
+Response (SSE stream):
+```
+event: token   data: {"text": "Hôm"}
+event: token   data: {"text": " nay"}
+…
+event: done    data: {"thread_id": "uuid", "tokens_used": 142, "quota_remaining": 7, "refused": false}
+```
+
+Error envelope (non-stream):
+```json
+{ "error": { "code": "SUB_EXPIRED" | "QUOTA_EXCEEDED" | "OFF_TOPIC" | "RATE_LIMITED" | "INTERNAL", "message": "…" } }
+```
+
+**Chat policy — enforced by Edge, mirrored in UI:**
+
+| Constraint | Server enforcement | UI affordance |
+|---|---|---|
+| **Scope-locked** | System prompt injects `{day, la_so, 4_sources}` and instructs refusal on off-topic. Post-process classifier flags `refused: true` if model strays. | Placeholder `"Hỏi tiếp về ngày DD.MM…"`; italic hint `"Chỉ trả lời về ngày này và lá số của bạn"` |
+| **Rate-limited** | `profiles.daily_chat_used_count` + `daily_chat_reset_at`. Atomic increment per non-refused turn. Reset 0h Asia/Ho_Chi_Minh by cron. Returns `QUOTA_EXCEEDED` past 10. | Quota chip `"còn N/10"`; disabled state at 0 |
+| **Length-bounded** | `max_tokens: 200` on the LLM call. | If response ends mid-sentence with "…", show inline "Tóm tắt thêm" button → resubmits with `mode: 'continue'` (does NOT count against quota) |
+| **Citation-only** | Post-process regex: every claim sentence must contain `[1]`–`[4]` or be a connective. Strip uncited claims before returning. | Citations rendered as `--gold-deep` mono `[n]` inline, tappable → scroll to that source row |
+| **Off-topic** | Classifier flags + refusal template. **Does not decrement quota.** | Answer renders as muted "Câu này ngoài phạm vi…" with redirect chips ("Tra cứu ngày", "Hỏi về lá số") |
+| **Tap-first** | n/a — UI shape. | Suggested chips are the primary path; input is for users who already know what to ask |
+
+**Animation timing constants:**
+- Typed char interval: `18 ms` (anchor) — feels alive but readable. `22 ms` for follow-ups (calmer).
+- Sectioned reveal: `b-fade-in 320 ms ease-out` after typing completes.
+- New follow-up auto-scroll: `behavior: 'smooth'` to the Q bubble's `offsetTop - 12 px`.
+- Cursor blink: `b-cursor-blink 1s steps(2) infinite`.
+
+**A11y:**
+- The streaming `<p>` uses `aria-live="polite"` so screen readers announce the final answer (not every keystroke).
+- Citations are real `<button>`s with `aria-label="Xem nguồn 1"`.
+- Input has `aria-describedby` pointing to the scope hint + quota chip.
+- Disabled input has `aria-disabled="true"` + the "Hết câu hôm nay" line gets `role="status"`.
+
+**FE state shape (per route render):**
+```ts
+type Turn = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  citations?: number[];      // [1,4]
+  refused?: boolean;
+  status: 'streaming' | 'done' | 'error';
+};
+
+type ChatState = {
+  threadId: string | null;
+  turns: Turn[];             // turns[0] = anchor Q, turns[1] = anchor A, …
+  sectionedBreakdown: SectionedData;  // computed once for the day; from bat-tu day-detail op
+  sources: [string, string][];
+  quotaRemaining: number;    // 0–10
+  suggestedChips: string[];
+};
+```
+
 ### Phase 9 — Tools (½ day)
-- Source: `c-screens-g.jsx` → `CChuyenLich`.
+- Source: `c-screens-f.jsx` → `CChuyenLich`.
 - Target: `/tien-ich/chuyen-lich`. Reached only from Tab 3 → Tiện ích.
 - **Phong thuỷ** (`CPhongThuy`) and **Tiểu Vận** (`CTieuVan`) are written but **not routed in C**. They're held in reserve — only ship when content is ready. Do not surface in nav.
 
 ### Phase 10 — Edge states + offline (½ day)
-- Source: `c-screens-i.jsx` → `CSubExpired`, `CConfirmDialog`, `COfflineHome`, `CNotifPerm`, `CPayFailure`.
+- Source: `c-screens-h.jsx` → `CSubExpired`, `CConfirmDialog`, `COfflineHome`, `CNotifPerm`, `CPayFailure`.
 - Wire each per §3.3.
 - Offline: top banner on every read route; Tab 1 specifically renders `COfflineHome` against cached lịch.
 
@@ -364,15 +522,16 @@ Ship in this order. Each phase is independently deployable.
 
 ## 6. Where forest-dark stays
 
-Forest is the *ceremonial* surface in C. Don't flip these to paper:
+Forest is the *ceremonial* surface in C — reserved cho những **moment đặc biệt**, không phải daily-use. Mỗi sáng mở app thấy forest = ceremonial mất ý nghĩa. Daily-use surfaces stay paper.
 
-- App splash (01)
+**Forest chỉ ở 5 chỗ:**
+- App splash (01) — first touch
 - Auth band (03–08) — chooser, signup, email login, forgot-password, OAuth callback
-- First-run trio (09 giờ sinh, 10 dựng lịch, 11 lịch đã mở)
-- Hôm nay (12) — **forest BG with a paper lịch-tờ inset**; this is the signature
-- Offline home (40) — same forest treatment with offline banner
+- First-run trio (09 giờ sinh, 10 dựng lịch, 11 lịch đã mở) — onboarding nghi thức
+- Offline home (40) — sự kiện đặc biệt khi mất kết nối
+- Logo lockup ở dark surfaces (e.g., footer của landing)
 
-Paper-default everywhere else (month grid, day detail, search, hợp tuổi, AI screens, lá số, Bát tự, tôi, settings, pricing, payment).
+**Paper-default everywhere else**, bao gồm **Hôm nay (C12)** — đây là daily-use surface, phải khớp với C13 (Tháng) và C14 (Ngày khác) trong cùng Tab 1 để tạo dải đọc liền mạch. "Lịch tờ giấy" là metaphor — paper IS the brand, không phải forest with paper inset.
 
 ---
 

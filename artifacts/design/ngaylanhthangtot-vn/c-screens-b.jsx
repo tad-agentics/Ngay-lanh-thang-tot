@@ -94,10 +94,9 @@ function CSearchResult() {
   return (
     <div style={{ width: 390, height: 800, background: CT.paper, position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <StatusBar />
-      <CTopStrip />
-      <CSegmented options={['Ngày lành', 'Hợp tuổi']} active={0} />
+      <CBackBar title="Tra cứu · kết quả" />
 
-      <div style={{ flex: 1, padding: '20px 24px 100px', overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: '12px 24px 24px', overflow: 'auto' }}>
         {/* Query recap — single line */}
         <div style={{ fontFamily: 'var(--serif)', fontSize: 12.5, color: CT.muted, lineHeight: 1.5 }}>
           Cho việc <strong style={{ color: CT.ink, fontWeight: 600 }}>khai trương cửa hàng</strong> · từ 26.05 đến 26.06 · <span style={{ color: CT.goldDeep, cursor: 'pointer' }}>sửa</span>
@@ -128,7 +127,6 @@ function CSearchResult() {
         </div>
       </div>
 
-      <CBottomNav active={1} />
       <HomeIndicator />
     </div>
   );
