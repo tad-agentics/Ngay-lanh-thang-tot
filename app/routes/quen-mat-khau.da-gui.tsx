@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { btnOutlineCream, C, CForestShell } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
+import { passwordResetRedirectUrl } from "~/lib/auth-password-reset";
 import { supabase } from "~/lib/supabase";
 
 const RESEND_COOLDOWN_SEC = 30;
@@ -30,7 +31,7 @@ export default function QuenMatKhauDaGuiRoute() {
     if (!email || cooldown > 0 || resending) return;
     setResending(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/dat-lai-mat-khau/recovery`,
+      redirectTo: passwordResetRedirectUrl(),
     });
     setResending(false);
     if (error) {

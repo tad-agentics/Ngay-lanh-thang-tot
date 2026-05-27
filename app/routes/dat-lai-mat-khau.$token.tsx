@@ -1,19 +1,39 @@
-import { useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { Logo } from "~/components/brand";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
+import {
+  btnOutlineCream,
+  btnPrimaryGold,
+  C,
+  CForestShell,
+  inputLabel,
+  inputUnderline,
+} from "~/components/auth/c-auth-ui";
+import { Mono } from "~/components/brand";
 import { supabase } from "~/lib/supabase";
 
 export default function DatLaiMatKhauRoute() {
-  const { token } = useParams();
   const navigate = useNavigate();
+  const [checking, setChecking] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function submit(e: React.FormEvent) {
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (cancelled) return;
+      setHasSession(!error && !!data.session);
+      setChecking(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function submit(e: FormEvent) {
     e.preventDefault();
     if (!password || password.length < 8) {
       toast.error("Mật khẩu cần ít nhất 8 ký tự.");
@@ -27,56 +47,102 @@ export default function DatLaiMatKhauRoute() {
       return;
     }
     toast.success("Đã đặt mật khẩu mới.");
-    navigate("/lich", { replace: true });
+    navigate("/dang-nhap/email", { replace: true });
   }
 
   return (
-    <main
-      className="flex min-h-[100svh] flex-col px-6 py-10"
-      style={{
-        background:
-          "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #0e1c14 100%)",
-        color: "var(--cream)",
-      }}
-    >
-      <Logo dark />
-      <h1 className="mt-8 font-[family-name:var(--font-display)] text-xl font-extrabold uppercase">
-        Đặt lại mật khẩu
-      </h1>
-      <form className="mt-6 flex w-full max-w-sm flex-col gap-4" onSubmit={(e) => void submit(e)}>
-        <Input
-          type="password"
-          autoComplete="new-password"
-          placeholder="Mật khẩu mới"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="min-h-[44px] bg-[rgba(0,0,0,0.2)] text-cream"
-        />
-        <Button
-          type="submit"
-          disabled={busy}
-          className="min-h-[44px] border-0 uppercase tracking-widest"
+    <CForestShell>
+      <div
+        style={{
+          flex: 1,
+          padding: "48px 28px 24px",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+          Đặt lại mật khẩu
+        </Mono>
+        <h1
           style={{
-            background: "var(--cream)",
-            color: "var(--ink)",
-            fontFamily: "var(--font-display)",
-            fontWeight: 700,
+            fontFamily: "var(--display)",
+            fontWeight: 800,
+            fontSize: 32,
+            color: C.cream,
+            lineHeight: 1.05,
+            textTransform: "uppercase",
+            letterSpacing: "-0.015em",
+            margin: "12px 0 6px",
           }}
         >
-          {busy ? "Đang lưu…" : "Lưu mật khẩu"}
-        </Button>
-      </form>
-      {!token ? (
-        <p className="mt-4 font-serif text-xs text-[rgba(237,231,211,0.55)]">
-          Mở liên kết từ email để hoàn tất.
-        </p>
-      ) : null}
-      <Link
-        to="/dang-nhap"
-        className="mt-6 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wide text-[var(--gold)]"
-      >
-        Về đăng nhập
-      </Link>
-    </main>
+          Mật khẩu mới
+        </h1>
+
+        {checking ? (
+          <p
+            className="mt-6 font-serif text-sm"
+            style={{ color: "rgba(237,231,211,0.65)", lineHeight: 1.55 }}
+          >
+            Đang mở liên kết từ email…
+          </p>
+        ) : !hasSession ? (
+          <>
+            <p
+              className="mt-6 font-serif text-sm"
+              style={{ color: "rgba(237,231,211,0.65)", lineHeight: 1.55 }}
+            >
+              Liên kết không hợp lệ hoặc đã hết hạn. Gửi lại từ màn quên mật
+              khẩu.
+            </p>
+            <Link
+              to="/quen-mat-khau"
+              style={{
+                ...btnOutlineCream,
+                marginTop: 28,
+                padding: 14,
+                textAlign: "center",
+                textDecoration: "none",
+                boxSizing: "border-box",
+              }}
+            >
+              Gửi link mới
+            </Link>
+          </>
+        ) : (
+          <form
+            onSubmit={(e) => void submit(e)}
+            className="mt-6 flex flex-1 flex-col"
+          >
+            <div>
+              <div style={inputLabel}>Mật khẩu mới</div>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                style={inputUnderline(true)}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={busy}
+              style={{ ...btnPrimaryGold, marginTop: 32 }}
+            >
+              {busy ? "Đang lưu…" : "Lưu mật khẩu"}
+            </button>
+          </form>
+        )}
+
+        <Link
+          to="/dang-nhap/email"
+          className="mt-auto block pt-6 text-center font-serif text-xs no-underline"
+          style={{ color: C.gold }}
+        >
+          Về đăng nhập
+        </Link>
+      </div>
+    </CForestShell>
   );
 }

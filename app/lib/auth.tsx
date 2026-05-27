@@ -9,6 +9,11 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 
 import { clearPendingReferralCode } from "~/lib/pending-referral";
+import {
+  markManualSignOut,
+  markSessionExpired,
+  resetManualSignOutFlag,
+} from "~/lib/auth-session-redirect";
 import { supabase } from "~/lib/supabase";
 
 export type AuthContextValue = {
@@ -29,6 +34,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .getSession()
       .then(({ data, error }) => {
         if (error) {
+          if (/jwt|expired|invalid.*token/i.test(error.message)) {
+            markSessionExpired();
+          }
           setSession(null);
         } else {
           setSession(data.session ?? null);
@@ -41,7 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
     const { data: subListener } = supabase.auth.onAuthStateChange(
-      (_event, next) => {
+      (event, next) => {
+        if (event === "SIGNED_OUT" && !next) {
+          markSessionExpired();
+          resetManualSignOutFlag();
+        }
         setSession(next);
       },
     );
@@ -50,8 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    markManualSignOut();
     clearPendingReferralCode();
     await supabase.auth.signOut();
+    resetManualSignOutFlag();
   }, []);
 
   const value = useMemo<AuthContextValue>(

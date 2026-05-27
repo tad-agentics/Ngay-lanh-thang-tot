@@ -10,6 +10,7 @@ import {
   inputUnderline,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
+import { passwordResetRedirectUrl } from "~/lib/auth-password-reset";
 import { supabase } from "~/lib/supabase";
 
 export default function QuenMatKhau() {
@@ -22,7 +23,7 @@ export default function QuenMatKhau() {
     setBusy(true);
     const trimmed = email.trim();
     const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
-      redirectTo: `${window.location.origin}/dat-lai-mat-khau/recovery`,
+      redirectTo: passwordResetRedirectUrl(),
     });
     setBusy(false);
     if (error) {

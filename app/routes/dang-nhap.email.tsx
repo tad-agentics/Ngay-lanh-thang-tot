@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -12,6 +12,7 @@ import {
   inputUnderline,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
+import { isInvalidLoginCredentials } from "~/lib/auth-login-error";
 import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
@@ -47,6 +48,13 @@ export default function DangNhapEmail() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get("reason") === "expired") {
+      toast.message("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
+  }, [searchParams]);
 
   async function signInGoogle() {
     stashPendingReferralCode(referralFromUrl);
@@ -63,6 +71,7 @@ export default function DangNhapEmail() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    setPasswordError(null);
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
@@ -70,7 +79,11 @@ export default function DangNhapEmail() {
     });
     if (error) {
       setBusy(false);
-      toast.error(error.message);
+      if (isInvalidLoginCredentials(error.message)) {
+        setPasswordError("Sai mật khẩu");
+      } else {
+        toast.error(error.message);
+      }
       return;
     }
     stashPendingReferralCode(referralFromUrl);
@@ -182,10 +195,37 @@ export default function DangNhapEmail() {
               type="password"
               autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (passwordError) setPasswordError(null);
+              }}
               required
-              style={inputUnderline()}
+              style={inputUnderline(false, !!passwordError)}
             />
+            {passwordError ? (
+              <div style={{ marginTop: 8 }}>
+                <Mono
+                  style={{
+                    color: C.red,
+                    fontSize: 10,
+                    letterSpacing: "0.14em",
+                  }}
+                >
+                  {passwordError}
+                </Mono>
+                <p
+                  style={{
+                    marginTop: 4,
+                    fontFamily: "var(--serif)",
+                    fontSize: 12,
+                    color: "rgba(237,231,211,0.65)",
+                    lineHeight: 1.45,
+                  }}
+                >
+                  Kiểm tra lại mật khẩu hoặc dùng Quên? để đặt lại.
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
 

@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 /** Direction C forest auth shell + form primitives (matches c-screens-c/d). */
 
 export const C = {
-  forest: "var(--forest-deep, #0e1c14)",
+  forest: "var(--forest, #1d3129)",
   cream: "var(--cream, #ede7d3)",
   gold: "var(--gold, #c5a55a)",
   goldDeep: "var(--gold-deep, #9a7c22)",
@@ -11,7 +11,7 @@ export const C = {
   ink2: "var(--ink-2, #3d3828)",
   muted: "var(--muted, #7a7050)",
   paperWarm: "var(--paper-warm, #ebe4d2)",
-  red: "var(--red, #8b1a1a)",
+  red: "var(--red, #a3201f)",
   hairline: "var(--hairline, rgba(24,21,14,0.12))",
 } as const;
 
@@ -78,14 +78,19 @@ export const inputLabel: CSSProperties = {
   color: "rgba(237,231,211,0.55)",
 };
 
-export function inputUnderline(active = false): CSSProperties {
+export function inputUnderline(active = false, error = false): CSSProperties {
+  const borderColor = error
+    ? C.red
+    : active
+      ? C.gold
+      : "rgba(237,231,211,0.3)";
   return {
     width: "100%",
     marginTop: 4,
     padding: "6px 0",
     background: "transparent",
     border: "none",
-    borderBottom: `1px solid ${active ? C.gold : "rgba(237,231,211,0.3)"}`,
+    borderBottom: `1px solid ${borderColor}`,
     outline: "none",
     color: C.cream,
     fontFamily: "var(--display-2)",

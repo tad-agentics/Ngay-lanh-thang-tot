@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -7,7 +7,6 @@ import {
   btnPrimaryGold,
   C,
   CForestShell,
-  forestGradientOverlay,
   GoogleIcon,
 } from "~/components/auth/c-auth-ui";
 import { Logo } from "~/components/brand";
@@ -31,6 +30,12 @@ export default function DangNhap() {
     : "/dang-nhap/email";
 
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("reason") === "expired") {
+      toast.message("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+    }
+  }, [searchParams]);
 
   async function signInGoogle() {
     stashPendingReferralCode(referralFromUrl);
@@ -113,7 +118,6 @@ export default function DangNhap() {
             to={signUpHref}
             style={{
               ...btnPrimaryGold,
-              padding: 14,
               textAlign: "center",
               textDecoration: "none",
               display: "block",

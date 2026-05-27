@@ -45,6 +45,7 @@ export default function DangKy() {
   );
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [lunarNote, setLunarNote] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -198,18 +199,64 @@ export default function DangKy() {
             />
           </div>
           <div>
-            <div style={inputLabel}>Ngày sinh dương lịch</div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+              }}
+            >
+              <div style={inputLabel}>Ngày sinh dương lịch</div>
+              <span
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontSize: 12,
+                  color: "rgba(237,231,211,0.5)",
+                }}
+              >
+                hoặc{" "}
+                <button
+                  type="button"
+                  onClick={() => setLunarNote(true)}
+                  style={{
+                    color: C.gold,
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    font: "inherit",
+                    cursor: "pointer",
+                  }}
+                >
+                  chọn âm lịch
+                </button>
+              </span>
+            </div>
             <input
               type="text"
               inputMode="numeric"
               placeholder="DD/MM/YYYY"
               value={ngaySinh}
-              onChange={(e) =>
-                setNgaySinh(formatDdMmYyyyWithAutoSlash(e.target.value))
-              }
+              onChange={(e) => {
+                setNgaySinh(formatDdMmYyyyWithAutoSlash(e.target.value));
+                if (lunarNote) setLunarNote(false);
+              }}
               required
               style={inputUnderline()}
             />
+            {lunarNote ? (
+              <p
+                style={{
+                  marginTop: 6,
+                  fontFamily: "var(--serif)",
+                  fontSize: 11,
+                  color: "rgba(237,231,211,0.55)",
+                  lineHeight: 1.45,
+                }}
+              >
+                Chọn ngày âm lịch đang được bổ sung — vui lòng nhập dương
+                lịch để tiếp tục lập lá số.
+              </p>
+            ) : null}
           </div>
           <div>
             <div style={inputLabel}>Mật khẩu</div>

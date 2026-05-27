@@ -9,6 +9,7 @@ import { Button } from "~/components/ui/button";
 import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
+import { consumeAuthRedirectReason } from "~/lib/auth-session-redirect";
 import {
   isOnboardingExemptPath,
   isSubscriptionExemptPath,
@@ -40,10 +41,17 @@ export default function AuthenticatedLayout() {
   }
 
   if (!user) {
-    const returnTo = encodeURIComponent(
-      `${location.pathname}${location.search}`,
-    );
-    return <Navigate to={`/dang-nhap?returnTo=${returnTo}`} replace />;
+    const returnTo = `${location.pathname}${location.search}`;
+    const params = new URLSearchParams();
+    const reason = consumeAuthRedirectReason();
+    if (reason === "expired") {
+      params.set("reason", "expired");
+    }
+    if (returnTo && returnTo !== "/") {
+      params.set("returnTo", returnTo);
+    }
+    const qs = params.toString();
+    return <Navigate to={qs ? `/dang-nhap?${qs}` : "/dang-nhap"} replace />;
   }
 
   return (
