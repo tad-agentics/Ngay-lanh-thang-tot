@@ -6,8 +6,8 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 
 import { Logo, Mono } from "~/components/brand";
-import { C } from "~/components/auth/c-auth-ui";
 import { useAuth } from "~/lib/auth";
+import { CT } from "~/lib/c-tokens";
 import { supabase } from "~/lib/supabase";
 
 export default function SplashRoute() {
@@ -45,7 +45,7 @@ export default function SplashRoute() {
   return (
     <main
       className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden"
-      style={{ background: C.forest, color: C.cream }}
+      style={{ background: CT.forest, color: CT.cream }}
     >
       <div
         style={{
@@ -62,11 +62,11 @@ export default function SplashRoute() {
       <div className="relative flex flex-1 flex-col items-center justify-center gap-8 px-6">
         <Logo dark size={52} showUrl />
         <div className="max-w-[280px] text-center">
-          <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+          <Mono style={{ color: CT.gold, fontSize: 10, letterSpacing: "0.22em" }}>
             Đang mở lịch của bạn
           </Mono>
           <p
-            className="mt-3 font-serif text-sm italic leading-relaxed"
+            className="mt-3 font-serif text-sm italic leading-[1.5]"
             style={{ color: "rgba(237,231,211,0.65)" }}
           >
             "Mỗi ngày một trang — của riêng bạn."
@@ -78,7 +78,7 @@ export default function SplashRoute() {
         >
           <div
             className="absolute bottom-0 left-0 top-0 w-[40%]"
-            style={{ background: C.gold }}
+            style={{ background: CT.gold }}
           />
         </div>
       </div>
