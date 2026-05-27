@@ -23,7 +23,9 @@ AUTH
 ├─ /dang-nhap/email             Email + password sign-in
 ├─ /dang-ky                     Sign-up (email + password, can prefill from landing form)
 ├─ /quen-mat-khau               Forgot password (email link)
-└─ /auth/callback               OAuth/magic-link redirect handler
+├─ /quen-mat-khau/da-gui        Reset email sent confirmation
+├─ /dat-lai-mat-khau/recovery   Password reset from email link (Supabase recovery session)
+└─ /auth/callback               OAuth + email-confirm redirect handler
 
 APP (auth-guarded — redirects to /dang-nhap if no session)
 └─ /app                         Layout: <AppShellLayout> ➜ <ProfileProvider> ➜ <AppMobileShell>
@@ -223,12 +225,18 @@ Email + password fields, link back to `/dang-nhap`, link forward to `/quen-mat-k
 
 #### `/quen-mat-khau`
 
-Single email input → `supabase.auth.resetPasswordForEmail()` with redirect to `/auth/callback`.
+Single email input → `supabase.auth.resetPasswordForEmail()` with redirect to `/dat-lai-mat-khau/recovery` (see `app/lib/auth-password-reset.ts`).
+
+#### `/dat-lai-mat-khau/recovery`
+
+- Supabase recovery link opens here; client `getSession()` + `updateUser({ password })`.
+- Invalid/expired link → CTA back to `/quen-mat-khau`.
 
 #### `/auth/callback`
 
-- Handles OAuth + email confirmation + password reset redirects.
-- Listens for `onAuthStateChange`; falls back to `getSession()`. 15-second timeout → bounce back to `/dang-nhap`.
+- Handles Google OAuth + email confirmation redirects (`redirectTo` / `emailRedirectTo` → `/auth/callback`).
+- Branches on `profiles.onboarding_completed_at` → `/gio-sinh` or `/lich`.
+- OAuth errors show inline error card; session timeout shows error card (not silent redirect).
 
 ---
 

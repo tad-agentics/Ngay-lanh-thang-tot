@@ -58,7 +58,10 @@ Work groups in order. Mark each item ✅ (pass), ❌ (fail — issue filed), or 
 - **FE login:** `dang-nhap.email.tsx` → `supabase.auth.signInWithPassword`
 - **FE signup:** `dang-ky.tsx` → `supabase.auth.signUp`
 - **FE forgot:** `quen-mat-khau.tsx` → `supabase.auth.resetPasswordForEmail`
-- **Check:** Confirm `redirect_to` in `resetPasswordForEmail` matches `SITE_URL` configured in Supabase Auth settings.
+- **Check:** Confirm `redirect_to` in `resetPasswordForEmail` matches Supabase Auth **Redirect URLs** allow list (exact paths):
+  - `{origin}/auth/callback` — OAuth + email confirm
+  - `{origin}/dat-lai-mat-khau/recovery` — password reset (`app/lib/auth-password-reset.ts`)
+- **Prod ops (Dashboard only — MCP cannot set):** [URL Configuration](https://supabase.com/dashboard/project/hptovpbiwvtngorhdhhm/auth/url-configuration) — add `https://ngaylanhthangtot.vn/auth/callback` and `https://ngaylanhthangtot.vn/dat-lai-mat-khau/recovery`; local: `supabase/config.toml` `[auth]` block.
 - **Acceptance:** Login, signup, and password-reset emails arrive; sessions persist on reload.
 
 ### 2.3 Profile auto-creation
