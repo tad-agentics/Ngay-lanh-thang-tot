@@ -246,7 +246,7 @@ For each screen: **Component** (canvas) → **Route** → **FE data** → **BE w
 | | |
 |---|---|
 | **FE** | Birth date + 12-canh giờ selector |
-| **BE** | PATCH `profiles` birth fields (not yet locked) |
+| **BE** | PATCH `profiles.gio_sinh` (ngày sinh đã ghi ở `/dang-ky`); preview trụ giờ qua `bat-tu` op `tu-tru-preview` |
 
 #### 10 · CBuildingCalendar → `/dang-dung-lich`
 
@@ -586,7 +586,7 @@ Sequential: Backend → Frontend → QA per wave. **Commerce (W8) after Daily + 
 | ⚠️ | **G2** | Sub expiry reminders + grace period | PM | **Locked** — **hard cutoff**; `CSubExpired` ngay khi `subscription_expires_at < now()`; push reminder T-7d/T-1d (opt-in only) |
 | ⚠️ | **G3** | Webhook idempotency pseudocode | BE | **Locked** — see §G3 below |
 | ⚠️ | **G4** | Legacy user migration (credits) | PM | **Locked** — **hide-honor** 90 ngày: UI zero lượng; bat-tu vẫn deduct credits nếu không có sub (transition only) |
-| ⚠️ | **G5** | Anonymous deep links + `return_to` | FE | **Locked** — see §G5 below |
+| ✅ | **G5** | Anonymous deep links + `return_to` | FE | `sanitizeReturnTo` + session stash; consume sau auth/onboarding |
 | ⚠️ | **G6** | Share / phiếu routes | FE + BE | **Locked** — full share Wave 10; `/share/:token` canonical |
 | ⚠️ | **G7** | Daily notification cron | BE | **Locked** — Wave 10 required; 06:00 local, quiet hours |
 | ⚠️ | **G8** | Wave reorder | PM | **Locked (v2)** — W4→W5→W6→W7→**W8 Commerce**→W9 (after Picks/Tools) |

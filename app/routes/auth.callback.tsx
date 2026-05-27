@@ -8,6 +8,7 @@ import {
 } from "~/components/auth/c-auth-ui";
 import { LogoMark, Mono } from "~/components/brand";
 import { readOauthCallbackError } from "~/lib/auth-login-error";
+import { destinationAfterAuth } from "~/lib/pending-return-to";
 import { supabase } from "~/lib/supabase";
 
 const SESSION_WAIT_MS = 15_000;
@@ -101,11 +102,7 @@ export default function AuthCallback() {
         .select("onboarding_completed_at")
         .eq("id", uid)
         .maybeSingle();
-      if (prof?.onboarding_completed_at) {
-        goAuthed("/lich");
-      } else {
-        goAuthed("/gio-sinh");
-      }
+      goAuthed(destinationAfterAuth(prof?.onboarding_completed_at != null));
     };
 
     const {

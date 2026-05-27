@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -21,6 +21,10 @@ import {
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
 import {
+  returnToFromSearchParams,
+  stashPendingReturnTo,
+} from "~/lib/pending-return-to";
+import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
@@ -37,6 +41,14 @@ export default function DangKy() {
     () => referralParamFromSearchParams(searchParams),
     [searchParams],
   );
+  const returnTo = useMemo(
+    () => returnToFromSearchParams(searchParams),
+    [searchParams],
+  );
+
+  useEffect(() => {
+    if (returnTo) stashPendingReturnTo(returnTo);
+  }, [returnTo]);
 
   const [fullName, setFullName] = useState(prefill.displayName ?? "");
   const [email, setEmail] = useState("");

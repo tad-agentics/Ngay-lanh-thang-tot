@@ -14,7 +14,9 @@ import {
   isOnboardingExemptPath,
   isSubscriptionExemptPath,
   legacyAppRedirect,
+  sanitizeReturnTo,
 } from "~/lib/nav-config";
+import { stashPendingReturnTo } from "~/lib/pending-return-to";
 import { ProfileProvider } from "~/lib/profile-context";
 import {
   setSubExpiredBlocked,
@@ -41,14 +43,15 @@ export default function AuthenticatedLayout() {
   }
 
   if (!user) {
-    const returnTo = `${location.pathname}${location.search}`;
     const params = new URLSearchParams();
     const reason = consumeAuthRedirectReason();
     if (reason === "expired") {
       params.set("reason", "expired");
     }
-    if (returnTo && returnTo !== "/") {
-      params.set("returnTo", returnTo);
+    const returnTo = sanitizeReturnTo(location.pathname);
+    if (returnTo) {
+      stashPendingReturnTo(returnTo);
+      params.set("return_to", returnTo);
     }
     const qs = params.toString();
     return <Navigate to={qs ? `/dang-nhap?${qs}` : "/dang-nhap"} replace />;

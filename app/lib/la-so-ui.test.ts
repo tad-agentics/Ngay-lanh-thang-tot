@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { LaSoJson } from "./api-types";
 import {
+  extractHourPillarPreview,
   extractLaSoChiTietEnrichment,
   laSoJsonToChiTiet,
   laSoJsonToRevealProps,
@@ -306,5 +307,24 @@ describe("laSoJsonToChiTiet", () => {
     const d = laSoJsonToChiTiet(merged);
     expect(d.nguHanh.kim).toBeCloseTo(25, 5);
     expect(d.nguHanh.moc).toBeCloseTo(75, 5);
+  });
+});
+
+describe("extractHourPillarPreview", () => {
+  it("reads hour pillar from tu-tru response", () => {
+    expect(
+      extractHourPillarPreview({
+        pillars: {
+          hour: {
+            can: { name: "Ất", hanh: "Mộc" },
+            chi: { name: "Mão" },
+          },
+        },
+      }),
+    ).toEqual({ label: "Ất Mão", hanh: "Mộc" });
+  });
+
+  it("returns null when hour pillar missing", () => {
+    expect(extractHourPillarPreview({ pillars: {} })).toBeNull();
   });
 });

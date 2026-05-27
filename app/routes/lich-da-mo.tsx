@@ -1,34 +1,105 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { btnPrimaryGold, C, CForestShell } from "~/components/auth/c-auth-ui";
 import { Mono } from "~/components/brand";
+import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import { parseNgayHomNayForHome } from "~/lib/home-bat-tu";
+import {
+  mastheadFromIso,
+  ngayHomNayToLichCard,
+  weekdayFromIso,
+} from "~/lib/lich-format";
+import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { destinationAfterOnboarding } from "~/lib/pending-return-to";
 import { supabase } from "~/lib/supabase";
+import { todayIsoInVn } from "~/lib/today-reading-cache";
 
-const VI_WEEKDAY = [
-  "Chủ Nhật",
-  "Thứ Hai",
-  "Thứ Ba",
-  "Thứ Tư",
-  "Thứ Năm",
-  "Thứ Sáu",
-  "Thứ Bảy",
-] as const;
+type RevealCard = {
+  masthead: string;
+  dayNumber: string;
+  weekday: string;
+  lunarLabel: string;
+  canChi: string;
+  verdictLabel: string;
+  score: number;
+};
+
+function fallbackCard(iso: string): RevealCard {
+  const d = new Date(`${iso}T12:00:00`);
+  return {
+    masthead: mastheadFromIso(iso),
+    dayNumber: String(d.getDate()),
+    weekday: weekdayFromIso(iso),
+    lunarLabel: "—",
+    canChi: "",
+    verdictLabel: "Ngày khá",
+    score: 68,
+  };
+}
 
 export default function LichDaMoRoute() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const [finishing, setFinishing] = useState(false);
+  const [loadingToday, setLoadingToday] = useState(true);
 
-  const today = useMemo(() => new Date(), []);
-  const dayNum = today.getDate();
-  const weekday = VI_WEEKDAY[today.getDay()]!;
-  const monthYear = today.toLocaleDateString("vi-VN", {
-    month: "long",
-    year: "numeric",
-  });
+  const iso = todayIsoInVn();
+  const menh = profile?.la_so ? laSoJsonToRevealProps(profile.la_so)?.menh : null;
+
+  const [card, setCard] = useState<RevealCard>(() => fallbackCard(iso));
+
+  useEffect(() => {
+    if (profileLoading || !profile) return;
+    const body = profileToBatTuPersonQuery(profile);
+    if (!body.birth_date) {
+      setLoadingToday(false);
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      const res = await invokeBatTu<unknown>({
+        op: "ngay-hom-nay",
+        body: { ...body, date: iso },
+      });
+      if (cancelled) return;
+      if (res.ok) {
+        const parsed = parseNgayHomNayForHome(res.data);
+        if (parsed) {
+          const mapped = ngayHomNayToLichCard(
+            parsed,
+            menh && menh !== "—" ? menh : null,
+            iso,
+          );
+          setCard({
+            masthead: mapped.masthead,
+            dayNumber: mapped.dayNumber,
+            weekday: mapped.weekday,
+            lunarLabel: parsed.lunarLabel,
+            canChi: parsed.canChi,
+            verdictLabel: mapped.verdictLabel,
+            score: mapped.score,
+          });
+        }
+      }
+      setLoadingToday(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, profileLoading, iso, menh]);
+
+  const footerMenh = useMemo(() => {
+    if (menh && menh !== "—") return menh;
+    return "của bạn";
+  }, [menh]);
 
   async function openCalendar() {
     if (!user) return;
@@ -43,7 +114,7 @@ export default function LichDaMoRoute() {
       return;
     }
     window.dispatchEvent(new Event("ngaytot:profile-refresh"));
-    navigate("/lich", { replace: true });
+    navigate(destinationAfterOnboarding(), { replace: true });
   }
 
   return (
@@ -105,6 +176,7 @@ export default function LichDaMoRoute() {
             color: C.ink,
             transform: "rotate(-2deg)",
             boxShadow: "0 18px 36px rgba(0,0,0,0.32)",
+            opacity: loadingToday ? 0.85 : 1,
           }}
         >
           <div
@@ -115,7 +187,7 @@ export default function LichDaMoRoute() {
               color: C.muted,
             }}
           >
-            {monthYear.charAt(0).toUpperCase() + monthYear.slice(1)}
+            {card.masthead}
           </div>
           <div
             style={{
@@ -135,7 +207,7 @@ export default function LichDaMoRoute() {
                 letterSpacing: "-0.045em",
               }}
             >
-              {dayNum}
+              {card.dayNumber}
             </div>
             <div
               style={{
@@ -148,8 +220,26 @@ export default function LichDaMoRoute() {
                 letterSpacing: "-0.01em",
               }}
             >
-              {weekday}
+              {card.weekday}
             </div>
+          </div>
+          <div
+            style={{
+              padding: "0 16px 10px",
+              fontFamily: "var(--serif)",
+              fontSize: 11,
+              color: C.ink2,
+            }}
+          >
+            {card.lunarLabel}
+            {card.canChi && card.canChi !== "—" ? (
+              <>
+                {" · ngày "}
+                <strong style={{ color: C.ink, fontWeight: 600 }}>
+                  {card.canChi}
+                </strong>
+              </>
+            ) : null}
           </div>
           <div
             style={{
@@ -161,7 +251,11 @@ export default function LichDaMoRoute() {
             }}
           >
             <div>
-              <Mono style={{ color: C.goldDeep, fontSize: 8 }}>Cho mệnh bạn</Mono>
+              {menh && menh !== "—" ? (
+                <Mono style={{ color: C.goldDeep, fontSize: 8 }}>
+                  Cho mệnh {menh}
+                </Mono>
+              ) : null}
               <div
                 style={{
                   fontFamily: "var(--display-2)",
@@ -171,7 +265,7 @@ export default function LichDaMoRoute() {
                   textTransform: "uppercase",
                 }}
               >
-                Ngày khá
+                {card.verdictLabel}
               </div>
             </div>
             <span
@@ -184,7 +278,7 @@ export default function LichDaMoRoute() {
                 letterSpacing: "-0.015em",
               }}
             >
-              —
+              {card.score}
             </span>
           </div>
         </div>
@@ -202,7 +296,7 @@ export default function LichDaMoRoute() {
           }}
         >
           Mỗi ngày một trang — đã chấm theo mệnh{" "}
-          <strong style={{ color: C.gold, fontWeight: 600 }}>của bạn</strong>.
+          <strong style={{ color: C.gold, fontWeight: 600 }}>{footerMenh}</strong>.
         </p>
 
         <button

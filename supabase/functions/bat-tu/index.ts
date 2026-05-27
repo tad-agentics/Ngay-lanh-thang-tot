@@ -136,6 +136,7 @@ const VALID_OPS = new Set([
   "day-detail",
   "convert-date",
   "tu-tru",
+  "tu-tru-preview",
   "recompute-la-so",
   "profile",
   "tieu-van",
@@ -486,6 +487,7 @@ function buildUpstream(
       break;
 
     case "tu-tru":
+    case "tu-tru-preview":
     case "recompute-la-so":
       if (!body.birth_date) {
         return {
@@ -665,6 +667,7 @@ function resolveFeatureKey(
     case "la-so":
       return "la_so_diengiai";
     case "tu-tru":
+    case "tu-tru-preview":
     case "recompute-la-so":
       return "tu_tru";
     case "tieu-van":
@@ -838,7 +841,9 @@ async function sha256Hex(text: string): Promise<string> {
 function isUpstreamCacheable(op: string, init: RequestInit): boolean {
   const m = (init.method ?? "GET").toUpperCase();
   if (op === "profile" && m === "POST") return false;
-  if (op === "tu-tru" || op === "recompute-la-so") return false;
+  if (op === "tu-tru" || op === "tu-tru-preview" || op === "recompute-la-so") {
+    return false;
+  }
   return true;
 }
 
@@ -1086,7 +1091,9 @@ Deno.serve(async (req) => {
     op === "phong-thuy" &&
     String(body.detail ?? "").toLowerCase() === "teaser";
   let featureKeyForBilling: string | null = featureKey;
-  if (op === "tu-tru" || op === "recompute-la-so") featureKeyForBilling = null;
+  if (op === "tu-tru" || op === "tu-tru-preview" || op === "recompute-la-so") {
+    featureKeyForBilling = null;
+  }
   if (op === "la-so") featureKeyForBilling = null;
   if (phongThuyTeaser) featureKeyForBilling = null;
   let chargedAmount = 0;

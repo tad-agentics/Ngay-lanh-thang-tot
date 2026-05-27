@@ -11,6 +11,11 @@ import {
 } from "~/components/auth/c-auth-ui";
 import { Logo } from "~/components/brand";
 import {
+  appendReturnToQuery,
+  returnToFromSearchParams,
+  stashPendingReturnTo,
+} from "~/lib/pending-return-to";
+import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
@@ -22,12 +27,22 @@ export default function DangNhap() {
     () => referralParamFromSearchParams(searchParams),
     [searchParams],
   );
-  const signUpHref = referralFromUrl
-    ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
-    : "/dang-ky";
-  const emailHref = referralFromUrl
-    ? `/dang-nhap/email?ref=${encodeURIComponent(referralFromUrl)}`
-    : "/dang-nhap/email";
+  const returnTo = useMemo(
+    () => returnToFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const signUpHref = appendReturnToQuery(
+    referralFromUrl
+      ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
+      : "/dang-ky",
+    returnTo,
+  );
+  const emailHref = appendReturnToQuery(
+    referralFromUrl
+      ? `/dang-nhap/email?ref=${encodeURIComponent(referralFromUrl)}`
+      : "/dang-nhap/email",
+    returnTo,
+  );
 
   const [busy, setBusy] = useState(false);
 
@@ -36,6 +51,10 @@ export default function DangNhap() {
       toast.message("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (returnTo) stashPendingReturnTo(returnTo);
+  }, [returnTo]);
 
   async function signInGoogle() {
     stashPendingReferralCode(referralFromUrl);

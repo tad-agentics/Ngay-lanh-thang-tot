@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   getActiveTab,
   isSubscriptionExemptPath,
+  sanitizeReturnTo,
   shouldShowNav,
 } from "~/lib/nav-config";
 
@@ -28,6 +29,15 @@ describe("nav-config (Direction C)", () => {
     expect(getActiveTab("/toi")).toBe("toi");
     expect(getActiveTab("/dat-lich")).toBe(null);
     expect(getActiveTab("/toi/cai-dat")).toBe(null);
+  });
+
+  it("sanitizes return_to deep links", () => {
+    expect(sanitizeReturnTo("/lich")).toBe("/lich");
+    expect(sanitizeReturnTo("/tra-cuu/ket-qua")).toBe("/tra-cuu/ket-qua");
+    expect(sanitizeReturnTo("/ngay/2026-05-27")).toBe("/ngay/2026-05-27");
+    expect(sanitizeReturnTo("//evil.com")).toBeNull();
+    expect(sanitizeReturnTo("/toi")).toBeNull();
+    expect(sanitizeReturnTo("https://evil")).toBeNull();
   });
 
   it("exempts renew and addon checkout when subscription expired", () => {

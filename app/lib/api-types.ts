@@ -189,6 +189,7 @@ export type BatTuOperation =
   | "convert-date"
   | "la-so"
   | "tu-tru"
+  | "tu-tru-preview"
   | "recompute-la-so"
   | "profile"
   | "tieu-van"

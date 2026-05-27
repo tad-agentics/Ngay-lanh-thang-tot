@@ -7,9 +7,20 @@ import { Mono } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { extractTuTruPillarLabels } from "~/lib/la-so-ui";
+import { buildingCalendarQuote } from "~/lib/first-run-ui";
+import {
+  extractMenhTagline,
+  extractTuTruPillarLabels,
+} from "~/lib/la-so-ui";
 
 const PILLARS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
+
+const REVEAL_STEPS = [
+  { at: 400, done: 1, prog: 25 },
+  { at: 1200, done: 2, prog: 50 },
+  { at: 2000, done: 3, prog: 76 },
+  { at: 3200, done: 4, prog: 100 },
+] as const;
 
 export default function DangDungLichRoute() {
   const navigate = useNavigate();
@@ -22,9 +33,7 @@ export default function DangDungLichRoute() {
     "···",
     "···",
   ]);
-  const [quote, setQuote] = useState(
-    '"Đang dựng lịch theo tứ trụ của bạn…"',
-  );
+  const [quote, setQuote] = useState(buildingCalendarQuote(null));
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -35,12 +44,19 @@ export default function DangDungLichRoute() {
       navigate("/gio-sinh", { replace: true });
       return;
     }
+    if (!body.birth_time) {
+      toast.error("Thiếu giờ sinh trên hồ sơ.");
+      navigate("/gio-sinh", { replace: true });
+      return;
+    }
     ranRef.current = true;
 
     let cancelled = false;
     const timers: number[] = [];
 
     void (async () => {
+      await invokeBatTu<unknown>({ op: "profile", body });
+
       const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
       if (cancelled) return;
       if (!res.ok) {
@@ -48,26 +64,21 @@ export default function DangDungLichRoute() {
         navigate("/gio-sinh", { replace: true });
         return;
       }
+
       const labels = extractTuTruPillarLabels(res.data);
-      setPillarValues(labels);
-      const menh = labels[0] !== "···" ? labels[0] : null;
-      if (menh) {
-        setQuote(`"${menh} — lá số của bạn đã sẵn sàng."`);
-      }
+      const tagline = extractMenhTagline(res.data);
+      setQuote(buildingCalendarQuote(tagline));
       window.dispatchEvent(new Event("ngaytot:profile-refresh"));
 
-      const steps = [
-        { at: 400, done: 1, prog: 25 },
-        { at: 1200, done: 2, prog: 50 },
-        { at: 2000, done: 3, prog: 76 },
-        { at: 3200, done: 4, prog: 100 },
-      ];
-      for (const { at, done, prog } of steps) {
+      for (const { at, done, prog } of REVEAL_STEPS) {
         timers.push(
           window.setTimeout(() => {
             if (cancelled) return;
             setDoneCount(done);
             setProgress(prog);
+            setPillarValues((prev) =>
+              prev.map((v, i) => (i < done ? labels[i] ?? v : v)),
+            );
           }, at),
         );
       }
@@ -130,11 +141,11 @@ export default function DangDungLichRoute() {
                     marginTop: 6,
                     fontFamily: "var(--display-2)",
                     fontWeight: 700,
-                    fontSize: 11,
+                    fontSize: 12,
                     color: done ? C.cream : "rgba(237,231,211,0.3)",
                     textTransform: "uppercase",
                     letterSpacing: "-0.005em",
-                    lineHeight: 1.1,
+                    lineHeight: 1,
                   }}
                 >
                   {done ? pillarValues[i] : "···"}

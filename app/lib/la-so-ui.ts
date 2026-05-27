@@ -469,6 +469,31 @@ export function laSoJsonToRevealProps(raw: unknown): {
   };
 }
 
+/** Nap âm tagline for building-calendar quote (screen 10). */
+export function extractMenhTagline(raw: unknown): string | null {
+  const root = asRecord(raw);
+  if (!root) return null;
+  const nested =
+    asRecord(root.data) ??
+    asRecord(root.result) ??
+    asRecord(root.tu_tru) ??
+    root;
+  const props = laSoJsonToRevealProps(raw);
+  const menh = props?.menh && props.menh !== "—" ? props.menh : null;
+
+  const pillars = asRecord(nested.pillars);
+  const year = pillars ? asRecord(pillars.year) : null;
+  const nap = year ? asRecord(year.nap_am) : null;
+  const moTa = nap
+    ? pickStr(nap, ["mo_ta", "description", "tagline", "summary"])
+    : "—";
+  if (moTa !== "—") {
+    return menh ? `${menh} — ${moTa}` : moTa;
+  }
+  if (menh) return `${menh} — lá số của bạn đã sẵn sàng.`;
+  return null;
+}
+
 const TU_TRU_PILLAR_KEYS = ["year", "month", "day", "hour"] as const;
 
 function pillarLabelFromRecord(p: Record<string, unknown> | null): string {
@@ -480,6 +505,37 @@ function pillarLabelFromRecord(p: Record<string, unknown> | null): string {
   if (c !== "—" && ch !== "—") return `${c} ${ch}`.trim();
   const flat = pickStr(p, ["label", "name", "ganzhi", "display"]);
   return flat !== "—" ? flat : "···";
+}
+
+/** Hour pillar preview for onboarding canh picker (screen 09). */
+export function extractHourPillarPreview(raw: unknown): {
+  label: string;
+  hanh: string;
+} | null {
+  const root = asRecord(raw);
+  if (!root) return null;
+  const nested =
+    asRecord(root.data) ??
+    asRecord(root.result) ??
+    asRecord(root.tu_tru) ??
+    root;
+  const pillars = asRecord(nested.pillars);
+  const hour = pillars ? asRecord(pillars.hour) : null;
+  const label = pillarLabelFromRecord(hour);
+  if (label === "···" || label === "—") return null;
+
+  const can = hour ? asRecord(hour.can) : null;
+  const chi = hour ? asRecord(hour.chi) : null;
+  let hanh = can
+    ? pickStr(can, ["hanh", "element", "ngu_hanh", "nguHanh"])
+    : "—";
+  if (hanh === "—" && chi) {
+    hanh = pickStr(chi, ["hanh", "element", "ngu_hanh", "nguHanh"]);
+  }
+  if (hanh === "—" && hour) {
+    hanh = pickStr(hour, ["hanh", "element", "ngu_hanh"]);
+  }
+  return { label, hanh: hanh !== "—" ? hanh : "—" };
 }
 
 /** Four pillars for onboarding reveal (Niên → Thời). */

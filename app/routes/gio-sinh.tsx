@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -9,21 +9,75 @@ import {
   CForestShell,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
+import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
-import { batTuBirthTimeCodeToGioSinh } from "~/lib/bat-tu-birth";
+import { invokeBatTu } from "~/lib/bat-tu";
+import {
+  batTuBirthTimeCodeToGioSinh,
+  profileToBatTuPersonQuery,
+} from "~/lib/bat-tu-birth";
+import { formatCanhRangeDetail } from "~/lib/first-run-ui";
+import { extractHourPillarPreview } from "~/lib/la-so-ui";
 import { supabase } from "~/lib/supabase";
 
 export default function GioSinhRoute() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const [selected, setSelected] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [hourPillar, setHourPillar] = useState<{
+    label: string;
+    hanh: string;
+  } | null>(null);
 
-  const selectedCanh =
-    selected != null ? CANH_HOURS[selected] : null;
+  const selectedCanh = selected != null ? CANH_HOURS[selected] : null;
+
+  useEffect(() => {
+    if (selected == null || !profile?.ngay_sinh) {
+      setHourPillar(null);
+      setPreviewLoading(false);
+      return;
+    }
+
+    const canh = CANH_HOURS[selected]!;
+    const base = profileToBatTuPersonQuery(profile);
+    const body = { ...base, birth_time: canh.code };
+
+    let cancelled = false;
+    setPreviewLoading(true);
+    setHourPillar(null);
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const res = await invokeBatTu<unknown>({
+          op: "tu-tru-preview",
+          body,
+        });
+        if (cancelled) return;
+        setPreviewLoading(false);
+        if (!res.ok) {
+          setHourPillar(null);
+          return;
+        }
+        setHourPillar(extractHourPillarPreview(res.data));
+      })();
+    }, 280);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [selected, profile?.ngay_sinh, profile?.gioi_tinh]);
 
   async function continueToBuild() {
     if (selected == null || !user) return;
+    if (!profile?.ngay_sinh) {
+      toast.error("Thiếu ngày sinh — hoàn tất đăng ký trước.");
+      navigate("/dang-ky", { replace: true });
+      return;
+    }
     const code = CANH_HOURS[selected]!.code;
     const gioSinh = batTuBirthTimeCodeToGioSinh(code);
     if (!gioSinh) {
@@ -48,7 +102,7 @@ export default function GioSinhRoute() {
     <CForestShell>
       <BackBar
         dark
-        onBack={() => navigate("/dang-ky")}
+        onBack={() => navigate("/dang-nhap", { replace: true })}
         endAdornment={
           <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9 }}>
             2 / 2
@@ -154,8 +208,8 @@ export default function GioSinhRoute() {
               background: "rgba(197,165,90,0.06)",
             }}
           >
-            <Mono style={{ color: C.gold, fontSize: 9 }}>
-              Đã chọn · {selectedCanh.name}
+            <Mono style={{ color: C.gold, fontSize: 9, letterSpacing: "0.12em" }}>
+              ĐÃ CHỌN · {selectedCanh.name.toUpperCase()}
             </Mono>
             <div
               style={{
@@ -166,19 +220,40 @@ export default function GioSinhRoute() {
                 lineHeight: 1.5,
               }}
             >
-              {selectedCanh.range.replace("h", "h sáng").replace("–", "–")} ·
-              trụ giờ theo canh <strong style={{ color: C.gold, fontWeight: 700 }}>{selectedCanh.name}</strong>
+              {formatCanhRangeDetail(selectedCanh.range, selectedCanh.name)}
+              {previewLoading ? (
+                <> · đang tính trụ giờ…</>
+              ) : hourPillar ? (
+                <>
+                  {" · "}
+                  trụ giờ{" "}
+                  <strong style={{ color: C.gold, fontWeight: 700 }}>
+                    {hourPillar.label}
+                  </strong>
+                  {hourPillar.hanh !== "—" ? (
+                    <> · hành {hourPillar.hanh}</>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  {" · "}
+                  trụ giờ theo canh{" "}
+                  <strong style={{ color: C.gold, fontWeight: 700 }}>
+                    {selectedCanh.name}
+                  </strong>
+                </>
+              )}
             </div>
           </div>
         ) : null}
 
         <button
           type="button"
-          disabled={selected == null || busy}
+          disabled={selected == null || busy || profileLoading}
           onClick={() => void continueToBuild()}
           style={{ ...btnPrimaryGold, marginTop: "auto" }}
         >
-          Mở lịch của tôi →
+          {busy ? "Đang lưu…" : "Mở lịch của tôi →"}
         </button>
       </div>
     </CForestShell>

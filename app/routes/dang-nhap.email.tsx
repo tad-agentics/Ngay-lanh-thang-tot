@@ -14,6 +14,12 @@ import {
 import { BackBar, Mono } from "~/components/brand";
 import { isInvalidLoginCredentials } from "~/lib/auth-login-error";
 import {
+  appendReturnToQuery,
+  destinationAfterAuth,
+  returnToFromSearchParams,
+  stashPendingReturnTo,
+} from "~/lib/pending-return-to";
+import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
@@ -28,7 +34,7 @@ async function resolvePostLoginPath(): Promise<string> {
     .select("onboarding_completed_at")
     .eq("id", uid)
     .maybeSingle();
-  return prof?.onboarding_completed_at ? "/lich" : "/gio-sinh";
+  return destinationAfterAuth(prof?.onboarding_completed_at != null);
 }
 
 export default function DangNhapEmail() {
@@ -38,12 +44,22 @@ export default function DangNhapEmail() {
     () => referralParamFromSearchParams(searchParams),
     [searchParams],
   );
-  const backHref = referralFromUrl
-    ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}`
-    : "/dang-nhap";
-  const signUpHref = referralFromUrl
-    ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
-    : "/dang-ky";
+  const returnTo = useMemo(
+    () => returnToFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const backHref = appendReturnToQuery(
+    referralFromUrl
+      ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}`
+      : "/dang-nhap",
+    returnTo,
+  );
+  const signUpHref = appendReturnToQuery(
+    referralFromUrl
+      ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
+      : "/dang-ky",
+    returnTo,
+  );
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -55,6 +71,10 @@ export default function DangNhapEmail() {
       toast.message("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (returnTo) stashPendingReturnTo(returnTo);
+  }, [returnTo]);
 
   async function signInGoogle() {
     stashPendingReferralCode(referralFromUrl);
