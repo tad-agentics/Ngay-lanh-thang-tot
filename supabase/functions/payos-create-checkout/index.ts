@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 import {
+  CHECKOUT_PACKAGE_SKUS,
   generateOrderCode,
   isPackageSku,
   PACKAGES,
@@ -135,6 +136,18 @@ Deno.serve(async (req) => {
         error: {
           code: "INVALID_SKU",
           message: `Unknown package_sku: ${package_sku}`,
+        },
+      },
+      422,
+    );
+  }
+
+  if (!CHECKOUT_PACKAGE_SKUS.includes(package_sku)) {
+    return json(
+      {
+        error: {
+          code: "SKU_RETIRED",
+          message: "Gói này không còn bán. Chọn gói lịch mới.",
         },
       },
       422,

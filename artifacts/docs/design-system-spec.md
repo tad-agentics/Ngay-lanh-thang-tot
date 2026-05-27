@@ -1,81 +1,105 @@
-# Design System — Ngày Lành Tháng Tốt
+# Design System — Ngày Lành Tháng Tốt (Direction C)
 
-**Source:** Figma Make code output (ported to `app/components/ui/`)
+**Version:** 2.0 (Direction C pivot)  
+**Last updated:** 2026-05-27  
+**Canonical visual spec:** `artifacts/design/ngaylanhthangtot-vn/Design System.html`  
+**FE handoff:** `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md`  
+**Retired:** Direction B → `artifacts/design/ngaylanhthangtot-vn/retired-direction-b/`
 
 ---
 
-## Make UI Components (`app/components/ui/`)
+## Product metaphor
 
-Moved from Make as-is except dependency-driven fixes (react-day-picker `Chevron`, recharts/tooltip typings, `react-resizable-panels` v4 `Group`/`Separator`).
+Direction C centers the **lịch-tờ** (tear-off calendar page), not the phiếu. Users **open their calendar** daily; subscription replaces lượng/credits in UI copy and gating.
 
-| Component | File | Notes |
-| --- | --- | --- |
-| Accordion | `accordion.tsx` | Radix accordion + chevron |
-| Alert | `alert.tsx` | Status messaging |
-| Alert dialog | `alert-dialog.tsx` | Confirm flows |
-| Aspect ratio | `aspect-ratio.tsx` | Media framing |
-| Avatar | `avatar.tsx` | User avatar |
-| Badge | `badge.tsx` | Labels, counts |
-| Breadcrumb | `breadcrumb.tsx` | Nav trail |
-| Button | `button.tsx` | CVA variants + sizes |
-| Calendar | `calendar.tsx` | DayPicker + nav chevrons |
-| Card | `card.tsx` | Content sections |
-| Carousel | `carousel.tsx` | Embla carousel |
-| Chart | `chart.tsx` | Recharts wrappers + tooltip/legend |
-| Checkbox | `checkbox.tsx` | Boolean input |
-| Collapsible | `collapsible.tsx` | Disclosure |
-| Command | `command.tsx` | Cmdk palette |
-| Context menu | `context-menu.tsx` | Right-click menus |
-| Dialog | `dialog.tsx` | Modal |
-| Drawer | `drawer.tsx` | Vaul drawer |
-| Dropdown menu | `dropdown-menu.tsx` | Menus |
-| Form | `form.tsx` | react-hook-form helpers |
-| Hover card | `hover-card.tsx` | Popover preview |
-| Input | `input.tsx` | Text input |
-| Input OTP | `input-otp.tsx` | OTP fields |
-| Label | `label.tsx` | Form labels |
-| Menubar | `menubar.tsx` | App menubar |
-| Navigation menu | `navigation-menu.tsx` | Site nav |
-| Pagination | `pagination.tsx` | Paged lists |
-| Popover | `popover.tsx` | Floating content |
-| Progress | `progress.tsx` | Progress bar |
-| Radio group | `radio-group.tsx` | Single choice |
-| Resizable | `resizable.tsx` | Panel split (v4 Group/Separator) |
-| Scroll area | `scroll-area.tsx` | Scroll container |
-| Select | `select.tsx` | Native-style select |
-| Separator | `separator.tsx` | Divider |
-| Sheet | `sheet.tsx` | Side sheet |
-| Sidebar | `sidebar.tsx` | App sidebar shell |
-| Skeleton | `skeleton.tsx` | Loading placeholder |
-| Slider | `slider.tsx` | Range |
-| Sonner / Toaster | `sonner.tsx` | Toast (theme light) |
-| Switch | `switch.tsx` | Toggle |
-| Table | `table.tsx` | Data table |
-| Tabs | `tabs.tsx` | Tabbed UI |
-| Textarea | `textarea.tsx` | Multiline |
-| Toggle | `toggle.tsx` | Icon toggle |
-| Toggle group | `toggle-group.tsx` | Segmented control |
-| Tooltip | `tooltip.tsx` | Hover hints |
-| Utils | `utils.ts` | `cn()` |
+---
 
-## Additional shared components (Foundation)
+## Color tokens (`app/theme.css`)
 
-| Component | File | Purpose |
-| --- | --- | --- |
-| `EmptyState` | `app/components/EmptyState.tsx` | Empty lists / no data |
-| `ErrorBanner` | `app/components/ErrorBanner.tsx` | Error surface |
-| `SkeletonCard` | `app/components/SkeletonCard.tsx` | Card-shaped loading |
+| Token | Value | Use |
+|---|---|---|
+| `--paper` | `#f0ece2` | App default surface |
+| `--paper-warm` | `#ede7d3` | Section breaks, lịch-tờ fill |
+| `--cream` | `#ede7d3` | Forest-mode text |
+| `--ink` | `#18150e` | Body text on paper |
+| `--ink-2` | `#3a3220` | Secondary text |
+| `--muted` | `#7a7050` | Mono labels (AA on paper) |
+| `--forest` | `#1d3129` | Ceremony surface |
+| `--forest-deep` | `#0e1c14` | Forest accents |
+| `--gold` | `#c5a55a` | Accent on forest only — **never text on paper** |
+| `--gold-deep` | `#9a7c22` | Accent text on paper |
+| `--red` | `#a3201f` | Day number on lịch-tờ only + danger |
+| `--green` / `--green-mute` | `#5e7d5e` / `#7a9a80` | Score dots |
+| `--border` | `rgba(154,124,34,0.18)` | Hairlines |
 
-## Brand tokens (Make `theme.css` → `app/theme.css`)
+---
 
-| Token | Role | Source |
-| --- | --- | --- |
-| `--primary` | Gold accent / CTA | EDS §5 Gold `oklch(0.73 0.12 85)` |
-| `--background` | Parchment page | EDS warm gray-parchment |
-| `--foreground` | Ink text | EDS |
-| `--surface` / `--surface-foreground` | Dark cards | EDS forest / cream |
-| `--destructive` / `--danger` | Hung / errors | EDS đỏ đô |
-| `--success` | Cát / positive | EDS |
-| Radii | `--radius`, `--radius-md`, … | Make |
+## Typography
 
-Font stacks: `--font-lora`, `--font-noto`, `--font-ibm-mono` in `@theme inline`; global headings use Lora in `theme.css` `@layer base`.
+| Role | Font | Notes |
+|---|---|---|
+| Display / headlines | Barlow Condensed 800 | UPPERCASE, `letter-spacing: -0.01em`, tabular-nums for numbers |
+| Body | Lora 400–700 | 16px floor; italic accent in `--gold-deep` |
+| Kickers / labels | IBM Plex Mono 600 | 12px floor, uppercase, `letter-spacing: 0.06–0.22em` |
+| Hanzi watermarks | Noto Serif SC | Decorative only — 吉 / 日 / 月 / 命 / 事 |
+
+Headline pattern: UPPERCASE Barlow + italic Lora phrase in gold-deep (e.g. `Lịch ngày lành` + *cho riêng bạn.*).
+
+---
+
+## Brand primitives (`app/components/brand/`)
+
+Port from `artifacts/design/ngaylanhthangtot-vn/b-shared.jsx` + `c-screens-a.jsx`:
+
+| Component | Source | Notes |
+|---|---|---|
+| `Logo`, `LogoMark` | `b-shared.jsx` | Mark in app chrome; full lockup splash/landing only |
+| `BackBar` | `b-shared.jsx` | Mandatory on every detail route |
+| `Mono`, `Stamp`, `Kanji` | `b-shared.jsx` | Kickers, score disc, watermarks |
+| `Ticket` | `b-shared.jsx` | **Share/print only** — not default result surface |
+| `CBottomNav` | `c-screens-a.jsx` | **3 tabs:** Lịch · Tra cứu · Tôi |
+| `CSegmented` | `c-screens-a.jsx` | Tab 1: Hôm nay \| Tháng; Tab 2: Ngày tốt \| Hợp tuổi |
+| `CTopStrip` | `c-screens-a.jsx` | Quiet identity strip |
+
+---
+
+## Surface rules
+
+| Surface | Screens |
+|---|---|
+| **Forest** (ceremonial) | Splash, auth band, first-run (giờ sinh → lịch đã mở), Hôm nay (#12), offline home |
+| **Paper** (default) | Month grid, day detail, search, hợp tuổi, AI, lá số, tôi, pricing, payment |
+
+No theme toggle. No gradients. No rounded cards with left-border accents — the lịch-tờ IS the card.
+
+---
+
+## shadcn/ui (`app/components/ui/`)
+
+Keep existing Radix primitives for forms, dialogs, sheets. Direction C screens compose brand primitives + minimal shadcn — do not replace lịch-tờ patterns with generic Card components.
+
+---
+
+## Readability (30+ audience)
+
+- Body ≥ 16px; mono labels ≥ 12px; touch targets ≥ 44×44px
+- Never `--gold` as text on paper; never `--gold-deep` on forest
+- Underline links on paper surfaces
+
+---
+
+## Canvas source modules
+
+| Band | JSX |
+|---|---|
+| Tab 1 + chrome | `c-screens-a.jsx` |
+| Tab 2 + Tab 3 entry + pricing | `c-screens-b.jsx` |
+| Auth + first-run | `c-screens-c.jsx`, `c-screens-f.jsx` |
+| Day detail + share | `c-screens-d.jsx` |
+| Payment confirm/success | `c-screens-e.jsx` |
+| Tools + profile edit | `c-screens-g.jsx` |
+| AI + lá số | `c-screens-h.jsx` |
+| Edge states + settings | `c-screens-i.jsx` |
+| Landing | `c-landing.jsx` |
+
+Open `Direction C.html` in browser to review all 40 artboards + 4 strategy boards.

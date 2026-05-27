@@ -72,7 +72,7 @@ export default function AppBatDau() {
       return;
     }
     await refresh();
-    navigate("/app", { replace: true });
+    navigate("/lich", { replace: true });
   }
 
   const credits = profile?.credits_balance ?? null;
@@ -203,8 +203,8 @@ export default function AppBatDau() {
           </Button>
 
           <Button variant="ghost" size="cta_sm" className="h-auto p-0 hover:bg-transparent" asChild>
-            <Link to="/app/mua-luong" style={{ ...btnOutline, display: "block", textAlign: "center", boxSizing: "border-box" }}>
-              Mua thêm lượng / gói
+            <Link to="/dat-lich" style={{ ...btnOutline, display: "block", textAlign: "center", boxSizing: "border-box" }}>
+              Đặt lịch / gia hạn
             </Link>
           </Button>
         </div>
@@ -229,7 +229,7 @@ export default function AppBatDau() {
             Chính sách bảo mật
           </Link>
           . Trong app:{" "}
-          <Link to="/app/cai-dat" style={linkOnDark}>
+          <Link to="/toi/cai-dat" style={linkOnDark}>
             Cài đặt
           </Link>
           . Trang giới thiệu:{" "}

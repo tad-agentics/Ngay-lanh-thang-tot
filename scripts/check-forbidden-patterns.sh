@@ -15,7 +15,17 @@ fail() {
   ERRORS=$((ERRORS + 1))
 }
 
-echo "Direction B forbidden-pattern check..."
+echo "Direction B/C forbidden-pattern check..."
+
+# Direction C: no consumer-facing "lượng" / credit-wallet copy in new route tree
+LUONG_HITS=$(grep -rl 'lượng\|mua lượng\|Mua lượng' "$ROOT/app/routes" \
+  --include='lich*.tsx' --include='tra-cuu*.tsx' --include='toi*.tsx' \
+  --include='dat-lich*.tsx' --include='gio-sinh.tsx' --include='splash.tsx' \
+  2>/dev/null || true)
+if [ -n "$LUONG_HITS" ]; then
+  fail "credit-wallet copy in Direction C routes" \
+    "Remove lượng/mua lượng strings from: $LUONG_HITS"
+fi
 
 # 1. text-gold on bg-paper (or vice versa) — gold fails contrast on paper
 # Heuristic: any file that contains BOTH "text-gold" (not "text-gold-deep") AND "bg-paper"

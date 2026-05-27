@@ -1,0 +1,68 @@
+/* Direction C landing — responsive rules from c-landing.jsx */
+
+@media (max-width: 900px) {
+  .ldc-nav-desktop {
+    display: none !important;
+  }
+  .ldc-nav-mobile {
+    display: block !important;
+  }
+  .ldc-hero-grid,
+  .ldc-personal-grid,
+  .ldc-pricing-tier-grid,
+  .ldc-footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 36px !important;
+  }
+  .ldc-ritual-pages,
+  .ldc-other-tiers {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+  }
+  .ldc-year-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+  }
+  .ldc-hero-h1 {
+    font-size: 60px !important;
+  }
+  .ldc-ritual-h2,
+  .ldc-personal-h2 {
+    font-size: 38px !important;
+  }
+  .ldc-year-h2,
+  .ldc-pricing-h3,
+  .ldc-cta-h2 {
+    font-size: 40px !important;
+  }
+  .ldc-hero-stack {
+    height: 380px !important;
+  }
+  .ldc-hero-front {
+    width: 220px !important;
+    height: 300px !important;
+    left: 10% !important;
+  }
+  .ldc-hero-price {
+    font-size: 80px !important;
+  }
+  .ldc-sticky-mobile-cta {
+    display: flex !important;
+  }
+  .ldc-root {
+    padding-bottom: 76px !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .ldc-year-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .ldc-hero-h1 {
+    font-size: 48px !important;
+  }
+  .ldc-hero-front {
+    width: 200px !important;
+    left: 5% !important;
+  }
+}

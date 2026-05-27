@@ -23,3 +23,12 @@ export const FEATURE_KEY_MAP: Record<string, string> = {
 export function toDbFeatureKey(uiKey: string): string {
   return FEATURE_KEY_MAP[uiKey] ?? uiKey;
 }
+
+/** Direction C PayOS checkout — subscription + add-on SKUs (not legacy `le`). */
+export const SUBSCRIPTION_SKUS = [
+  "goi_1thang",
+  "goi_6thang",
+  "goi_12thang",
+] as const;
+
+export const ADDON_SKUS = ["luan_bat_tu", "luan_tieu_van"] as const;

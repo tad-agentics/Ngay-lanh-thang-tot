@@ -23,6 +23,12 @@ export interface Database {
           referral_code: string;
           referred_by: string | null;
           subscription_expires_at: string | null;
+          bazi_reading_unlocked_at: string | null;
+          tieu_van_reading_expires_at: string | null;
+          la_so_recompute_status: "pending" | "ready" | "failed" | null;
+          birth_edit_count: number;
+          birth_edit_window_start: string | null;
+          timezone: string;
           birth_data_locked_at: string | null;
           onboarding_completed_at: string | null;
           push_enabled: boolean;
@@ -43,6 +49,12 @@ export interface Database {
           referral_code?: string;
           referred_by?: string | null;
           subscription_expires_at?: string | null;
+          bazi_reading_unlocked_at?: string | null;
+          tieu_van_reading_expires_at?: string | null;
+          la_so_recompute_status?: "pending" | "ready" | "failed" | null;
+          birth_edit_count?: number;
+          birth_edit_window_start?: string | null;
+          timezone?: string;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
           push_enabled?: boolean;
@@ -63,6 +75,12 @@ export interface Database {
           referral_code?: string;
           referred_by?: string | null;
           subscription_expires_at?: string | null;
+          bazi_reading_unlocked_at?: string | null;
+          tieu_van_reading_expires_at?: string | null;
+          la_so_recompute_status?: "pending" | "ready" | "failed" | null;
+          birth_edit_count?: number;
+          birth_edit_window_start?: string | null;
+          timezone?: string;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
           push_enabled?: boolean;

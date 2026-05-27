@@ -1,42 +1,61 @@
 import type { PackageSku } from "~/lib/api-types";
 
+export const SUBSCRIPTION_SKUS: PackageSku[] = [
+  "goi_1thang",
+  "goi_6thang",
+  "goi_12thang",
+];
+
+export const ADDON_SKUS: PackageSku[] = ["luan_bat_tu", "luan_tieu_van"];
+
 export const UI_PACKAGES: {
   sku: PackageSku;
   title: string;
   subtitle: string;
   priceLabel: string;
-  creditsLabel: string;
-  mathNote: string;
+  badge?: string;
   featured: boolean;
+  kind: "subscription" | "addon";
 }[] = [
   {
-    sku: "le",
-    title: "Lẻ — gói nhỏ",
-    subtitle:
-      "Mua một lần, dùng dần — không tự động nạp. Còn dư sau 12 tháng thì hết hiệu lực.",
-    priceLabel: "99.000₫",
-    creditsLabel: "100 lượng",
-    mathNote: "≈ 10 lần chọn ngày · hoặc 12 lần hợp tuổi",
+    sku: "goi_1thang",
+    title: "1 tháng",
+    subtitle: "Lịch ngày lành cá nhân hoá — gia hạn linh hoạt.",
+    priceLabel: "49.000₫",
     featured: false,
+    kind: "subscription",
   },
   {
     sku: "goi_6thang",
-    title: "Tháng An Cư",
-    subtitle:
-      "6 tháng không trừ lượng từng việc — thoải mái thử nhiều ngày, nhiều tháng. Hợp giai đoạn bận: cưới hỏi, khai trương, nhà mới.",
-    priceLabel: "789.000₫",
-    creditsLabel: "Dùng thoải mái",
-    mathNote: "≈ 131.500₫ / tháng · tiết kiệm so với gói lẻ",
-    featured: true,
+    title: "6 tháng",
+    subtitle: "Tiết kiệm hơn gói tháng — phù hợp mùa cưới, khai trương.",
+    priceLabel: "249.000₫",
+    featured: false,
+    kind: "subscription",
   },
   {
     sku: "goi_12thang",
-    title: "Năm Phú Quý",
-    subtitle:
-      "Cả năm tra cứu không tính lượt — chọn ngày, vận tháng, hợp tuổi, phong thủy. Giá mỗi tháng thấp hơn ~37% so với gói 6 tháng.",
-    priceLabel: "989.000₫",
-    creditsLabel: "Dùng thoải mái",
-    mathNote: "≈ 82.400₫ / tháng · tiết kiệm nhất",
+    title: "1 năm",
+    subtitle: "Gói đầy đủ — kèm luận Bát tự & Tiểu vận trong năm.",
+    priceLabel: "449.000₫",
+    badge: "Đề xuất",
+    featured: true,
+    kind: "subscription",
+  },
+  {
+    sku: "luan_bat_tu",
+    title: "Luận Bát tự",
+    subtitle: "Mở khóa luận giải Bát tự đầy đủ — dùng vĩnh viễn.",
+    priceLabel: "299.000₫",
     featured: false,
+    kind: "addon",
+  },
+  {
+    sku: "luan_tieu_van",
+    title: "Luận Tiểu vận",
+    subtitle: "Luận giải Tiểu vận 12 tháng tới.",
+    priceLabel: "199.000₫",
+    featured: false,
+    kind: "addon",
   },
 ];

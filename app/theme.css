@@ -220,8 +220,11 @@
   --muted-warm: #6a5f3f;
   --green-mute: #7a9a80;
 
-  /* Forest deep accent */
-  --forest-deep: #15241e;
+  /* Forest deep accent — Direction C */
+  --forest-deep: #0e1c14;
+  --muted: #7a7050;
+  --border: rgba(154, 124, 34, 0.18);
+  --red: #a3201f;
 
   /* Gold (accent on forest ONLY — never body text on paper) */
   --gold: #c5a55a;

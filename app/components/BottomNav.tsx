@@ -9,11 +9,11 @@ import { useNavigate } from "react-router";
 
 import { prefetchCoreAppQueries } from "~/lib/prefetch-app-queries";
 import { HM } from "~/lib/maket-tokens";
-import type { BottomNavTab } from "~/lib/nav-config";
+import type { LegacyBottomNavTab } from "~/lib/nav-config-legacy";
 
 interface BottomNavProps {
-  activeTab: BottomNavTab | null;
-  onTabChange: (tab: BottomNavTab) => void;
+  activeTab: LegacyBottomNavTab | null;
+  onTabChange: (tab: LegacyBottomNavTab) => void;
   /** FAB click = navigate to /app/chon-ngay. Kept as prop for backward compat. */
   onExploreOpen?: () => void;
 }
@@ -101,7 +101,7 @@ function PerfDots() {
 }
 
 type TabDef = {
-  id: BottomNavTab;
+  id: LegacyBottomNavTab;
   ic: string;
   vi: string;
 };
@@ -118,7 +118,7 @@ export function BottomNav({ activeTab, onTabChange, onExploreOpen }: BottomNavPr
   const navigate = useNavigate();
   const warmCache = () => prefetchCoreAppQueries(queryClient);
 
-  const handleTabClick = (tab: BottomNavTab) => {
+  const handleTabClick = (tab: LegacyBottomNavTab) => {
     onTabChange(tab);
   };
 

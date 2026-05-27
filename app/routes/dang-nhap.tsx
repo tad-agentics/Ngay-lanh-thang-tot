@@ -1,9 +1,16 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import {
+  btnOutlineCream,
+  btnPrimaryGold,
+  C,
+  CForestShell,
+  forestGradientOverlay,
+  GoogleIcon,
+} from "~/components/auth/c-auth-ui";
 import { Logo } from "~/components/brand";
-import { Button } from "~/components/ui/button";
 import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
@@ -38,119 +45,155 @@ export default function DangNhap() {
     if (error) toast.error(error.message);
   }
 
-  const shell: CSSProperties = {
-    background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
-    minHeight: "100svh",
-    color: "var(--cream, #ede7d3)",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "48px 16px",
-    boxSizing: "border-box",
-  };
-
-  const btnPrimary: CSSProperties = {
-    width: "100%",
-    backgroundColor: "var(--cream, #ede7d3)",
-    color: "var(--ink, #18150e)",
-    fontFamily: "var(--display-2)",
-    fontWeight: 700,
-    fontSize: 13,
-    textTransform: "uppercase",
-    letterSpacing: "0.1em",
-    border: "none",
-    padding: "14px 20px",
-    borderRadius: "var(--radius-md, 6px)",
-  };
-
-  const btnOutline: CSSProperties = {
-    width: "100%",
-    backgroundColor: "transparent",
-    color: "var(--cream, #ede7d3)",
-    fontFamily: "var(--display-2)",
-    fontWeight: 700,
-    fontSize: 13,
-    textTransform: "uppercase",
-    letterSpacing: "0.1em",
-    border: "1px solid rgba(197, 165, 90, 0.35)",
-    padding: "14px 20px",
-    borderRadius: "var(--radius-md, 6px)",
-  };
-
-  const linkStyle: CSSProperties = {
-    color: "var(--gold, #c5a55a)",
-    textDecoration: "underline",
-    textUnderlineOffset: 4,
-  };
-
   return (
-    <main style={shell}>
-      <div style={{ width: "100%", maxWidth: 384, display: "flex", flexDirection: "column", gap: 24 }}>
-        <Link
-          to="/"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 12,
-            textDecoration: "none",
-            color: "inherit",
-          }}
-        >
-          <Logo dark size={42} />
-        </Link>
-        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 8 }}>
+    <CForestShell gradientOpacity={0.12}>
+      <div
+        style={{
+          flex: 1,
+          padding: "60px 28px 28px",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+        }}
+      >
+        <Logo dark size={36} />
+
+        <div style={{ marginTop: 56 }}>
           <h1
             style={{
-              fontFamily: "var(--display-2)",
+              fontFamily: "var(--display)",
               fontWeight: 800,
-              fontSize: 24,
+              fontSize: 44,
+              color: C.cream,
+              lineHeight: 0.96,
               textTransform: "uppercase",
-              letterSpacing: "-0.01em",
-              color: "var(--cream, #ede7d3)",
+              letterSpacing: "-0.02em",
               margin: 0,
             }}
           >
-            Đăng nhập
+            Lập lịch riêng
+            <br />
+            <span
+              style={{
+                color: C.gold,
+                fontFamily: "var(--serif)",
+                fontStyle: "italic",
+                fontWeight: 700,
+                textTransform: "none",
+                letterSpacing: 0,
+              }}
+            >
+              cho mệnh của bạn.
+            </span>
           </h1>
           <p
             style={{
+              marginTop: 16,
               fontFamily: "var(--serif)",
-              fontSize: 16,
-              color: "rgba(237, 231, 211, 0.72)",
-              margin: 0,
+              fontSize: 14,
+              color: "rgba(237,231,211,0.7)",
+              lineHeight: 1.55,
+              maxWidth: 280,
             }}
           >
-            Google (khuyên dùng) hoặc email.
+            Mỗi ngày một trang — chấm điểm theo lá số tứ trụ riêng. Dùng được
+            trên mọi thiết bị.
           </p>
         </div>
-        <Button
-          type="button"
-          disabled={busy}
-          onClick={() => void signInGoogle()}
-          className="w-full"
-          style={btnPrimary}
+
+        <div
+          style={{
+            marginTop: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
         >
-          Tiếp tục với Google
-        </Button>
-        <Button variant="ghost" className="w-full p-0 h-auto hover:bg-transparent" asChild>
-          <Link to={emailHref} style={{ ...btnOutline, display: "block", textAlign: "center", boxSizing: "border-box" }}>
-            Đăng nhập bằng email
+          <Link
+            to={signUpHref}
+            style={{
+              ...btnPrimaryGold,
+              padding: 14,
+              textAlign: "center",
+              textDecoration: "none",
+              display: "block",
+              boxSizing: "border-box",
+            }}
+          >
+            Lập lịch — 30 giây
           </Link>
-        </Button>
-        <p style={{ textAlign: "center", fontFamily: "var(--serif)", fontSize: 14, color: "rgba(237, 231, 211, 0.78)", margin: 0 }}>
-          Chưa có tài khoản?{" "}
-          <Link to={signUpHref} style={linkStyle}>
-            Đăng ký
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void signInGoogle()}
+            style={btnOutlineCream}
+          >
+            <GoogleIcon />
+            Tiếp tục với Google
+          </button>
+          <div
+            style={{
+              marginTop: 14,
+              padding: "12px 0",
+              borderTop: "1px solid rgba(237,231,211,0.15)",
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--serif)",
+                fontSize: 13,
+                color: "rgba(237,231,211,0.7)",
+              }}
+            >
+              Đã có lịch?
+            </span>
+            <Link
+              to={emailHref}
+              style={{
+                fontFamily: "var(--display-2)",
+                fontWeight: 700,
+                fontSize: 13,
+                color: C.gold,
+                textTransform: "uppercase",
+                letterSpacing: "0.06em",
+                textDecoration: "none",
+              }}
+            >
+              Mở lịch →
+            </Link>
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            fontFamily: "var(--serif)",
+            fontSize: 11,
+            color: "rgba(237,231,211,0.4)",
+            textAlign: "center",
+            lineHeight: 1.5,
+          }}
+        >
+          Tiếp tục đồng nghĩa với việc bạn chấp nhận
+          <br />
+          <Link
+            to="/dieu-khoan"
+            style={{ color: "rgba(237,231,211,0.6)", textDecoration: "none" }}
+          >
+            Điều khoản
           </Link>
-        </p>
-        <p style={{ textAlign: "center", fontFamily: "var(--serif)", fontSize: 12, color: "rgba(237, 231, 211, 0.55)", margin: 0 }}>
-          <Link to="/" style={{ color: "inherit", textDecoration: "underline", textUnderlineOffset: 4 }}>
-            Về trang chủ
+          {" · "}
+          <Link
+            to="/chinh-sach-bao-mat"
+            style={{ color: "rgba(237,231,211,0.6)", textDecoration: "none" }}
+          >
+            Bảo mật
           </Link>
-        </p>
+        </div>
       </div>
-    </main>
+    </CForestShell>
   );
 }

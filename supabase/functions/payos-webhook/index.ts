@@ -1,6 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { isPackageSku, PACKAGES, verifyWebhookSignature } from "../_shared/payos.ts";
+import {
+  applyPackageEntitlements,
+  isPackageSku,
+  PACKAGES,
+  verifyWebhookSignature,
+} from "../_shared/payos.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 function ok(body: unknown = { received: true }): Response {
@@ -127,7 +132,9 @@ Deno.serve(async (req) => {
 
   const { data: profile, error: profErr } = await admin
     .from("profiles")
-    .select("credits_balance, subscription_expires_at")
+    .select(
+      "credits_balance, subscription_expires_at, bazi_reading_unlocked_at, tieu_van_reading_expires_at",
+    )
     .eq("id", order.user_id)
     .single();
 
@@ -159,7 +166,45 @@ Deno.serve(async (req) => {
     }
   }
 
-  if (order.subscription_months != null && order.subscription_months > 0) {
+  const sku = order.package_sku;
+  if (sku && isPackageSku(sku)) {
+    const entitlementPatch = applyPackageEntitlements(
+      {
+        subscription_expires_at: profile.subscription_expires_at as string | null,
+        bazi_reading_unlocked_at: profile.bazi_reading_unlocked_at as string | null,
+        tieu_van_reading_expires_at: profile.tieu_van_reading_expires_at as string | null,
+      },
+      sku,
+    );
+
+    if (Object.keys(entitlementPatch).length > 0) {
+      const { error: u2 } = await admin
+        .from("profiles")
+        .update(entitlementPatch)
+        .eq("id", order.user_id);
+
+      if (u2) {
+        console.error("entitlement update", u2);
+        return new Response("DB error", { status: 500 });
+      }
+
+      const { error: l2 } = await admin.from("credit_ledger").insert({
+        user_id: order.user_id,
+        delta: 0,
+        balance_after: profile.credits_balance,
+        reason: "payos_entitlement",
+        idempotency_key: `payos:${eventId}:ent`,
+        metadata: {
+          order_id: order.id,
+          package_sku: sku,
+          ...entitlementPatch,
+        },
+      });
+      if (l2 && (l2 as { code?: string }).code !== "23505") {
+        console.error("ledger entitlement", l2);
+      }
+    }
+  } else if (order.subscription_months != null && order.subscription_months > 0) {
     const now = new Date();
     const current = profile.subscription_expires_at
       ? new Date(profile.subscription_expires_at)
@@ -175,23 +220,6 @@ Deno.serve(async (req) => {
     if (u2) {
       console.error("sub update", u2);
       return new Response("DB error", { status: 500 });
-    }
-
-    const { error: l2 } = await admin.from("credit_ledger").insert({
-      user_id: order.user_id,
-      delta: 0,
-      balance_after: profile.credits_balance,
-      reason: "payos_subscription",
-      idempotency_key: `payos:${eventId}:sub`,
-      metadata: {
-        order_id: order.id,
-        package_sku: order.package_sku,
-        months: order.subscription_months,
-        subscription_expires_at: expires.toISOString(),
-      },
-    });
-    if (l2 && (l2 as { code?: string }).code !== "23505") {
-      console.error("ledger sub", l2);
     }
   }
 

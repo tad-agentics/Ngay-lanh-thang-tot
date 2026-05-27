@@ -22,6 +22,8 @@
 
 | Feature | What changed | Blocking? | Fixed? | Commit |
 |---|---|---|---|---|
+| Direction C pivot | Wave 0–11 scaffold: `authenticated` layout, `/lich` `/tra-cuu` `/toi`, entitlements migration, `SUB_EXPIRED` in bat-tu, PayOS SKUs, `/splash` PWA entry, legacy `/app/*` redirects. Full C visual reskin of screens still incremental on top of ported routes. | No | Partial | — |
+| Birth-data edit | Direction C `/toi/sua-ho-so` (`CEditProfile`) allows birth edit + lá số recompute — contradicts prior "no self-serve birth edit" rule. Logged as ADR-2026-05-27 in pivot plan. | No | No | — |
 
 ## Resolved
 

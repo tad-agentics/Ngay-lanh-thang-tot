@@ -5,3 +5,6 @@ export { Mono } from "./Mono";
 export { Stamp } from "./Stamp";
 export { Ticket } from "./Ticket";
 export { BackBar } from "./BackBar";
+export { CBottomNav } from "./CBottomNav";
+export { CSegmented } from "./CSegmented";
+export { CTopStrip } from "./CTopStrip";

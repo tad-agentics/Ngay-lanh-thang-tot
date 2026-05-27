@@ -52,7 +52,7 @@ export default function AppMuaLuong() {
         fontFamily: "var(--serif)",
       }}
     >
-      <BackBar title="Mua lượng" subtitle="Ví lượng · không tự gia hạn" />
+      <BackBar title="Đặt lịch" subtitle="Gia hạn lịch · không tự gia hạn" />
 
       {/* Current balance */}
       <div className="px-5 pt-4">
@@ -186,12 +186,22 @@ export default function AppMuaLuong() {
                       letterSpacing: "0.18em",
                     }}
                   >
-                    PHỔ BIẾN
+                    {pkg.badge ?? "PHỔ BIẾN"}
                   </span>
                 ) : null}
 
                 <Kanji
-                  ch={pkg.sku === "le" ? "一" : pkg.sku === "goi_6thang" ? "安" : "富"}
+                  ch={
+                    pkg.sku === "goi_1thang"
+                      ? "月"
+                      : pkg.sku === "goi_6thang"
+                        ? "安"
+                        : pkg.sku === "goi_12thang"
+                          ? "富"
+                          : pkg.sku === "luan_bat_tu"
+                            ? "命"
+                            : "運"
+                  }
                   size={120}
                   style={{
                     position: "absolute",
@@ -248,7 +258,7 @@ export default function AppMuaLuong() {
                           marginTop: 4,
                         }}
                       >
-                        {pkg.creditsLabel}
+                        {pkg.kind === "subscription" ? "Lịch cá nhân" : "Mở khóa luận"}
                       </Mono>
                     </div>
                   </div>
@@ -262,7 +272,7 @@ export default function AppMuaLuong() {
                       borderTop: pkg.featured ? "1px dashed rgba(197,165,90,0.25)" : "1px dashed rgba(125,98,25,0.2)",
                     }}
                   >
-                    {pkg.mathNote}
+                    {pkg.priceLabel}
                   </Mono>
 
                   {/* PayOS recovery state */}

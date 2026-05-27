@@ -1,0 +1,1254 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Design System · Direction C · Ngày Lành Tháng Tốt</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Barlow+Condensed:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --paper: #f0ece2;
+        --paper-warm: #ede7d3;
+        --ink: #18150e;
+        --ink2: #3a3220;
+        --muted: #7a7050;
+        --forest: #1d3129;
+        --forest-deep: #0e1c14;
+        --cream: #ede7d3;
+        --gold: #c5a55a;
+        --gold-light: #c9a84c;
+        --gold-deep: #9a7c22;
+        --red: #a3201f;
+        --green: #5e7d5e;
+        --green-mute: #7a9a80;
+        --hairline: rgba(154,124,34,0.18);
+        --hairline2: rgba(154,124,34,0.10);
+
+        --serif: 'Lora', Georgia, serif;
+        --display: 'Barlow Condensed', 'Arial Narrow', Impact, system-ui, sans-serif;
+        --display-2: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+        --mono: 'IBM Plex Mono', ui-monospace, monospace;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; background: var(--paper); color: var(--ink); font-family: var(--serif); }
+
+      .page { max-width: 1080px; margin: 0 auto; padding: 80px 56px 120px; }
+
+      .kicker { font-family: var(--mono); font-weight: 600; font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold-deep); }
+      .h1 { font-family: var(--display); font-weight: 800; font-size: 84px; line-height: 0.92; letter-spacing: -0.025em; text-transform: uppercase; color: var(--ink); margin: 18px 0 12px; }
+      .h1 em { font-family: var(--serif); font-style: italic; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--gold-deep); }
+      .lede { font-family: var(--serif); font-size: 17px; line-height: 1.65; color: var(--ink2); max-width: 640px; margin: 0; }
+
+      .section { margin-top: 88px; }
+      .section-head { display: flex; align-items: baseline; gap: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--ink); }
+      .section-num { font-family: var(--mono); font-size: 12px; letter-spacing: 0.22em; color: var(--gold-deep); }
+      .section-title { font-family: var(--display); font-weight: 800; font-size: 32px; text-transform: uppercase; letter-spacing: -0.01em; color: var(--ink); }
+      .section-intro { font-family: var(--serif); font-size: 14.5px; color: var(--ink2); line-height: 1.6; margin: 14px 0 0; max-width: 720px; }
+
+      .subhead { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; margin: 32px 0 14px; }
+
+      /* ─── Color swatches ─── */
+      .palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+      .swatch { display: flex; flex-direction: column; }
+      .swatch .chip { aspect-ratio: 4 / 3; border: 1px solid var(--hairline); }
+      .swatch .meta { padding: 10px 2px 0; }
+      .swatch .name { font-family: var(--display-2); font-weight: 700; font-size: 13px; color: var(--ink); letter-spacing: -0.005em; }
+      .swatch .hex { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.04em; }
+      .swatch .role { font-family: var(--serif); font-size: 12.5px; font-style: italic; color: var(--ink2); margin-top: 6px; line-height: 1.45; }
+
+      /* ─── Type samples ─── */
+      .type-row { display: grid; grid-template-columns: 200px 1fr; gap: 28px; padding: 22px 0; border-bottom: 1px solid var(--hairline2); align-items: baseline; }
+      .type-row:last-child { border-bottom: none; }
+      .type-label { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+      .type-label code { font-family: var(--mono); font-size: 11px; color: var(--ink); display: block; margin-top: 4px; }
+      .display-xl { font-family: var(--display); font-weight: 800; font-size: 88px; line-height: 0.92; letter-spacing: -0.025em; text-transform: uppercase; color: var(--ink); }
+      .display-l  { font-family: var(--display); font-weight: 800; font-size: 36px; line-height: 1; letter-spacing: -0.015em; text-transform: uppercase; color: var(--ink); }
+      .display-m  { font-family: var(--display); font-weight: 800; font-size: 24px; line-height: 1.05; letter-spacing: -0.01em; text-transform: uppercase; color: var(--ink); }
+      .body       { font-family: var(--serif); font-size: 15px; line-height: 1.65; color: var(--ink); }
+      .body em    { font-family: var(--serif); font-style: italic; color: var(--gold-deep); }
+      .mono-kicker{ font-family: var(--mono); font-weight: 600; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-deep); }
+      .display2-h { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -0.015em; color: var(--ink); text-transform: uppercase; }
+      .tabular    { font-family: var(--display); font-weight: 800; font-size: 48px; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+      /* ─── Buttons ─── */
+      .btn-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+      .btn { padding: 14px 22px; font-family: var(--display-2); font-weight: 800; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; border: none; cursor: pointer; }
+      .btn-primary { background: var(--forest); color: var(--cream); }
+      .btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--gold-deep); }
+      .btn-tertiary { background: var(--gold); color: var(--forest); }
+      .btn-danger { background: var(--ink); color: var(--paper); }
+      .btn-text { padding: 6px 0; background: transparent; border: none; color: var(--gold-deep); font-family: var(--display-2); font-weight: 700; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+
+      /* ─── Cards / components ─── */
+      .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+      .card { padding: 18px 18px; background: #fff; border: 1px solid var(--hairline); }
+      .card.dark { background: var(--forest); color: var(--cream); border-color: var(--gold); }
+      .card.hero { background: var(--forest); color: var(--cream); border: 1.5px solid var(--gold); }
+      .card.gold-bordered { border: 1px solid var(--gold-deep); }
+      .card-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; }
+      .card.dark .card-label { color: var(--gold); }
+
+      /* ─── Segmented ─── */
+      .seg { display: flex; gap: 28px; padding-bottom: 0; border-bottom: 1px solid var(--hairline); }
+      .seg button { padding: 12px 0 11px; background: transparent; border: none; font-family: var(--serif); font-size: 15px; color: rgba(24,21,14,0.55); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+      .seg button.active { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
+
+      /* ─── Bottom nav ─── */
+      .nav-wrap { display: flex; gap: 22px; }
+      .nav { position: relative; width: 320px; padding: 7px 5px; background: rgba(241,236,225,0.96); border: 1px solid var(--hairline); border-radius: 999px; display: flex; gap: 4px; backdrop-filter: blur(14px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+      .nav.dark { background: rgba(14,28,20,0.92); border-color: rgba(197,165,90,0.18); box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+      .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 6px 4px; border-radius: 999px; cursor: pointer; gap: 3px; }
+      .nav-item.active { background: rgba(29,49,41,0.07); }
+      .nav.dark .nav-item.active { background: rgba(197,165,90,0.15); }
+      .nav-item svg { stroke: var(--muted); }
+      .nav-item.active svg { stroke: var(--forest); }
+      .nav.dark .nav-item svg { stroke: rgba(237,231,211,0.6); }
+      .nav.dark .nav-item.active svg { stroke: var(--gold); }
+      .nav-item .label { font-family: var(--display-2); font-weight: 600; font-size: 10px; letter-spacing: 0.04em; color: var(--muted); text-transform: uppercase; }
+      .nav-item.active .label { font-weight: 700; color: var(--forest); }
+      .nav.dark .nav-item .label { color: rgba(237,231,211,0.6); }
+      .nav.dark .nav-item.active .label { color: var(--gold); }
+
+      /* ─── Score dots ─── */
+      .score-ramp { display: flex; gap: 22px; align-items: flex-end; }
+      .score-stop { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+      .dot { width: 16px; height: 16px; border-radius: 50%; }
+
+      /* ─── Verdict band ─── */
+      .verdict { display: flex; align-items: baseline; justify-content: space-between; padding: 16px 0; border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+      .verdict .v-label { font-family: var(--display-2); font-weight: 700; font-size: 17px; color: var(--gold-deep); text-transform: uppercase; letter-spacing: -0.005em; }
+      .verdict .v-sub { font-family: var(--serif); font-size: 12px; color: var(--muted); margin-top: 2px; }
+      .verdict .v-score { font-family: var(--display-2); font-weight: 800; font-size: 44px; color: var(--gold-deep); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.015em; }
+      .verdict .v-of100 { font-family: var(--serif); font-size: 12px; color: var(--muted); }
+
+      /* ─── Spacing scale ─── */
+      .space-row { display: flex; align-items: center; gap: 18px; padding: 10px 0; }
+      .space-bar { background: var(--gold-deep); height: 8px; }
+      .space-name { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+      .space-px { font-family: var(--mono); font-size: 11px; color: var(--ink); }
+
+      /* ─── Lịch tờ page sample ─── */
+      .litho { background: #fff; border: 1px solid var(--hairline2); box-shadow: 0 6px 16px rgba(0,0,0,0.06); max-width: 360px; }
+      .litho .head-band { padding: 10px 18px 6px; font-family: var(--serif); font-size: 12px; color: var(--muted); }
+      .litho .day { padding: 4px 18px 12px; display: flex; align-items: flex-end; gap: 14px; }
+      .litho .day-num { font-family: var(--display-2); font-weight: 800; font-size: 124px; color: var(--red); line-height: 0.84; letter-spacing: -0.045em; font-variant-numeric: tabular-nums; }
+      .litho .day-wd { padding-bottom: 14px; font-family: var(--display); font-weight: 900; font-size: 30px; color: var(--red); text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.95; }
+      .litho .meta { padding: 0 18px 14px; font-family: var(--serif); font-size: 13px; color: var(--ink2); line-height: 1.55; }
+
+      /* ─── Footer notes ─── */
+      .note { padding: 14px 18px; background: rgba(154,124,34,0.06); border-left: 3px solid var(--gold-deep); font-family: var(--serif); font-size: 13.5px; color: var(--ink2); line-height: 1.6; margin-top: 28px; }
+      .note strong { color: var(--ink); }
+
+      /* responsive */
+      @media (max-width: 720px) {
+        .page { padding: 40px 22px; }
+        .h1 { font-size: 48px; }
+        .palette { grid-template-columns: repeat(2, 1fr); }
+        .card-grid { grid-template-columns: 1fr; }
+        .type-row { grid-template-columns: 1fr; gap: 10px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+
+      <div class="kicker">Design System · v1.0</div>
+      <h1 class="h1">Lịch ngày lành <em>cho riêng bạn.</em></h1>
+      <p class="lede">Hệ thống thị giác cho ứng dụng Ngày Lành Tháng Tốt — Direction C. Đóng gói như một <em>cuốn lịch tờ điện tử</em> cá nhân, không phải tool. Tài liệu này khoá lại các quyết định: màu, type, spacing, components, patterns.</p>
+
+      <!-- ─── 01 · COLOR ─────────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">01</span>
+          <h2 class="section-title">Color</h2>
+        </div>
+        <p class="section-intro">Bốn lớp: <strong>paper</strong> (giấy nền), <strong>ink</strong> (chữ), <strong>forest</strong> (ceremonial dark), <strong>gold</strong> (accent). Đỏ <strong>son</strong> chỉ dành cho số ngày trên lịch tờ.</p>
+
+        <div class="subhead">Tokens chính</div>
+        <div class="palette">
+          <div class="swatch"><div class="chip" style="background:#f0ece2"></div><div class="meta"><div class="name">Paper</div><div class="hex">#F0ECE2</div><div class="role">Nền chính — giấy lịch</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#ede7d3"></div><div class="meta"><div class="name">Paper warm</div><div class="hex">#EDE7D3</div><div class="role">Trang lịch tờ trên nền paper</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#18150e"></div><div class="meta"><div class="name">Ink</div><div class="hex">#18150E</div><div class="role">Chữ chính, button danger</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#3a3220"></div><div class="meta"><div class="name">Ink 2</div><div class="hex">#3A3220</div><div class="role">Chữ body italic, secondary</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#7a7050"></div><div class="meta"><div class="name">Muted</div><div class="hex">#7A7050</div><div class="role">Caption, kicker, mono label</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#1d3129"></div><div class="meta"><div class="name">Forest</div><div class="hex">#1D3129</div><div class="role">Ceremonial surface · button primary · CTA</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#ede7d3"></div><div class="meta"><div class="name">Cream</div><div class="hex">#EDE7D3</div><div class="role">Chữ trên forest</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#c5a55a"></div><div class="meta"><div class="name">Gold</div><div class="hex">#C5A55A</div><div class="role">Accent trên forest, button tertiary</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#9a7c22"></div><div class="meta"><div class="name">Gold deep</div><div class="hex">#9A7C22</div><div class="role">Accent trên paper, kicker, score</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#a3201f"></div><div class="meta"><div class="name">Red (son)</div><div class="hex">#A3201F</div><div class="role">Số ngày lịch tờ · danger · CN</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#5e7d5e"></div><div class="meta"><div class="name">Green</div><div class="hex">#5E7D5E</div><div class="role">Success state · "ngày tốt" dot</div></div></div>
+          <div class="swatch"><div class="chip" style="background:#7a9a80"></div><div class="meta"><div class="name">Green mute</div><div class="hex">#7A9A80</div><div class="role">Score dot · "tốt" ramp</div></div></div>
+        </div>
+
+        <div class="subhead">Hairline borders</div>
+        <div class="palette" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="swatch"><div class="chip" style="background:rgba(154,124,34,0.18); aspect-ratio: 8/1"></div><div class="meta"><div class="name">Hairline</div><div class="hex">rgba(154,124,34, 0.18)</div><div class="role">Divider chính giữa các nhóm</div></div></div>
+          <div class="swatch"><div class="chip" style="background:rgba(154,124,34,0.10); aspect-ratio: 8/1"></div><div class="meta"><div class="name">Hairline 2</div><div class="hex">rgba(154,124,34, 0.10)</div><div class="role">Divider nhẹ trong list rows</div></div></div>
+        </div>
+
+        <div class="note">
+          <strong>Locked rules:</strong> Forest dùng cho ceremonial moments (splash, auth, day detail header, "Lịch của tôi" card). Paper dùng cho forms, lists, daily surfaces. Red chỉ là <em>số ngày trên trang lịch tờ</em> + state danger; không phải brand accent.
+        </div>
+      </section>
+
+      <!-- ─── 02 · TYPOGRAPHY ────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">02</span>
+          <h2 class="section-title">Typography</h2>
+        </div>
+        <p class="section-intro">3 families. <strong>Lora</strong> cho body + italic mệnh đề. <strong>Barlow Condensed</strong> cho display uppercase + tiêu đề + số (với tabular-nums). <strong>IBM Plex Mono</strong> cho kickers + IDs + technical labels. Đủ cho mọi role, không trộn lẫn.</p>
+
+        <div class="type-row">
+          <div class="type-label">Display XL<br/><code>Barlow Condensed 800 · 88px</code></div>
+          <div class="display-xl">Ngày Lành<br/><span style="color:var(--gold-deep)">Tháng Tốt</span></div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Display L<br/><code>Barlow Condensed 800 · 36px</code></div>
+          <div class="display-l">Trang hôm nay</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Display M<br/><code>Barlow Condensed 800 · 24px</code></div>
+          <div class="display-m">Vận năm Bính Ngọ</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Tabular numérals<br/><code>Barlow Condensed 800 · tabular-nums</code></div>
+          <div class="tabular">76 / 92 / 449</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Body serif<br/><code>Lora 400 · 15px</code></div>
+          <div class="body">Mộc khí vượng đến trưa, hợp ký kết và mở việc. Sang chiều Thổ vượng — <em>nên tránh động thổ, đào móng</em>.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Mono kicker<br/><code>IBM Plex Mono 600 · 10.5px · 0.22em</code></div>
+          <div class="mono-kicker">Lịch của Nguyễn Thị Minh · Bính Ngọ</div>
+        </div>
+
+        <div class="note">
+          <strong>Hierarchy:</strong> Lora (serif) = body + italic phrases. Barlow Condensed (display) = headers + numerals + button labels — dùng <code style="font-family: var(--mono); font-size: 11px;">font-variant-numeric: tabular-nums</code> cho số căn cột. IBM Plex Mono = kickers + IDs + technical data. <strong>Không trộn ngẫu nhiên.</strong>
+        </div>
+
+        <div class="note" style="background: rgba(163,32,31,0.04); border-left-color: var(--red);">
+          <strong>Deprecated v1.0 → v1.1:</strong> Montserrat đã bỏ. Numerals trước dùng Montserrat 800 giờ dùng Barlow Condensed 800 với tabular-nums. Số sẽ condensed hơn một chút — phù hợp với headers dùng cùng font. Biến CSS <code style="font-family: var(--mono); font-size: 11px;">--display-2</code> giữ alias tới Barlow Condensed cho backward compat.
+        </div>
+      </section>
+
+      <!-- ─── 03 · SPACING ───────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">03</span>
+          <h2 class="section-title">Spacing</h2>
+        </div>
+        <p class="section-intro">Scale 8px-based với accent points. Padding mobile screens: 22-24px horizontal, 18-32px vertical between groups.</p>
+
+        <div style="margin-top: 28px;">
+          <div class="space-row"><div class="space-name" style="min-width:90px">xs</div><div class="space-bar" style="width:4px"></div><div class="space-px">4px</div></div>
+          <div class="space-row"><div class="space-name" style="min-width:90px">sm</div><div class="space-bar" style="width:8px"></div><div class="space-px">8px</div></div>
+          <div class="space-row"><div class="space-name" style="min-width:90px">md</div><div class="space-bar" style="width:14px"></div><div class="space-px">14px</div></div>
+          <div class="space-row"><div class="space-name" style="min-width:90px">base</div><div class="space-bar" style="width:22px"></div><div class="space-px">22px · horizontal padding</div></div>
+          <div class="space-row"><div class="space-name" style="min-width:90px">lg</div><div class="space-bar" style="width:28px"></div><div class="space-px">28px · between elements</div></div>
+          <div class="space-row"><div class="space-name" style="min-width:90px">xl</div><div class="space-bar" style="width:36px"></div><div class="space-px">36px · between groups (Tôi screen)</div></div>
+          <div class="space-row"><div class="space-name" style="min-width:90px">section</div><div class="space-bar" style="width:88px"></div><div class="space-px">88px · between major sections (this page)</div></div>
+        </div>
+      </section>
+
+      <!-- ─── 04 · COMPONENTS ─────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">04</span>
+          <h2 class="section-title">Components</h2>
+        </div>
+
+        <div class="subhead">Buttons</div>
+        <div class="btn-row">
+          <button class="btn btn-primary">Đặt lịch năm</button>
+          <button class="btn btn-tertiary">Đọc luận giải →</button>
+          <button class="btn btn-secondary">Chọn gói này</button>
+          <button class="btn btn-danger">Đăng xuất</button>
+          <button class="btn-text">XEM CHI TIẾT →</button>
+        </div>
+        <p style="margin-top: 14px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">
+          <strong style="color: var(--ink)">Primary</strong> (forest/cream) = main CTA per screen, 1 instance. <strong style="color: var(--ink)">Tertiary</strong> (gold/forest) = on-forest CTA, also used for "khuyên dùng" hero tier. <strong style="color: var(--ink)">Secondary</strong> = alternate actions. <strong style="color: var(--ink)">Danger</strong> (ink/paper) = destructive confirm. <strong style="color: var(--ink)">Text</strong> = inline link, uppercase mono-display, mostly with arrows.
+        </p>
+
+        <div class="subhead">Cards</div>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-label">Default card</div>
+            <h3 style="font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.01em; margin: 6px 0 4px;">Trên paper bg</h3>
+            <p style="font-family: var(--serif); font-size: 13.5px; color: var(--ink2); line-height: 1.55; margin: 0;">White card + hairline border. Pattern phổ biến cho list items, mini-cards.</p>
+          </div>
+          <div class="card hero">
+            <div class="card-label" style="color: var(--gold)">Hero card · forest</div>
+            <h3 style="font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.01em; margin: 6px 0 4px;">Dùng đến 30.04.2027</h3>
+            <p style="font-family: var(--serif); font-size: 13.5px; color: rgba(237,231,211,0.78); line-height: 1.55; margin: 0;">"Lịch của tôi" card · subscription state · gold rule + button</p>
+          </div>
+          <div class="card gold-bordered">
+            <div style="display: flex; align-items: baseline; gap: 8px;"><span style="color: var(--gold-deep); font-size: 14px;">★</span><span class="card-label" style="color: var(--gold-deep)">Đã mở · gói năm</span></div>
+            <h3 style="font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: -0.01em; margin: 6px 0 4px;">Luận giải Bát tự năm</h3>
+            <p style="font-family: var(--serif); font-size: 12px; color: var(--muted); margin: 0;">tính cách · vận năm · phong thuỷ · quý nhân</p>
+          </div>
+          <div class="card" style="border-color: var(--gold-deep); background: rgba(154,124,34,0.06); border-left: 3px solid var(--gold-deep);">
+            <div class="card-label" style="color: var(--gold-deep)">Insight callout</div>
+            <p style="font-family: var(--serif); font-size: 13px; color: var(--ink2); line-height: 1.55; margin: 6px 0 0;">Khi có tip, hint, comparison hoặc upsell mềm. Padding 14×16, border-left 3px gold-deep.</p>
+          </div>
+        </div>
+
+        <div class="subhead">Segmented control</div>
+        <div style="max-width: 380px;">
+          <div class="seg">
+            <button class="active">Hôm nay</button>
+            <button>Tháng</button>
+          </div>
+        </div>
+        <p style="margin-top: 12px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Text-led với hairline underline cho active. 2 options trên cùng Tab. Whitespace nowrap.</p>
+
+        <div class="subhead">Bottom nav · 3 tabs</div>
+        <div class="nav-wrap">
+          <div class="nav">
+            <div class="nav-item active">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><rect x="3.8" y="5" width="16.4" height="15" rx="1"/><path d="M3.8 9 H20.2 M8 3 V7 M16 3 V7"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/></svg>
+              <span class="label">Lịch</span>
+            </div>
+            <div class="nav-item">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 L20 20"/></svg>
+              <span class="label">Tra cứu</span>
+            </div>
+            <div class="nav-item">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21 C4.5 16, 8 14, 12 14 C16 14, 19.5 16, 19.5 21"/></svg>
+              <span class="label">Tôi</span>
+            </div>
+          </div>
+
+          <div class="nav dark">
+            <div class="nav-item">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><rect x="3.8" y="5" width="16.4" height="15" rx="1"/><path d="M3.8 9 H20.2 M8 3 V7 M16 3 V7"/></svg>
+              <span class="label">Lịch</span>
+            </div>
+            <div class="nav-item active">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 L20 20"/></svg>
+              <span class="label">Tra cứu</span>
+            </div>
+            <div class="nav-item">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21 C4.5 16, 8 14, 12 14 C16 14, 19.5 16, 19.5 21"/></svg>
+              <span class="label">Tôi</span>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top: 12px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Floating pill, blur 14px, bottom 24px. Light + dark variants. Mỗi tab có internal segmented control.</p>
+
+        <div class="subhead">Score color ramp</div>
+        <div class="score-ramp">
+          <div class="score-stop"><span class="dot" style="background:#5e7d5e"></span><span style="font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em;">85–100</span><span style="font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--ink);">Tốt</span></div>
+          <div class="score-stop"><span class="dot" style="background:#9a7c22"></span><span style="font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em;">70–84</span><span style="font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--ink);">Khá</span></div>
+          <div class="score-stop"><span class="dot" style="background:#bfae7a"></span><span style="font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em;">55–69</span><span style="font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--ink);">Bình</span></div>
+          <div class="score-stop"><span class="dot" style="background:#7a7050"></span><span style="font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em;">40–54</span><span style="font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--ink);">Bình</span></div>
+          <div class="score-stop"><span class="dot" style="background:#a3201f"></span><span style="font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.06em;">0–39</span><span style="font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--ink);">Tránh</span></div>
+        </div>
+
+        <div class="subhead">Verdict band</div>
+        <div class="verdict">
+          <div>
+            <div class="v-label">Ngày khá</div>
+            <div class="v-sub">cho mệnh Quý Thủy · <span style="color: var(--gold-deep);">tại sao? ›</span></div>
+          </div>
+          <div style="display: flex; align-items: baseline; gap: 2px;">
+            <span class="v-score">76</span>
+            <span class="v-of100">/100</span>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Pattern xuất hiện trên Hôm nay + Day detail. Tappable (vào AI luận giải streaming).</p>
+      </section>
+
+      <!-- ─── 05 · KEY PATTERN ──────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">05</span>
+          <h2 class="section-title">Pattern · trang lịch tờ</h2>
+        </div>
+        <p class="section-intro">Surface chính của sản phẩm. Big-bang ngày đỏ + meta line đơn giản. Đây là cấu trúc lặp ở Hôm nay (#12), Day detail (#14), Reveal mini (#11), Share phiếu.</p>
+
+        <div style="margin-top: 28px;" class="litho">
+          <div class="head-band">Tháng 5 · 2026 · Bính Ngọ</div>
+          <div class="day">
+            <span class="day-num">26</span>
+            <span class="day-wd">Thứ Ba</span>
+          </div>
+          <div class="meta">Mùng 10 tháng Tư · ngày <strong style="color: var(--ink); font-weight: 600;">Mậu Tuất</strong> · tiết Tiểu Mãn</div>
+        </div>
+
+        <div class="note">
+          <strong>Anatomy:</strong> head-band (solar) · big day-num red + weekday red · meta line (lunar · can chi · tiết khí, cách nhau bằng dot). Sau đó verdict band + luận giải italic + Nên/Tránh/Giờ labeled rows. Không dùng card-on-card; surface đơn.
+        </div>
+      </section>
+
+      <!-- ─── 06 · ICONOGRAPHY ───────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">06</span>
+          <h2 class="section-title">Iconography</h2>
+        </div>
+        <p class="section-intro">Single-weight line icons, stroke 1.4-1.6px, no fills. Inherits color từ context (default <code style="font-family: var(--mono); font-size: 11px;">var(--muted)</code> on light surface, <code style="font-family: var(--mono); font-size: 11px;">rgba(237,231,211,0.6)</code> on dark).</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+          <!-- calendar -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"><rect x="3.8" y="5" width="16.4" height="15" rx="1"/><path d="M3.8 9 H20.2 M8 3 V7 M16 3 V7"/></svg>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">calendar</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Tab Lịch</div>
+          </div>
+          <!-- search -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 L20 20"/></svg>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">search</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Tab Tra cứu</div>
+          </div>
+          <!-- user -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 21 C4.5 16, 8 14, 12 14 C16 14, 19.5 16, 19.5 21"/></svg>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">user</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Tab Tôi</div>
+          </div>
+          <!-- bell -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <svg width="32" height="32" viewBox="0 0 64 64" fill="none" stroke="var(--ink)" stroke-width="1.6"><path d="M22 36 V28 C22 22, 26 18, 32 18 C38 18, 42 22, 42 28 V36 L44 40 H20 Z M28 42 C28 44, 30 46, 32 46 C34 46, 36 44, 36 42" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">bell</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Nhắc nhở</div>
+          </div>
+          <!-- back chevron -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 32px; color: var(--ink); line-height: 1;">‹</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">back</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Serif ‹ U+2039</div>
+          </div>
+          <!-- chevron right -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 32px; color: var(--ink); line-height: 1;">›</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">forward</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Row affordance</div>
+          </div>
+          <!-- dropdown -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 26px; color: var(--ink); line-height: 1;">▾</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">dropdown</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">▾ U+25BE</div>
+          </div>
+          <!-- arrow right -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 26px; color: var(--ink); line-height: 1;">→</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">arrow</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">CTA, next, link</div>
+          </div>
+          <!-- star -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 26px; color: var(--gold-deep); line-height: 1;">★</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">star</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Premium badge</div>
+          </div>
+          <!-- check -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 26px; color: var(--green); line-height: 1;">✓</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">check</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Benefit list, success</div>
+          </div>
+          <!-- close -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 26px; color: var(--ink); line-height: 1;">×</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">close</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Modal dismiss</div>
+          </div>
+          <!-- plus -->
+          <div style="display: flex; flex-direction: column; align-items: center; padding: 22px 14px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--serif); font-size: 26px; color: var(--gold-deep); line-height: 1;">+</span>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 12px; margin-top: 12px; letter-spacing: -0.005em;">plus</div>
+            <div style="font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px;">Add option, optional</div>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>Rules:</strong> No emoji. No filled icons except score dots. Chevrons + dropdown + arrows dùng glyph Unicode trong serif font cho consistency. SVG icons drawn at 20×20 or 24×24 viewBox, scale to context.
+        </div>
+      </section>
+
+      <!-- ─── 07 · FORMS ─────────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">07</span>
+          <h2 class="section-title">Forms</h2>
+        </div>
+        <p class="section-intro">Underline-style inputs. Active field có border-bottom gold-deep (light) hoặc gold (dark). KHÔNG box inputs trừ khi đặt trong card.</p>
+
+        <div class="subhead">Light variant · trên paper</div>
+        <div style="background: var(--paper); padding: 22px; border: 1px dashed var(--hairline);">
+          <div style="margin-top: 4px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted);">Họ và tên · active</div>
+            <input type="text" value="Nguyễn Thị Minh" style="width: 100%; margin-top: 4px; padding: 6px 0; background: transparent; border: none; border-bottom: 1px solid var(--gold-deep); outline: none; color: var(--ink); font-family: var(--display-2); font-weight: 600; font-size: 17px; letter-spacing: -0.005em;" />
+          </div>
+          <div style="margin-top: 22px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted);">Email · default</div>
+            <input type="text" value="minh.nguyen@gmail.com" style="width: 100%; margin-top: 4px; padding: 6px 0; background: transparent; border: none; border-bottom: 1px solid var(--hairline); outline: none; color: var(--ink); font-family: var(--display-2); font-weight: 600; font-size: 17px; letter-spacing: -0.005em;" />
+          </div>
+          <div style="margin-top: 22px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted);">Email · khoá</div>
+            <div style="margin-top: 8px; padding: 6px 0; border-bottom: 1px solid var(--hairline); display: flex; align-items: baseline; gap: 6px;">
+              <span style="font-family: var(--display-2); font-weight: 600; font-size: 17px; color: var(--ink2); letter-spacing: -0.005em;">minh.nguyen@gmail.com</span>
+              <span style="margin-left: auto; font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase;">khoá</span>
+            </div>
+          </div>
+          <div style="margin-top: 22px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted);">Dropdown · 26 việc</div>
+            <div style="margin-top: 4px; padding: 14px 14px; background: #fff; border: 1.5px solid var(--gold-deep); display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <div style="font-family: var(--display); font-weight: 800; font-size: 24px; color: var(--ink); line-height: 1.05; text-transform: uppercase; letter-spacing: -0.01em;">Khai trương <span style="color: var(--gold-deep); font-weight: 700;">cửa hàng</span></div>
+                <div style="margin-top: 8px; font-family: var(--serif); font-size: 11.5px; color: var(--muted);">26 việc · chọn lại</div>
+              </div>
+              <span style="color: var(--gold-deep); font-family: var(--serif); font-size: 16px;">▾</span>
+            </div>
+          </div>
+          <div style="margin-top: 22px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted);">Segmented · Nam / Nữ</div>
+            <div style="margin-top: 8px; display: flex; gap: 4px;">
+              <span style="flex: 1; font-family: var(--display-2); font-weight: 700; font-size: 11px; padding: 8px 0; background: var(--forest); color: var(--cream); text-align: center; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;">Nam</span>
+              <span style="flex: 1; font-family: var(--display-2); font-weight: 700; font-size: 11px; padding: 8px 0; background: transparent; color: var(--muted); border: 1px solid var(--hairline); text-align: center; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;">Nữ</span>
+            </div>
+          </div>
+          <div style="margin-top: 22px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted);">Textarea · với gold border</div>
+            <textarea style="width: 100%; margin-top: 6px; padding: 12px 14px; min-height: 76px; background: #fff; border: 1px solid var(--gold-deep); outline: none; font-family: var(--serif); font-size: 13.5px; color: var(--ink); line-height: 1.5; resize: none;">Anh chị xem ngày khai trương quán em chọn — 06.06 hợp mệnh em nhất.</textarea>
+          </div>
+        </div>
+
+        <div class="subhead">Dark variant · trên forest</div>
+        <div style="background: var(--forest); padding: 22px; color: var(--cream);">
+          <div>
+            <div style="font-family: var(--serif); font-size: 11.5px; color: rgba(237,231,211,0.55);">Họ và tên · active</div>
+            <input type="text" value="Nguyễn Thị Minh" style="width: 100%; margin-top: 4px; padding: 6px 0; background: transparent; border: none; border-bottom: 1px solid var(--gold); outline: none; color: var(--cream); font-family: var(--display-2); font-weight: 600; font-size: 17px; letter-spacing: -0.005em;" />
+          </div>
+          <div style="margin-top: 22px;">
+            <div style="font-family: var(--serif); font-size: 11.5px; color: rgba(237,231,211,0.55);">Email · default</div>
+            <input type="text" value="minh.nguyen@gmail.com" style="width: 100%; margin-top: 4px; padding: 6px 0; background: transparent; border: none; border-bottom: 1px solid rgba(237,231,211,0.3); outline: none; color: var(--cream); font-family: var(--display-2); font-weight: 600; font-size: 17px; letter-spacing: -0.005em;" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 08 · LISTS & ROWS ──────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">08</span>
+          <h2 class="section-title">Lists &amp; rows</h2>
+        </div>
+        <p class="section-intro">Padding 12px vertical, hairline2 dividers between rows. Last row không có divider. Tap target full row width.</p>
+
+        <div class="subhead">A · Title · sub · chevron</div>
+        <div style="background: #fff; border: 1px solid var(--hairline);">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--hairline2); cursor: pointer;">
+            <div>
+              <div style="font-family: var(--display-2); font-weight: 700; font-size: 14px; color: var(--ink); letter-spacing: -0.005em;">Chuyển lịch</div>
+              <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted); margin-top: 2px;">âm ↔ dương</div>
+            </div>
+            <span style="font-family: var(--serif); color: var(--gold-deep); font-size: 14px;">›</span>
+          </div>
+          <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 12px 16px; cursor: pointer;">
+            <div>
+              <div style="font-family: var(--display-2); font-weight: 700; font-size: 14px; color: var(--ink); letter-spacing: -0.005em;">Cài đặt</div>
+              <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted); margin-top: 2px;">thông báo · tài khoản · hỗ trợ</div>
+            </div>
+            <span style="font-family: var(--serif); color: var(--gold-deep); font-size: 14px;">›</span>
+          </div>
+        </div>
+
+        <div class="subhead">B · Sổ ngày · date | content | score</div>
+        <div>
+          <div style="display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--hairline2); align-items: baseline;">
+            <div style="font-family: var(--display-2); font-weight: 800; font-size: 17px; color: var(--ink); min-width: 50px; font-variant-numeric: tabular-nums; letter-spacing: -0.015em;">17.06</div>
+            <div style="flex: 1; font-family: var(--serif); font-size: 13.5px; color: var(--ink);">Khai trương cửa hàng</div>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 14px; color: var(--green-mute); font-variant-numeric: tabular-nums;">92</div>
+          </div>
+          <div style="display: flex; gap: 14px; padding: 12px 0; align-items: baseline;">
+            <div style="font-family: var(--display-2); font-weight: 800; font-size: 17px; color: var(--ink); min-width: 50px; font-variant-numeric: tabular-nums; letter-spacing: -0.015em;">14.07</div>
+            <div style="flex: 1; font-family: var(--serif); font-size: 13.5px; color: var(--ink);">Ký hợp đồng thuê mặt bằng</div>
+            <div style="font-family: var(--display-2); font-weight: 700; font-size: 14px; color: var(--gold); font-variant-numeric: tabular-nums;">85</div>
+          </div>
+        </div>
+
+        <div class="subhead">C · Tra cứu result · date col · meta+reason · score · #1 highlight</div>
+        <div>
+          <div style="display: flex; gap: 16px; padding: 16px 14px; background: rgba(154,124,34,0.12); border-bottom: 1px solid var(--hairline2); border-left: 3px solid var(--gold-deep); cursor: pointer; align-items: baseline; position: relative;">
+            <span style="position: absolute; top: 8px; right: 14px; font-family: var(--mono); font-size: 9px; color: var(--gold-deep); letter-spacing: 0.2em; font-weight: 800; background: var(--gold); padding: 2px 6px;">★ ĐỀ XUẤT</span>
+            <div style="min-width: 54px;">
+              <div style="font-family: var(--display-2); font-weight: 800; font-size: 24px; color: var(--red); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">06</div>
+              <div style="font-family: var(--serif); font-size: 11px; color: var(--muted); margin-top: 3px;">Th 06 · T7</div>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted); margin-bottom: 3px;">Kỷ Tỵ · Mùng 21 Tháng Tư</div>
+              <div style="font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ink2); line-height: 1.45;">Hỏa khí thịnh, hợp khai trương thương hiệu mới</div>
+            </div>
+            <div style="min-width: 38px; text-align: right;">
+              <span style="font-family: var(--display-2); font-weight: 800; font-size: 22px; color: var(--green-mute); font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">92</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 16px; padding: 16px 14px; cursor: pointer; align-items: baseline;">
+            <div style="min-width: 54px;">
+              <div style="font-family: var(--display-2); font-weight: 800; font-size: 24px; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">14</div>
+              <div style="font-family: var(--serif); font-size: 11px; color: var(--muted); margin-top: 3px;">Th 06 · CN</div>
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted); margin-bottom: 3px;">Đinh Sửu · Mùng 29 Tháng Tư</div>
+              <div style="font-family: var(--serif); font-style: italic; font-size: 13px; color: var(--ink2); line-height: 1.45;">Thổ vượng, hợp mở cửa hàng dịch vụ</div>
+            </div>
+            <div style="min-width: 38px; text-align: right;">
+              <span style="font-family: var(--display-2); font-weight: 800; font-size: 22px; color: var(--gold); font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">88</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="subhead">D · Pricing tier · name+sub · price+per</div>
+        <div style="padding: 16px 16px; background: #fff; border: 1px solid var(--hairline); display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+          <div>
+            <div style="font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: -0.01em;">6 tháng</div>
+            <div style="font-family: var(--serif); font-size: 12px; color: var(--muted); margin-top: 3px;">Chỉ lịch · người mới quen</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-family: var(--serif); font-size: 12px; color: var(--muted); text-decoration: line-through; margin-bottom: 2px; font-variant-numeric: tabular-nums;">294.000đ</div>
+            <div style="font-family: var(--display-2); font-weight: 800; font-size: 24px; color: var(--gold-deep); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.015em;">249.000</div>
+            <div style="font-family: var(--serif); font-size: 11.5px; color: var(--muted); margin-top: 4px;">đ · 6 tháng</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 09 · BADGES & LABELS ───────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">09</span>
+          <h2 class="section-title">Badges &amp; labels</h2>
+        </div>
+        <p class="section-intro">4 patterns trong app, mỗi cái có ngữ cảnh riêng. Không trộn lẫn.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div style="font-family: var(--serif); font-style: italic; font-size: 12px; color: var(--gold-deep); display: inline-block;">khuyên dùng</div>
+            <div class="subhead" style="margin-top: 12px;">Soft italic · pricing hero</div>
+            <p style="font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.5; margin: 4px 0 0;">Inline với tier name, không tách lớp. Dành cho recommendation mềm.</p>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <span style="font-family: var(--mono); font-size: 9px; color: var(--gold-deep); letter-spacing: 0.18em; font-weight: 700;">★ ĐÃ MỞ · GÓI NĂM</span>
+            <div class="subhead" style="margin-top: 12px;">Mono kicker · unlocked state</div>
+            <p style="font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.5; margin: 4px 0 0;">Gold-deep, mono 0.18em tracking. Báo state đã unlock của feature paywall.</p>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline); position: relative;">
+            <span style="position: absolute; top: -10px; left: 14px; padding: 3px 8px; background: var(--gold); color: var(--forest); font-family: var(--mono); font-size: 9px; font-weight: 800; letter-spacing: 0.18em;">★ TỐT NHẤT</span>
+            <div style="margin-top: 6px;"></div>
+            <div class="subhead" style="margin-top: 16px;">Sticker · hero tier marker</div>
+            <p style="font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.5; margin: 4px 0 0;">Gold-fill, position absolute trên top-left của card. Cho 1 instance per screen.</p>
+          </div>
+          <div style="padding: 18px; background: rgba(154,124,34,0.12); border: 1px solid var(--hairline); border-left: 3px solid var(--gold-deep); position: relative;">
+            <span style="position: absolute; top: 8px; right: 14px; font-family: var(--mono); font-size: 9px; color: var(--gold-deep); letter-spacing: 0.2em; font-weight: 800; background: var(--gold); padding: 2px 6px;">★ ĐỀ XUẤT</span>
+            <div style="margin-top: 4px;">Item content...</div>
+            <div class="subhead" style="margin-top: 14px;">Result row · #1 recommendation</div>
+            <p style="font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.5; margin: 4px 0 0;">Combine: tinted bg + border-left + sticker top-right. Top-1 trong list.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 10 · MODALS & SHEETS ───────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">10</span>
+          <h2 class="section-title">Modals &amp; sheets</h2>
+        </div>
+        <p class="section-intro">3 variants. Dim overlay luôn là <code style="font-family: var(--mono); font-size: 11px;">rgba(24,21,14,0.45-0.55)</code>.</p>
+
+        <div class="subhead">A · Bottom sheet · rounded-top 16px</div>
+        <div style="background: var(--ink); height: 320px; position: relative; overflow: hidden; max-width: 360px;">
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; background: var(--paper); padding: 14px 24px 28px; border-top-left-radius: 16px; border-top-right-radius: 16px;">
+            <div style="display: flex; justify-content: center; margin-bottom: 16px;"><span style="width: 36px; height: 4px; background: rgba(24,21,14,0.18); border-radius: 2px;"></span></div>
+            <div style="font-family: var(--mono); font-size: 9px; color: var(--gold-deep); letter-spacing: 0.18em; text-transform: uppercase;">Đặt lịch</div>
+            <div style="font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); margin-top: 4px; text-transform: uppercase; letter-spacing: -0.015em;">Lịch Đinh Mùi 2027</div>
+            <div style="margin-top: 18px;"><button class="btn btn-primary" style="width: 100%;">Thanh toán 449.000đ</button></div>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Pay confirm, Install banner, Notif permission. Drag handle 36×4px, padding 14-24-28.</p>
+
+        <div class="subhead">B · Centered dialog · 320px width</div>
+        <div style="background: var(--ink); height: 320px; position: relative; max-width: 360px; display: flex; align-items: center; justify-content: center; padding: 0 28px;">
+          <div style="width: 100%; max-width: 320px; background: var(--paper); padding: 24px 22px 20px;">
+            <div style="font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase;">Xác nhận</div>
+            <h3 style="margin-top: 6px; font-family: var(--display); font-weight: 800; font-size: 18px; color: var(--ink); text-transform: uppercase; letter-spacing: -0.01em; line-height: 1.1;">Đăng xuất khỏi<br />lịch của bạn?</h3>
+            <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.55;">Lá số và sổ ngày của bạn vẫn được lưu trên cloud.</p>
+            <div style="margin-top: 18px; display: flex; gap: 8px;">
+              <button style="flex: 1; padding: 10px; background: transparent; color: var(--ink); border: 1px solid var(--hairline); font-family: var(--display-2); font-weight: 700; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;">Huỷ</button>
+              <button class="btn btn-danger" style="flex: 1; font-size: 11px;">Đăng xuất</button>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Confirm logout, delete account. 320px max, 2 buttons cancel + danger.</p>
+
+        <div class="subhead">C · Paywall sheet · floating</div>
+        <p style="font-family: var(--serif); font-size: 12.5px; color: var(--ink2); line-height: 1.6;">Locked content visible at top, fade-out gradient overlay, paywall card floating bottom với 2 price paths (subscription + standalone). Card style: white bg, border 1.5px gold-deep, box-shadow 0 16px 36px rgba(0,0,0,0.16). Pattern dùng cho Bazi locked (#33).</p>
+      </section>
+
+      <!-- ─── 11 · EMPTY STATES ──────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">11</span>
+          <h2 class="section-title">Empty states</h2>
+        </div>
+        <p class="section-intro">Anatomy: SVG icon (60-84px) + uppercase headline (Display 22-24px) + italic body (max 260-300px) + primary CTA. Centered vertically và horizontally.</p>
+
+        <div style="margin-top: 28px; background: var(--paper); padding: 60px 32px; border: 1px dashed var(--hairline); display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 380px;">
+          <svg width="68" height="84" viewBox="0 0 68 84" fill="none">
+            <path d="M2 2 H50 L66 18 V82 H2 Z" stroke="var(--gold-deep)" stroke-width="1.4" fill="rgba(154,124,34,0.04)"/>
+            <path d="M50 2 V18 H66" stroke="var(--gold-deep)" stroke-width="1.4" fill="none"/>
+            <line x1="12" y1="34" x2="56" y2="34" stroke="var(--hairline)" stroke-width="1"/>
+            <line x1="12" y1="44" x2="56" y2="44" stroke="var(--hairline)" stroke-width="1"/>
+            <line x1="12" y1="54" x2="42" y2="54" stroke="var(--hairline)" stroke-width="1"/>
+          </svg>
+          <h2 style="margin-top: 24px; font-family: var(--display); font-weight: 800; font-size: 22px; color: var(--ink); text-transform: uppercase; letter-spacing: -0.005em;">Sổ còn trống</h2>
+          <p style="margin-top: 10px; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--muted); line-height: 1.55; max-width: 260px;">Khi bạn tra cứu được ngày tốt và lưu lại — ngày đó sẽ xuất hiện ở đây.</p>
+          <button class="btn btn-primary" style="margin-top: 28px; font-size: 12px; padding: 12px 22px;">Tra cứu ngày tốt →</button>
+        </div>
+      </section>
+
+      <!-- ─── 12 · BANNERS & STATUS ──────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">12</span>
+          <h2 class="section-title">Banners &amp; status</h2>
+        </div>
+        <p class="section-intro">Inline strips, không phải modals. Đính top hoặc inline trong content.</p>
+
+        <div class="subhead">A · Insight callout · padding 12-14 · borderLeft 2-3px</div>
+        <div style="padding: 14px 16px; background: rgba(154,124,34,0.06); border-left: 3px solid var(--gold-deep);">
+          <span style="font-family: var(--mono); font-size: 9px; color: var(--gold-deep); letter-spacing: 0.18em; text-transform: uppercase;">So sánh nhanh</span>
+          <p style="font-family: var(--serif); font-size: 13px; color: var(--ink); line-height: 1.6; margin: 8px 0 0;">Mua lẻ cả 2 luận giải = <strong>498.000đ</strong> — nhưng <strong>không có lịch</strong>.</p>
+        </div>
+
+        <div class="subhead">B · Success callout · green left-border</div>
+        <div style="padding: 14px 16px; background: rgba(122,154,128,0.12); border-left: 2px solid var(--green);">
+          <span style="font-family: var(--serif); font-size: 12px; color: var(--ink2); line-height: 1.45;"><strong style="color: var(--ink);">Đã mở</strong> · miễn phí với Lịch Đinh Mùi 2027 (gói năm)</span>
+        </div>
+
+        <div class="subhead">C · Warning callout · red left-border</div>
+        <div style="padding: 14px 16px; background: rgba(163,32,31,0.05); border-left: 2px solid var(--red);">
+          <span style="font-family: var(--mono); font-size: 9px; color: var(--red); letter-spacing: 0.18em; text-transform: uppercase;">Cảnh báo</span>
+          <p style="font-family: var(--serif); font-size: 13px; color: var(--ink2); line-height: 1.55; margin: 6px 0 0;"><strong style="color: var(--ink);">Tam Tai</strong> — năm cuối tam tai (Thân Tý Thìn → Ngọ là năm thứ 3).</p>
+        </div>
+
+        <div class="subhead">D · Offline banner · top of screen</div>
+        <div style="padding: 10px 22px; background: #3a2a14; color: #e8d9a3; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(197,165,90,0.2); max-width: 380px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e8d9a3" stroke-width="1.6" stroke-linecap="round"><path d="M5 12 a7 7 0 0 1 14 0 M8.5 15 a3 3 0 0 1 7 0 M12 18.5 v.1"/><path d="M3 3 L21 21"/></svg>
+          <div style="flex: 1; font-family: var(--serif); font-size: 11.5px; color: #e8d9a3; line-height: 1.3;"><strong style="font-weight: 600;">Đang offline.</strong> Các trang lịch đã tải vẫn xem được.</div>
+        </div>
+      </section>
+
+      <!-- ─── 13 · LOADING STATES ────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">13</span>
+          <h2 class="section-title">Loading states</h2>
+        </div>
+        <p class="section-intro">4 patterns. KHÔNG dùng spinning circle. Mỗi loading state có ý nghĩa narrative.</p>
+
+        <div class="subhead">A · Splash bar · 64×1.5px</div>
+        <div style="background: var(--forest); padding: 36px; max-width: 380px; display: flex; justify-content: center;">
+          <div style="width: 72px; height: 1.5px; background: rgba(197,165,90,0.3); position: relative; overflow: hidden;">
+            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 40%; background: var(--gold);"></div>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">App splash · "Đang mở lịch của bạn".</p>
+
+        <div class="subhead">B · AI streaming cursor · ink block · 1s blink</div>
+        <div style="padding: 18px; background: var(--paper); max-width: 380px;">
+          <p style="font-family: var(--serif); font-size: 14px; color: var(--ink); line-height: 1.65; margin: 0;">Hôm nay ngày Mậu Tuất — Thổ. Mệnh bạn là Quý Thủy...<span style="display: inline-block; width: 7px; height: 14px; background: var(--ink); margin-left: 2px; vertical-align: middle; animation: blink-cursor 1s steps(2) infinite;"></span></p>
+          <style>@keyframes blink-cursor { 50% { opacity: 0; } }</style>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">AI luận giải streaming. <code style="font-family: var(--mono); font-size: 11px;">@keyframes blink-cursor &#123; 50% &#123; opacity: 0; &#125; &#125;</code></p>
+
+        <div class="subhead">C · Building calendar · 4 pillars filling sequentially</div>
+        <div style="padding: 28px; background: var(--forest); max-width: 380px; text-align: center;">
+          <div style="display: inline-flex; gap: 8px;">
+            <div style="width: 56px; padding: 12px 0; background: rgba(197,165,90,0.1); border: 1px solid var(--gold);">
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--gold); letter-spacing: 0.18em; text-transform: uppercase;">Niên</div>
+              <div style="margin-top: 6px; font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--cream); text-transform: uppercase; letter-spacing: -0.005em; line-height: 1;">Canh Ngọ</div>
+            </div>
+            <div style="width: 56px; padding: 12px 0; background: rgba(197,165,90,0.1); border: 1px solid var(--gold);">
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--gold); letter-spacing: 0.18em; text-transform: uppercase;">Nguyệt</div>
+              <div style="margin-top: 6px; font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--cream); text-transform: uppercase; letter-spacing: -0.005em; line-height: 1;">Quý Mùi</div>
+            </div>
+            <div style="width: 56px; padding: 12px 0; background: rgba(197,165,90,0.1); border: 1px solid var(--gold);">
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--gold); letter-spacing: 0.18em; text-transform: uppercase;">Nhật</div>
+              <div style="margin-top: 6px; font-family: var(--display-2); font-weight: 700; font-size: 12px; color: var(--cream); text-transform: uppercase; letter-spacing: -0.005em; line-height: 1;">Quý Tỵ</div>
+            </div>
+            <div style="width: 56px; padding: 12px 0; background: transparent; border: 1px solid rgba(237,231,211,0.18);">
+              <div style="font-family: var(--mono); font-size: 9px; color: rgba(237,231,211,0.4); letter-spacing: 0.18em; text-transform: uppercase;">Thời</div>
+              <div style="margin-top: 6px; font-family: var(--display-2); font-weight: 700; font-size: 12px; color: rgba(237,231,211,0.3); letter-spacing: -0.005em; line-height: 1;">···</div>
+            </div>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Onboarding · "Đang dựng lịch". Trụ fill từ trái phải, mỗi pillar ~400ms.</p>
+
+        <div class="subhead">D · Calendar page flip · day number scale + opacity</div>
+        <p style="font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Pick loading. Day number <code style="font-family: var(--mono); font-size: 11px;">c-flip-num</code> keyframe: 1.6s ease-in-out infinite, peak opacity 0.3 + scale 0.97 at 50%.</p>
+      </section>
+
+      <!-- ─── 14 · DATA DISPLAY ──────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">14</span>
+          <h2 class="section-title">Data display</h2>
+        </div>
+        <p class="section-intro">Visualizations dùng trong app. Đều phẳng, không 3D, không gradients.</p>
+
+        <div class="subhead">A · Ngũ hành horizontal bars · height 70px</div>
+        <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline); max-width: 380px;">
+          <div style="display: flex; align-items: flex-end; gap: 8px; height: 70px;">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+              <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); font-weight: 600; margin-bottom: 3px;">25%</div>
+              <div style="width: 70%; height: 60%; background: var(--green-mute); opacity: 0.85;"></div>
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--ink2); margin-top: 4px; letter-spacing: 0.06em;">Mộc</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+              <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); font-weight: 600; margin-bottom: 3px;">10%</div>
+              <div style="width: 70%; height: 24%; background: #c5402a; opacity: 0.85;"></div>
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--ink2); margin-top: 4px; letter-spacing: 0.06em;">Hỏa</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+              <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); font-weight: 600; margin-bottom: 3px;">18%</div>
+              <div style="width: 70%; height: 43%; background: var(--gold-deep); opacity: 0.85;"></div>
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--ink2); margin-top: 4px; letter-spacing: 0.06em;">Thổ</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+              <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); font-weight: 600; margin-bottom: 3px;">22%</div>
+              <div style="width: 70%; height: 53%; background: #c8c5a0; opacity: 0.85;"></div>
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--ink2); margin-top: 4px; letter-spacing: 0.06em;">Kim</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+              <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); font-weight: 600; margin-bottom: 3px;">25%</div>
+              <div style="width: 70%; height: 60%; background: var(--forest); opacity: 0.85;"></div>
+              <div style="font-family: var(--mono); font-size: 9px; color: var(--ink2); margin-top: 4px; letter-spacing: 0.06em;">Thủy</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="subhead">B · Month grid score dots · 4px circles in 7-col</div>
+        <div style="padding: 18px; background: var(--paper); max-width: 380px;">
+          <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0;">
+            <!-- weekday headers -->
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--muted); padding: 4px 0;">T2</div>
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--muted); padding: 4px 0;">T3</div>
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--muted); padding: 4px 0;">T4</div>
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--muted); padding: 4px 0;">T5</div>
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--muted); padding: 4px 0;">T6</div>
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--muted); padding: 4px 0;">T7</div>
+            <div style="text-align: center; font-family: var(--mono); font-size: 9px; color: var(--red); padding: 4px 0;">CN</div>
+            <!-- sample row -->
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="font-family: var(--display-2); font-weight: 600; font-size: 14px; color: var(--ink);">22</div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--gold);"></div></div>
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="font-family: var(--display-2); font-weight: 600; font-size: 14px; color: var(--ink);">23</div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--green-mute);"></div></div>
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="font-family: var(--display-2); font-weight: 600; font-size: 14px; color: var(--ink);">24</div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: #bfae7a;"></div></div>
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="font-family: var(--display-2); font-weight: 600; font-size: 14px; color: var(--ink);">25</div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--muted);"></div></div>
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="width: 26px; height: 26px; border-radius: 50%; background: var(--ink); display: flex; align-items: center; justify-content: center;"><span style="font-family: var(--display-2); font-weight: 700; font-size: 14px; color: var(--paper);">26</span></div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--gold-deep);"></div></div>
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="font-family: var(--display-2); font-weight: 600; font-size: 14px; color: var(--ink);">27</div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--green-mute);"></div></div>
+            <div style="aspect-ratio: 1; padding: 4px 0 6px; display: flex; flex-direction: column; align-items: center; position: relative;"><div style="font-family: var(--display-2); font-weight: 600; font-size: 14px; color: var(--red);">28</div><div style="position: absolute; bottom: 6px; width: 4px; height: 4px; border-radius: 50%; background: var(--red);"></div></div>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Today's date là forest circle 26×26 paper text. Score dot ở bottom của ô, 4×4 colored theo ramp.</p>
+
+        <div class="subhead">C · Year fortune bars · 12 monthly</div>
+        <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline); max-width: 380px;">
+          <div style="display: flex; align-items: flex-end; gap: 3px; height: 56px;">
+            <div style="flex: 1; height: 55%; background: var(--gold-deep); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 62%; background: var(--gold-deep); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 70%; background: var(--green); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 68%; background: var(--gold-deep); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 76%; background: var(--green); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 48%; background: var(--muted); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 42%; background: var(--red); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 65%; background: var(--gold-deep); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 78%; background: var(--green); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 80%; background: var(--green); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 72%; background: var(--green); opacity: 0.85;"></div>
+            <div style="flex: 1; height: 68%; background: var(--gold-deep); opacity: 0.85;"></div>
+          </div>
+          <div style="margin-top: 6px; display: flex; gap: 3px;">
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">1</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">2</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">3</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">4</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">5</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">6</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">7</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">8</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">9</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">10</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">11</div>
+            <div style="flex: 1; text-align: center; font-family: var(--mono); font-size: 8px; color: var(--muted);">12</div>
+          </div>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Tiểu vận trong Bazi reading. Bar color theo score-band giống month dots.</p>
+
+        <div class="subhead">D · Sao bay · 3×3 grid · 9 cung</div>
+        <div style="padding: 14px 16px; background: #fff; border: 1px solid var(--hairline); max-width: 320px;">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;">
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Tây Nam</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--red); letter-spacing: -0.005em;">2 Bệnh</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Đông</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--red); letter-spacing: -0.005em;">7 Phá</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Đông Nam</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--gold-deep); letter-spacing: -0.005em;">9 Hỷ</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Bắc</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--gold-deep); letter-spacing: -0.005em;">6 Tài</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: rgba(154,124,34,0.06); border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Trung</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--red); letter-spacing: -0.005em;">5 Tử</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Nam</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--gold-deep); letter-spacing: -0.005em;">1 Bạch</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Đông Bắc</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--gold-deep); letter-spacing: -0.005em;">4 Văn</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Tây</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--muted); letter-spacing: -0.005em;">3 Thị</div></div>
+            <div style="padding: 8px 4px; text-align: center; background: transparent; border: 1px solid var(--hairline2);"><div style="font-family: var(--mono); font-size: 8px; color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase;">Tây Bắc</div><div style="margin-top: 4px; font-family: var(--display-2); font-weight: 700; font-size: 11px; color: var(--gold-deep); letter-spacing: -0.005em;">8 Tài</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 15 · BRAND MARK ────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">15</span>
+          <h2 class="section-title">Brand mark</h2>
+        </div>
+        <p class="section-intro">Logo hiện tại retained từ Direction B — circle mark có 吉 character + diamonds + concentric rings.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: center;">
+          <svg viewBox="0 0 140 140" width="140" height="140">
+            <circle cx="70" cy="70" r="65" fill="#1d3129"/>
+            <path fill="#c9a84c" d="M70,1.5 L73.5,5 L70,8.5 L66.5,5 Z M116,20.5 L119.5,24 L116,27.5 L112.5,24 Z M135,66.5 L138.5,70 L135,73.5 L131.5,70 Z M116,112.5 L119.5,116 L116,119.5 L112.5,116 Z M70,131.5 L73.5,135 L70,138.5 L66.5,135 Z M24,112.5 L27.5,116 L24,119.5 L20.5,116 Z M5,66.5 L8.5,70 L5,73.5 L1.5,70 Z M24,20.5 L27.5,24 L24,27.5 L20.5,24 Z"/>
+            <circle cx="70" cy="70" r="65" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+            <circle cx="70" cy="70" r="50" fill="none" stroke="#9a7c22" stroke-width="1"/>
+            <circle cx="70" cy="70" r="43" fill="none" stroke="#9a7c22" stroke-width="0.5" opacity="0.6"/>
+            <circle cx="70" cy="44" r="2.5" fill="#9a7c22"/>
+            <circle cx="96" cy="70" r="2.5" fill="#9a7c22"/>
+            <circle cx="70" cy="96" r="2.5" fill="#9a7c22"/>
+            <circle cx="44" cy="70" r="2.5" fill="#9a7c22"/>
+            <text x="70" y="70" text-anchor="middle" dominant-baseline="central" font-family="serif" font-weight="700" font-size="36" fill="#c9a84c">吉</text>
+          </svg>
+          <div>
+            <div class="subhead" style="margin-top: 0;">Current state · v1.0</div>
+            <p style="font-family: var(--serif); font-size: 14px; color: var(--ink2); line-height: 1.65;">Logo mark vẫn dùng từ Direction B. <strong style="color: var(--ink);">Direction C giảm dùng chữ Hán trong UI</strong> nhưng <strong style="color: var(--ink);">không redesign brand mark</strong>. Logo retained là legacy. Roadmap v2 — thay 吉 bằng motif Việt (Đông Sơn sun / lotus / vermillion seal) — đã có exploration riêng, để sau.</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>Locked:</strong> Đến v2 brand decision: <code style="font-family: var(--mono); font-size: 11px;">assets/logo-mark.svg</code> + <code style="font-family: var(--mono); font-size: 11px;">assets/logo-mark-reversed.svg</code> dùng nguyên. Sizes: 22 (top strip), 28 (nav small), 36-48 (splash/reveal).
+        </div>
+      </section>
+
+      <!-- ─── 16 · VOICE & TONE ──────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">16</span>
+          <h2 class="section-title">Voice &amp; tone</h2>
+        </div>
+        <p class="section-intro">Tiếng Việt thường ngày, không Hán Việt nặng nếu không cần thiết. "Bạn" làm subject mặc định.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 28px;">
+          <div>
+            <div class="subhead" style="margin-top: 0;">Do</div>
+            <ul style="font-family: var(--serif); font-size: 13.5px; color: var(--ink2); line-height: 1.65; padding-left: 22px;">
+              <li>Xưng "bạn" — neutral, formal</li>
+              <li>Capitalize can chi: "Mậu Tuất", "Quý Thủy"</li>
+              <li>Italic serif cho mệnh đề trích dẫn: <em>"Mộc khí vượng đến trưa..."</em></li>
+              <li>Display uppercase cho headers</li>
+              <li>Số tiền: "449.000đ" (dấu chấm ngăn nghìn, đ thường)</li>
+              <li>Năm âm đầy đủ: "Bính Ngọ 2026"</li>
+              <li>Câu ngắn, có nhịp</li>
+              <li>Giải thích kỹ thuật bằng tiếng Việt: "Mệnh Thủy" thay vì "命水"</li>
+            </ul>
+          </div>
+          <div>
+            <div class="subhead" style="margin-top: 0;">Don't</div>
+            <ul style="font-family: var(--serif); font-size: 13.5px; color: var(--ink2); line-height: 1.65; padding-left: 22px;">
+              <li>"Anh/chị" — too formal cho app, biased gender</li>
+              <li>Hán Việt nặng: "ngày cát" → "ngày tốt"</li>
+              <li>Emoji 😊 trong UI</li>
+              <li>UPPERCASE cho body text (chỉ heading)</li>
+              <li>"$449" — luôn đ thường, dấu chấm</li>
+              <li>Dấu lệnh: "Hãy bấm" → "Bấm"</li>
+              <li>Câu dài quá 25 từ</li>
+              <li>Chữ Hán bên cạnh phiên âm (吉 Cát)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="subhead">Headline voice samples</div>
+        <div style="font-family: var(--serif); font-size: 14px; color: var(--ink); line-height: 1.6; background: rgba(154,124,34,0.04); padding: 16px 18px; border-left: 2px solid var(--gold-deep);">
+          <strong style="font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; font-size: 17px; display: block;">Lịch ngày lành <em style="color: var(--gold-deep);">cho riêng bạn</em>.</strong>
+          <strong style="font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; font-size: 17px; display: block; margin-top: 14px;">Đây là trang <em style="color: var(--gold-deep);">đầu tiên của bạn</em>.</strong>
+          <strong style="font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: -0.01em; font-size: 17px; display: block; margin-top: 14px;">Lịch của bạn, <em style="color: var(--gold-deep);">cho cả năm</em>.</strong>
+        </div>
+        <p style="margin-top: 10px; font-family: var(--serif); font-size: 12.5px; color: var(--muted); line-height: 1.5;">Pattern: UPPERCASE display + italic serif gold accent · 2 lines · short.</p>
+      </section>
+
+      <!-- ─── 17 · SAMPLE DATA PERSONA ───────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">17</span>
+          <h2 class="section-title">Sample data persona</h2>
+        </div>
+        <p class="section-intro">Lock data này. Team không tạo random sample khi mock UI.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Primary user</div>
+            <table style="font-family: var(--serif); font-size: 13px; color: var(--ink); line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted); padding-right: 12px;">Họ tên</td><td style="font-weight: 600;">Nguyễn Thị Minh</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Giới tính</td><td>Nữ</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Email</td><td style="font-family: var(--mono); font-size: 12px;">minh.nguyen@gmail.com</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Sinh</td><td>20.05.1990 · giờ Mão (5–7h)</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Tuổi</td><td>Canh Ngọ · 36 tuổi</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Mệnh</td><td>Quý Thủy · Trường Lưu Thủy</td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Tứ trụ</div>
+            <table style="font-family: var(--serif); font-size: 13px; color: var(--ink); line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted); padding-right: 12px;">Niên</td><td>Canh Ngọ · Kim</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Nguyệt</td><td>Quý Mùi · Thủy</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Nhật</td><td style="color: var(--gold-deep); font-weight: 600;">Quý Tỵ · Thủy ★</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Thời</td><td>Ất Mão · Mộc</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Dụng</td><td style="color: var(--green);">Kim, Thủy</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Kỵ</td><td style="color: var(--red);">Thổ, Hỏa</td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Today reference</div>
+            <table style="font-family: var(--serif); font-size: 13px; color: var(--ink); line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted); padding-right: 12px;">Dương</td><td>26.05.2026 · Thứ Ba</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Âm</td><td>Mùng 10 tháng Tư · Bính Ngọ</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Can chi ngày</td><td>Mậu Tuất</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Tiết khí</td><td>Tiểu Mãn</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Verdict</td><td>Ngày khá · 76/100</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Giờ tốt</td><td>Thìn 7–9h · Mùi 13–15h</td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Sample picks &amp; hợp tuổi</div>
+            <table style="font-family: var(--serif); font-size: 13px; color: var(--ink); line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted); padding-right: 12px;">Khai trương</td><td>06.06 · Kỷ Tỵ · 92/100</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Ký hợp đồng</td><td>14.06 · Đinh Sửu · 85/100</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Cưới hỏi</td><td>02.09 · 78/100</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Hợp tuổi</td><td>Trần Văn Hùng · 18.09.1988 Sửu</td></tr>
+              <tr><td style="color: var(--muted); padding-right: 12px;">Hợp score</td><td>82/100 · Hợp tốt</td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 18 · PRICING CONVENTIONS ───────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">18</span>
+          <h2 class="section-title">Pricing conventions</h2>
+        </div>
+        <p class="section-intro">Format số, baseline, savings phrasing. Đồng bộ ở mọi touchpoint.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Number format</div>
+            <div style="font-family: var(--serif); font-size: 14px; line-height: 1.7;">
+              <div><span style="color: var(--muted);">Full:</span> <strong style="font-family: var(--display-2); font-variant-numeric: tabular-nums;">449.000đ</strong></div>
+              <div><span style="color: var(--muted);">Short (chip only):</span> <strong style="font-family: var(--display-2); font-variant-numeric: tabular-nums;">449k</strong></div>
+              <div><span style="color: var(--muted);">Comparison:</span> <span style="text-decoration: line-through; color: var(--muted);">588.000đ</span> → <strong style="color: var(--gold-deep);">449.000đ</strong></div>
+            </div>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Per phrase</div>
+            <div style="font-family: var(--serif); font-size: 14px; line-height: 1.7;">
+              <div><strong>49.000đ / tháng</strong> <span style="color: var(--muted);">(có space xung quanh /)</span></div>
+              <div><strong>249.000đ · 6 tháng</strong></div>
+              <div><strong>449.000đ · cả năm</strong></div>
+              <div><strong>299.000đ · một lần</strong></div>
+            </div>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Savings phrasing</div>
+            <div style="font-family: var(--serif); font-size: 13.5px; line-height: 1.65;">
+              <div><strong>tiết kiệm 25%</strong> <span style="color: var(--muted);">— small saves</span></div>
+              <div style="margin-top: 4px;"><strong>tiết kiệm 498.000đ</strong> <span style="color: var(--muted);">— big saves (số tuyệt đối ấn tượng hơn)</span></div>
+              <div style="margin-top: 4px;"><strong>≈ 53% rẻ hơn</strong> <span style="color: var(--muted);">— comparison vs alternative</span></div>
+            </div>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Tier naming</div>
+            <div style="font-family: var(--serif); font-size: 14px; line-height: 1.7;">
+              <div><strong>1 tháng</strong> · 6 tháng · 1 năm</div>
+              <div><strong>Lịch Đinh Mùi 2027</strong> <span style="color: var(--muted);">— year-specific name</span></div>
+              <div><strong>Luận giải Bát tự</strong> <span style="color: var(--muted);">— standalone product</span></div>
+              <div><strong>Luận giải Tiểu Vận năm</strong> <span style="color: var(--muted);">— annual standalone</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 19 · MOTION ────────────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">19</span>
+          <h2 class="section-title">Motion principles</h2>
+        </div>
+        <p class="section-intro">Calm, document-like. KHÔNG bouncy spring, KHÔNG playful. Mỗi animation kể một mẩu story.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Easing</div>
+            <table style="font-family: var(--serif); font-size: 13px; line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted);">UI transitions</td><td><code style="font-family: var(--mono); font-size: 11px;">cubic-bezier(0.4, 0, 0.2, 1)</code></td></tr>
+              <tr><td style="color: var(--muted);">Ambient loops</td><td><code style="font-family: var(--mono); font-size: 11px;">ease-in-out</code></td></tr>
+              <tr><td style="color: var(--muted);">Sheet slide</td><td><code style="font-family: var(--mono); font-size: 11px;">cubic-bezier(0.32, 0.72, 0, 1)</code></td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Duration</div>
+            <table style="font-family: var(--serif); font-size: 13px; line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted);">Micro UI</td><td><strong>200–300ms</strong></td></tr>
+              <tr><td style="color: var(--muted);">Sheet/modal</td><td><strong>280ms</strong></td></tr>
+              <tr><td style="color: var(--muted);">Cursor blink</td><td><strong>1s</strong> steps(2)</td></tr>
+              <tr><td style="color: var(--muted);">Calendar flip</td><td><strong>1.6s</strong> ambient</td></tr>
+              <tr><td style="color: var(--muted);">Building lịch</td><td><strong>~400ms</strong> per pillar</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>Rule:</strong> Một screen = max 1 ambient animation đồng thời (cursor OR calendar flip, không cả 2). Modal slide không bị block bởi content motion.
+        </div>
+      </section>
+
+      <!-- ─── 20 · LOCALIZATION ──────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">20</span>
+          <h2 class="section-title">Localization</h2>
+        </div>
+        <p class="section-intro">App tiếng Việt only. Font + line-height tính cho dấu Việt.</p>
+
+        <div style="margin-top: 28px; padding: 18px; background: #fff; border: 1px solid var(--hairline); font-family: var(--serif); font-size: 14px; line-height: 1.7;">
+          <div style="font-size: 18px; line-height: 1.55;">à á ả ã ạ â ầ ấ ẩ ẫ ậ ă ằ ắ ẳ ẵ ặ đ è é ẻ ẽ ẹ ê ề ế ể ễ ệ ì í ỉ ĩ ị ò ó ỏ õ ọ ô ồ ố ổ ỗ ộ ơ ờ ớ ở ỡ ợ ù ú ủ ũ ụ ư ừ ứ ử ữ ự ỳ ý ỷ ỹ ỵ</div>
+          <p style="font-family: var(--serif); font-size: 12.5px; color: var(--muted); margin-top: 14px;">Full Vietnamese diacritic set. Font stack đã chọn (Lora · Barlow · Montserrat · IBM Plex Mono) đều support đầy đủ.</p>
+        </div>
+
+        <div style="margin-top: 22px;" class="note">
+          <strong>Rules:</strong>
+          <ul style="margin: 8px 0 0; padding-left: 22px;">
+            <li>Line-height tối thiểu <strong>1.45</strong> cho body để không cắt dấu trên-trên (ẩ, ễ, ữ)</li>
+            <li>KHÔNG dùng chữ Hán (Noto Serif SC) — đã từ chối</li>
+            <li>Can chi format: phiên âm Hán Việt ("Quý Thủy"), KHÔNG trộn 癸水</li>
+            <li>Tiếng Anh fallback: chỉ trong mã giao dịch, error code (vd <code style="font-family: var(--mono); font-size: 11px;">MOMO_INSUFFICIENT_BALANCE</code>)</li>
+            <li>Letter-spacing âm (-0.015em) cho display — kiểm tra không cắt dấu</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ─── 21 · ACCESSIBILITY ─────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">21</span>
+          <h2 class="section-title">Accessibility floors</h2>
+        </div>
+        <p class="section-intro">Floors, không phải ceilings. Mỗi value là tối thiểu — vượt qua thì tốt hơn.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Tap target</div>
+            <p style="font-family: var(--serif); font-size: 13.5px; color: var(--ink2); line-height: 1.6; margin: 8px 0 0;">Mọi interactive ≥ <strong>44×44px</strong>. Bottom nav items: ≈48×52px ✓. Row tap target: full row width × 44+px ✓. Inline links text-only: tăng padding 8px tối thiểu.</p>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Font size floors</div>
+            <table style="font-family: var(--serif); font-size: 13px; line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted);">Body</td><td>≥ <strong>12.5px</strong></td></tr>
+              <tr><td style="color: var(--muted);">Mono kicker</td><td>≥ <strong>9px</strong> (chỉ label phụ)</td></tr>
+              <tr><td style="color: var(--muted);">Display uppercase</td><td>≥ <strong>14px</strong></td></tr>
+              <tr><td style="color: var(--muted);">Date numerals</td><td>≥ <strong>17px</strong> (tabular)</td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Color contrast</div>
+            <table style="font-family: var(--serif); font-size: 13px; line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted);">Ink on paper</td><td>14:1 ✓ <strong style="color: var(--green);">AAA</strong></td></tr>
+              <tr><td style="color: var(--muted);">Cream on forest</td><td>9:1 ✓ <strong style="color: var(--green);">AAA</strong></td></tr>
+              <tr><td style="color: var(--muted);">Gold-deep on paper</td><td>4.5:1 ✓ <strong style="color: var(--gold-deep);">AA</strong></td></tr>
+              <tr><td style="color: var(--muted);">Gold on forest</td><td>4:1 ⚠️ <strong style="color: var(--red);">AA Large only</strong></td></tr>
+              <tr><td style="color: var(--muted);">Muted on paper</td><td>4.5:1 ✓ <strong style="color: var(--gold-deep);">AA</strong></td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Other</div>
+            <p style="font-family: var(--serif); font-size: 13px; color: var(--ink2); line-height: 1.6; margin: 8px 0 0;">
+              <strong>Focus outline:</strong> 2px gold-deep, 2px offset (FE add).<br />
+              <strong>Don't rely on color alone:</strong> score dot luôn kèm số.<br />
+              <strong>Motion safety:</strong> respect <code style="font-family: var(--mono); font-size: 11px;">prefers-reduced-motion</code> — pause cursor blink, calendar flip.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── 22 · LAYOUT & RESPONSIVE ───────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">22</span>
+          <h2 class="section-title">Layout &amp; responsive</h2>
+        </div>
+        <p class="section-intro">Mobile-only PWA. Lock viewport 390×800. Desktop chỉ cho landing.</p>
+
+        <div style="margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px;">
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Mobile screens</div>
+            <table style="font-family: var(--serif); font-size: 13px; line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted);">Viewport</td><td><strong>390 × 800px</strong></td></tr>
+              <tr><td style="color: var(--muted);">Status bar</td><td>36px (iOS notch)</td></tr>
+              <tr><td style="color: var(--muted);">Home indicator</td><td>24px bottom</td></tr>
+              <tr><td style="color: var(--muted);">Bottom nav</td><td>floats 24px from bottom</td></tr>
+              <tr><td style="color: var(--muted);">Content padding</td><td>22–24px horizontal</td></tr>
+              <tr><td style="color: var(--muted);">Scroll area</td><td>~660px (between strip + nav)</td></tr>
+              <tr><td style="color: var(--muted);">Bottom scroll buffer</td><td>100px (clear floating nav)</td></tr>
+            </table>
+          </div>
+          <div style="padding: 18px; background: #fff; border: 1px solid var(--hairline);">
+            <div class="subhead" style="margin-top: 0;">Desktop landing only</div>
+            <table style="font-family: var(--serif); font-size: 13px; line-height: 1.7; width: 100%; margin-top: 8px;">
+              <tr><td style="color: var(--muted);">Max width</td><td><strong>1080px</strong></td></tr>
+              <tr><td style="color: var(--muted);">Side padding</td><td>56px desktop · 22px mobile</td></tr>
+              <tr><td style="color: var(--muted);">Sections gap</td><td>88px</td></tr>
+              <tr><td style="color: var(--muted);">Breakpoint</td><td>720px</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div class="note">
+          <strong>Rule:</strong> App screens KHÔNG có desktop variant. Khi mở trên desktop → giữ phone viewport center + đen 2 bên (PWA pattern). Landing v3 sẽ là responsive web; app chỉ phone.
+        </div>
+      </section>
+
+      <!-- ─── 23 · DON'TS (moved) ────────────────────────── -->
+      <section class="section">
+        <div class="section-head">
+          <span class="section-num">23</span>
+          <h2 class="section-title">Don'ts</h2>
+        </div>
+        <p class="section-intro">Các quyết định đã từ chối — không thử lại.</p>
+
+        <ul style="font-family: var(--serif); font-size: 14px; line-height: 1.65; color: var(--ink2); margin-top: 22px; padding-left: 22px;">
+          <li>Không dùng <strong>chữ Hán</strong> (Noto Serif SC) trên UI. Can chi bằng phiên âm Hán Việt là đủ.</li>
+          <li>Không dùng <strong>emoji</strong> như icon. Dùng SVG line icons.</li>
+          <li>Không trộn <strong>nhiều cards lồng nhau</strong> (card-on-card-on-card). Một surface đơn.</li>
+          <li>Không dùng <strong>gradient nền</strong> ngoại trừ radial subtle ở splash/reveal.</li>
+          <li>Không dùng "lượng" trong copy — chỉ "lịch", "đặt lịch", "gói".</li>
+          <li>Không dùng <strong>"quyển lịch"</strong> — chỉ "lịch" (per user constraint).</li>
+          <li>Không treo FAB. 3 tabs đủ vì có internal segmented.</li>
+          <li>Không dùng chips chấm phẩy thay vì labeled rows cho Nên/Tránh/Giờ.</li>
+          <li>Không paywall các tính năng cốt lõi (tra cứu ngày tốt, lá số). Paywall đặt ở <em>luận giải đầy đủ</em>.</li>
+        </ul>
+      </section>
+
+      <!-- ─── Footer ────────────────────────────────────── -->
+      <div style="margin-top: 88px; padding-top: 32px; border-top: 1px solid var(--hairline); font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; display: flex; justify-content: space-between;">
+        <span>NGÀY LÀNH THÁNG TỐT · DIRECTION C · v1.0</span>
+        <span>ngaylanhthangtot.vn</span>
+      </div>
+
+    </div>
+  </body>
+</html>

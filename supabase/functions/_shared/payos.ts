@@ -1,6 +1,17 @@
 /** PayOS v2 helpers — create link + webhook verify (per payos.vn docs). */
 
-export type PackageSku = "le" | "goi_6thang" | "goi_12thang";
+import {
+  applyYearlyBundleLuận,
+  extendSubscriptionMonths,
+} from "./entitlements.ts";
+
+export type PackageSku =
+  | "le"
+  | "goi_1thang"
+  | "goi_6thang"
+  | "goi_12thang"
+  | "luan_bat_tu"
+  | "luan_tieu_van";
 
 export type PackageDef = {
   sku: PackageSku;
@@ -8,7 +19,12 @@ export type PackageDef = {
   amountVnd: number;
   creditsToAdd: number | null;
   subscriptionMonths: number | null;
-  /** ≤9 chars recommended for some bank channels */
+  /** Standalone Bát tự luận unlock */
+  baziUnlock: boolean;
+  /** Years to add to tieu_van_reading_expires_at */
+  tieuVanYears: number | null;
+  /** Legacy SKU — webhook only, not offered in Direction C checkout */
+  legacyCheckout?: boolean;
   description: string;
 };
 
@@ -18,26 +34,107 @@ export const PACKAGES: Record<PackageSku, PackageDef> = {
     amountVnd: 99_000,
     creditsToAdd: 100,
     subscriptionMonths: null,
+    baziUnlock: false,
+    tieuVanYears: null,
+    legacyCheckout: true,
     description: "100 luong",
+  },
+  goi_1thang: {
+    sku: "goi_1thang",
+    amountVnd: 49_000,
+    creditsToAdd: null,
+    subscriptionMonths: 1,
+    baziUnlock: false,
+    tieuVanYears: null,
+    description: "Goi 1T",
   },
   goi_6thang: {
     sku: "goi_6thang",
-    amountVnd: 789_000,
+    amountVnd: 249_000,
     creditsToAdd: null,
     subscriptionMonths: 6,
-    description: "Goi 6 T",
+    baziUnlock: false,
+    tieuVanYears: null,
+    description: "Goi 6T",
   },
   goi_12thang: {
     sku: "goi_12thang",
-    amountVnd: 989_000,
+    amountVnd: 449_000,
     creditsToAdd: null,
     subscriptionMonths: 12,
-    description: "Goi 12 T",
+    baziUnlock: true,
+    tieuVanYears: 1,
+    description: "Goi 12T",
+  },
+  luan_bat_tu: {
+    sku: "luan_bat_tu",
+    amountVnd: 299_000,
+    creditsToAdd: null,
+    subscriptionMonths: null,
+    baziUnlock: true,
+    tieuVanYears: null,
+    description: "Luan BT",
+  },
+  luan_tieu_van: {
+    sku: "luan_tieu_van",
+    amountVnd: 199_000,
+    creditsToAdd: null,
+    subscriptionMonths: null,
+    baziUnlock: false,
+    tieuVanYears: 1,
+    description: "Luan TV",
   },
 };
 
+export const CHECKOUT_PACKAGE_SKUS: PackageSku[] = (
+  Object.keys(PACKAGES) as PackageSku[]
+).filter((sku) => !PACKAGES[sku].legacyCheckout);
+
 export function isPackageSku(x: string): x is PackageSku {
-  return x === "le" || x === "goi_6thang" || x === "goi_12thang";
+  return x in PACKAGES;
+}
+
+export function applyPackageEntitlements(
+  profile: {
+    subscription_expires_at: string | null;
+    bazi_reading_unlocked_at: string | null;
+    tieu_van_reading_expires_at: string | null;
+  },
+  sku: PackageSku,
+): Record<string, string> {
+  const pkg = PACKAGES[sku];
+  const patch: Record<string, string> = {};
+
+  if (pkg.subscriptionMonths != null && pkg.subscriptionMonths > 0) {
+    patch.subscription_expires_at = extendSubscriptionMonths(
+      profile.subscription_expires_at,
+      pkg.subscriptionMonths,
+    );
+  }
+
+  if (pkg.baziUnlock || sku === "goi_12thang") {
+    const extras = sku === "goi_12thang"
+      ? applyYearlyBundleLuận(profile)
+      : { bazi_reading_unlocked_at: profile.bazi_reading_unlocked_at ?? new Date().toISOString() };
+    if (extras.bazi_reading_unlocked_at) {
+      patch.bazi_reading_unlocked_at = extras.bazi_reading_unlocked_at;
+    }
+    if ("tieu_van_reading_expires_at" in extras && extras.tieu_van_reading_expires_at) {
+      patch.tieu_van_reading_expires_at = extras.tieu_van_reading_expires_at;
+    }
+  }
+
+  if (pkg.tieuVanYears != null && pkg.tieuVanYears > 0 && sku !== "goi_12thang") {
+    const base = profile.tieu_van_reading_expires_at
+      ? new Date(profile.tieu_van_reading_expires_at)
+      : new Date();
+    const from = base > new Date() ? base : new Date();
+    const next = new Date(from);
+    next.setFullYear(next.getFullYear() + pkg.tieuVanYears);
+    patch.tieu_van_reading_expires_at = next.toISOString();
+  }
+
+  return patch;
 }
 
 /** Signature for POST /v2/payment-requests body */
@@ -79,48 +176,20 @@ function sortKeys(obj: Record<string, unknown>): Record<string, unknown> {
   return sorted;
 }
 
-/** Webhook `data` object verification (payment link) */
 export async function verifyWebhookSignature(
   data: Record<string, unknown>,
   signature: string,
   checksumKey: string,
 ): Promise<boolean> {
   const sorted = sortKeys(data);
-  const parts: string[] = [];
-  for (const key of Object.keys(sorted)) {
-    let value: unknown = sorted[key];
-    if (value !== undefined && Array.isArray(value)) {
-      value = JSON.stringify(
-        (value as unknown[]).map((val) =>
-          typeof val === "object" && val !== null && !Array.isArray(val)
-            ? sortKeys(val as Record<string, unknown>)
-            : val,
-        ),
-      );
-    }
-    if ([null, undefined, "undefined", "null"].includes(value as null)) {
-      value = "";
-    }
-    parts.push(`${key}=${value}`);
-  }
-  const dataQueryStr = parts.join("&");
-  const computed = await hmacSha256Hex(checksumKey, dataQueryStr);
-  return timingSafeEqual(computed.toLowerCase(), signature.toLowerCase());
-}
-
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  const enc = new TextEncoder();
-  const ab = enc.encode(a);
-  const bb = enc.encode(b);
-  let diff = 0;
-  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
-  return diff === 0;
+  const pairs = Object.entries(sorted).map(([k, v]) => `${k}=${v}`);
+  const raw = pairs.join("&");
+  const expected = await hmacSha256Hex(checksumKey, raw);
+  return expected === signature;
 }
 
 export function generateOrderCode(): number {
-  const rnd = Math.floor(Math.random() * 900_000) + 100_000;
-  return Math.floor(Date.now() / 1000) * 1_000_000 + rnd;
+  return Math.floor(100000000 + Math.random() * 900000000);
 }
 
 export const PAYOS_API_BASE = "https://api-merchant.payos.vn";

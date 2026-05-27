@@ -1,5 +1,7 @@
 import { Navigate, Outlet, useLocation } from "react-router";
 
+import { legacyAppRedirect } from "~/lib/nav-config";
+
 import { AppMobileShell } from "~/components/AppMobileShell";
 import { AppShellViewport } from "~/components/AppShellViewport";
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -21,6 +23,11 @@ function isOnboardingExemptPath(pathname: string): boolean {
 
 export default function AppShellLayout() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const location = useLocation();
+  const legacyTarget = legacyAppRedirect(location.pathname);
+  if (legacyTarget) {
+    return <Navigate to={legacyTarget} replace />;
+  }
 
   if (authLoading) {
     return (

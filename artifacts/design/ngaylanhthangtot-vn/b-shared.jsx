@@ -11,7 +11,7 @@ function BProvider({ value, children }) {
   return <BCtx.Provider value={v}>{children}</BCtx.Provider>;
 }
 function useB() {
-  return useContext(BCtx) || { perforation: 'classic', kanjiDensity: 0.18, accent: '#c5a55a', accentDeep: '#9a7c22', tone: 'classical' };
+  return useContext(BCtx) || { perforation: 'classic', kanjiDensity: 0.12, accent: '#c5a55a', accentDeep: '#9a7c22', tone: 'classical', density: 'default' };
 }
 
 // ─── Status bar / home indicator ───
@@ -93,12 +93,13 @@ function PerfEdge({ side, style }) {
   const b = useB();
   const p = b.perforation;
   if (p === 'none') return null;
-  const dashed = side === 'top' ? { borderBottom: '1px dashed rgba(122,112,80,0.45)' } : { borderTop: '1px dashed rgba(122,112,80,0.45)' };
+  const alpha = b.density === 'quiet' ? 0.22 : b.density === 'rich' ? 0.55 : 0.35;
+  const dashed = side === 'top' ? { borderBottom: `1px dashed rgba(122,112,80,${alpha})` } : { borderTop: `1px dashed rgba(122,112,80,${alpha})` };
   if (p === 'wave') {
     return (
       <svg viewBox="0 0 400 12" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 12, ...style }}>
         <path d="M0,6 Q10,0 20,6 T40,6 T60,6 T80,6 T100,6 T120,6 T140,6 T160,6 T180,6 T200,6 T220,6 T240,6 T260,6 T280,6 T300,6 T320,6 T340,6 T360,6 T380,6 T400,6"
-          stroke="rgba(122,112,80,0.45)" strokeWidth="1" fill="none" strokeDasharray="3 3" />
+          stroke={`rgba(122,112,80,${alpha})`} strokeWidth="1" fill="none" strokeDasharray="3 3" />
       </svg>
     );
   }
@@ -106,19 +107,25 @@ function PerfEdge({ side, style }) {
     return (
       <svg viewBox="0 0 400 12" preserveAspectRatio="none" style={{ display: 'block', width: '100%', height: 12, ...style }}>
         <path d="M0,12 L10,2 L20,12 L30,2 L40,12 L50,2 L60,12 L70,2 L80,12 L90,2 L100,12 L110,2 L120,12 L130,2 L140,12 L150,2 L160,12 L170,2 L180,12 L190,2 L200,12 L210,2 L220,12 L230,2 L240,12 L250,2 L260,12 L270,2 L280,12 L290,2 L300,12 L310,2 L320,12 L330,2 L340,12 L350,2 L360,12 L370,2 L380,12 L390,2 L400,12"
-          stroke="rgba(122,112,80,0.55)" strokeWidth="0.8" fill="none" />
+          stroke={`rgba(122,112,80,${alpha + 0.1})`} strokeWidth="0.8" fill="none" />
       </svg>
     );
   }
   // classic: dashed line + dotted holes
   return (
-    <div style={{ height: 12, background: 'repeating-linear-gradient(90deg, transparent 0 6px, rgba(122,112,80,0.06) 6px 10px)', ...dashed, ...style }} />
+    <div style={{ height: 12, background: `repeating-linear-gradient(90deg, transparent 0 6px, rgba(122,112,80,${alpha * 0.18}) 6px 10px)`, ...dashed, ...style }} />
   );
 }
 
 function Ticket({ children, holes = true, transform, style, holeColor = '#1d3129', stub = false, stubLabel }) {
+  const b = useB();
+  const shadow = b.density === 'quiet'
+    ? '0 6px 14px rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.12)'
+    : b.density === 'rich'
+      ? '0 18px 36px rgba(0,0,0,0.45), 0 4px 8px rgba(0,0,0,0.25)'
+      : '0 10px 22px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.18)';
   return (
-    <div style={{ background: '#ede7d3', position: 'relative', boxShadow: '0 18px 36px rgba(0,0,0,0.45), 0 4px 8px rgba(0,0,0,0.25)', transform, ...style }}>
+    <div style={{ background: '#ede7d3', position: 'relative', boxShadow: shadow, transform, ...style }}>
       <PerfEdge side="top" />
       {holes && <>
         <div style={{ position: 'absolute', top: 38, left: -7, width: 14, height: 14, borderRadius: '50%', background: holeColor }} />

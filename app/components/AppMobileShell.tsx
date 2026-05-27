@@ -3,7 +3,12 @@ import { useLocation, useNavigate } from "react-router";
 
 import { AppShellViewport } from "~/components/AppShellViewport";
 import { BottomNav } from "~/components/BottomNav";
-import { getActiveTab, shouldShowNav, TAB_ROUTES, type BottomNavTab } from "~/lib/nav-config";
+import {
+  getLegacyActiveTab,
+  LEGACY_TAB_ROUTES,
+  shouldShowLegacyNav,
+  type LegacyBottomNavTab,
+} from "~/lib/nav-config-legacy";
 
 export function AppMobileShell({
   children,
@@ -15,11 +20,11 @@ export function AppMobileShell({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const showNav = shouldShowNav(location.pathname);
-  const activeTab = getActiveTab(location.pathname);
+  const showNav = shouldShowLegacyNav(location.pathname);
+  const activeTab = getLegacyActiveTab(location.pathname);
 
-  const handleTabChange = (tab: BottomNavTab) => {
-    void navigate(TAB_ROUTES[tab]);
+  const handleTabChange = (tab: LegacyBottomNavTab) => {
+    void navigate(LEGACY_TAB_ROUTES[tab]);
   };
 
   const handleFab = () => {

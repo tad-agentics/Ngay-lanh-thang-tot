@@ -6,18 +6,18 @@ alwaysApply: true
 ## Project
 
 App: **Ngày Lành Tháng Tốt** (ngaytot / ngaylanhthangtot.vn)
-Stack: React Router v7 (Vite) · Supabase (DB + Auth + RLS + Edge Functions) · Vercel · Tailwind CSS · Direction B design system (`app/components/brand/`)
+Stack: React Router v7 (Vite) · Supabase (DB + Auth + RLS + Edge Functions) · Vercel · Tailwind CSS · Direction C design system (`app/components/brand/` — `CBottomNav`, `CSegmented`, `CTopStrip`)
 
 ## Architecture summary
 
-- **Frontend:** React SPA on Vercel. Pre-render **`/`** for SEO. Authenticated app routes under **`/app/*`**.
+- **Frontend:** React SPA on Vercel. Pre-render **`/`** for SEO; PWA **`start_url`** → **`/splash`**. Authenticated routes under **`/lich`**, **`/tra-cuu`**, **`/toi`** (layout: `authenticated.tsx`). Legacy **`/app/*`** 302 via `nav-config` during transition.
 - **Backend:** Supabase only. Client via publishable key + JWT; **RLS** is the auth boundary.
 - **Server logic:** Edge Functions — **Bát Tự** proxy (`BAT_TU_*` secrets), **PayOS** checkout + webhook, share resolve/OG, `generate-reading` (Gemini), cron push. No PayOS, Bát Tự or Gemini calls from the browser.
-- **Design:** Direction B — light-default paper surfaces for daily app; ceremonial forest-dark for readings, payment success, habit rituals. Source: `app/components/brand/` (Logo, LogoMark, Ticket, Stamp, Kanji, Mono, BackBar, BottomNav).
+- **Design:** Direction C — lịch-tờ metaphor; forest-deep `#0e1c14` for ceremonial surfaces; 3-tab nav (Lịch · Tra cứu · Tôi). Source: `artifacts/design/ngaylanhthangtot-vn/` + `app/components/brand/`.
 
 ## What this app does
 
-Vietnamese B2C PWA: pick auspicious dates (**chọn ngày**) and related insights using **Bát Tự Tứ Trụ**, **personalized by saved lá số**. **Credits + PayOS** (bundles/packs, no auto-renew). Anonymous users get **hôm nay** + **tuần này** free. Tone: calm, specific, Vietnamese.
+Vietnamese B2C PWA: **subscription calendar** (“Lịch ngày lành cho riêng bạn”) using **Bát Tự Tứ Trụ** personalized by saved lá số. **PayOS** subscription + add-on luận (no lượng in UI). Anonymous: landing-only teaser (no public `/lich`). Tone: calm, specific, Vietnamese.
 
 ## Not building (out of scope)
 
@@ -25,18 +25,18 @@ Generative chatbot; raw almanac tables as primary UI; marketplace thầy; commun
 
 ## LLM / AI Reading (first-class feature)
 
-AI Reading (Luận Giải) is first-class, powered by **Gemini Flash** via the `generate-reading` Edge Function. Engine = deterministic Bát Tự + Gemini templates. No generative chatbot. No raw LLM access from the browser. All calls go through the Edge proxy with credit gating.
+AI Reading (Luận Giải) is first-class, powered by **Gemini Flash** via the `generate-reading` Edge Function. Engine = deterministic Bát Tự + Gemini templates. No generative chatbot. No raw LLM access from the browser. Gating: **subscription + entitlement columns** (`bazi_reading_unlocked_at`, `tieu_van_reading_expires_at`).
 
 ## AI module boundary
 
-Gemini calls live exclusively in `supabase/functions/generate-reading/`. No AI SDK in the React app. RLS + credit ledger enforce auth/payment boundary.
+Gemini calls live exclusively in `supabase/functions/generate-reading/`. No AI SDK in the React app. RLS + `subscription_expires_at` / entitlement helpers (`app/lib/entitlements.ts`, `_shared/entitlements.ts`) enforce auth/payment boundary.
 
 ## Key constraints
 
 - **Auth:** Google OAuth + email/password; **anonymous** browse for free calendar/teaser.
 - **PayOS only** — no Stripe unless product changes.
 - **Feature credit keys:** DB canonical names in `feature_credit_costs`.
-- **PayOS `package_sku`:** `le`, `goi_6thang`, `goi_12thang` only. UI labels: "Lẻ — gói nhỏ" / "Tháng An Cư" / "Năm Phú Quý".
+- **PayOS `package_sku` (checkout):** `goi_1thang`, `goi_6thang`, `goi_12thang`, `luan_bat_tu`, `luan_tieu_van`. Legacy `le` webhook-only. UI route: **`/dat-lich`**.
 - **Screen inventory:** `app/routes/` + `artifacts/plans/build-plan.md`.
 
 ## Phase reference
@@ -45,7 +45,7 @@ Gemini calls live exclusively in `supabase/functions/generate-reading/`. No AI S
 |-----|------|
 | Tech spec | `artifacts/docs/tech-spec.md` |
 | Build plan | `artifacts/plans/build-plan.md` |
-| FE Handoff | `artifacts/docs/fe-handoff-direction-b.md` |
+| FE Handoff | `artifacts/docs/fe-handoff-direction-c.md` |
 | Northstar | `artifacts/docs/northstar-ngay-lanh.html` |
 | EDS | `artifacts/docs/emotional-design-system.md` |
 | Changelog | `artifacts/docs/changelog.md` |

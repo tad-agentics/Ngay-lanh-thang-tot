@@ -1,65 +1,34 @@
-import { useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { Logo, Mono } from "~/components/brand";
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+import {
+  btnOutlineCream,
+  btnPrimaryGold,
+  C,
+  CForestShell,
+  GoogleIcon,
+  inputLabel,
+  inputUnderline,
+} from "~/components/auth/c-auth-ui";
+import { BackBar, Mono } from "~/components/brand";
 import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
-const shell: CSSProperties = {
-  background: "radial-gradient(ellipse at 50% 0%, #2a4738 0%, #1d3129 50%, #131f1a 100%)",
-  minHeight: "100svh",
-  color: "var(--cream, #ede7d3)",
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: "48px 16px",
-  boxSizing: "border-box",
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  padding: "12px 14px",
-  background: "rgba(0,0,0,0.2)",
-  border: "1px solid rgba(197,165,90,0.3)",
-  borderRadius: "var(--radius-md, 6px)",
-  color: "var(--cream, #ede7d3)",
-  fontFamily: "var(--serif)",
-  fontSize: 16,
-  outline: "none",
-  boxSizing: "border-box",
-  caretColor: "var(--gold, #c5a55a)",
-};
-
-const btnPrimary: CSSProperties = {
-  width: "100%",
-  backgroundColor: "var(--cream, #ede7d3)",
-  color: "var(--ink, #18150e)",
-  fontFamily: "var(--display-2)",
-  fontWeight: 700,
-  fontSize: 13,
-  textTransform: "uppercase",
-  letterSpacing: "0.1em",
-  border: "none",
-  padding: "14px 20px",
-  borderRadius: "var(--radius-md, 6px)",
-};
-
-const linkMuted: CSSProperties = {
-  color: "var(--gold, #c5a55a)",
-  textDecoration: "underline",
-  textUnderlineOffset: 4,
-  fontFamily: "var(--serif)",
-  fontSize: 14,
-  fontStyle: "italic",
-};
+async function resolvePostLoginPath(): Promise<string> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const uid = sessionData.session?.user?.id;
+  if (!uid) return "/dang-nhap";
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("onboarding_completed_at")
+    .eq("id", uid)
+    .maybeSingle();
+  return prof?.onboarding_completed_at ? "/lich" : "/gio-sinh";
+}
 
 export default function DangNhapEmail() {
   const navigate = useNavigate();
@@ -74,9 +43,23 @@ export default function DangNhapEmail() {
   const signUpHref = referralFromUrl
     ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
     : "/dang-ky";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+
+  async function signInGoogle() {
+    stashPendingReferralCode(referralFromUrl);
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    setBusy(false);
+    if (error) toast.error(error.message);
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -85,136 +68,171 @@ export default function DangNhapEmail() {
       email: email.trim(),
       password,
     });
-    setBusy(false);
     if (error) {
+      setBusy(false);
       toast.error(error.message);
       return;
     }
     stashPendingReferralCode(referralFromUrl);
     toast.success("Đã đăng nhập");
-    navigate("/app", { replace: true });
+    const dest = await resolvePostLoginPath();
+    navigate(dest, { replace: true });
+    setBusy(false);
   }
 
   return (
-    <main style={shell}>
+    <CForestShell>
+      <BackBar
+        dark
+        onBack={() => navigate(backHref)}
+        endAdornment={
+          <Link
+            to={signUpHref}
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 12,
+              color: C.gold,
+              textDecoration: "none",
+            }}
+          >
+            Lập lịch mới
+          </Link>
+        }
+      />
+
       <form
         onSubmit={(e) => void onSubmit(e)}
         style={{
-          width: "100%",
-          maxWidth: 384,
+          flex: 1,
+          padding: "12px 28px 24px",
           display: "flex",
           flexDirection: "column",
-          gap: 20,
         }}
       >
-        <Link
-          to="/"
+        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+          Mở lịch của bạn
+        </Mono>
+        <h1
           style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 12,
-            textDecoration: "none",
-            color: "inherit",
+            fontFamily: "var(--display)",
+            fontWeight: 800,
+            fontSize: 36,
+            color: C.cream,
+            lineHeight: 1,
+            textTransform: "uppercase",
+            letterSpacing: "-0.015em",
+            margin: "12px 0 6px",
           }}
         >
-          <Logo dark size={36} />
-        </Link>
-        <div style={{ padding: "6px 4px 0" }}>
-          <Mono style={{ color: "var(--gold, #c5a55a)" }} size={11}>
-            Đăng nhập
-          </Mono>
-          <div
-            style={{
-              fontFamily: "var(--display-2)",
-              fontWeight: 800,
-              fontSize: 24,
-              color: "var(--cream, #ede7d3)",
-              marginTop: 4,
-              letterSpacing: "-0.01em",
-              textTransform: "uppercase",
-            }}
-          >
-            Email & mật khẩu
-          </div>
-          <div
-            style={{
-              fontFamily: "var(--serif)",
-              fontStyle: "italic",
-              fontSize: 13,
-              color: "rgba(200,188,152,0.7)",
-              marginTop: 4,
-            }}
-          >
-            Đăng nhập bằng tài khoản đã tạo.
-          </div>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <Label htmlFor="email" style={{ display: "block", margin: 0, padding: 0 }}>
-            <Mono style={{ color: "rgba(200,188,152,0.75)" }} size={11}>
-              Email
-            </Mono>
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={inputStyle}
-            className="min-w-0"
-          />
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
-            <Label htmlFor="password" style={{ margin: 0, padding: 0 }}>
-              <Mono style={{ color: "rgba(200,188,152,0.75)" }} size={11}>
-                Mật khẩu
-              </Mono>
-            </Label>
-            <Link to="/quen-mat-khau" style={linkMuted}>
-              Quên mật khẩu?
-            </Link>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={inputStyle}
-            className="min-w-0"
-          />
-        </div>
-        <Button type="submit" disabled={busy} className="w-full" style={btnPrimary}>
           Đăng nhập
-        </Button>
+        </h1>
         <p
           style={{
-            textAlign: "center",
             fontFamily: "var(--serif)",
-            fontSize: 14,
-            color: "rgba(237, 231, 211, 0.78)",
-            margin: 0,
+            fontSize: 13.5,
+            color: "rgba(237,231,211,0.65)",
+            lineHeight: 1.55,
           }}
         >
-          <Link
-            to={backHref}
-            style={{ color: "var(--cream, #ede7d3)", textDecoration: "underline", textUnderlineOffset: 4 }}
-          >
-            Quay lại
-          </Link>
-          {" · "}
-          <Link
-            to={signUpHref}
-            style={{ color: "var(--cream, #ede7d3)", textDecoration: "underline", textUnderlineOffset: 4 }}
-          >
-            Đăng ký
-          </Link>
+          Lịch của bạn được lưu trên cloud — đăng nhập là thấy ngay trang hôm
+          nay.
         </p>
+
+        <div
+          style={{
+            marginTop: 28,
+            display: "flex",
+            flexDirection: "column",
+            gap: 22,
+          }}
+        >
+          <div>
+            <div style={inputLabel}>Email</div>
+            <input
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={inputUnderline(true)}
+            />
+          </div>
+          <div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "baseline",
+              }}
+            >
+              <div style={inputLabel}>Mật khẩu</div>
+              <Link
+                to="/quen-mat-khau"
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontSize: 11.5,
+                  color: C.gold,
+                  textDecoration: "none",
+                }}
+              >
+                Quên?
+              </Link>
+            </div>
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={inputUnderline()}
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={busy}
+          style={{ ...btnPrimaryGold, marginTop: 32 }}
+        >
+          Mở lịch của tôi →
+        </button>
+
+        <div
+          style={{
+            marginTop: 28,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <div
+            style={{ flex: 1, height: 1, background: "rgba(237,231,211,0.15)" }}
+          />
+          <span
+            style={{
+              fontFamily: "var(--mono)",
+              fontSize: 10,
+              color: "rgba(237,231,211,0.4)",
+              letterSpacing: "0.18em",
+            }}
+          >
+            HOẶC
+          </span>
+          <div
+            style={{ flex: 1, height: 1, background: "rgba(237,231,211,0.15)" }}
+          />
+        </div>
+
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void signInGoogle()}
+          style={{ ...btnOutlineCream, marginTop: 22 }}
+        >
+          <GoogleIcon />
+          Tiếp tục với Google
+        </button>
       </form>
-    </main>
+    </CForestShell>
   );
 }

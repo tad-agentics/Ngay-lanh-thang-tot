@@ -1,6 +1,8 @@
 # Direction B — screen-by-screen audit
 
-> **Sources:** `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md`, `Direction B (bundled).html`, JSX references (`b-*.jsx`).  
+> **SUPERSEDED (2026-05-27):** Direction C is the active spec. See `artifacts/plans/direction-c-pivot-plan.md` and `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md`. This audit is kept for archaeology only.
+
+> **Sources:** `artifacts/design/ngaylanhthangtot-vn/retired-direction-b/FE-HANDOFF.md`, `Direction B (bundled).html`, JSX references (`b-*.jsx`).  
 > **App routes:** `app/routes.ts` → `app/routes/*.tsx`.  
 > **Status legend:** ✅ aligned · ⚠️ gap · ❌ missing / wrong · 🔍 needs visual QA in browser
 

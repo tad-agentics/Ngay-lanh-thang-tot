@@ -210,7 +210,13 @@ export interface BatTuResponse<T = unknown> {
 
 // ─── Edge: PayOS ───────────────────────────────────────────────────────────
 
-export type PackageSku = "le" | "goi_6thang" | "goi_12thang";
+export type PackageSku =
+  | "le"
+  | "goi_1thang"
+  | "goi_6thang"
+  | "goi_12thang"
+  | "luan_bat_tu"
+  | "luan_tieu_van";
 
 export interface CreatePayosCheckoutRequest {
   package_sku: PackageSku;

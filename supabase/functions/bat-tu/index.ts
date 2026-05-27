@@ -1004,13 +1004,39 @@ Deno.serve(async (req) => {
       }
 
       if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
+        const { data: pivotRow } = await admin
+          .from("app_config")
+          .select("value")
+          .eq("config_key", "pivot_transition_until")
+          .maybeSingle();
+        const pivotUntil = pivotRow?.value
+          ? new Date(pivotRow.value as string)
+          : null;
+        const inLegacyWindow =
+          pivotUntil != null && !Number.isNaN(pivotUntil.getTime()) &&
+          pivotUntil > new Date();
+
+        if (!inLegacyWindow) {
+          return json(
+            {
+              error: {
+                code: "SUB_EXPIRED",
+                message:
+                  "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
+              },
+            },
+            402,
+          );
+        }
+
         const bal = profile.credits_balance as number;
         if (bal < cost) {
           return json(
             {
               error: {
-                code: "INSUFFICIENT_CREDITS",
-                message: "Không đủ lượng để dùng tính năng này.",
+                code: "SUB_EXPIRED",
+                message:
+                  "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
               },
             },
             402,

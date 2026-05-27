@@ -34,3 +34,8 @@ on conflict (feature_key) do update set
   credit_cost = excluded.credit_cost,
   is_free = excluded.is_free,
   updated_at = now();
+
+-- Direction C dev QA: after creating a test user via Auth, set active subscription:
+--   update public.profiles
+--   set subscription_expires_at = now() + interval '1 year'
+--   where email = 'your-test@example.com';

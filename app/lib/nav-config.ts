@@ -1,22 +1,15 @@
 /**
- * Direction B nav config — 5-cell bottom nav: home / month / (FAB) / lookup / me.
- * BottomNav is visible on all tab roots + the chọn ngày flow.
+ * Direction C nav — 3-tab: Lịch · Tra cứu · Tôi
  */
 
-/** Routes where BottomNav is visible */
+export type BottomNavTab = "lich" | "tra-cuu" | "toi";
+
 const NAV_PATHS = new Set([
-  "/app",
-  "/app/chon-ngay",
-  "/app/chon-ngay/ket-qua",
-  "/app/thang",
-  "/app/tra-cuu",
-  "/app/toi",
-  // Legacy tab routes that still exist until fully reskinned in waves 4-5
-  "/app/van-thang",
-  "/app/la-so",
-  "/app/la-so/chi-tiet",
-  "/app/hop-tuoi",
-  "/app/phong-thuy",
+  "/lich",
+  "/lich/thang",
+  "/tra-cuu",
+  "/tra-cuu/hop-tuoi",
+  "/toi",
 ]);
 
 function normalizePath(pathname: string): string {
@@ -28,26 +21,72 @@ export function shouldShowNav(pathname: string): boolean {
   return NAV_PATHS.has(normalizePath(pathname));
 }
 
-export type BottomNavTab = "home" | "month" | "lookup" | "me";
-
 export function getActiveTab(pathname: string): BottomNavTab | null {
   const p = normalizePath(pathname);
-  if (p === "/app") return "home";
-  if (p === "/app/thang") return "month";
-  if (p === "/app/chon-ngay" || p === "/app/chon-ngay/ket-qua") return null;
-  if (p === "/app/tra-cuu") return "lookup";
-  if (p === "/app/toi") return "me";
-  // Legacy routes (to be retired in waves 4-5)
-  if (["/app/la-so", "/app/la-so/chi-tiet", "/app/van-thang", "/app/hop-tuoi", "/app/phong-thuy"].includes(p)) {
-    return "lookup";
-  }
+  if (p === "/lich" || p === "/lich/thang") return "lich";
+  if (p === "/tra-cuu" || p === "/tra-cuu/hop-tuoi") return "tra-cuu";
+  if (p === "/toi") return "toi";
   return null;
 }
 
-/** Map tab id to its canonical route */
 export const TAB_ROUTES: Record<BottomNavTab, string> = {
-  home: "/app",
-  month: "/app/thang",
-  lookup: "/app/tra-cuu",
-  me: "/app/toi",
+  lich: "/lich",
+  "tra-cuu": "/tra-cuu",
+  toi: "/toi",
 };
+
+/** Paths allowed while onboarding is incomplete (purchase + first-run). */
+export const ONBOARDING_EXEMPT_PATHS = new Set([
+  "/gio-sinh",
+  "/dang-dung-lich",
+  "/lich-da-mo",
+  "/dat-lich",
+  "/dat-lich/xac-nhan",
+  "/thanh-cong",
+  "/luan/mua/xac-nhan",
+  "/luan/mua/thanh-cong",
+]);
+
+export function isOnboardingExemptPath(pathname: string): boolean {
+  return ONBOARDING_EXEMPT_PATHS.has(normalizePath(pathname));
+}
+
+const RETURN_TO_ALLOW = /^\/(lich|tra-cuu|ngay\/[\d-]+|dat-lich)(\/|$)/;
+
+export function sanitizeReturnTo(raw: string | null): string | null {
+  if (!raw || raw.length > 200) return null;
+  if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+  if (!RETURN_TO_ALLOW.test(raw)) return null;
+  return raw;
+}
+
+/** Legacy /app/* → Direction C paths (302 during transition). */
+export const LEGACY_APP_REDIRECTS: Record<string, string> = {
+  "/app": "/lich",
+  "/app/hom-nay": "/lich",
+  "/app/home": "/lich",
+  "/app/thang": "/lich/thang",
+  "/app/tra-cuu": "/tra-cuu",
+  "/app/chon-ngay": "/tra-cuu",
+  "/app/chon-ngay/ket-qua": "/tra-cuu/ket-qua",
+  "/app/hop-tuoi": "/tra-cuu/hop-tuoi",
+  "/app/toi": "/toi",
+  "/app/mua-luong": "/dat-lich",
+  "/app/mua-luong/thanh-cong": "/thanh-cong",
+  "/app/cai-dat": "/toi/cai-dat",
+  "/app/cai-dat-app": "/toi/cai-dat",
+  "/app/ngay": "/ngay",
+  "/app/bat-dau": "/gio-sinh",
+  "/app/chuyen-lich": "/tien-ich/chuyen-lich",
+  "/app/la-so": "/toi/la-so",
+  "/app/la-so/chi-tiet": "/toi/la-so",
+};
+
+export function legacyAppRedirect(pathname: string): string | null {
+  const p = normalizePath(pathname);
+  if (LEGACY_APP_REDIRECTS[p]) return LEGACY_APP_REDIRECTS[p];
+  if (p.startsWith("/app/ngay/")) {
+    return p.replace("/app/ngay/", "/ngay/");
+  }
+  return null;
+}
