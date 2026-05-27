@@ -6,8 +6,7 @@ import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNa
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import type { TuTruIntent } from "~/lib/api-types";
-import { invokeBatTu } from "~/lib/bat-tu";
-import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import type { TraCuuPickPendingState } from "~/routes/tra-cuu.dang-tim";
 import { CT } from "~/lib/c-tokens";
 import {
   addDaysIso,
@@ -54,8 +53,7 @@ function splitIntentLabel(label: string): { main: string; accent: string | null 
 
 export default function TraCuuRoute() {
   const navigate = useNavigate();
-  const { profile, loading: profileLoading, refresh: refreshProfile } =
-    useProfile();
+  const { profile, loading: profileLoading } = useProfile();
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [intent, setIntent] = useState<TuTruIntent | "">("");
   const [busy, setBusy] = useState(false);
@@ -91,35 +89,17 @@ export default function TraCuuRoute() {
     }
     setBusy(true);
     setErr(null);
-    const base = profileToBatTuPersonQuery(profile);
-    const res = await invokeBatTu({
-      op: "chon-ngay",
-      body: {
-        ...base,
-        intent,
-        range_start: rs,
-        range_end: re,
-        top_n: 5,
-      },
-    });
-    setBusy(false);
-    if (!res.ok) {
-      setErr(res.message);
-      return;
-    }
-    await refreshProfile();
     const label =
       TU_TRU_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? intent;
-    navigate("/tra-cuu/ket-qua", {
-      state: {
-        intent,
-        intentLabel: label,
-        rangeStart,
-        rangeEnd,
-        daysInclusive: rangeDays,
-        payload: res.data,
-      },
-    });
+    const pending: TraCuuPickPendingState = {
+      intent,
+      intentLabel: label,
+      rangeStart,
+      rangeEnd,
+      daysInclusive: rangeDays,
+    };
+    navigate("/tra-cuu/dang-tim", { state: pending });
+    setBusy(false);
   }
 
   const disabledForm = profileLoading || !profile;

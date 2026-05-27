@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router";
 
+import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
@@ -22,9 +23,10 @@ export function CHomeScreen() {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink }}
     >
+      <CTopStrip />
       <CLichSegmentedNav />
 
-      <div className="flex-1 overflow-y-auto px-[22px] pb-24 pt-[18px]">
+      <div className="flex-1 overflow-y-auto px-[22px] pb-24 pt-2">
         {error ? <ErrorBanner message={error} /> : null}
         {!canBatTu && !loading ? (
           <p

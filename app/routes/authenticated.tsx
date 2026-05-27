@@ -1,16 +1,24 @@
+import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 import { AuthenticatedMobileShell } from "~/components/AuthenticatedMobileShell";
 import { AppShellViewport } from "~/components/AppShellViewport";
+import { CSubExpired } from "~/components/CSubExpired";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
+import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import {
   isOnboardingExemptPath,
+  isSubscriptionExemptPath,
   legacyAppRedirect,
 } from "~/lib/nav-config";
 import { ProfileProvider } from "~/lib/profile-context";
+import {
+  setSubExpiredBlocked,
+  subscribeSubExpired,
+} from "~/lib/sub-expired";
 
 export default function AuthenticatedLayout() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -52,7 +60,15 @@ function AuthenticatedShellWithProfile({
 }) {
   const { profile, loading: profileLoading, error: profileError, reload } =
     useProfile();
+  const { canUseCalendar } = useEntitlements();
   const location = useLocation();
+  const [, subExpiredTick] = useState(0);
+
+  useEffect(() => subscribeSubExpired(() => subExpiredTick((n) => n + 1)), []);
+
+  useEffect(() => {
+    if (canUseCalendar) setSubExpiredBlocked(false);
+  }, [canUseCalendar]);
 
   async function retryProfile() {
     await reload();
@@ -106,6 +122,19 @@ function AuthenticatedShellWithProfile({
       location.pathname === "/lich-da-mo")
   ) {
     return <Navigate to="/lich" replace />;
+  }
+
+  const subscriptionBlocked =
+    !canUseCalendar && !isSubscriptionExemptPath(location.pathname);
+
+  if (subscriptionBlocked) {
+    return (
+      <AppShellViewport>
+        <div className="flex min-h-full flex-col bg-paper">
+          <CSubExpired />
+        </div>
+      </AppShellViewport>
+    );
   }
 
   return (

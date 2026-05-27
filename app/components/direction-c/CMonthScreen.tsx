@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
+import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -239,9 +240,10 @@ export function CMonthScreen() {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink }}
     >
+      <CTopStrip />
       <CLichSegmentedNav />
 
-      <div className="flex-1 overflow-y-auto px-6 pb-24 pt-5">
+      <div className="flex-1 overflow-y-auto px-6 pb-24 pt-2">
         <div
           style={{
             display: "flex",

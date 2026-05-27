@@ -1,6 +1,5 @@
 import { useState } from "react";
 
-import { CalendarGate } from "~/components/CalendarGate";
 import { CInstallBanner } from "~/components/CInstallBanner";
 import { CHomeScreen } from "~/components/direction-c/CHomeScreen";
 
@@ -16,13 +15,13 @@ export default function LichRoute() {
   }
 
   return (
-    <CalendarGate>
+    <>
       {!installDismissed ? (
         <div className="absolute left-0 right-0 top-0 z-30">
           <CInstallBanner onDismiss={dismissInstall} />
         </div>
       ) : null}
       <CHomeScreen />
-    </CalendarGate>
+    </>
   );
 }

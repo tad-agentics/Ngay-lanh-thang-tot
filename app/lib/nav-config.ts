@@ -52,6 +52,20 @@ export function isOnboardingExemptPath(pathname: string): boolean {
   return ONBOARDING_EXEMPT_PATHS.has(normalizePath(pathname));
 }
 
+/** Allowed when subscription expired — renew, addon checkout, account, offline. */
+export const SUBSCRIPTION_EXEMPT_PATHS = new Set([
+  ...ONBOARDING_EXEMPT_PATHS,
+  "/toi/cai-dat",
+  "/offline",
+]);
+
+export function isSubscriptionExemptPath(pathname: string): boolean {
+  const p = normalizePath(pathname);
+  if (SUBSCRIPTION_EXEMPT_PATHS.has(p)) return true;
+  if (p.startsWith("/luan/mua/")) return true;
+  return false;
+}
+
 const RETURN_TO_ALLOW = /^\/(lich|tra-cuu|ngay\/[\d-]+|dat-lich)(\/|$)/;
 
 export function sanitizeReturnTo(raw: string | null): string | null {
@@ -82,7 +96,7 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/la-so": "/toi/la-so",
   "/app/la-so/chi-tiet": "/toi/la-so",
   "/app/tieu-van": "/toi/luan-tieu-van",
-  "/app/phong-thuy": "/tra-cuu",
+  "/app/phong-thuy": "/tien-ich/phong-thuy",
   "/app/so-viec": "/tra-cuu",
   "/app/nhip/lich-su": "/lich",
   "/app/nhip/cai-dat": "/toi/cai-dat",

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
 import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
+import { CBaziLockedScreen } from "~/components/direction-c/CBaziLockedScreen";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -76,29 +76,7 @@ export function CBaziReadingScreen() {
   }
 
   if (!unlocked) {
-    return (
-      <main className="min-h-[100svh]" style={{ background: CT.paper }}>
-        <BackBar title="Luận giải Bát tự" />
-        <div className="px-6 py-10 text-center">
-          <Mono style={{ color: CT.goldDeep, fontSize: 10, letterSpacing: "0.22em" }}>
-            Chưa mở
-          </Mono>
-          <h2 className="mt-2 font-display text-2xl font-extrabold uppercase">
-            Luận giải Bát tự · 2026
-          </h2>
-          <p className="mt-3 font-serif text-sm leading-relaxed" style={{ color: CT.ink2 }}>
-            Gói năm hoặc gói Luận Bát tự — mở khóa luận giải đầy đủ theo lá số của bạn.
-          </p>
-          <Link
-            to="/dat-lich"
-            className="mt-6 inline-block py-3 px-8 font-display text-xs font-extrabold uppercase tracking-wider no-underline"
-            style={{ background: CT.forest, color: CT.cream }}
-          >
-            Xem gói →
-          </Link>
-        </div>
-      </main>
-    );
+    return <CBaziLockedScreen />;
   }
 
   return (

@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 import type { BatTuRequest } from "~/lib/api-types";
+import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
 type EdgeErrorInner = {
@@ -42,9 +43,11 @@ export async function invokeBatTu<T = unknown>(
             typeof e.reset_at === "number" && Number.isFinite(e.reset_at)
               ? e.reset_at
               : undefined;
+          const code = typeof e.code === "string" ? e.code : "BAT_TU";
+          if (isSubExpiredCode(code)) notifySubExpired();
           return {
             ok: false,
-            code: typeof e.code === "string" ? e.code : "BAT_TU",
+            code,
             message:
               typeof e.message === "string" && e.message.length
                 ? e.message
@@ -75,9 +78,11 @@ export async function invokeBatTu<T = unknown>(
       typeof e.reset_at === "number" && Number.isFinite(e.reset_at)
         ? e.reset_at
         : undefined;
+    const code = e.code ?? "BAT_TU";
+    if (isSubExpiredCode(code)) notifySubExpired();
     return {
       ok: false,
-      code: e.code ?? "BAT_TU",
+      code,
       message: e.message ?? "Lỗi Bát Tự.",
       ...(resetAt != null ? { reset_at: resetAt } : {}),
     };

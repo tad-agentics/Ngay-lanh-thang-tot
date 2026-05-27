@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router";
 
 import { Mono } from "~/components/brand";
+import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
 import { subscriptionActive } from "~/lib/entitlements";
@@ -177,9 +178,7 @@ export default function ToiRoute() {
           >
             <div className="flex items-baseline gap-2">
               <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
-              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
-                {baziUnlocked ? "Đã mở" : "Luận giải"}
-              </Mono>
+              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Đã mở</Mono>
             </div>
             <div
               className="mt-1.5 font-[family-name:var(--font-display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
@@ -197,6 +196,8 @@ export default function ToiRoute() {
               Đọc ngay →
             </div>
           </Link>
+        ) : isActive ? (
+          <CMeLockedBaziCard />
         ) : (
           <Link
             to="/dat-lich"
@@ -315,6 +316,7 @@ export default function ToiRoute() {
             Tiện ích · cài đặt
           </Mono>
           {[
+            { t: "Phong thuỷ", sub: "hướng · màu · số theo mệnh", to: "/tien-ich/phong-thuy" },
             { t: "Chuyển lịch", sub: "âm ↔ dương", to: "/tien-ich/chuyen-lich" },
             { t: "Cài đặt", sub: "thông báo · tài khoản · hỗ trợ", to: "/toi/cai-dat" },
           ].map((row, i, arr) => (

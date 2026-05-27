@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
+import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
 export type ReadingUnlockScope = "home" | "day_detail";
@@ -72,9 +73,11 @@ export async function invokeReadingUnlock(params: {
         };
       }
       if (d.ok === false) {
+        const error_code = String(d.error_code ?? "UNKNOWN");
+        if (isSubExpiredCode(error_code)) notifySubExpired();
         return {
           ok: false,
-          error_code: String(d.error_code ?? "UNKNOWN"),
+          error_code,
           message: String(d.message ?? "Không mở khóa được."),
           credits_balance:
             typeof d.credits_balance === "number"
@@ -89,9 +92,11 @@ export async function invokeReadingUnlock(params: {
         try {
           const body = (await error.context.json()) as Record<string, unknown>;
           if (body && body.ok === false) {
+            const error_code = String(body.error_code ?? "ERROR");
+            if (isSubExpiredCode(error_code)) notifySubExpired();
             return {
               ok: false,
-              error_code: String(body.error_code ?? "ERROR"),
+              error_code,
               message: String(body.message ?? error.message),
               credits_balance:
                 typeof body.credits_balance === "number"

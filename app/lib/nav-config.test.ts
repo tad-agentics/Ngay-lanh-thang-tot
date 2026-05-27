@@ -1,37 +1,42 @@
 import { describe, expect, it } from "vitest";
 
-import { getActiveTab, shouldShowNav } from "~/lib/nav-config";
+import {
+  getActiveTab,
+  isSubscriptionExemptPath,
+  shouldShowNav,
+} from "~/lib/nav-config";
 
-describe("nav-config", () => {
-  it("shows BottomNav on tab roots, chọn ngày flow, and lookup stack routes", () => {
-    expect(shouldShowNav("/app")).toBe(true);
-    expect(shouldShowNav("/app/chon-ngay")).toBe(true);
-    expect(shouldShowNav("/app/chon-ngay/ket-qua")).toBe(true);
-    expect(shouldShowNav("/app/thang")).toBe(true);
-    expect(shouldShowNav("/app/tra-cuu")).toBe(true);
-    expect(shouldShowNav("/app/toi")).toBe(true);
-    expect(shouldShowNav("/app/hop-tuoi")).toBe(true);
-    expect(shouldShowNav("/app/phong-thuy")).toBe(true);
-    expect(shouldShowNav("/app/van-thang")).toBe(true);
-    expect(shouldShowNav("/app/la-so")).toBe(true);
-    expect(shouldShowNav("/app/la-so/chi-tiet")).toBe(true);
-    expect(shouldShowNav("/app/cai-dat")).toBe(false);
-    expect(shouldShowNav("/app/mua-luong")).toBe(false);
-    expect(shouldShowNav("/app/bat-dau")).toBe(false);
+describe("nav-config (Direction C)", () => {
+  it("shows BottomNav on 3-tab roots only", () => {
+    expect(shouldShowNav("/lich")).toBe(true);
+    expect(shouldShowNav("/lich/thang")).toBe(true);
+    expect(shouldShowNav("/tra-cuu")).toBe(true);
+    expect(shouldShowNav("/tra-cuu/hop-tuoi")).toBe(true);
+    expect(shouldShowNav("/toi")).toBe(true);
+    expect(shouldShowNav("/tra-cuu/ket-qua")).toBe(false);
+    expect(shouldShowNav("/tra-cuu/dang-tim")).toBe(false);
+    expect(shouldShowNav("/dat-lich")).toBe(false);
+    expect(shouldShowNav("/toi/cai-dat")).toBe(false);
+    expect(shouldShowNav("/ngay/2026-05-27")).toBe(false);
   });
 
   it("maps paths to active tabs", () => {
-    expect(getActiveTab("/app")).toBe("home");
-    expect(getActiveTab("/app/thang")).toBe("month");
-    expect(getActiveTab("/app/chon-ngay")).toBe(null);
-    expect(getActiveTab("/app/chon-ngay/ket-qua")).toBe(null);
-    expect(getActiveTab("/app/tra-cuu")).toBe("lookup");
-    expect(getActiveTab("/app/toi")).toBe("me");
-    expect(getActiveTab("/app/cai-dat")).toBe(null);
-    expect(getActiveTab("/app/van-thang")).toBe("lookup");
-    expect(getActiveTab("/app/hop-tuoi")).toBe("lookup");
-    expect(getActiveTab("/app/phong-thuy")).toBe("lookup");
-    expect(getActiveTab("/app/la-so")).toBe("lookup");
-    expect(getActiveTab("/app/la-so/chi-tiet")).toBe("lookup");
+    expect(getActiveTab("/lich")).toBe("lich");
+    expect(getActiveTab("/lich/thang")).toBe("lich");
+    expect(getActiveTab("/tra-cuu")).toBe("tra-cuu");
+    expect(getActiveTab("/tra-cuu/hop-tuoi")).toBe("tra-cuu");
+    expect(getActiveTab("/toi")).toBe("toi");
+    expect(getActiveTab("/dat-lich")).toBe(null);
+    expect(getActiveTab("/toi/cai-dat")).toBe(null);
+  });
+
+  it("exempts renew and addon checkout when subscription expired", () => {
+    expect(isSubscriptionExemptPath("/dat-lich")).toBe(true);
+    expect(isSubscriptionExemptPath("/thanh-cong")).toBe(true);
+    expect(isSubscriptionExemptPath("/luan/mua/xac-nhan")).toBe(true);
+    expect(isSubscriptionExemptPath("/luan/mua/thanh-cong")).toBe(true);
+    expect(isSubscriptionExemptPath("/toi/cai-dat")).toBe(true);
+    expect(isSubscriptionExemptPath("/lich")).toBe(false);
+    expect(isSubscriptionExemptPath("/tra-cuu")).toBe(false);
   });
 });

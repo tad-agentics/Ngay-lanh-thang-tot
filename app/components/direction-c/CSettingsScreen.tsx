@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { Download, ExternalLink, Smartphone } from "lucide-react";
-import { Link } from "react-router";
+import { Download, ExternalLink, LogOut, Smartphone } from "lucide-react";
+import { Link, useNavigate } from "react-router";
 
 import { BackBar, Mono } from "~/components/brand";
+import { CConfirmDialog } from "~/components/direction-c/CConfirmDialog";
+import {
+  CNotifPermPrompt,
+  dismissNotifPermPrompt,
+} from "~/components/direction-c/CNotifPermPrompt";
 import { Button } from "~/components/ui/button";
+import { useAuth } from "~/lib/auth";
 import { CT } from "~/lib/c-tokens";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -34,12 +40,16 @@ function isInStandaloneMode(): boolean {
 const DISMISSED_KEY = "pwa_install_dismissed";
 
 export function CSettingsScreen() {
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [installState, setInstallState] = useState<InstallState>("unknown");
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem(DISMISSED_KEY) === "true",
   );
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
     if (isInStandaloneMode()) {
@@ -72,6 +82,28 @@ export function CSettingsScreen() {
       setInstallState("installed");
       setDeferredPrompt(null);
     }
+  }
+
+  async function handleEnableNotif() {
+    dismissNotifPermPrompt();
+    setNotifOpen(false);
+    if (typeof Notification === "undefined") return;
+    try {
+      await Notification.requestPermission();
+    } catch {
+      /* user dismissed native prompt */
+    }
+  }
+
+  function handleDismissNotif() {
+    dismissNotifPermPrompt();
+    setNotifOpen(false);
+  }
+
+  async function confirmLogout() {
+    setLogoutOpen(false);
+    await signOut();
+    navigate("/dang-nhap", { replace: true });
   }
 
   return (
@@ -134,10 +166,52 @@ export function CSettingsScreen() {
           <ExternalLink size={14} style={{ color: CT.muted }} />
         </a>
 
+        <button
+          type="button"
+          onClick={() => setNotifOpen(true)}
+          className="flex w-full cursor-pointer items-center justify-between border px-4 py-3.5 text-left text-sm"
+          style={{ borderColor: CT.hairline, color: CT.ink, background: "transparent" }}
+        >
+          Thông báo ngày đã lưu
+          <span className="font-serif text-xs" style={{ color: CT.goldDeep }}>
+            Cài đặt →
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setLogoutOpen(true)}
+          className="flex w-full cursor-pointer items-center gap-2 border px-4 py-3.5 text-sm"
+          style={{ borderColor: CT.hairline, color: CT.ink, background: "transparent" }}
+        >
+          <LogOut size={14} style={{ color: CT.muted }} />
+          Đăng xuất
+        </button>
+
         <Link to="/toi" className="text-sm no-underline" style={{ color: CT.goldDeep }}>
           ← Quay lại Tôi
         </Link>
       </div>
+
+      <CNotifPermPrompt
+        open={notifOpen}
+        onEnable={() => void handleEnableNotif()}
+        onDismiss={handleDismissNotif}
+      />
+      <CConfirmDialog
+        open={logoutOpen}
+        title={
+          <>
+            Đăng xuất khỏi
+            <br />
+            lịch của bạn?
+          </>
+        }
+        description="Lá số và sổ ngày của bạn vẫn được lưu trên cloud. Đăng nhập lại bất cứ lúc nào."
+        confirmLabel="Đăng xuất"
+        onConfirm={() => void confirmLogout()}
+        onCancel={() => setLogoutOpen(false)}
+      />
     </div>
   );
 }
