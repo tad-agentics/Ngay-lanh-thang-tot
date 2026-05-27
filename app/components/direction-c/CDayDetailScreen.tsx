@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar } from "~/components/brand";
+import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -18,8 +20,10 @@ export function CDayDetailScreen() {
   const { ngay } = useParams();
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
+  const { savePick } = useSavedPicks();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [detail, setDetail] = useState<ReturnType<typeof parseDayDetailForView> | null>(
     null,
   );
@@ -62,6 +66,25 @@ export function CDayDetailScreen() {
   const monthNum = iso ? Number(iso.slice(5, 7)) : 0;
 
   const score = detail?.score ?? null;
+
+  async function handleSavePick() {
+    if (!detail || !iso || saving) return;
+    setSaving(true);
+    const label =
+      detail.goodFor[0] ??
+      detail.catThanLabels[0] ??
+      `Ngày ${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
+    const r = await savePick({
+      source_endpoint: "day-detail",
+      payload: detail,
+      label,
+      day_iso: iso,
+      score: score ?? undefined,
+    });
+    setSaving(false);
+    if (r.ok) toast.success("Đã lưu vào sổ việc.");
+    else toast.error(r.error ?? "Không lưu được.");
+  }
 
   return (
     <main
@@ -144,7 +167,9 @@ export function CDayDetailScreen() {
 
             <button
               type="button"
-              className="mt-4 flex min-h-[44px] w-full items-center justify-center gap-2 border-none uppercase tracking-widest"
+              disabled={saving}
+              onClick={() => void handleSavePick()}
+              className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:opacity-60"
               style={{
                 padding: 12,
                 background: CT.forest,
@@ -155,7 +180,7 @@ export function CDayDetailScreen() {
                 letterSpacing: "0.08em",
               }}
             >
-              Đánh dấu để nhắc trước 1 ngày
+              {saving ? "Đang lưu…" : "Đánh dấu để nhắc trước 1 ngày"}
             </button>
           </>
         ) : null}

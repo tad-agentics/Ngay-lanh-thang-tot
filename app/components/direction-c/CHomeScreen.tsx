@@ -4,6 +4,8 @@ import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
+import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useTodayLichData } from "~/hooks/useTodayLichData";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
@@ -12,6 +14,7 @@ import { addDaysToIso } from "~/hooks/useStreak";
 
 export function CHomeScreen() {
   const navigate = useNavigate();
+  const online = useOnlineStatus();
   const { loading, error, today, menh, canBatTu } = useTodayLichData();
   const todayIso = todayIsoInVn();
 
@@ -21,20 +24,21 @@ export function CHomeScreen() {
   return (
     <main
       className="flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink }}
+      style={{ background: CT.forest, color: CT.cream }}
     >
-      <CTopStrip />
-      <CLichSegmentedNav />
+      {!online ? <COfflineBanner /> : null}
+      <CTopStrip dark />
+      <CLichSegmentedNav dark />
 
       <div className="flex-1 overflow-y-auto px-[22px] pb-24 pt-2">
         {error ? <ErrorBanner message={error} /> : null}
         {!canBatTu && !loading ? (
           <p
             className="font-serif text-sm"
-            style={{ color: CT.muted, lineHeight: 1.55 }}
+            style={{ color: "rgba(237,231,211,0.75)", lineHeight: 1.55 }}
           >
             Hoàn thành{" "}
-            <Link to="/gio-sinh" className="text-[var(--gold-deep)] underline">
+            <Link to="/gio-sinh" className="underline" style={{ color: CT.gold }}>
               lập lịch
             </Link>{" "}
             để xem trang hôm nay.
@@ -42,7 +46,10 @@ export function CHomeScreen() {
         ) : null}
 
         {loading ? (
-          <p className="py-12 text-center font-serif text-sm" style={{ color: CT.muted }}>
+          <p
+            className="py-12 text-center font-serif text-sm"
+            style={{ color: "rgba(237,231,211,0.65)" }}
+          >
             Đang mở trang hôm nay…
           </p>
         ) : null}

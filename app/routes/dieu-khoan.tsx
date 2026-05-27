@@ -14,9 +14,9 @@ const SECTIONS = [
       "Ứng dụng cung cấp thông tin về lịch âm dương, lá số tứ trụ và gợi ý ngày lành dựa trên phương pháp luận học phương Đông. Thông tin mang tính tham khảo, không phải lời khuyên chuyên nghiệp.",
   },
   {
-    title: "3. Lượng và thanh toán",
+    title: "3. Gói lịch và thanh toán",
     content:
-      "Lượng là đơn vị nội tệ trong ứng dụng. Sau khi mua, lượng không được hoàn trả. Mỗi tính năng có mức sử dụng lượng khác nhau.",
+      "Dịch vụ bán theo gói thời hạn (tháng, 6 tháng, năm) và gói luận giải bổ sung qua PayOS. Thanh toán một lần, không tự gia hạn. Chính sách hoàn tiền trong 7 ngày theo quy định từng giao dịch.",
   },
   {
     title: "4. Sở hữu trí tuệ",
@@ -36,7 +36,7 @@ export function meta() {
     {
       name: "description",
       content:
-        "Điều khoản sử dụng dịch vụ Ngày Lành Tháng Tốt — lượng, thanh toán và giới hạn trách nhiệm.",
+        "Điều khoản sử dụng dịch vụ Ngày Lành Tháng Tốt — gói lịch, thanh toán và giới hạn trách nhiệm.",
     },
   ];
 }

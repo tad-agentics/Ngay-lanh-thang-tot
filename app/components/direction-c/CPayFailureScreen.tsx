@@ -3,7 +3,15 @@ import { Link, useNavigate } from "react-router";
 import { BackBar, Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
 
-export function CPayFailureScreen() {
+type CPayFailureScreenProps = {
+  retryTo?: string;
+  backTo?: string;
+};
+
+export function CPayFailureScreen({
+  retryTo = "/dat-lich",
+  backTo = "/lich",
+}: CPayFailureScreenProps) {
   const navigate = useNavigate();
 
   return (
@@ -56,18 +64,18 @@ export function CPayFailureScreen() {
 
         <button
           type="button"
-          onClick={() => navigate("/dat-lich")}
+          onClick={() => navigate(retryTo)}
           className="mt-7 w-full max-w-[320px] cursor-pointer border-none py-3.5 font-[family-name:var(--font-display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em]"
           style={{ background: CT.forest, color: CT.cream }}
         >
           Thử lại
         </button>
         <Link
-          to="/lich"
+          to={backTo}
           className="mt-2.5 block w-full max-w-[320px] border py-3 text-center font-[family-name:var(--font-display-2)] text-xs font-bold uppercase tracking-[0.08em] no-underline"
           style={{ borderColor: CT.goldDeep, color: CT.ink }}
         >
-          Về lịch
+          Quay lại
         </Link>
       </div>
     </div>

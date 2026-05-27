@@ -7,13 +7,18 @@ const OPTIONS = [
   { label: "Tháng", to: "/lich/thang" },
 ] as const;
 
-export function CLichSegmentedNav() {
+type CLichSegmentedNavProps = {
+  dark?: boolean;
+};
+
+export function CLichSegmentedNav({ dark = false }: CLichSegmentedNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const active = location.pathname.startsWith("/lich/thang") ? 1 : 0;
 
   return (
     <CSegmented
+      dark={dark}
       options={OPTIONS.map((o) => ({ label: o.label, to: o.to }))}
       activeIndex={active}
       onSelect={(i) => {

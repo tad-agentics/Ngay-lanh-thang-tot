@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 
 import { Mono } from "~/components/brand";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
+import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
 import { subscriptionActive } from "~/lib/entitlements";
@@ -64,7 +65,8 @@ export default function ToiRoute() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const { expiryFormatted, isActive, expiresAt } = useSubscription();
-  const { canUseBaziReading: baziUnlocked } = useEntitlements();
+  const { canUseBaziReading: baziUnlocked, canUseTieuVanReading: tieuVanUnlocked } =
+    useEntitlements();
   const { picks, loading: picksLoading } = useSavedPicks();
 
   const displayName = profile?.display_name ?? "—";
@@ -216,15 +218,38 @@ export default function ToiRoute() {
           </Link>
         )}
 
+        {tieuVanUnlocked ? (
+          <Link
+            to={`/toi/luan-tieu-van?year=${new Date().getFullYear()}`}
+            className="mt-4 block border px-4 py-3.5 no-underline"
+            style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
+          >
+            <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Đã mở · Tiểu Vận</Mono>
+            <div className="mt-1.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-[-0.005em]">
+              Luận giải Tiểu Vận
+            </div>
+            <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
+              vận tháng · phong thuỷ năm
+            </div>
+          </Link>
+        ) : isActive ? (
+          <CMeLockedTieuVanCard />
+        ) : null}
+
         <div
           className="mt-9 border-t pt-5"
           style={{ borderColor: CT.hairline }}
         >
-          <Mono
-            style={{ color: CT.muted, fontSize: 9, display: "block", marginBottom: 6 }}
-          >
-            Ngày sắp tới · đã đánh dấu
-          </Mono>
+          <div className="mb-3 flex items-baseline justify-between">
+            <Mono style={{ color: CT.muted, fontSize: 9 }}>Ngày sắp tới · đã đánh dấu</Mono>
+            <Link
+              to="/toi/so-viec"
+              className="font-serif text-xs no-underline"
+              style={{ color: CT.goldDeep }}
+            >
+              Xem sổ →
+            </Link>
+          </div>
           {picksLoading ? (
             <p className="font-serif text-xs" style={{ color: CT.muted }}>
               Đang tải…
@@ -316,6 +341,7 @@ export default function ToiRoute() {
             Tiện ích · cài đặt
           </Mono>
           {[
+            { t: "Sổ việc", sub: "ngày đã đánh dấu", to: "/toi/so-viec" },
             { t: "Phong thuỷ", sub: "hướng · màu · số theo mệnh", to: "/tien-ich/phong-thuy" },
             { t: "Chuyển lịch", sub: "âm ↔ dương", to: "/tien-ich/chuyen-lich" },
             { t: "Cài đặt", sub: "thông báo · tài khoản · hỗ trợ", to: "/toi/cai-dat" },

@@ -1,13 +1,32 @@
+import { useEffect, useState } from "react";
+
 import { Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+
+const PHASES = [
+  "Đối chiếu lá số tứ trụ",
+  "Lọc ngày dữ chung",
+  "Chấm điểm theo mệnh",
+  "Sắp xếp ngày tốt nhất",
+] as const;
 
 type CPickLoadingScreenProps = {
   intentLabel?: string | null;
 };
 
-/** Direction C — tra cứu loading (artboard CPickLoading). */
+/** Direction C — tra cứu loading (artboard CPickLoading, 4 phases). */
 export function CPickLoadingScreen({ intentLabel }: CPickLoadingScreenProps) {
+  const [phase, setPhase] = useState(0);
   const accent = intentLabel?.split("·").pop()?.trim() ?? intentLabel ?? "việc của bạn";
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setPhase((p) => (p + 1) % PHASES.length);
+    }, 900);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const progress = ((phase + 1) / PHASES.length) * 100;
 
   return (
     <div
@@ -36,7 +55,7 @@ export function CPickLoadingScreen({ intentLabel }: CPickLoadingScreenProps) {
                 className="animate-pulse font-[family-name:var(--font-display-2)] text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
                 style={{ color: CT.red }}
               >
-                ···
+                {String(phase + 1).padStart(2, "0")}
               </span>
             </div>
           </div>
@@ -56,19 +75,23 @@ export function CPickLoadingScreen({ intentLabel }: CPickLoadingScreenProps) {
             className="mx-auto mt-2 max-w-[280px] text-[13.5px] leading-snug"
             style={{ color: CT.muted }}
           >
-            Đối chiếu khoảng ngày với lá số tứ trụ của bạn — vài giây nữa thôi.
+            {PHASES[phase]}
           </p>
         </div>
 
         <div
-          className="relative h-[1.5px] w-[200px] overflow-hidden"
+          className="relative h-[1.5px] w-[220px] overflow-hidden"
           style={{ background: "rgba(154,124,34,0.18)" }}
         >
           <div
-            className="absolute left-0 top-0 bottom-0 w-[70%] animate-pulse"
-            style={{ background: CT.goldDeep }}
+            className="absolute left-0 top-0 bottom-0 transition-all duration-500"
+            style={{ width: `${progress}%`, background: CT.goldDeep }}
           />
         </div>
+
+        <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.muted }}>
+          Bước {phase + 1}/{PHASES.length}
+        </Mono>
       </div>
     </div>
   );

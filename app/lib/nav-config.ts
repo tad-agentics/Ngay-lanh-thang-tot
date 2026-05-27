@@ -57,6 +57,7 @@ export const SUBSCRIPTION_EXEMPT_PATHS = new Set([
   ...ONBOARDING_EXEMPT_PATHS,
   "/toi/cai-dat",
   "/offline",
+  "/toi/so-viec",
 ]);
 
 export function isSubscriptionExemptPath(pathname: string): boolean {
@@ -97,7 +98,8 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/la-so/chi-tiet": "/toi/la-so",
   "/app/tieu-van": "/toi/luan-tieu-van",
   "/app/phong-thuy": "/tien-ich/phong-thuy",
-  "/app/so-viec": "/tra-cuu",
+  "/app/so-viec": "/toi/so-viec",
+  "/app/chia-se": "/tra-cuu",
   "/app/nhip/lich-su": "/lich",
   "/app/nhip/cai-dat": "/toi/cai-dat",
   "/app/van-thang": "/lich/thang",

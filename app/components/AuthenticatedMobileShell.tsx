@@ -18,6 +18,8 @@ export function AuthenticatedMobileShell({
   const location = useLocation();
   const showNav = shouldShowNav(location.pathname);
   const activeTab = getActiveTab(location.pathname);
+  const path = location.pathname.replace(/\/+$/, "") || "/";
+  const useDarkNav = darkNav || path === "/lich";
 
   return (
     <AppShellViewport>
@@ -28,7 +30,7 @@ export function AuthenticatedMobileShell({
         {children}
       </div>
       {showNav && activeTab ? (
-        <CBottomNav active={activeTab} dark={darkNav} />
+        <CBottomNav active={activeTab} dark={useDarkNav} />
       ) : null}
     </AppShellViewport>
   );

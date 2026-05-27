@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
 import { toast } from "sonner";
 
+import { CTieuVanLockedScreen } from "~/components/direction-c/CTieuVanLockedScreen";
 import { BackBar } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -69,20 +69,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
   }
 
   if (!unlocked) {
-    return (
-      <div
-        className="flex min-h-full flex-col px-6 py-10"
-        style={{ background: CT.paper, fontFamily: "var(--serif)" }}
-      >
-        <BackBar title="Tiểu Vận" />
-        <p className="mt-6 text-sm" style={{ color: CT.ink2 }}>
-          Cần gói luận Tiểu Vận hoặc gói năm để đọc luận giải.
-        </p>
-        <Link to="/dat-lich" className="mt-4 text-sm" style={{ color: CT.goldDeep }}>
-          Xem gói →
-        </Link>
-      </div>
-    );
+    return <CTieuVanLockedScreen year={year} />;
   }
 
   return (

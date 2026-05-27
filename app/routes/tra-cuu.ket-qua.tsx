@@ -1,9 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { useSavedPicks } from "~/hooks/useSavedPicks";
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
@@ -107,6 +109,8 @@ export default function TraCuuKetQuaRoute() {
 
   if (!state) return null;
 
+  const bestDay = days[0] ?? null;
+
   return (
     <div
       className="flex min-h-full flex-col"
@@ -141,6 +145,14 @@ export default function TraCuuKetQuaRoute() {
           {days.length} ngày tốt nhất
         </div>
 
+        {bestDay ? (
+          <KetQuaSaveBestDay
+            bestDay={bestDay}
+            intentLabel={state.intentLabel}
+            payload={state.payload}
+          />
+        ) : null}
+
         {days.length === 0 ? (
           <div className="mt-4">
             <ErrorBanner message="Chưa đọc được danh sách ngày từ API." />
@@ -160,6 +172,47 @@ export default function TraCuuKetQuaRoute() {
         )}
       </div>
     </div>
+  );
+}
+
+function KetQuaSaveBestDay({
+  bestDay,
+  intentLabel,
+  payload,
+}: {
+  bestDay: ResultDay;
+  intentLabel: string;
+  payload: unknown;
+}) {
+  const { savePick } = useSavedPicks();
+  const [saving, setSaving] = useState(false);
+  const score = extractScoreFromPayload(payload, bestDay.isoDate, 88);
+
+  async function handleSave() {
+    if (saving) return;
+    setSaving(true);
+    const r = await savePick({
+      source_endpoint: "chon-ngay",
+      payload,
+      label: `${intentLabel} — ${bestDay.dateLabel}`,
+      day_iso: bestDay.isoDate,
+      score,
+    });
+    setSaving(false);
+    if (r.ok) toast.success("Đã lưu ngày đề xuất vào sổ.");
+    else toast.error(r.error ?? "Không lưu được.");
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={saving}
+      onClick={() => void handleSave()}
+      className="mt-3 w-full cursor-pointer border-none py-2.5 font-[family-name:var(--font-display-2)] text-[11px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+      style={{ background: CT.forest, color: CT.cream }}
+    >
+      {saving ? "Đang lưu…" : "Lưu ngày đề xuất vào sổ"}
+    </button>
   );
 }
 

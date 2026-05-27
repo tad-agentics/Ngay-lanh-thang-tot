@@ -1,0 +1,64 @@
+import { Link } from "react-router";
+
+import { BackBar, Mono } from "~/components/brand";
+import { CT } from "~/lib/c-tokens";
+import { UI_PACKAGES } from "~/lib/packages";
+
+/** Direction C — Tiểu Vận paywall (addon `luan_tieu_van`). */
+export function CTieuVanLockedScreen({ year }: { year: number }) {
+  const pkg = UI_PACKAGES.find((p) => p.sku === "luan_tieu_van");
+  const yearly = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
+
+  return (
+    <main
+      className="flex min-h-full flex-col"
+      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
+    >
+      <BackBar title={`Tiểu Vận ${year}`} />
+
+      <div className="flex flex-1 flex-col px-6 pb-10 pt-2">
+        <div
+          className="border px-4 py-3.5"
+          style={{ background: "#fff", borderColor: CT.hairline }}
+        >
+          <Mono style={{ color: CT.muted, fontSize: 9 }}>Chưa mở khoá</Mono>
+          <h2
+            className="mt-1.5 font-[family-name:var(--font-display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+          >
+            Luận giải Tiểu Vận
+          </h2>
+          <p className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
+            vận năm · phong thuỷ năm · 12 tháng tới
+          </p>
+          <p
+            className="mt-2.5 font-[family-name:var(--font-display-2)] text-sm font-bold tabular-nums"
+            style={{ color: CT.goldDeep }}
+          >
+            {pkg?.priceLabel ?? "199.000₫"}
+            <span className="ml-2 font-serif text-[11px] font-normal" style={{ color: CT.muted }}>
+              · hoặc kèm gói năm
+            </span>
+          </p>
+        </div>
+
+        <Link
+          to="/luan/mua/xac-nhan?sku=luan_tieu_van"
+          className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--font-display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+          style={{ background: CT.forest, color: CT.cream }}
+        >
+          Mở khóa {pkg?.title ?? "Tiểu Vận"}
+        </Link>
+
+        {yearly ? (
+          <Link
+            to="/dat-lich?plan=goi_12thang"
+            className="mt-3 block w-full border py-3 text-center font-[family-name:var(--font-display-2)] text-xs font-bold uppercase tracking-[0.06em] no-underline"
+            style={{ borderColor: CT.hairline, color: CT.ink }}
+          >
+            Gói năm — kèm Tiểu Vận
+          </Link>
+        ) : null}
+      </div>
+    </main>
+  );
+}

@@ -40,7 +40,7 @@ export default function LuanMuaXacNhanRoute() {
     const result = await createPayosCheckout({
       package_sku: sku,
       return_url: `${origin}/luan/mua/thanh-cong?sku=${sku}`,
-      cancel_url: `${origin}/luan/mua/xac-nhan?sku=${sku}`,
+      cancel_url: `${origin}/luan/mua/that-bai?sku=${sku}`,
     });
     setBusy(false);
     if (!result.ok) {
