@@ -5,6 +5,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import {
+  inPivotCreditTransition,
+  readPivotTransitionUntil,
+} from "../_shared/entitlements.ts";
 import { subscriptionActive } from "../_shared/subscription.ts";
 
 const SINGLE_FEATURE_KEY = "ai_reading_unlock";
@@ -161,6 +165,19 @@ Deno.serve(async (req) => {
       subscription_free: true,
       dry_run: dryRun,
     });
+  }
+
+  const pivotUntil = await readPivotTransitionUntil(admin);
+  if (!inPivotCreditTransition(pivotUntil)) {
+    return json(
+      {
+        ok: false,
+        error_code: "SUB_EXPIRED",
+        message: "Lịch đã hết hạn. Gia hạn để mở luận giải.",
+        unlocked: false,
+      },
+      403,
+    );
   }
 
   if (cost <= 0) {

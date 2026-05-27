@@ -10,6 +10,10 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import {
+  inPivotCreditTransition,
+  readPivotTransitionUntil,
+} from "../_shared/entitlements.ts";
 
 type ServiceClient = ReturnType<typeof createClient>;
 
@@ -46,6 +50,25 @@ async function userHasPaidAiReadingAccess(
   scope: "home" | "day_detail",
   dayIso: string,
 ): Promise<boolean> {
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("subscription_expires_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (
+    profile &&
+    subscriptionActiveForReading(
+      profile.subscription_expires_at as string | null,
+    )
+  ) {
+    return true;
+  }
+
+  const pivotUntil = await readPivotTransitionUntil(admin);
+  if (!inPivotCreditTransition(pivotUntil)) {
+    return false;
+  }
+
   const idempotencyKey = `ai_reading_unlock:${userId}:${scope}:${dayIso}`;
   const { data: existing } = await admin
     .from("credit_ledger")
@@ -66,15 +89,7 @@ async function userHasPaidAiReadingAccess(
       : 0;
   if (cost <= 0) return true;
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("subscription_expires_at")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile) return false;
-  return subscriptionActiveForReading(
-    profile.subscription_expires_at as string | null,
-  );
+  return false;
 }
 
 import { corsHeaders } from "../_shared/cors.ts";

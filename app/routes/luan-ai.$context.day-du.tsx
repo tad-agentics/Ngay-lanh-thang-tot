@@ -7,7 +7,7 @@ export default function LuanAiDayDuRoute() {
   const { context } = useParams();
   const parsed = parseLuanContext(context);
 
-  if (parsed.kind === "invalid") {
+  if (parsed.kind !== "day") {
     return <Navigate to="/lich" replace />;
   }
 

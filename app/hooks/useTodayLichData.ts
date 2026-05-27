@@ -7,11 +7,13 @@ import {
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 export function useTodayLichData() {
   const { profile, loading: profileLoading } = useProfile();
+  const { canUseCalendar } = useEntitlements();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [today, setToday] = useState<NgayHomNayHome | null>(null);
@@ -22,6 +24,12 @@ export function useTodayLichData() {
 
   useEffect(() => {
     if (profileLoading) return;
+    if (!canUseCalendar) {
+      setLoading(false);
+      setToday(null);
+      setError(null);
+      return;
+    }
     if (!profile || !canBatTu) {
       setLoading(false);
       setToday(null);
@@ -52,7 +60,7 @@ export function useTodayLichData() {
     return () => {
       cancelled = true;
     };
-  }, [profile, profileLoading, canBatTu]);
+  }, [profile, profileLoading, canBatTu, canUseCalendar]);
 
   return {
     profile,

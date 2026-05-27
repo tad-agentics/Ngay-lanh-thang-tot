@@ -93,10 +93,12 @@ export default function TraCuuKetQuaRoute() {
 
   useEffect(() => {
     if (state?.payload && days.length === 0) {
-      navigate("/app/loi/khong-tim-thay-ngay", {
+      navigate("/tra-cuu/khong-co-ngay", {
         state: {
           intentLabel: state.intentLabel,
           daysInclusive: state.daysInclusive,
+          rangeStart: state.rangeStart,
+          rangeEnd: state.rangeEnd,
         },
         replace: true,
       });

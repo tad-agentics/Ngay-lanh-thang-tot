@@ -469,6 +469,34 @@ export function laSoJsonToRevealProps(raw: unknown): {
   };
 }
 
+const TU_TRU_PILLAR_KEYS = ["year", "month", "day", "hour"] as const;
+
+function pillarLabelFromRecord(p: Record<string, unknown> | null): string {
+  if (!p) return "···";
+  const can = asRecord(p.can);
+  const chi = asRecord(p.chi);
+  const c = can ? pickStr(can, ["name", "can_name", "label"]) : "—";
+  const ch = chi ? pickStr(chi, ["name", "chi_name", "label"]) : "—";
+  if (c !== "—" && ch !== "—") return `${c} ${ch}`.trim();
+  const flat = pickStr(p, ["label", "name", "ganzhi", "display"]);
+  return flat !== "—" ? flat : "···";
+}
+
+/** Four pillars for onboarding reveal (Niên → Thời). */
+export function extractTuTruPillarLabels(raw: unknown): string[] {
+  const root = asRecord(raw);
+  if (!root) return ["···", "···", "···", "···"];
+  const nested =
+    asRecord(root.data) ??
+    asRecord(root.result) ??
+    asRecord(root.tu_tru) ??
+    root;
+  const pillars = asRecord(nested.pillars);
+  return TU_TRU_PILLAR_KEYS.map((k) =>
+    pillarLabelFromRecord(pillars ? asRecord(pillars[k]) : null),
+  );
+}
+
 export interface LaSoChiTietView {
   thienCan: string[];
   diaChi: string[];

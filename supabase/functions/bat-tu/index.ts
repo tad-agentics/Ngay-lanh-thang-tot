@@ -136,6 +136,7 @@ const VALID_OPS = new Set([
   "day-detail",
   "convert-date",
   "tu-tru",
+  "recompute-la-so",
   "profile",
   "tieu-van",
   "hop-tuoi",
@@ -485,6 +486,7 @@ function buildUpstream(
       break;
 
     case "tu-tru":
+    case "recompute-la-so":
       if (!body.birth_date) {
         return {
           ok: false,
@@ -663,6 +665,7 @@ function resolveFeatureKey(
     case "la-so":
       return "la_so_diengiai";
     case "tu-tru":
+    case "recompute-la-so":
       return "tu_tru";
     case "tieu-van":
       return "tieu_van";
@@ -714,6 +717,103 @@ async function persistTuTruToProfile(
   return null;
 }
 
+async function readBirthEditMax(admin: SupabaseAdmin): Promise<number> {
+  const { data } = await admin
+    .from("app_config")
+    .select("value")
+    .eq("config_key", "birth_edit_max_per_30d")
+    .maybeSingle();
+  const n = Number(data?.value ?? 2);
+  return Number.isFinite(n) && n > 0 ? n : 2;
+}
+
+async function assertBirthEditAllowed(
+  admin: SupabaseAdmin,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { data: profile, error } = await admin
+    .from("profiles")
+    .select("birth_edit_count, birth_edit_window_start")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !profile) {
+    return { ok: false, message: "Không đọc hồ sơ." };
+  }
+  const max = await readBirthEditMax(admin);
+  const now = Date.now();
+  const windowStart = profile.birth_edit_window_start
+    ? new Date(profile.birth_edit_window_start as string).getTime()
+    : null;
+  const inWindow =
+    windowStart != null && !Number.isNaN(windowStart) &&
+    now - windowStart < 30 * 24 * 60 * 60 * 1000;
+  const count = inWindow ? (profile.birth_edit_count as number) ?? 0 : 0;
+  if (count >= max) {
+    return {
+      ok: false,
+      message: `Bạn đã sửa hồ sơ ${max} lần trong 30 ngày qua.`,
+    };
+  }
+  return { ok: true };
+}
+
+async function persistRecomputeLaSo(
+  admin: SupabaseAdmin,
+  userId: string,
+  body: Record<string, unknown>,
+  laSoPayload: unknown,
+): Promise<string | null> {
+  const iso = typeof body.birth_date === "string"
+    ? birthDdMmYyyyToIso(body.birth_date)
+    : null;
+  const gio = birthTimeToGioSinh(body.birth_time);
+  const gt = genderToGioiTinh(body.gender);
+
+  const { data: existing } = await admin
+    .from("profiles")
+    .select("birth_edit_count, birth_edit_window_start")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const now = Date.now();
+  const windowStart = existing?.birth_edit_window_start
+    ? new Date(existing.birth_edit_window_start as string).getTime()
+    : null;
+  const inWindow =
+    windowStart != null && !Number.isNaN(windowStart) &&
+    now - windowStart < 30 * 24 * 60 * 60 * 1000;
+  const nextCount = inWindow
+    ? ((existing?.birth_edit_count as number) ?? 0) + 1
+    : 1;
+
+  const patch: Record<string, unknown> = {
+    la_so: laSoPayload,
+    la_so_recompute_status: "ready",
+    birth_edit_count: nextCount,
+    birth_edit_window_start: inWindow
+      ? existing!.birth_edit_window_start
+      : new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  if (iso) patch.ngay_sinh = iso;
+  if (gio) patch.gio_sinh = gio;
+  if (gt) patch.gioi_tinh = gt;
+
+  const { error } = await admin.from("profiles").update(patch).eq("id", userId);
+  if (error) {
+    console.error("persistRecomputeLaSo", error);
+    return "Không lưu lá số vào hồ sơ được.";
+  }
+
+  await admin
+    .from("credit_ledger")
+    .delete()
+    .eq("user_id", userId)
+    .like("idempotency_key", "ai_reading%");
+
+  return null;
+}
+
 /** TTL tối đa 60 phút; BAT_TU_CACHE_TTL_SEC (giây), clamp 1…3600, mặc định 3600. */
 function cacheTtlSec(): number {
   const raw = Deno.env.get("BAT_TU_CACHE_TTL_SEC");
@@ -738,7 +838,7 @@ async function sha256Hex(text: string): Promise<string> {
 function isUpstreamCacheable(op: string, init: RequestInit): boolean {
   const m = (init.method ?? "GET").toUpperCase();
   if (op === "profile" && m === "POST") return false;
-  if (op === "tu-tru") return false;
+  if (op === "tu-tru" || op === "recompute-la-so") return false;
   return true;
 }
 
@@ -913,6 +1013,23 @@ Deno.serve(async (req) => {
     userId = u.id;
   }
 
+  if (op === "recompute-la-so" && userId) {
+    const allowed = await assertBirthEditAllowed(admin, userId);
+    if (!allowed.ok) {
+      return json(
+        { error: { code: "BIRTH_EDIT_LIMIT", message: allowed.message } },
+        403,
+      );
+    }
+    await admin
+      .from("profiles")
+      .update({
+        la_so_recompute_status: "pending",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+  }
+
   if (op === "tu-tru" && userId) {
     const { data: lasoRow, error: lasoErr } = await admin
       .from("profiles")
@@ -969,7 +1086,7 @@ Deno.serve(async (req) => {
     op === "phong-thuy" &&
     String(body.detail ?? "").toLowerCase() === "teaser";
   let featureKeyForBilling: string | null = featureKey;
-  if (op === "tu-tru") featureKeyForBilling = null;
+  if (op === "tu-tru" || op === "recompute-la-so") featureKeyForBilling = null;
   if (op === "la-so") featureKeyForBilling = null;
   if (phongThuyTeaser) featureKeyForBilling = null;
   let chargedAmount = 0;
@@ -1165,6 +1282,28 @@ Deno.serve(async (req) => {
       if (featureKey) {
         await refundCredits(admin, userId, featureKey, chargedAmount, op);
       }
+      return json(
+        { error: { code: "DB_ERROR", message: persistMsg } },
+        500,
+      );
+    }
+  }
+
+  if (op === "recompute-la-so" && userId) {
+    const persistMsg = await persistRecomputeLaSo(
+      admin,
+      userId,
+      body,
+      data,
+    );
+    if (persistMsg) {
+      await admin
+        .from("profiles")
+        .update({
+          la_so_recompute_status: "failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
       return json(
         { error: { code: "DB_ERROR", message: persistMsg } },
         500,

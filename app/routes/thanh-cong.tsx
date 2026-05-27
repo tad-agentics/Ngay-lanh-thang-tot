@@ -1,1 +1,5 @@
-export { default } from "./app.mua-luong.thanh-cong";
+import { CPaySuccessScreen } from "~/components/direction-c/CPaySuccessScreen";
+
+export default function ThanhCongRoute() {
+  return <CPaySuccessScreen />;
+}

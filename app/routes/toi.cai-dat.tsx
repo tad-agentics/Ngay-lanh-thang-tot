@@ -1,1 +1,5 @@
-export { default } from "./app.cai-dat";
+import { CSettingsScreen } from "~/components/direction-c/CSettingsScreen";
+
+export default function ToiCaiDatRoute() {
+  return <CSettingsScreen />;
+}

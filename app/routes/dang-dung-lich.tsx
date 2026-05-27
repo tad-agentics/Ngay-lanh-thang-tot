@@ -1,40 +1,88 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { C, CForestShell } from "~/components/auth/c-auth-ui";
 import { Mono } from "~/components/brand";
+import { useProfile } from "~/hooks/useProfile";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import { extractTuTruPillarLabels } from "~/lib/la-so-ui";
 
 const PILLARS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
-const PILLAR_VALUES = ["Canh Ngọ", "Quý Mùi", "Quý Tỵ", "···"] as const;
-const QUOTE =
-  '"Trường Lưu Thủy — nước sông dài, hợp người làm việc bền"';
 
 export default function DangDungLichRoute() {
   const navigate = useNavigate();
+  const { profile, loading: profileLoading } = useProfile();
   const [doneCount, setDoneCount] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [pillarValues, setPillarValues] = useState<string[]>([
+    "···",
+    "···",
+    "···",
+    "···",
+  ]);
+  const [quote, setQuote] = useState(
+    '"Đang dựng lịch theo tứ trụ của bạn…"',
+  );
+  const ranRef = useRef(false);
 
   useEffect(() => {
-    const steps = [
-      { at: 400, done: 1, prog: 25 },
-      { at: 1200, done: 2, prog: 50 },
-      { at: 2000, done: 3, prog: 76 },
-      { at: 3200, done: 4, prog: 100 },
-    ];
-    const timers = steps.map(({ at, done, prog }) =>
-      window.setTimeout(() => {
-        setDoneCount(done);
-        setProgress(prog);
-      }, at),
-    );
-    const nav = window.setTimeout(() => {
-      navigate("/lich-da-mo", { replace: true });
-    }, 3400);
+    if (profileLoading || !profile || ranRef.current) return;
+    const body = profileToBatTuPersonQuery(profile);
+    if (!body.birth_date) {
+      toast.error("Thiếu ngày sinh trên hồ sơ.");
+      navigate("/gio-sinh", { replace: true });
+      return;
+    }
+    ranRef.current = true;
+
+    let cancelled = false;
+    const timers: number[] = [];
+
+    void (async () => {
+      const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
+      if (cancelled) return;
+      if (!res.ok) {
+        toast.error(res.message ?? "Không lập được lá số.");
+        navigate("/gio-sinh", { replace: true });
+        return;
+      }
+      const labels = extractTuTruPillarLabels(res.data);
+      setPillarValues(labels);
+      const menh = labels[0] !== "···" ? labels[0] : null;
+      if (menh) {
+        setQuote(`"${menh} — lá số của bạn đã sẵn sàng."`);
+      }
+      window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+
+      const steps = [
+        { at: 400, done: 1, prog: 25 },
+        { at: 1200, done: 2, prog: 50 },
+        { at: 2000, done: 3, prog: 76 },
+        { at: 3200, done: 4, prog: 100 },
+      ];
+      for (const { at, done, prog } of steps) {
+        timers.push(
+          window.setTimeout(() => {
+            if (cancelled) return;
+            setDoneCount(done);
+            setProgress(prog);
+          }, at),
+        );
+      }
+      timers.push(
+        window.setTimeout(() => {
+          if (!cancelled) navigate("/lich-da-mo", { replace: true });
+        }, 3400),
+      );
+    })();
+
     return () => {
+      cancelled = true;
       timers.forEach(window.clearTimeout);
-      window.clearTimeout(nav);
     };
-  }, [navigate]);
+  }, [profile, profileLoading, navigate]);
 
   return (
     <CForestShell gradientOpacity={0.16} gradientHeight={320} centered>
@@ -82,14 +130,14 @@ export default function DangDungLichRoute() {
                     marginTop: 6,
                     fontFamily: "var(--display-2)",
                     fontWeight: 700,
-                    fontSize: 12,
+                    fontSize: 11,
                     color: done ? C.cream : "rgba(237,231,211,0.3)",
                     textTransform: "uppercase",
                     letterSpacing: "-0.005em",
-                    lineHeight: 1,
+                    lineHeight: 1.1,
                   }}
                 >
-                  {done && i < 3 ? PILLAR_VALUES[i] : done ? "···" : "···"}
+                  {done ? pillarValues[i] : "···"}
                 </div>
               </div>
             );
@@ -129,7 +177,7 @@ export default function DangDungLichRoute() {
             margin: 0,
           }}
         >
-          {QUOTE}
+          {quote}
         </p>
       </div>
     </CForestShell>

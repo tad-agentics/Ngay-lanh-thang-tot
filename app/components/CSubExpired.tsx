@@ -1,39 +1,141 @@
 import { Link } from "react-router";
 
-import { Button } from "~/components/ui/button";
+import { Mono } from "~/components/brand";
+import { useSubscription } from "~/hooks/useSubscription";
+import { CT } from "~/lib/c-tokens";
+import { UI_PACKAGES } from "~/lib/packages";
 
 type CSubExpiredProps = {
   onDismiss?: () => void;
 };
 
-/** Direction C — subscription expired blocker (artboard 38). */
+/** Direction C — subscription expired full-screen blocker (artboard 38). */
 export function CSubExpired({ onDismiss }: CSubExpiredProps) {
+  const { expiryFormatted } = useSubscription();
+  const yearly = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+      className="fixed inset-0 z-50 flex flex-col overflow-auto"
+      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
       role="dialog"
       aria-labelledby="sub-expired-title"
     >
-      <div className="w-full max-w-md rounded-lg bg-paper p-6 shadow-lg">
-        <h2
-          id="sub-expired-title"
-          className="font-[family-name:var(--font-display)] text-lg font-extrabold uppercase text-ink"
+      <div className="flex flex-1 flex-col items-center justify-center px-7 py-10 text-center">
+        <svg width="84" height="92" viewBox="0 0 84 92" fill="none" aria-hidden>
+          <rect
+            x="6"
+            y="14"
+            width="72"
+            height="68"
+            rx="2"
+            stroke={CT.muted}
+            strokeWidth="1.4"
+            fill="rgba(122,112,80,0.04)"
+          />
+          <path
+            d="M6 28 H78 M22 6 V20 M62 6 V20"
+            stroke={CT.muted}
+            strokeWidth="1.4"
+            strokeLinecap="round"
+          />
+          {[0, 1, 2].map((i) =>
+            [0, 1, 2, 3, 4, 5, 6].map((j) => (
+              <circle
+                key={`${i}-${j}`}
+                cx={14 + j * 10}
+                cy={42 + i * 12}
+                r="1.5"
+                fill="rgba(122,112,80,0.25)"
+              />
+            )),
+          )}
+          <circle cx="62" cy="68" r="14" fill={CT.paper} />
+          <path
+            d="M58 68 V64 C58 62, 60 60, 62 60 C64 60, 66 62, 66 64 V68"
+            stroke={CT.goldDeep}
+            strokeWidth="1.4"
+            fill="none"
+          />
+          <rect x="55" y="68" width="14" height="10" rx="1" fill={CT.goldDeep} />
+        </svg>
+
+        <Mono
+          className="mt-5 text-[10px] tracking-[0.22em]"
+          style={{ color: CT.goldDeep }}
         >
           Lịch đã hết hạn
+        </Mono>
+        <h2
+          id="sub-expired-title"
+          className="mt-2.5 max-w-[320px] font-[family-name:var(--font-display)] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+          style={{ color: CT.ink }}
+        >
+          Lịch của bạn
+          <br />
+          <span
+            className="font-serif text-[28px] font-bold normal-case not-italic tracking-normal"
+            style={{ color: CT.goldDeep }}
+          >
+            {expiryFormatted ? `dừng từ ${expiryFormatted}` : "đã hết hạn"}
+          </span>
         </h2>
-        <p className="mt-2 font-serif text-base text-ink-2">
-          Gia hạn lịch để tiếp tục xem ngày cá nhân hoá, tra cứu và luận giải.
+        <p
+          className="mt-3.5 max-w-[320px] text-[13.5px] leading-snug"
+          style={{ color: CT.ink2 }}
+        >
+          Gia hạn để tiếp tục xem trang hôm nay, tra cứu ngày tốt và đọc{" "}
+          <strong className="font-semibold" style={{ color: CT.ink }}>
+            luận giải Bát tự + Tiểu Vận
+          </strong>
+          . Lá số tứ trụ vẫn được lưu — không cần lập lại.
         </p>
-        <div className="mt-6 flex flex-col gap-3">
-          <Button asChild className="min-h-[44px] w-full">
-            <Link to="/dat-lich">Gia hạn lịch</Link>
-          </Button>
-          {onDismiss ? (
-            <Button type="button" variant="outline" className="min-h-[44px] w-full" onClick={onDismiss}>
-              Để sau
-            </Button>
-          ) : null}
-        </div>
+
+        {yearly ? (
+          <div
+            className="relative mt-5 w-full max-w-[320px] px-4 py-3.5 text-left"
+            style={{ background: CT.forest, color: CT.cream }}
+          >
+            <Mono className="text-[9px]" style={{ color: CT.gold }}>
+              Khuyên dùng
+            </Mono>
+            <div className="mt-1 font-[family-name:var(--font-display)] text-lg font-extrabold uppercase tracking-[-0.005em]">
+              {yearly.title}
+            </div>
+            <div
+              className="mt-1.5 font-[family-name:var(--font-display-2)] text-[22px] font-extrabold tabular-nums"
+              style={{ color: CT.gold }}
+            >
+              {yearly.priceLabel}
+            </div>
+            <Link
+              to="/dat-lich?plan=goi_12thang"
+              className="mt-3 block w-full py-2.5 text-center font-[family-name:var(--font-display-2)] text-xs font-extrabold uppercase tracking-[0.08em] no-underline"
+              style={{ background: CT.gold, color: CT.forest }}
+            >
+              Đặt lịch năm
+            </Link>
+          </div>
+        ) : null}
+
+        <Link
+          to="/dat-lich"
+          className="mt-3 text-[12.5px] no-underline"
+          style={{ color: CT.muted }}
+        >
+          Xem các gói khác →
+        </Link>
+
+        {onDismiss ? (
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="mt-6 cursor-pointer border-none bg-transparent font-serif text-sm"
+            style={{ color: CT.muted }}
+          >
+            Để sau
+          </button>
+        ) : null}
       </div>
     </div>
   );

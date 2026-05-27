@@ -42,6 +42,7 @@ export const ONBOARDING_EXEMPT_PATHS = new Set([
   "/lich-da-mo",
   "/dat-lich",
   "/dat-lich/xac-nhan",
+  "/dat-lich/that-bai",
   "/thanh-cong",
   "/luan/mua/xac-nhan",
   "/luan/mua/thanh-cong",
@@ -80,6 +81,13 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/chuyen-lich": "/tien-ich/chuyen-lich",
   "/app/la-so": "/toi/la-so",
   "/app/la-so/chi-tiet": "/toi/la-so",
+  "/app/tieu-van": "/toi/luan-tieu-van",
+  "/app/phong-thuy": "/tra-cuu",
+  "/app/so-viec": "/tra-cuu",
+  "/app/nhip/lich-su": "/lich",
+  "/app/nhip/cai-dat": "/toi/cai-dat",
+  "/app/van-thang": "/lich/thang",
+  "/app/lich-thang": "/lich/thang",
 };
 
 export function legacyAppRedirect(pathname: string): string | null {
@@ -87,6 +95,9 @@ export function legacyAppRedirect(pathname: string): string | null {
   if (LEGACY_APP_REDIRECTS[p]) return LEGACY_APP_REDIRECTS[p];
   if (p.startsWith("/app/ngay/")) {
     return p.replace("/app/ngay/", "/ngay/");
+  }
+  if (p.startsWith("/app/")) {
+    return "/lich";
   }
   return null;
 }

@@ -1,14 +1,10 @@
-import { CSubExpired } from "~/components/CSubExpired";
+import { CalendarGate } from "~/components/CalendarGate";
 import { CMonthScreen } from "~/components/direction-c/CMonthScreen";
-import { useEntitlements } from "~/hooks/useEntitlements";
 
 export default function LichThangRoute() {
-  const { canUseCalendar } = useEntitlements();
-
   return (
-    <>
+    <CalendarGate>
       <CMonthScreen />
-      {!canUseCalendar ? <CSubExpired /> : null}
-    </>
+    </CalendarGate>
   );
 }

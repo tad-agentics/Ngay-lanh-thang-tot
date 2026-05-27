@@ -73,8 +73,8 @@ export default function DatLichRoute() {
     const origin = window.location.origin;
     const result = await createPayosCheckout({
       package_sku: sku,
-      return_url: `${origin}/lich-da-mo`,
-      cancel_url: `${origin}/dat-lich`,
+      return_url: `${origin}/thanh-cong`,
+      cancel_url: `${origin}/dat-lich/that-bai`,
     });
     setBusySku(null);
     if (!result.ok) {

@@ -1,14 +1,10 @@
+import { CalendarGate } from "~/components/CalendarGate";
 import { CDayDetailScreen } from "~/components/direction-c/CDayDetailScreen";
-import { CSubExpired } from "~/components/CSubExpired";
-import { useEntitlements } from "~/hooks/useEntitlements";
 
 export default function NgayDetailRoute() {
-  const { canUseCalendar } = useEntitlements();
-
   return (
-    <>
+    <CalendarGate>
       <CDayDetailScreen />
-      {!canUseCalendar ? <CSubExpired /> : null}
-    </>
+    </CalendarGate>
   );
 }

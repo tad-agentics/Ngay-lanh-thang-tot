@@ -1,1 +1,5 @@
-export { default } from "./app.chuyen-lich";
+import { CChuyenLichScreen } from "~/components/direction-c/CChuyenLichScreen";
+
+export default function TienIchChuyenLichRoute() {
+  return <CChuyenLichScreen />;
+}
