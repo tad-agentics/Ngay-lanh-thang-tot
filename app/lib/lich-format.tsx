@@ -54,14 +54,13 @@ export function ngayHomNayToLichCard(
   lunarLine: ReactNode;
   verdictLabel: string;
   verdictSub: ReactNode;
-  score: number;
+  score: number | null;
   quote: string | null;
   rows: LichRow[];
 } {
-  const score =
-    data.score != null && Number.isFinite(data.score)
-      ? data.score
-      : scoreFromDayType(data.dayType);
+  const displayScore =
+    data.score != null && Number.isFinite(data.score) ? data.score : null;
+  const verdictScore = displayScore ?? scoreFromDayType(data.dayType);
   const weekday = weekdayFromIso(iso);
   const dayCanChi = data.canChi !== "—" ? data.canChi : null;
   const yearCanChi =
@@ -103,9 +102,9 @@ export function ngayHomNayToLichCard(
         ) : null}
       </>
     ),
-    verdictLabel: verdictLabelFromScore(score),
+    verdictLabel: verdictLabelFromScore(verdictScore),
     verdictSub: menh ? <>cho mệnh {menh}</> : null,
-    score,
+    score: displayScore,
     quote: data.homeSummaryLine || null,
     rows: [
       { key: "Nên", value: nen, color: CT.forest },

@@ -1,4 +1,5 @@
 import type { CalendarDay, DayType } from "~/lib/api-types";
+import { parseDayDetailForView } from "~/lib/day-detail-view";
 import {
   extractChiLabelsFromGioSlots,
   formatGioTotChiCompactDisplayVi,
@@ -447,8 +448,20 @@ export interface NgayHomNayHome {
   gioTotDisplay: string;
   gioXauChis: string[];
   homeSummaryLine: string;
-  /** Engine score 0–100 when present; else map from dayType in UI. */
+  /** Personalized score 0–100 from day-detail when merged; ngay-hom-nay may omit. */
   score: number | null;
+}
+
+/** Canonical personalized score lives on day-detail; ngay-hom-nay often omits it. */
+export function mergeDayDetailScoreIntoHome(
+  home: NgayHomNayHome,
+  dayDetailRaw: unknown,
+): NgayHomNayHome {
+  const detail = parseDayDetailForView(dayDetailRaw);
+  if (detail?.score != null && Number.isFinite(detail.score)) {
+    return { ...home, score: detail.score };
+  }
+  return home;
 }
 
 /** Map engine /v1/ngay-hom-nay JSON → home cards (flexible keys). */

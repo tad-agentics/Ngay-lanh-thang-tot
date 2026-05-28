@@ -8,7 +8,10 @@ import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { parseNgayHomNayForHome } from "~/lib/home-bat-tu";
+import {
+  mergeDayDetailScoreIntoHome,
+  parseNgayHomNayForHome,
+} from "~/lib/home-bat-tu";
 import {
   mastheadFromIso,
   ngayHomNayToLichCard,
@@ -26,7 +29,7 @@ type RevealCard = {
   lunarLabel: string;
   canChi: string;
   verdictLabel: string;
-  score: number;
+  score: number | null;
 };
 
 function fallbackCard(iso: string): RevealCard {
@@ -64,13 +67,22 @@ export default function LichDaMoRoute() {
 
     let cancelled = false;
     void (async () => {
-      const res = await invokeBatTu<unknown>({
-        op: "ngay-hom-nay",
-        body: { ...body, date: iso },
-      });
+      const [homNayRes, detailRes] = await Promise.all([
+        invokeBatTu<unknown>({
+          op: "ngay-hom-nay",
+          body: { ...body, date: iso },
+        }),
+        invokeBatTu<unknown>({
+          op: "day-detail",
+          body: { ...body, date: iso },
+        }),
+      ]);
       if (cancelled) return;
-      if (res.ok) {
-        const parsed = parseNgayHomNayForHome(res.data);
+      if (homNayRes.ok) {
+        let parsed = parseNgayHomNayForHome(homNayRes.data);
+        if (parsed && detailRes.ok) {
+          parsed = mergeDayDetailScoreIntoHome(parsed, detailRes.data);
+        }
         if (parsed) {
           const mapped = ngayHomNayToLichCard(
             parsed,
@@ -278,7 +290,7 @@ export default function LichDaMoRoute() {
                 letterSpacing: "-0.015em",
               }}
             >
-              {card.score}
+              {card.score ?? "—"}
             </span>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCalendarDaysForMonth,
   formatLichThangMonthKey,
+  mergeDayDetailScoreIntoHome,
   parseLichThangLunarMonthLabel,
   parseNgayHomNayForHome,
   parseWeeklyGoodDayCount,
@@ -149,6 +150,32 @@ describe("ngayHomNayToLichCard", () => {
     expect(card.dayNumber).toBe("12");
     expect(card.weekday).toBe("Thứ Ba");
     expect(card.masthead).toBe("Tháng 5 · 2026  ·  Bính Ngọ");
+  });
+
+  it("does not show fallback 68 when ngay-hom-nay omits score", () => {
+    const parsed = parseNgayHomNayForHome({
+      date: "2026-05-28",
+      day_type: "neutral",
+    });
+    expect(parsed).not.toBeNull();
+    const card = ngayHomNayToLichCard(parsed!, null, "2026-05-28");
+    expect(card.score).toBeNull();
+    expect(card.verdictLabel).toBe("Ngày bình");
+  });
+});
+
+describe("mergeDayDetailScoreIntoHome", () => {
+  it("overrides home score with day-detail personalized score", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-28",
+      day_type: "neutral",
+    });
+    expect(home).not.toBeNull();
+    const merged = mergeDayDetailScoreIntoHome(home!, { score: 35 });
+    expect(merged.score).toBe(35);
+    const card = ngayHomNayToLichCard(merged, "Lộ Bàng Thổ", "2026-05-28");
+    expect(card.score).toBe(35);
+    expect(card.verdictLabel).toBe("Ngày tránh");
   });
 });
 

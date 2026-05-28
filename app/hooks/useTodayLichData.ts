@@ -7,6 +7,7 @@ import { useAuth } from "~/lib/auth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
+  mergeDayDetailScoreIntoHome,
   parseNgayHomNayForHome,
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
@@ -71,19 +72,28 @@ export function useTodayLichData() {
 
     void (async () => {
       const body = profileToBatTuPersonQuery(profile);
-      const res = await invokeBatTu<unknown>({
-        op: "ngay-hom-nay",
-        body: { ...body, date: todayIso },
-      });
+      const [homNayRes, detailRes] = await Promise.all([
+        invokeBatTu<unknown>({
+          op: "ngay-hom-nay",
+          body: { ...body, date: todayIso },
+        }),
+        invokeBatTu<unknown>({
+          op: "day-detail",
+          body: { ...body, date: todayIso },
+        }),
+      ]);
       if (cancelled) return;
-      if (!res.ok) {
-        setError(res.message ?? "Không tải được lịch hôm nay.");
+      if (!homNayRes.ok) {
+        setError(homNayRes.message ?? "Không tải được lịch hôm nay.");
         setToday(null);
         setRawPayload(null);
       } else {
-        const parsed = parseNgayHomNayForHome(res.data);
+        let parsed = parseNgayHomNayForHome(homNayRes.data);
+        if (parsed && detailRes.ok) {
+          parsed = mergeDayDetailScoreIntoHome(parsed, detailRes.data);
+        }
         setToday(parsed);
-        setRawPayload(res.data);
+        setRawPayload(homNayRes.data);
         if (parsed) writeCached(parsed);
       }
       setLoading(false);
