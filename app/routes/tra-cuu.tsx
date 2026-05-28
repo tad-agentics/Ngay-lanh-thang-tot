@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CPickLoadingScreen } from "~/components/direction-c/CPickLoadingScreen";
@@ -14,6 +14,7 @@ import {
   localTodayIsoDate,
 } from "~/lib/tu-tru-dates";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
+import { consumeTraCuuIntentPreset } from "~/lib/hop-tuoi-ui";
 import { useProfile } from "~/hooks/useProfile";
 
 const CHON_NGAY_INTENT_OPTIONS = TU_TRU_INTENT_OPTIONS.filter(
@@ -58,6 +59,13 @@ export default function TraCuuRoute() {
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [intent, setIntent] = useState<TuTruIntent | "">("");
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  useEffect(() => {
+    const preset = consumeTraCuuIntentPreset();
+    if (preset) {
+      setIntent(preset.intent);
+    }
+  }, []);
 
   const rangeStart = useMemo(() => localTodayIsoDate(), []);
   const rangeEnd = useMemo(() => {

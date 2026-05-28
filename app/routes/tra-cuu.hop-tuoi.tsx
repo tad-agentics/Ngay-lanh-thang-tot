@@ -18,9 +18,9 @@ import {
 import { invokeBatTu } from "~/lib/bat-tu";
 import { CT } from "~/lib/c-tokens";
 import {
-  HOP_TUOI_RELATIONSHIP_OPTIONS,
   hopTuoiPayloadToPanel,
 } from "~/lib/hop-tuoi-result";
+import { persistHopTuoiKetQua } from "~/lib/hop-tuoi-session";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { useProfile } from "~/hooks/useProfile";
 
@@ -84,7 +84,7 @@ export default function TraCuuHopTuoiRoute() {
 
   const otherTimeLabel = useMemo(() => {
     if (form.otherBirthTime === HOP_OTHER_BIRTH_TIME_DEFAULT) {
-      return "Sửu · 1–3h";
+      return "Ngọ · 11–12h";
     }
     const code = Number.parseInt(form.otherBirthTime, 10);
     const opt = BAT_TU_BIRTH_TIME_OPTIONS.find((o) => o.value === code);
@@ -153,13 +153,16 @@ export default function TraCuuHopTuoiRoute() {
         return;
       }
 
-      navigate("/tra-cuu/hop-tuoi/ket-qua", {
-        state: {
+      const ketQuaState = {
           panel: mapped,
           payload: res.data,
           otherName: form.otherName.trim() || "Đối phương",
           selfName: profile.display_name ?? "Bạn",
-        },
+          purposeLabel: form.purposeLabel,
+        };
+      persistHopTuoiKetQua(ketQuaState);
+      navigate("/tra-cuu/hop-tuoi/ket-qua", {
+        state: ketQuaState,
       });
     } finally {
       setBusy(false);

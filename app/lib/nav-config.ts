@@ -93,7 +93,7 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/cai-dat-app": "/toi/cai-dat",
   "/app/ngay": "/ngay",
   "/app/bat-dau": "/gio-sinh",
-  "/app/chuyen-lich": "/tien-ich/chuyen-lich",
+  "/app/chuyen-lich": "/toi",
   "/app/la-so": "/toi/la-so",
   "/app/la-so/chi-tiet": "/toi/la-so",
   "/app/tieu-van": "/toi/luan-tieu-van",

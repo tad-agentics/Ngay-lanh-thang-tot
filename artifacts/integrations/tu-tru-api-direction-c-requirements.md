@@ -53,7 +53,7 @@ Browser (Direction C)
 | GET | `/v1/tieu-van` | `tieu-van` | Tiểu vận (ngoài band 15–18) |
 | POST | `/v1/hop-tuoi` | `hop-tuoi` | 22–23 |
 | GET | `/v1/phong-thuy` | `phong-thuy` | Hold (không route C v1) |
-| GET | `/v1/convert-date` | `convert-date` | 24 chuyển lịch |
+| GET | `/v1/convert-date` | `convert-date` | Nội bộ only (Tiểu vận labels) — **no C route** (màn 24 dropped) |
 | GET | `/v1/weekly-summary` | `weekly-summary` | Legacy (deprecated C) |
 | POST/GET | `/v1/profile` | `profile` | Sync birth profile |
 
@@ -424,6 +424,7 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | REQ-P3-04 | Rate limit header `X-RateLimit-Remaining` | Edge bat-tu hiển thị lỗi rõ |
 | REQ-P3-05 | Deprecate `/v1/weekly-summary` trong docs | Direction C bỏ tab Tuần |
 | REQ-P3-06 | `chon-ngay` echo `candidates_scanned` / `days_in_range` | Copy empty state + methodology (minh bạch) |
+| REQ-P3-07 | `hop-tuoi` `criteria[].points` (số ±) | Breakdown màn 23 — **FE fallback** (2026-05-27): suy điểm từ `overall_score` hoặc `verdict_level×25`; nếu thiếu `points` thì phân bổ heuristic theo sentiment. Upstream vẫn nên trả `points` chính thức. |
 
 ---
 

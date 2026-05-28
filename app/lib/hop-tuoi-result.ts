@@ -21,6 +21,7 @@ export interface HopTuoiCriterionRow {
   name: string;
   sentiment: HopTuoiCriteriaSentiment;
   description: string | null;
+  points: number | null;
 }
 
 export interface HopTuoiPersonCard {
@@ -218,6 +219,7 @@ function pickCriteriaRows(nested: Record<string, unknown>): HopTuoiCriterionRow[
           name,
           sentiment: "unknown" as const,
           description: null,
+          points: null,
         }));
     }
     return [];
@@ -227,7 +229,7 @@ function pickCriteriaRows(nested: Record<string, unknown>): HopTuoiCriterionRow[
     if (typeof item === "string") {
       const name = item.trim();
       if (name) {
-        rows.push({ name, sentiment: "unknown", description: null });
+        rows.push({ name, sentiment: "unknown", description: null, points: null });
       }
       continue;
     }
@@ -246,7 +248,15 @@ function pickCriteriaRows(nested: Record<string, unknown>): HopTuoiCriterionRow[
     const sentiment = normalizeSentiment(
       o.sentiment ?? o.tone ?? o.polarity ?? o.valence,
     );
-    rows.push({ name, sentiment, description });
+    const points = pickNumberOptional(o, [
+      "points",
+      "score",
+      "diem",
+      "weight",
+      "contribution",
+      "delta",
+    ]);
+    rows.push({ name, sentiment, description, points });
   }
   const order: Record<HopTuoiCriteriaSentiment, number> = {
     negative: 0,
@@ -256,6 +266,73 @@ function pickCriteriaRows(nested: Record<string, unknown>): HopTuoiCriterionRow[
   };
   rows.sort((a, b) => order[a.sentiment] - order[b.sentiment]);
   return rows;
+}
+
+/** Fill missing criterion points for UI (API or verdict_level-derived total). */
+export function enrichCriterionPoints(
+  rows: HopTuoiCriterionRow[],
+  totalScore: number | null,
+): HopTuoiCriterionRow[] {
+  if (rows.length === 0) return rows;
+  if (rows.every((r) => r.points != null)) return rows;
+
+  const sentimentWeight: Record<HopTuoiCriteriaSentiment, number> = {
+    positive: 3,
+    neutral: 1,
+    unknown: 1,
+    negative: 2,
+  };
+
+  if (totalScore != null && totalScore > 0) {
+    const weightSum = rows.reduce(
+      (sum, r) => sum + sentimentWeight[r.sentiment],
+      0,
+    );
+    return rows.map((row) => {
+      if (row.points != null) return row;
+      const w = sentimentWeight[row.sentiment];
+      const magnitude = Math.max(
+        4,
+        Math.round((totalScore * 0.55 * w) / Math.max(weightSum, 1)),
+      );
+      const points =
+        row.sentiment === "negative" ? -magnitude : magnitude;
+      return { ...row, points };
+    });
+  }
+
+  const fallback: Record<HopTuoiCriteriaSentiment, number> = {
+    positive: 18,
+    neutral: 8,
+    unknown: 5,
+    negative: -10,
+  };
+  return rows.map((row) =>
+    row.points != null ? row : { ...row, points: fallback[row.sentiment] },
+  );
+}
+
+function resolveV2DisplayScore(
+  explicit: number | null,
+  verdictLevel: number | null,
+): { score: number | null; showNumericScore: boolean } {
+  if (explicit != null) {
+    return { score: explicit, showNumericScore: true };
+  }
+  if (verdictLevel != null && verdictLevel >= 1 && verdictLevel <= 4) {
+    return { score: verdictLevel * 25, showNumericScore: true };
+  }
+  return { score: null, showNumericScore: false };
+}
+
+export function formatHopTuoiCriterionPoints(row: HopTuoiCriterionRow): string {
+  if (row.points != null) {
+    const n = Math.round(row.points);
+    return n > 0 ? `+${n}` : String(n);
+  }
+  if (row.sentiment === "positive") return "+";
+  if (row.sentiment === "negative") return "−";
+  return "·";
 }
 
 function verdictToGradLabel(verdict: string, score: number): HopTuoiGradLabel {
@@ -438,9 +515,8 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
   ]);
   const advice = adviceRaw !== "—" ? adviceRaw : null;
 
-  const criteriaRows =
+  const criteriaRowsRaw =
     apiVersion === 2 ? pickCriteriaRows(nested) : [];
-  const criteriaLines = criteriaRows.map((r) => r.name);
 
   const relationshipTypeRaw = pickStr(nested, [
     "relationship_type",
@@ -490,11 +566,19 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
         "Hai Nạp Âm được đối chiếu trong tiêu chí và luận giải phía trên.";
     }
 
-    const showNumericScore = scoreForV2 != null;
+    const { score: displayScore, showNumericScore } = resolveV2DisplayScore(
+      scoreForV2,
+      verdictLevel,
+    );
+    const criteriaRowsEnriched = enrichCriterionPoints(
+      criteriaRowsRaw,
+      displayScore,
+    );
+    const criteriaLinesEnriched = criteriaRowsEnriched.map((r) => r.name);
 
     return {
       apiVersion: 2,
-      score: scoreForV2,
+      score: displayScore,
       gradLabel,
       chipLabel,
       naphAm1,
@@ -502,8 +586,8 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
       naphAmRelation,
       verdict,
       verdictLevel,
-      criteriaLines,
-      criteriaRows,
+      criteriaLines: criteriaLinesEnriched,
+      criteriaRows: criteriaRowsEnriched,
       reading,
       advice,
       relationshipType,

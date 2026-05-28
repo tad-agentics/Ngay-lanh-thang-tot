@@ -1,52 +1,126 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
+import { useSavedPicks } from "~/hooks/useSavedPicks";
+import {
+  formatHopTuoiCriterionPoints,
+} from "~/lib/hop-tuoi-result";
+import {
+  loadHopTuoiKetQua,
+  persistHopTuoiKetQua,
+  type HopTuoiKetQuaState,
+} from "~/lib/hop-tuoi-session";
+import {
+  buildHopTuoiNextStepCopy,
+  stashTraCuuIntentPreset,
+} from "~/lib/hop-tuoi-ui";
 import { CT } from "~/lib/c-tokens";
-import type { HopTuoiPanelView } from "~/lib/hop-tuoi-result";
-import { invokeGenerateReading } from "~/lib/generate-reading";
 
-export type HopTuoiKetQuaState = {
-  panel: HopTuoiPanelView;
-  payload: unknown;
-  otherName: string;
-  selfName: string;
-};
+function gradHeadline(label: string): string {
+  return label.toUpperCase();
+}
+
+function HopTuoiSaveButton({
+  state,
+}: {
+  state: HopTuoiKetQuaState;
+}) {
+  const { savePick } = useSavedPicks();
+  const [saving, setSaving] = useState(false);
+  const { panel, selfName, otherName, purposeLabel, payload } = state;
+  const labelParts = [
+    "Hợp tuổi",
+    `${selfName} × ${otherName}`,
+    purposeLabel,
+    panel.gradLabel,
+  ].filter(Boolean);
+
+  async function handleSave() {
+    if (saving) return;
+    setSaving(true);
+    const r = await savePick({
+      source_endpoint: "hop-tuoi",
+      payload: {
+        api: payload,
+        panel,
+        selfName,
+        otherName,
+        purposeLabel: purposeLabel ?? null,
+      },
+      label: labelParts.join(" · "),
+      score: panel.score ?? undefined,
+    });
+    setSaving(false);
+    if (r.ok) toast.success("Đã lưu kết quả hợp tuổi vào sổ.");
+    else toast.error(r.error ?? "Không lưu được.");
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={saving}
+      onClick={() => void handleSave()}
+      className="cursor-pointer border-none bg-transparent p-0 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.14em]"
+      style={{ color: CT.goldDeep }}
+    >
+      {saving ? "…" : "Lưu"}
+    </button>
+  );
+}
 
 export default function TraCuuHopTuoiKetQuaRoute() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as HopTuoiKetQuaState | null;
-  const [aiReading, setAiReading] = useState<string | null>(null);
+  const navState = location.state as HopTuoiKetQuaState | null;
+  const [state, setState] = useState<HopTuoiKetQuaState | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!state?.panel) {
+    if (navState?.panel) {
+      persistHopTuoiKetQua(navState);
+      setState(navState);
+      setHydrated(true);
+      return;
+    }
+    const stored = loadHopTuoiKetQua();
+    if (stored?.panel) {
+      setState(stored);
+    }
+    setHydrated(true);
+  }, [navState]);
+
+  useEffect(() => {
+    if (hydrated && !state?.panel) {
       navigate("/tra-cuu/hop-tuoi", { replace: true });
     }
-  }, [state, navigate]);
+  }, [hydrated, state, navigate]);
 
-  useEffect(() => {
-    if (!state?.payload) return;
-    let cancelled = false;
-    void invokeGenerateReading({
-      endpoint: "hop-tuoi",
-      data: state.payload,
-    }).then((r) => {
-      if (!cancelled) setAiReading(r.reading);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [state?.payload]);
+  const nextStep = useMemo(
+    () =>
+      state
+        ? buildHopTuoiNextStepCopy({
+            purposeLabel: state.purposeLabel,
+            naphAm1: state.panel.naphAm1,
+            naphAm2: state.panel.naphAm2,
+          })
+        : null,
+    [state],
+  );
 
-  if (!state) return null;
+  if (!hydrated || !state) return null;
 
-  const { panel, selfName, otherName } = state;
-  const score = panel.score ?? 72;
+  const { panel, selfName, otherName, purposeLabel } = state;
+  const contextLabel =
+    purposeLabel ??
+    panel.relationshipLabel?.toLowerCase() ??
+    "hợp tuổi";
+  const showScore = panel.showNumericScore && panel.score != null;
   const quote =
-    aiReading?.trim() ||
     panel.reading?.trim() ||
     panel.advice?.trim() ||
+    panel.verdict?.trim() ||
     panel.naphAmRelation;
 
   const breakdown =
@@ -54,12 +128,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
       ? panel.criteriaRows.map((row) => ({
           t: row.name,
           v: row.description ?? "—",
-          s:
-            row.sentiment === "positive"
-              ? "+"
-              : row.sentiment === "negative"
-                ? "−"
-                : "·",
+          s: formatHopTuoiCriterionPoints(row),
         }))
       : panel.criteriaLines.map((line, i) => ({
           t: `Tiêu chí ${i + 1}`,
@@ -67,12 +136,21 @@ export default function TraCuuHopTuoiKetQuaRoute() {
           s: "·",
         }));
 
+  function handleTraCuuClick() {
+    if (nextStep?.preset) {
+      stashTraCuuIntentPreset(nextStep.preset);
+    }
+  }
+
   return (
     <div
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <BackBar title="Hợp tuổi · kết quả" />
+      <BackBar
+        title="Hợp tuổi · kết quả"
+        endAdornment={<HopTuoiSaveButton state={state} />}
+      />
 
       <div className="flex-1 overflow-auto px-[22px] pb-24 pt-1.5">
         <div className="mt-1.5 flex items-center gap-3.5">
@@ -118,24 +196,26 @@ export default function TraCuuHopTuoiKetQuaRoute() {
 
         <div className="mt-6 text-center">
           <Mono style={{ color: CT.goldDeep, fontSize: 10, letterSpacing: "0.22em" }}>
-            Độ hợp · {panel.relationshipLabel ?? "hợp tuổi"}
+            Độ hợp · {contextLabel}
           </Mono>
-          <div className="mt-2.5 flex items-baseline justify-center gap-1.5">
-            <span
-              className="font-[family-name:var(--font-display)] text-[96px] font-extrabold leading-[0.85] tabular-nums tracking-[-0.04em]"
-              style={{ color: CT.goldDeep }}
-            >
-              {score}
-            </span>
-            <span className="font-serif text-base" style={{ color: CT.muted }}>
-              /100
-            </span>
-          </div>
+          {showScore ? (
+            <div className="mt-2.5 flex items-baseline justify-center gap-1.5">
+              <span
+                className="font-[family-name:var(--font-display)] text-[96px] font-extrabold leading-[0.85] tabular-nums tracking-[-0.04em]"
+                style={{ color: CT.goldDeep }}
+              >
+                {panel.score}
+              </span>
+              <span className="font-serif text-base" style={{ color: CT.muted }}>
+                /100
+              </span>
+            </div>
+          ) : null}
           <div
             className="mt-2 font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ color: CT.ink }}
           >
-            {panel.gradLabel}
+            {gradHeadline(panel.gradLabel)}
           </div>
           {quote ? (
             <p
@@ -183,32 +263,33 @@ export default function TraCuuHopTuoiKetQuaRoute() {
           </div>
         ) : null}
 
-        <div
-          className="mt-5 border-l-2 px-3.5 py-3.5"
-          style={{
-            background: "rgba(154,124,34,0.06)",
-            borderColor: CT.goldDeep,
-          }}
-        >
-          <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
-            Gợi ý tiếp theo
-          </Mono>
+        {nextStep ? (
           <div
-            className="mt-1.5 font-serif text-[13.5px] leading-snug"
-            style={{ color: CT.ink }}
+            className="mt-5 border-l-2 px-3.5 py-3.5"
+            style={{
+              background: "rgba(154,124,34,0.06)",
+              borderColor: CT.goldDeep,
+            }}
           >
-            Tra cứu{" "}
-            <strong className="font-semibold">ngày tốt</strong> theo cả hai mệnh
-            — chấm điểm chéo Can Chi.
+            <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+              {nextStep.kicker}
+            </Mono>
+            <div
+              className="mt-1.5 font-serif text-[13.5px] leading-snug"
+              style={{ color: CT.ink }}
+            >
+              {nextStep.body}
+            </div>
+            <Link
+              to="/tra-cuu"
+              onClick={handleTraCuuClick}
+              className="mt-3 inline-block px-3.5 py-2 no-underline font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.08em]"
+              style={{ background: CT.forest, color: CT.cream }}
+            >
+              {nextStep.cta}
+            </Link>
           </div>
-          <Link
-            to="/tra-cuu"
-            className="mt-3 inline-block px-3.5 py-2 no-underline font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.08em]"
-            style={{ background: CT.forest, color: CT.cream }}
-          >
-            Tra cứu ngày lành →
-          </Link>
-        </div>
+        ) : null}
 
         <button
           type="button"

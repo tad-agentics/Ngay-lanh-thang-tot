@@ -145,7 +145,7 @@ Current app uses `/app/*`. Direction C uses cleaner paths. **Recommended:** migr
 | 21 | `/tra-cuu/ket-qua` | `/app/chon-ngay/ket-qua` | Move |
 | 22 | `/tra-cuu/hop-tuoi` | `/app/hop-tuoi` | Move under tra-cuu |
 | 23 | `/tra-cuu/hop-tuoi/ket-qua` | `/app/hop-tuoi` result | Split |
-| 24 | `/tien-ich/chuyen-lich` | `/app/chuyen-lich` | Move |
+| ~~24~~ | ~~`/tien-ich/chuyen-lich`~~ | ~~`/app/chuyen-lich`~~ | **Dropped** — no chuyển lịch in Direction C |
 | 25 | `/dat-lich` | `/app/mua-luong` | **Rename** + new UI |
 | 26–27 | `/dat-lich/xac-nhan`, `/thanh-cong` | `/app/mua-luong/thanh-cong` | Rename |
 | 28 | `/toi` | `/app/toi` | Move |
@@ -421,13 +421,11 @@ For each screen: **Component** (canvas) → **Route** → **FE data** → **BE w
 | **FE** | Notifications, account, đăng xuất → `CConfirmDialog` (39) |
 | **BE** | `push_subscriptions`; `signOut` |
 
-#### 24 · CChuyenLich → `/tien-ich/chuyen-lich`
+#### ~~24 · CChuyenLich~~ — **Dropped**
 
-| | |
-|---|---|
-| **BE** | `bat-tu` op `convert-date` |
+Chuyển lịch âm ↔ dương **không ship** Direction C (2026-05-27). Legacy `/app/chuyen-lich` → redirect `/toi`. Edge op `convert-date` vẫn dùng nội bộ (vd. Tiểu vận labels) — không có route user-facing.
 
-**Not routed in C v1:** `CPhongThuy`, `CTieuVan` — keep in codebase, no nav links.
+**Not routed in C v1:** `CPhongThuy`, `CTieuVan`, ~~`CChuyenLich`~~ — keep in codebase, no nav links.
 
 ---
 
@@ -476,7 +474,7 @@ Sequential: Backend → Frontend → QA per wave. **Commerce (W8) after Daily + 
 | **W4** | DAILY 12–14 | `/lich`, `/lich/thang`, `/ngay/:ngay`, `useOfflineCalendar` | 2.5d |
 | **W5** | LUẬN 15–18 | AI routes, generate-reading refactor | 3d |
 | **W6** | PICKS 19–21 | `/tra-cuu`, overlay loading (G10), `/tra-cuu/ket-qua` | 1.5d |
-| **W7** | TOOLS 22–24 | hợp tuổi, chuyển lịch | 1.5d |
+| **W7** | TOOLS 22–23 | hợp tuổi (24 chuyển lịch dropped) | 1d |
 | **W8** | COMMERCE 25–27 | `/dat-lich`, PayOS webhook (G3), addon BE | 2.5d |
 | **W9** | ACCOUNT 28–29 | `/toi`, `/toi/sua-ho-so`, G1 recompute | 2d |
 | **W10** | EDGE 30–40 | settings, share (G6), notif (G7), G2 banners | 3.5d |
@@ -501,7 +499,7 @@ Sequential: Backend → Frontend → QA per wave. **Commerce (W8) after Daily + 
 
 **W6:** pick overlay G10 · CNoDatesFound · methodology collapsible
 
-**W7:** hợp tuổi segmented · chuyển lịch from Tab 3 · no phong-thuy nav
+**W7:** hợp tuổi segmented · no chuyển lịch · no phong-thuy nav
 
 **W8:** SKU B1 · webhook TX G3 · orphan cron · `/dat-lich?plan=` pre-select G2 · N1 copy verbatim · N2 date format
 

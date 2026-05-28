@@ -51,7 +51,6 @@ export default [
     route("luan/mua/that-bai", "routes/luan.mua.that-bai.tsx"),
     route("luan-ai/:context", "routes/luan-ai.$context.tsx"),
     route("luan-ai/:context/day-du", "routes/luan-ai.$context.day-du.tsx"),
-    route("tien-ich/chuyen-lich", "routes/tien-ich.chuyen-lich.tsx"),
     route("tien-ich/phong-thuy", "routes/tien-ich.phong-thuy.tsx"),
     route("offline", "routes/offline.tsx"),
   ]),

@@ -343,7 +343,6 @@ export default function ToiRoute() {
           {[
             { t: "Sổ việc", sub: "ngày đã đánh dấu", to: "/toi/so-viec" },
             { t: "Phong thuỷ", sub: "hướng · màu · số theo mệnh", to: "/tien-ich/phong-thuy" },
-            { t: "Chuyển lịch", sub: "âm ↔ dương", to: "/tien-ich/chuyen-lich" },
             { t: "Cài đặt", sub: "thông báo · tài khoản · hỗ trợ", to: "/toi/cai-dat" },
           ].map((row, i, arr) => (
             <Link

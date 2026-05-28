@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   hopTuoiPayloadToPanel,
+  formatHopTuoiCriterionPoints,
   relationshipLabelFromType,
   scoreToGradLabel,
 } from "./hop-tuoi-result";
@@ -20,6 +21,27 @@ describe("scoreToGradLabel", () => {
 describe("relationshipLabelFromType", () => {
   it("maps PHU_THE to display label", () => {
     expect(relationshipLabelFromType("PHU_THE")).toContain("Phu thê");
+  });
+});
+
+describe("formatHopTuoiCriterionPoints", () => {
+  it("formats numeric and sentiment fallbacks", () => {
+    expect(
+      formatHopTuoiCriterionPoints({
+        name: "Ngũ Hành",
+        sentiment: "positive",
+        description: null,
+        points: 24,
+      }),
+    ).toBe("+24");
+    expect(
+      formatHopTuoiCriterionPoints({
+        name: "X",
+        sentiment: "negative",
+        description: null,
+        points: null,
+      }),
+    ).toBe("−");
   });
 });
 
@@ -98,7 +120,7 @@ describe("hopTuoiPayloadToPanel", () => {
     expect(p?.advice).toContain("văn bản");
   });
 
-  it("v2 without numeric score: no implied 72, showNumericScore false", () => {
+  it("v2 without numeric score: no score when verdict_level absent", () => {
     const p = hopTuoiPayloadToPanel({
       version: 2,
       verdict: "Cần trao đổi thêm",
@@ -109,6 +131,25 @@ describe("hopTuoiPayloadToPanel", () => {
     expect(p?.apiVersion).toBe(2);
     expect(p?.score).toBeNull();
     expect(p?.showNumericScore).toBe(false);
+    expect(p?.criteriaRows[0]?.points).toBe(8);
+  });
+
+  it("v2 derives display score from verdict_level when overall_score absent", () => {
+    const p = hopTuoiPayloadToPanel({
+      version: 2,
+      verdict_level: 3,
+      criteria: [
+        { name: "Nạp Âm", sentiment: "positive" },
+        { name: "Địa Chi", sentiment: "negative" },
+      ],
+      nap_am_1: "A",
+      nap_am_2: "B",
+    });
+    expect(p?.score).toBe(75);
+    expect(p?.showNumericScore).toBe(true);
+    expect(p?.criteriaRows.every((r) => r.points != null)).toBe(true);
+    const positiveRow = p!.criteriaRows.find((r) => r.sentiment === "positive");
+    expect(formatHopTuoiCriterionPoints(positiveRow!)).toMatch(/^\+/);
   });
 
   it("v2 criteria: sentiment không tốt is negative not positive", () => {
