@@ -199,13 +199,7 @@ export function CSettingsScreen() {
             arrow="khoá"
             onClick={() => toast.message("Email liên kết tài khoản — không đổi tại đây.")}
           />
-          <SettingsRow label="Đổi mật khẩu" to="/quen-mat-khau" />
-          <SettingsRow
-            label="Đăng nhập 2 lớp"
-            value="tắt"
-            onClick={() => toast.message("Tính năng sắp có.")}
-            last
-          />
+          <SettingsRow label="Đổi mật khẩu" to="/quen-mat-khau" last />
         </SettingsSection>
 
         <SettingsSection title="Lịch của tôi">
@@ -215,16 +209,6 @@ export function CSettingsScreen() {
             href="mailto:hotro@ngaylanhthangtot.vn?subject=Y%C3%AAu%20c%E1%BA%A7u%20l%E1%BB%8Bch%20s%E1%BB% AD%20thanh%20to%C3%A1n"
           />
           <SettingsRow label="Phương thức thanh toán" value="PayOS" arrow="›" last />
-        </SettingsSection>
-
-        <SettingsSection title="Hiển thị">
-          <SettingsRow label="Ngôn ngữ" value="Tiếng Việt" arrow="›" />
-          <SettingsRow
-            label="Hiện chữ Hán Việt nặng"
-            value="tắt"
-            onClick={() => toast.message("Tính năng sắp có.")}
-            last
-          />
         </SettingsSection>
 
         <SettingsSection title="Hỗ trợ">
