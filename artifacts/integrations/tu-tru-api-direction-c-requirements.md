@@ -3,7 +3,7 @@
 **Đối tượng:** Team vận hành / phát triển [API Chọn Ngày Bát Tự](https://tu-tru-api.fly.dev/docs#/)  
 **OpenAPI hiện tại:** `https://tu-tru-api.fly.dev/openapi.json` (info.version `0.1.0`)  
 **Consumer:** Ứng dụng **Ngày Lành Tháng Tốt** (Direction C) — proxy qua Supabase Edge `bat-tu`  
-**Cập nhật:** 2026-05-28 (REQ-P0-02: `reason_vi` + UI contract breakdown; score đồng bộ `ngay-hom-nay` ↔ `day-detail`)  
+**Cập nhật:** 2026-05-28 (REQ-P0-02: `reason_vi` + UI contract breakdown; REQ-P1-04: audit Tab Tra cứu + acceptance `chon-ngay`; score đồng bộ `ngay-hom-nay` ↔ `day-detail`)  
 **Liên quan:** `artifacts/plans/direction-c-pivot-plan.md` · W4–W10 · màn Tra cứu 19–21
 
 ---
@@ -442,9 +442,13 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 ---
 
-#### REQ-P1-04 · `POST /v1/chon-ngay` — `ranked_days[]` canonical (W6)
+#### REQ-P1-04 · `POST /v1/chon-ngay` — `ranked_days[]` canonical (W6 · Tab Tra cứu)
 
 **API phải làm:** Response ranking ổn định — **field name cố định**, OpenAPI có schema item.
+
+**Consumer:** `/tra-cuu` → overlay `CPickLoading` (G10) → `/tra-cuu/ket-qua`. NLTT Edge proxy `bat-tu` op `chon-ngay` với `source: "tra_cuu"` (subscription gate only, no credit — REQ-NLTT-01 ✅).
+
+**Audit FE (2026-05-27):** Shell UI Tab Tra cứu đã khớp Direction C maket (entry, BackBar kết quả, overlay loading). **Dữ liệu kết quả vẫn phụ thuộc FE fallback** khi upstream thiếu field — user có thể thấy **điểm synthetic** (`gradeToScore`) và **lý do generic** (Trực + giờ tốt) thay vì `reason_vi` cá nhân hoá.
 
 **Request NLTT gửi:**
 
@@ -474,12 +478,12 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
       "date": "2026-06-03",
       "score": 92,
       "grade": "A",
-      "lunar_label": "初八",
+      "lunar_label": "Mùng 3 Tháng Năm",
       "truc": "Định",
       "gio_tot": [
         { "chi": "Thìn", "start_hour": 7, "end_hour": 9, "label_vi": "Thìn 7–9h" }
       ],
-      "reason_vi": "Trực Định · Can Chi thuận nhật chủ · giờ Hoàng đạo sáng."
+      "reason_vi": "Trực Định thuận nhật chủ Quý Thủy — giờ Thìn buổi sáng hoá giải xung Thổ, hợp ký kết."
     }
   ],
   "score_methodology": { "summary_vi": "…", "weights": [] },
@@ -487,9 +491,53 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 }
 ```
 
+**Field checklist (acceptance):**
+
+| Field | Priority | Rule |
+|-------|----------|------|
+| `ranked_days[]` | **P1** | Fixed key name; OpenAPI item schema; ≥1 fixture with 3–5 rows |
+| `ranked_days[].score` | **P1** | Real 0–100; FE **không** synthesize từ grade |
+| `ranked_days[].reason_vi` | **P1** | 1–3 câu tiếng Việt, **cá nhân hoá** với lá số + intent; ≠ nhãn Trực/giờ (cùng quy tắc tinh gọn REQ-P0-02) |
+| `score_methodology` | **P0** | Same shape REQ-P0-03; FE thay `TraCuuMethodologyCollapsible` copy tĩnh |
+| `empty_reason_vi` | **P1** | When `ranked_days: []` — HTTP 200, explain why (e.g. tháng xung, ngưỡng điểm) |
+| `chon-ngay/detail` | **P1** | Same schema personalized `day-detail` (breakdown 4 yếu tố + `reason_vi`, REQ-P0-02) |
+
+**Anti-pattern (reject trong QA upstream):**
+
+- Response chỉ dùng ad-hoc array keys (`top_dates`, `results`, …) **không** có `ranked_days`
+- `reason_vi` = copy `truc` + list `gio_tot`
+- Thiếu `score` → FE invent 85/88/78 từ rank
+- Empty search trả 404 hoặc `{}` **không** có `empty_reason_vi`
+
 **Empty:** HTTP 200 + `"ranked_days": []` + `empty_reason_vi` (không 404 mơ hồ).
 
-**NLTT hiện tại:** `mapChonNgayPayloadToResultDays()` ưu tiên `ranked_days`, fallback 11 array keys.
+**Hiện trạng (2026-05-27 prod / staging):**
+
+- NLTT `mapChonNgayPayloadToResultDays()` accept **11 fallback array keys** — dấu hiệu shape upstream chưa ổn định
+- `tra-cuu.ket-qua.tsx` dùng `gradeToScore()` khi thiếu `score`
+- `TraCuuMethodologyCollapsible` — copy tĩnh, chưa đọc `score_methodology`
+- `CNoDatesFoundScreen` — copy empty tĩnh, chưa đọc `empty_reason_vi`
+
+**NLTT blocked until upstream ships:**
+
+1. Bỏ `gradeToScore` / fallback Trực·giờ trên `/tra-cuu/ket-qua` — map 1:1 `reason_vi` + `score`
+2. Render `TraCuuMethodologyCollapsible` từ `score_methodology.summary_vi` (+ `weights` nếu có)
+3. Render empty state body từ `empty_reason_vi`
+4. Bỏ multi-key array parsing khi `ranked_days[]` được guarantee
+
+**Fixtures `chon-ngay` (attach PR / staging — gửi NLTT regression):**
+
+1. **Happy path:** `CUOI_HOI`, range 30d, profile Lộ Bàng Thổ — 5 `ranked_days` với `reason_vi` khác nhau
+2. **Low-score row:** cùng profile, một row score ~35 với `reason_vi` trung thực
+3. **Empty:** range với `ranked_days: []` + non-null `empty_reason_vi`
+4. **Mirror:** cùng `date` trong `chon-ngay/detail` và `day-detail` — `score` + `breakdown[]` khớp
+
+**NLTT consumer files (proxy only — không scoring logic):**
+
+- `app/lib/tra-cuu-pick.ts` · `app/lib/chon-ngay-result.ts`
+- `app/routes/tra-cuu.ket-qua.tsx`
+- `app/components/direction-c/TraCuuMethodologyCollapsible.tsx` · `CNoDatesFoundScreen.tsx`
+- `supabase/functions/bat-tu/index.ts`
 
 **SLA khuyến nghị:** p95 &lt; **8s** cho `top_n=5`, range 90 ngày.
 
@@ -546,7 +594,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | REQ-P3-04 | `X-RateLimit-Remaining` | Lỗi generic |
 | REQ-P3-05 | Deprecate `/v1/weekly-summary` trong docs | Op vẫn trong Edge |
 | REQ-P3-06 | `chon-ngay` echo `candidates_scanned` | Empty copy tĩnh |
-| REQ-P3-07 | `hop-tuoi` `criteria[].points` | Heuristic từ `overall_score` |
+| REQ-P3-07 | `hop-tuoi` `criteria[].points` per tiêu chí | Heuristic từ `overall_score` trên `/tra-cuu/hop-tuoi/ket-qua` |
 
 ---
 
@@ -601,7 +649,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
    - Pair **`ngay-hom-nay` + `day-detail`** cùng profile — **`score` khớp**
    - **`day-compare`** (date_a vs date_b + delta_score)
    - Generic `day-detail` (anon, `personalized: false`)
-   - `chon-ngay` với `ranked_days` (≥3) + empty `ranked_days: []`
+   - **`chon-ngay`:** happy path ≥5 `ranked_days` (distinct `reason_vi`) + empty `ranked_days: []` + `empty_reason_vi` + mirror `chon-ngay/detail` ↔ `day-detail` (REQ-P1-04)
    - `la-so` + `luu-nien?year=2026`
 
 ---
