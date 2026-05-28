@@ -54,7 +54,7 @@ export function CHomeScreen() {
       <CTopStrip dark={offlineMode} />
       <CLichSegmentedNav dark={offlineMode} />
 
-      <div className="flex-1 overflow-y-auto px-[22px] pb-24 pt-2">
+      <div className="flex-1 overflow-y-auto px-[22px] pb-[100px] pt-[18px]">
         {error ? <ErrorBanner message={error} /> : null}
         {!canBatTu && !loading ? (
           <p
@@ -83,15 +83,14 @@ export function CHomeScreen() {
         {today && !showRecomputeSkeleton ? (
           <LichToPageCard
             {...ngayHomNayToLichCard(today, menh, todayIso)}
-            quote={today.homeSummaryLine}
             prevLabel={`‹ ${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm qua`}
             nextLabel={`ngày mai ${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)} ›`}
             onPrev={() => void navigate(`/ngay/${prevIso}`)}
             onNext={() => void navigate(`/ngay/${nextIso}`)}
-            afterRows={
+            reasoning={
               offlineMode ? (
                 <p
-                  className="mt-3 font-serif text-xs italic leading-snug"
+                  className="px-[18px] pb-3.5 font-serif text-xs italic leading-snug"
                   style={{ color: CT.muted }}
                 >
                   Luận giải đầy đủ cần kết nối lại.

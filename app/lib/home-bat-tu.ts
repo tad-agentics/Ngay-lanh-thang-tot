@@ -1,6 +1,8 @@
 import type { CalendarDay, DayType } from "~/lib/api-types";
 import {
   extractChiLabelsFromGioSlots,
+  formatGioTotChiCompactDisplayVi,
+  formatHourRangeForDayDetailFigmaVi,
   formatHourRangeForDisplayVi,
 } from "~/lib/format-gio-tot-display-vi";
 
@@ -17,6 +19,46 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
     if (typeof v === "string" && v.trim()) return v.trim();
   }
   return "";
+}
+
+/** tu-tru-api: `can_chi` string hoặc `{ name, can_name, chi_name }`. */
+export function pickCanChiLabel(
+  obj: Record<string, unknown>,
+  keys: string[],
+): string {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "string" && v.trim()) return v.trim();
+    const nested = asRecord(v);
+    if (!nested) continue;
+    const name = pickStr(nested, ["name", "label", "display", "full"]);
+    if (name) return name;
+    const can = pickStr(nested, ["can_name", "canName"]);
+    const chi = pickStr(nested, ["chi_name", "chiName"]);
+    if (can && chi) return `${can} ${chi}`;
+    if (can) return can;
+    if (chi) return chi;
+  }
+  return "";
+}
+
+export function yearCanChiFromLunarDisplay(display: string): string {
+  const m = /năm\s+([A-Za-zÀ-ỹ]+(?:\s+[A-Za-zÀ-ỹ]+)?)\s*$/iu.exec(display.trim());
+  return m?.[1]?.trim() ?? "";
+}
+
+function pickYearCanChiFromLunar(obj: Record<string, unknown>): string {
+  const lunar = asRecord(obj.lunar);
+  if (!lunar) return "";
+  const direct = pickStr(lunar, [
+    "year_can_chi",
+    "yearCanChi",
+    "can_chi_year",
+    "canChiYear",
+  ]);
+  if (direct) return direct;
+  const display = pickStr(lunar, ["display", "label", "text", "full"]);
+  return display ? yearCanChiFromLunarDisplay(display) : "";
 }
 
 function pickNumber(obj: Record<string, unknown>, keys: string[]): number | null {
@@ -69,6 +111,50 @@ function stringGoodForList(raw: unknown): string[] {
 }
 
 const WEEKDAY_SHORT_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] as const;
+
+const LUNAR_MONTH_VI = [
+  "Giêng",
+  "Hai",
+  "Ba",
+  "Tư",
+  "Năm",
+  "Sáu",
+  "Bảy",
+  "Tám",
+  "Chín",
+  "Mười",
+  "Mười Một",
+  "Chạp",
+] as const;
+
+/** Maket lịch tháng: `Tháng Tư âm`. */
+export function lunarMonthLabelVi(monthNum: number): string | null {
+  if (!Number.isFinite(monthNum) || monthNum < 1 || monthNum > 12) return null;
+  return `Tháng ${LUNAR_MONTH_VI[monthNum - 1]} âm`;
+}
+
+/** Âm lịch tháng từ payload `lich-thang` (cột `lunar_month` trên day row). */
+export function parseLichThangLunarMonthLabel(raw: unknown): string | null {
+  const root = asRecord(raw);
+  if (!root) return null;
+  const nested =
+    asRecord(root.data) ?? asRecord(root.result) ?? asRecord(root.payload) ?? root;
+
+  const direct = pickNumber(nested, ["lunar_month", "lunarMonth", "thang_am"]);
+  if (direct != null && direct >= 1 && direct <= 12) {
+    return lunarMonthLabelVi(direct);
+  }
+
+  for (const row of extractDayArray(nested)) {
+    const o = asRecord(row);
+    if (!o) continue;
+    const { lunarMonth } = pickLunarDayMonth(o);
+    if (lunarMonth >= 1 && lunarMonth <= 12) {
+      return lunarMonthLabelVi(lunarMonth);
+    }
+  }
+  return null;
+}
 
 /** Nhãn kiểu maket: `T6 15/05/2026`. */
 export function formatViWeekdayShortDayMonth(iso: string): string {
@@ -295,12 +381,16 @@ export interface NgayHomNayHome {
   lunarLabel: string;
   hourRange: string;
   canChi: string;
+  /** Can Chi năm âm lịch — masthead `Tháng M · YYYY · Bính Ngọ`. */
+  yearCanChi: string;
   /** Tên trực (không lặp tiền tố "Trực "). */
   trucDisplay: string;
   saoTotCsv: string;
   saoXauCsv: string;
   goodForChips: string[];
   gioTotChis: string[];
+  /** Maket lịch tờ: `Thìn 7–9h, Mùi 13–15h`. */
+  gioTotDisplay: string;
   gioXauChis: string[];
   homeSummaryLine: string;
   /** Engine score 0–100 when present; else map from dayType in UI. */
@@ -321,8 +411,12 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
 
   const iso = pickIsoFromUnknown(nested) ?? pickIsoFromUnknown(root);
   const canChi =
-    pickStr(nested, ["can_chi", "canChi", "can_chi_day", "can_chi_ngay"]) ||
-    pickStr(root, ["can_chi", "canChi"]);
+    pickCanChiLabel(nested, [
+      "can_chi",
+      "canChi",
+      "can_chi_day",
+      "can_chi_ngay",
+    ]) || pickCanChiLabel(root, ["can_chi", "canChi"]);
   let solarDateVi = iso
     ? formatViDateFromIso(iso)
     : pickStr(nested, [
@@ -351,6 +445,12 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
       lunarLabel = pickStr(lunarObj, ["display", "label", "text", "full"]);
     }
   }
+
+  const yearCanChi =
+    pickYearCanChiFromLunar(nested) ||
+    pickYearCanChiFromLunar(root) ||
+    (lunarLabel ? yearCanChiFromLunarDisplay(lunarLabel) : "") ||
+    "—";
 
   let dayType = inferDayType(nested);
   if (dayType === "neutral") dayType = inferDayType(root);
@@ -401,6 +501,11 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
   const gioTotChis = extractChiLabelsFromGioSlots(
     nested.gio_tot ?? nested.gioTot ?? nested.gio_hoang_dao ?? nested.gioHoangDao,
   );
+  const gioTotDisplay =
+    formatGioTotChiCompactDisplayVi(slotSources) ||
+    formatHourRangeForDayDetailFigmaVi(hourRange, slotSources) ||
+    hourDisplay ||
+    (gioTotChis.length > 0 ? gioTotChis.join(", ") : "—");
   const gioXauChis = extractChiLabelsFromGioSlots(
     nested.gio_xau ?? nested.gioXau ?? nested.bad_hours ?? nested.gio_hung,
   );
@@ -428,11 +533,13 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     lunarLabel: lunarLabel || "—",
     hourRange: hourDisplay || "—",
     canChi: canChi || "—",
+    yearCanChi,
     trucDisplay,
     saoTotCsv,
     saoXauCsv,
     goodForChips,
     gioTotChis,
+    gioTotDisplay,
     gioXauChis,
     homeSummaryLine,
     score,

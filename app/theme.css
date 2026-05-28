@@ -320,7 +320,8 @@
 
   /* Direction B.html: --display = Barlow (wordmark subline, tight labels); --display-2 = Montserrat (headlines) */
   --display: 'Barlow Condensed', sans-serif;
-  --display-2: var(--font-montserrat);
+  /* Direction C maket (`c-screens-a.jsx`): numerals + verdict labels use Barlow Condensed. */
+  --display-2: var(--font-barlow);
   --serif: 'Lora', Georgia, serif;
   --mono: 'IBM Plex Mono', monospace;
   --hanzi: 'Noto Serif SC', serif;

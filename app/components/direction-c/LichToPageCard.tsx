@@ -17,13 +17,15 @@ export type LichToPageCardProps = {
   verdictLabel: string;
   verdictSub?: ReactNode;
   score?: number | null;
-  quote?: string | null;
+  /** Inline NLTT luận — between verdict and Nên/Tránh/Giờ (`c-screens-a` order). */
+  reasoning?: ReactNode;
   rows: LichRow[];
   prevLabel?: string;
   nextLabel?: string;
   onPrev?: () => void;
   onNext?: () => void;
   onVerdictClick?: () => void;
+  /** @deprecated Use `reasoning` — kept for callers not yet migrated. */
   afterRows?: ReactNode;
 };
 
@@ -35,7 +37,7 @@ export function LichToPageCard({
   verdictLabel,
   verdictSub,
   score,
-  quote,
+  reasoning,
   rows,
   prevLabel,
   nextLabel,
@@ -44,6 +46,7 @@ export function LichToPageCard({
   onVerdictClick,
   afterRows,
 }: LichToPageCardProps) {
+  const inlineReasoning = reasoning ?? afterRows;
   return (
     <div
       style={{
@@ -61,7 +64,7 @@ export function LichToPageCard({
           style={{
             fontFamily: "var(--serif)",
             fontSize: 12,
-            color: CT.muted,
+            color: "var(--muted)",
           }}
         >
           {masthead}
@@ -78,7 +81,7 @@ export function LichToPageCard({
       >
         <div
           style={{
-            fontFamily: "var(--font-display)",
+            fontFamily: "var(--display-2)",
             fontWeight: 800,
             fontSize: 124,
             color: CT.red,
@@ -92,7 +95,7 @@ export function LichToPageCard({
         <div style={{ paddingBottom: 14 }}>
           <div
             style={{
-              fontFamily: "var(--font-display)",
+              fontFamily: "var(--display)",
               fontWeight: 900,
               fontSize: 30,
               color: CT.red,
@@ -142,7 +145,7 @@ export function LichToPageCard({
         <div>
           <div
             style={{
-              fontFamily: "var(--font-display)",
+              fontFamily: "var(--display-2)",
               fontWeight: 700,
               fontSize: 17,
               color: CT.goldDeep,
@@ -157,7 +160,7 @@ export function LichToPageCard({
               style={{
                 fontFamily: "var(--serif)",
                 fontSize: 12,
-                color: CT.muted,
+                color: "var(--muted)",
                 marginTop: 2,
               }}
             >
@@ -169,7 +172,7 @@ export function LichToPageCard({
           <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
             <span
               style={{
-                fontFamily: "var(--font-display)",
+                fontFamily: "var(--display-2)",
                 fontWeight: 800,
                 fontSize: 38,
                 color: CT.goldDeep,
@@ -184,7 +187,7 @@ export function LichToPageCard({
               style={{
                 fontFamily: "var(--serif)",
                 fontSize: 12,
-                color: CT.muted,
+                color: "var(--muted)",
               }}
             >
               /100
@@ -193,22 +196,7 @@ export function LichToPageCard({
         ) : null}
       </div>
 
-      {quote ? (
-        <div style={{ padding: "10px 18px 14px" }}>
-          <p
-            style={{
-              fontFamily: "var(--serif)",
-              fontStyle: "italic",
-              fontSize: 13.5,
-              lineHeight: 1.55,
-              color: CT.ink2,
-              margin: 0,
-            }}
-          >
-            "{quote}"
-          </p>
-        </div>
-      ) : null}
+      {inlineReasoning}
 
       <div
         style={{
@@ -252,8 +240,6 @@ export function LichToPageCard({
           </div>
         ))}
       </div>
-
-      {afterRows}
 
       {(prevLabel || nextLabel) && (
         <div

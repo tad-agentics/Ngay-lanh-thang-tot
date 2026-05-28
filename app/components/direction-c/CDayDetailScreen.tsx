@@ -18,7 +18,12 @@ import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
 import { canUseCalendar } from "~/lib/entitlements";
 import { CT } from "~/lib/c-tokens";
-import { mastheadFromIso, weekdayFromIso } from "~/lib/lich-format";
+import {
+  dayNumberFromIso,
+  mastheadFromIso,
+  weekdayFromIso,
+} from "~/lib/lich-format";
+import { yearCanChiFromLunarDisplay } from "~/lib/home-bat-tu";
 import { verdictLabelFromScore } from "~/lib/c-score";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
@@ -137,7 +142,7 @@ export function CDayDetailScreen() {
       {!online ? <COfflineBanner /> : null}
       <BackBar title={monthNum ? `Lịch tháng ${monthNum}` : "Chi tiết ngày"} />
 
-      <div className="flex-1 overflow-y-auto px-[22px] pb-8 pt-1">
+      <div className="flex-1 overflow-y-auto px-[22px] pb-[100px] pt-[18px]">
         {error ? <ErrorBanner message={error} /> : null}
         {loading ? (
           <p className="py-12 text-center font-serif text-sm" style={{ color: CT.muted }}>
@@ -148,13 +153,17 @@ export function CDayDetailScreen() {
         {detail ? (
           <>
             <LichToPageCard
-              masthead={mastheadFromIso(iso, detail.canChi)}
-              dayNumber={iso.slice(8, 10).replace(/^0/, "") || "—"}
+              masthead={mastheadFromIso(
+                iso,
+                yearCanChiFromLunarDisplay(detail.lunarDate) ||
+                  (detail.canChi !== "—" ? detail.canChi : null),
+              )}
+              dayNumber={dayNumberFromIso(iso)}
               weekday={weekdayFromIso(iso)}
               lunarLine={
                 <>
                   {detail.lunarDate || "—"}
-                  {detail.canChi ? (
+                  {detail.canChi && detail.canChi !== "—" ? (
                     <>
                       {" "}
                       · ngày{" "}
@@ -163,6 +172,9 @@ export function CDayDetailScreen() {
                       </strong>
                     </>
                   ) : null}
+                  {detail.trucDisplay && detail.trucDisplay !== "—" ? (
+                    <> · tiết {detail.trucDisplay}</>
+                  ) : null}
                 </>
               }
               verdictLabel={
@@ -170,7 +182,17 @@ export function CDayDetailScreen() {
               }
               verdictSub={verdictSub}
               score={score}
-              quote={detail.reasonLines[0] ?? null}
+              reasoning={
+                personalized ? (
+                  <CTodayReasoning
+                    text={readingText}
+                    fallbackText={detail.reasonLines[0] ?? null}
+                    loading={readingLoading}
+                    onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
+                    showCta={Boolean(user)}
+                  />
+                ) : null
+              }
               rows={[
                 {
                   key: "Nên",
@@ -206,17 +228,6 @@ export function CDayDetailScreen() {
               }
               onPrev={() => void navigate(`/ngay/${prevIso}`)}
               onNext={() => void navigate(`/ngay/${nextIso}`)}
-              afterRows={
-                personalized ? (
-                  <CTodayReasoning
-                    text={readingText}
-                    fallbackText={detail.reasonLines[0] ?? null}
-                    loading={readingLoading}
-                    onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
-                    showCta={Boolean(user)}
-                  />
-                ) : null
-              }
             />
 
             <DayScoreMethodologyCollapsible />
@@ -231,7 +242,7 @@ export function CDayDetailScreen() {
                   padding: 12,
                   background: CT.forest,
                   color: CT.cream,
-                  fontFamily: "var(--font-display)",
+                  fontFamily: "var(--display-2)",
                   fontWeight: 800,
                   fontSize: 12,
                   letterSpacing: "0.08em",

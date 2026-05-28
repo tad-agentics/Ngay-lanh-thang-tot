@@ -10,7 +10,7 @@ export const CT = {
   cream: "var(--cream, #ede7d3)",
   gold: "var(--gold, #c5a55a)",
   goldDeep: "var(--gold-deep, #9a7c22)",
-  muted: "var(--muted-warm, #7a7050)",
+  muted: "var(--muted, #7a7050)",
   greenMute: "var(--green-mute, #7a9a80)",
   red: "var(--red, #a3201f)",
   hairline: "rgba(154,124,34,0.18)",

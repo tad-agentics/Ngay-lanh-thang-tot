@@ -17,7 +17,7 @@ export function CSegmented({
     : "rgba(154,124,34,0.07)";
   const activeBg = dark ? "var(--gold)" : "var(--forest)";
   const activeFg = dark ? "var(--forest)" : "var(--cream)";
-  const inactiveFg = dark ? "rgba(237,231,211,0.6)" : "var(--muted-warm)";
+  const inactiveFg = dark ? "rgba(237,231,211,0.6)" : "var(--muted)";
 
   return (
     <div
@@ -31,7 +31,7 @@ export function CSegmented({
             key={opt.label}
             type="button"
             onClick={() => onSelect?.(i)}
-            className="flex-1 cursor-pointer rounded-full border-none py-[9px] text-center font-[family-name:var(--font-display)] text-[11.5px] font-bold uppercase tracking-[0.06em] whitespace-nowrap"
+            className="flex-1 cursor-pointer rounded-full border-none py-[9px] text-center font-[family-name:var(--display-2)] text-[11.5px] font-bold uppercase tracking-[0.06em] whitespace-nowrap"
             style={{
               background: sel ? activeBg : "transparent",
               color: sel ? activeFg : inactiveFg,

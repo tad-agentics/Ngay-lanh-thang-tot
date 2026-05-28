@@ -39,11 +39,8 @@ describe("parseDayDetailForView", () => {
     expect(v!.grade).toBe("B");
     expect(v!.reasonLines.some((x) => x.includes("Hắc"))).toBe(true);
     expect(v!.goodFor).toContain("Khai trương");
-    expect(v!.gioTot).toContain("giờ");
-    expect(v!.gioTot).not.toContain("Dần");
-    expect(v!.gioXau).toContain("giờ");
-    expect(v!.gioXau).toContain("đêm");
-    expect(v!.gioXau).not.toContain("Tý");
+    expect(v!.gioTot).toBe("Dần 3–5h");
+    expect(v!.gioXau).toBe("Tý 23–1h");
     expect(v!.trucTitle).toContain("Khai");
     expect(v!.purposeRows.length).toBe(26);
     const khai = v!.purposeRows.find((r) => r.label === "Khai trương");

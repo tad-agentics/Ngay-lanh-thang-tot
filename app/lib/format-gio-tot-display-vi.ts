@@ -176,6 +176,23 @@ export function formatGioTotArrayDisplayVi(raw: unknown): string | null {
   return out.length ? out.join(" · ") : null;
 }
 
+/** Cùng nguồn mảng slot — maket lịch tờ: `Thìn 7–9h, Mùi 13–15h`. */
+export function formatGioTotChiCompactDisplayVi(raw: unknown): string | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const out: string[] = [];
+  for (const item of raw) {
+    const o = asRecord(item);
+    if (!o) continue;
+    const chi = pickStr(o, ["chi_name", "label", "name"]);
+    const range = pickStr(o, ["range", "gio", "time", "label_gio"]);
+    const compact = range ? parseSegmentToCompactFigma(range) : null;
+    if (chi && compact) out.push(`${chi} ${compact}`);
+    else if (compact) out.push(compact);
+    else if (chi) out.push(chi);
+  }
+  return out.length ? out.join(", ") : null;
+}
+
 /** Cùng nguồn mảng slot nhưng hiển thị ngắn theo mock chi tiết ngày: `7–9h, 13–15h`. */
 export function formatGioTotArrayCompactVi(raw: unknown): string | null {
   if (!Array.isArray(raw) || raw.length === 0) return null;

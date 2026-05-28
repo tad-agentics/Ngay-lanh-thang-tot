@@ -1,5 +1,9 @@
 import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
-import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
+import {
+  formatGioTotChiCompactDisplayVi,
+  formatHourRangeForDayDetailFigmaVi,
+} from "~/lib/format-gio-tot-display-vi";
+import { pickCanChiLabel } from "~/lib/home-bat-tu";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
@@ -28,15 +32,17 @@ function firstNonEmptySlotArray(
   return null;
 }
 
-/** Giờ Hoàng/Hắc đạo — cùng cách đọc như thẻ Hôm nay (vd. `23–1 giờ đêm · 7–9 giờ sáng`). */
+/** Giờ Hoàng/Hắc đạo — maket lịch tờ: `Thìn 7–9h, Mùi 13–15h`. */
 function formatGioSlotsHumanVi(
   nested: Record<string, unknown>,
   keys: string[],
 ): string {
   const arr = firstNonEmptySlotArray(nested, keys);
   if (!arr) return "—";
-  const s = formatHourRangeForDisplayVi("", arr);
-  return s === "—" ? "—" : s;
+  const fromChi = formatGioTotChiCompactDisplayVi(arr);
+  if (fromChi) return fromChi;
+  const compact = formatHourRangeForDayDetailFigmaVi("", arr);
+  return compact === "—" ? "—" : compact;
 }
 
 function labelsFromMixedArray(raw: unknown): string[] {
@@ -88,6 +94,8 @@ export interface DayDetailViewModel {
   starLine: string;
   /** Tiêu đề thẻ Trực (vd. `Trực Thành`). */
   trucTitle: string;
+  /** Tên trực/tiết trên lịch tờ (không tiền tố "Trực "). */
+  trucDisplay: string;
   /** Mô tả ngắn dưới tên trực. */
   trucDescription: string;
   score: number | null;
@@ -311,7 +319,8 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     }
   }
 
-  const canChi = pickStr(nested, ["can_chi", "canChi", "can_chi_day"]);
+  const canChi =
+    pickCanChiLabel(nested, ["can_chi", "canChi", "can_chi_day"]) || "—";
 
   const trucName =
     pickStr(nested, ["truc_name", "truc"]) ||
@@ -331,6 +340,8 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
       : trucPlain
         ? `Trực ${trucPlain.replace(/^trực\s+/i, "").trim()}`
         : "—";
+  const trucDisplay =
+    (trucPlain.replace(/^trực\s+/i, "").trim() || trucPlain) || "—";
 
   const starName = pickStr(nested, ["star_name", "starName"]);
   const sao28 = pickStr(nested, ["sao_28", "sao28"]);
@@ -418,6 +429,7 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     trucLine: trucLine || "—",
     starLine: starLine || "—",
     trucTitle,
+    trucDisplay,
     trucDescription,
     score,
     grade,

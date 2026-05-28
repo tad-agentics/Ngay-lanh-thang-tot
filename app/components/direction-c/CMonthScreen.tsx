@@ -11,7 +11,7 @@ import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { buildCalendarDaysForMonth, formatLichThangMonthKey } from "~/lib/home-bat-tu";
+import { buildCalendarDaysForMonth, formatLichThangMonthKey, parseLichThangLunarMonthLabel } from "~/lib/home-bat-tu";
 import type { CalendarDay } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { scoreDotColor, scoreFromDayType } from "~/lib/c-score";
@@ -81,9 +81,9 @@ function MonthGrid({
             key={d}
             style={{
               textAlign: "center",
-              fontFamily: "var(--font-mono)",
+              fontFamily: "var(--mono)",
               fontSize: 9,
-              color: i === 6 ? CT.red : CT.muted,
+              color: i === 6 ? CT.red : "var(--muted)",
               letterSpacing: "0.08em",
               padding: "4px 0",
             }}
@@ -130,7 +130,7 @@ function MonthGrid({
               >
                 <span
                   style={{
-                    fontFamily: "var(--font-display)",
+                    fontFamily: "var(--display-2)",
                     fontWeight: isToday ? 800 : 600,
                     fontSize: 14,
                     color: isToday
@@ -158,16 +158,25 @@ function MonthGrid({
                 {c.otherMonth ? "·" : lunarDay ?? "·"}
               </div>
               {!c.otherMonth && c.score != null ? (
-                <span
+                <div
                   style={{
                     position: "absolute",
                     bottom: 6,
-                    width: 4,
-                    height: 4,
-                    borderRadius: "50%",
-                    background: scoreDotColor(c.score),
+                    left: 0,
+                    right: 0,
+                    display: "flex",
+                    justifyContent: "center",
                   }}
-                />
+                >
+                  <span
+                    style={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: "50%",
+                      background: scoreDotColor(c.score),
+                    }}
+                  />
+                </div>
               ) : null}
             </div>
           );
@@ -195,6 +204,7 @@ export function CMonthScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [days, setDays] = useState<CalendarDay[]>([]);
+  const [lunarMonthLabel, setLunarMonthLabel] = useState<string | null>(null);
 
   const menh = useMemo(() => {
     const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
@@ -227,9 +237,11 @@ export function CMonthScreen() {
       if (!res.ok) {
         setError(res.message ?? "Không tải lịch tháng.");
         setDays([]);
+        setLunarMonthLabel(null);
       } else {
         const built = buildCalendarDaysForMonth(month, year, res.data);
         setDays(built);
+        setLunarMonthLabel(parseLichThangLunarMonthLabel(res.data));
       }
       setLoading(false);
     })();
@@ -262,7 +274,7 @@ export function CMonthScreen() {
 
       {!online ? <COfflineBanner /> : null}
 
-      <div className="flex-1 overflow-y-auto px-6 pb-24 pt-2">
+      <div className="flex-1 overflow-y-auto px-6 pb-[100px] pt-5">
         <div
           style={{
             display: "flex",
@@ -272,7 +284,7 @@ export function CMonthScreen() {
         >
           <div
             style={{
-              fontFamily: "var(--font-display)",
+              fontFamily: "var(--display)",
               fontWeight: 800,
               fontSize: 28,
               color: CT.ink,
@@ -324,12 +336,25 @@ export function CMonthScreen() {
             marginTop: 6,
             fontFamily: "var(--serif)",
             fontSize: 12.5,
-            color: CT.muted,
+            color: "var(--muted)",
             lineHeight: 1.5,
           }}
         >
-          Chấm theo mệnh{" "}
+          {lunarMonthLabel ? (
+            <>
+              {lunarMonthLabel}
+              {" · "}
+            </>
+          ) : null}
+          chấm theo mệnh{" "}
           <strong style={{ color: CT.ink, fontWeight: 600 }}>{menh}</strong>
+          {" · "}
+          <Link
+            to="/tra-cuu"
+            style={{ color: CT.goldDeep, textDecoration: "none" }}
+          >
+            đổi việc
+          </Link>
         </div>
 
         {error ? <ErrorBanner message={error} /> : null}

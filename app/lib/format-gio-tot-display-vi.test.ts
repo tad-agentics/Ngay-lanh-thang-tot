@@ -2,10 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatGioTotArrayDisplayVi,
+  formatGioTotChiCompactDisplayVi,
   formatHourRangeForDayDetailFigmaVi,
   formatHourRangeForDisplayVi,
   formatHourRangeStringDisplayVi,
 } from "~/lib/format-gio-tot-display-vi";
+
+describe("formatGioTotChiCompactDisplayVi", () => {
+  it("prefixes chi with compact hour like maket lịch tờ", () => {
+    const s = formatGioTotChiCompactDisplayVi([
+      { chi_name: "Thìn", range: "07:00-09:00" },
+      { chi_name: "Mùi", range: "13:00-15:00" },
+    ]);
+    expect(s).toBe("Thìn 7–9h, Mùi 13–15h");
+  });
+});
 
 describe("formatGioTotArrayDisplayVi", () => {
   it("formats morning and afternoon like user example", () => {

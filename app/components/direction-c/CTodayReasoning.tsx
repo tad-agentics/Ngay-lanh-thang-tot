@@ -45,7 +45,7 @@ export function CTodayReasoning({
     : fullText.slice(0, Math.min(n, fullText.length));
 
   return (
-    <div style={{ padding: "12px 18px 14px", borderTop: `1px solid ${CT.hairline}` }}>
+    <div style={{ padding: "12px 18px 14px" }}>
       <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
         <div
           style={{
@@ -131,7 +131,7 @@ export function CTodayReasoning({
             >
               <span
                 style={{
-                  fontFamily: "var(--font-display-2)",
+                  fontFamily: "var(--display-2)",
                   fontWeight: 700,
                   fontSize: 11.5,
                   color: CT.goldDeep,
