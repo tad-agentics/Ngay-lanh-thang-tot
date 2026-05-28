@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { CPickLoadingScreen } from "~/components/direction-c/CPickLoadingScreen";
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
-import { ErrorBanner } from "~/components/ErrorBanner";
+import { useTraCuuPickOverlay } from "~/hooks/useTraCuuPickOverlay";
 import type { TuTruIntent } from "~/lib/api-types";
-import type { TraCuuPickPendingState } from "~/routes/tra-cuu.dang-tim";
 import { CT } from "~/lib/c-tokens";
+import type { TraCuuPickPending } from "~/lib/tra-cuu-pick";
 import {
   addDaysIso,
   isoDateToDdMmYyyy,
@@ -52,12 +52,11 @@ function splitIntentLabel(label: string): { main: string; accent: string | null 
 }
 
 export default function TraCuuRoute() {
-  const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
+  const { overlayOpen, slow, intentLabel, busy, startPick, cancel } =
+    useTraCuuPickOverlay();
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [intent, setIntent] = useState<TuTruIntent | "">("");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const rangeStart = useMemo(() => localTodayIsoDate(), []);
@@ -66,10 +65,10 @@ export default function TraCuuRoute() {
     return end ?? rangeStart;
   }, [rangeStart, rangeDays]);
 
-  const intentLabel =
+  const intentLabelSelected =
     CHON_NGAY_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? null;
-  const intentParts = intentLabel
-    ? splitIntentLabel(intentLabel)
+  const intentParts = intentLabelSelected
+    ? splitIntentLabel(intentLabelSelected)
     : { main: "Chọn việc", accent: null };
 
   async function runLookup() {
@@ -87,26 +86,23 @@ export default function TraCuuRoute() {
       toast.error("Khoảng ngày không hợp lệ.");
       return;
     }
-    setBusy(true);
-    setErr(null);
     const label =
       TU_TRU_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? intent;
-    const pending: TraCuuPickPendingState = {
+    const pending: TraCuuPickPending = {
       intent,
       intentLabel: label,
       rangeStart,
       rangeEnd,
       daysInclusive: rangeDays,
     };
-    navigate("/tra-cuu/dang-tim", { state: pending });
-    setBusy(false);
+    await startPick(pending);
   }
 
-  const disabledForm = profileLoading || !profile;
+  const disabledForm = profileLoading || !profile || overlayOpen;
 
   return (
     <div
-      className="flex min-h-full flex-col"
+      className="relative flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <CTopStrip />
@@ -130,7 +126,7 @@ export default function TraCuuRoute() {
           type="button"
           disabled={disabledForm}
           onClick={() => setPickerOpen((o) => !o)}
-          className="mt-1.5 flex w-full cursor-pointer items-start justify-between border bg-white p-3.5 text-left"
+          className="mt-1.5 flex w-full cursor-pointer items-start justify-between border bg-white p-3.5 text-left disabled:opacity-60"
           style={{ borderColor: CT.goldDeep }}
         >
           <div>
@@ -194,6 +190,7 @@ export default function TraCuuRoute() {
                 type="button"
                 className="cursor-pointer border-none bg-transparent p-0 font-serif text-xs"
                 style={{ color: CT.ink }}
+                disabled={disabledForm}
                 onClick={() => setIntent(item.value)}
               >
                 {item.label}
@@ -249,7 +246,7 @@ export default function TraCuuRoute() {
                 type="button"
                 disabled={disabledForm}
                 onClick={() => setRangeDays(preset.days)}
-                className="flex-1 cursor-pointer border-none py-1.5 text-center font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.06em]"
+                className="flex-1 cursor-pointer border-none py-1.5 text-center font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.06em] disabled:opacity-60"
                 style={{
                   background: sel ? CT.forest : "transparent",
                   color: sel ? CT.cream : CT.muted,
@@ -271,13 +268,23 @@ export default function TraCuuRoute() {
         >
           {busy ? "Đang tra…" : "Tìm ngày tốt nhất"}
         </button>
-
-        {err ? (
-          <div className="mt-4">
-            <ErrorBanner message={err} />
-          </div>
-        ) : null}
       </div>
+
+      {overlayOpen ? (
+        <div
+          className="absolute inset-0 z-20 flex flex-col"
+          style={{ background: CT.paper }}
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <CPickLoadingScreen
+            intentLabel={intentLabel}
+            slow={slow}
+            onCancel={cancel}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

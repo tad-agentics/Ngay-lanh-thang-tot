@@ -12,10 +12,17 @@ const PHASES = [
 
 type CPickLoadingScreenProps = {
   intentLabel?: string | null;
+  /** G10 — still waiting after slow threshold. */
+  slow?: boolean;
+  onCancel?: () => void;
 };
 
 /** Direction C — tra cứu loading (artboard CPickLoading, 4 phases). */
-export function CPickLoadingScreen({ intentLabel }: CPickLoadingScreenProps) {
+export function CPickLoadingScreen({
+  intentLabel,
+  slow = false,
+  onCancel,
+}: CPickLoadingScreenProps) {
   const [phase, setPhase] = useState(0);
   const accent = intentLabel?.split("·").pop()?.trim() ?? intentLabel ?? "việc của bạn";
 
@@ -92,6 +99,24 @@ export function CPickLoadingScreen({ intentLabel }: CPickLoadingScreenProps) {
         <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.muted }}>
           Bước {phase + 1}/{PHASES.length}
         </Mono>
+
+        {slow ? (
+          <div className="mt-2 flex flex-col items-center gap-3">
+            <p className="font-serif text-[13px]" style={{ color: CT.muted }}>
+              Vẫn đang tìm…
+            </p>
+            {onCancel ? (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="cursor-pointer border bg-white px-4 py-2 font-serif text-[13px]"
+                style={{ borderColor: CT.hairline, color: CT.ink2 }}
+              >
+                Huỷ · quay lại form
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@
 **OpenAPI hiện tại:** `https://tu-tru-api.fly.dev/openapi.json` (info.version `0.1.0`)  
 **Consumer:** Ứng dụng **Ngày Lành Tháng Tốt** (Direction C) — proxy qua Supabase Edge `bat-tu`  
 **Ngày:** 2026-05-27  
-**Liên quan:** `artifacts/plans/direction-c-pivot-plan.md` · `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md` §Phase 8 · W4–W5
+**Liên quan:** `artifacts/plans/direction-c-pivot-plan.md` · `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md` · W4–W5 · **W6 (màn 19–21 Tra cứu)**
 
 ---
 
@@ -46,8 +46,8 @@ Browser (Direction C)
 | GET | `/v1/ngay-hom-nay` | `ngay-hom-nay` | 12 `/lich` |
 | GET | `/v1/lich-thang` | `lich-thang` | 13 `/lich/thang` |
 | GET | `/v1/day-detail` | `day-detail` | 14 `/ngay/:ngay`, 15 `/luan-ai/day-*` |
-| POST | `/v1/chon-ngay` | `chon-ngay` | 20–21 `/tra-cuu` |
-| POST | `/v1/chon-ngay/detail` | `chon-ngay/detail` | 21 (tap ngày) |
+| POST | `/v1/chon-ngay` | `chon-ngay` | **19–21** `/tra-cuu` (overlay G10 → `/tra-cuu/ket-qua`) |
+| POST | `/v1/chon-ngay/detail` | `chon-ngay/detail` | 21 tap row → `/ngay/:ngay` |
 | POST | `/v1/tu-tru` | `tu-tru` / `recompute-la-so` | Onboarding 09–11, G1 |
 | GET | `/v1/la-so` | `la-so` | 18 `/toi/luan-bat-tu` (payload AI) |
 | GET | `/v1/tieu-van` | `tieu-van` | Tiểu vận (ngoài band 15–18) |
@@ -274,6 +274,107 @@ GET /v1/day-compare
 
 ---
 
+#### REQ-P1-04 · `POST /v1/chon-ngay` — response xếp hạng ổn định (W6 · màn 19–21)
+
+**Vấn đề:** FE W6 đã ship (`app/lib/chon-ngay-result.ts`, `app/lib/tra-cuu-pick.ts`) nhưng phải quét ~12 tên field (`recommended_dates`, `top_days`, `days`, …) vì OpenAPI/schema `{}` rỗng. Pivot cần **top N ngày** có `score` + metadata hiển thị trên `/tra-cuu/ket-qua` và empty state rõ ràng.
+
+**Request (đã gửi từ NLTT):**
+
+```json
+{
+  "birth_date": "dd/mm/yyyy",
+  "birth_time": "",
+  "gender": "nam|nu",
+  "intent": "CUOI_HOI",
+  "range_start": "dd/mm/yyyy",
+  "range_end": "dd/mm/yyyy",
+  "top_n": 5
+}
+```
+
+| Param | Bắt buộc | Ghi chú |
+|-------|----------|---------|
+| `intent` | Có | Enum 26 việc (đồng bộ NLTT `TuTruIntent`) |
+| `range_start` / `range_end` | Có | Inclusive; NLTT gửi `dd/mm/yyyy` |
+| `top_n` | Khuyến nghị | Default **5** (FE W6); max 10 |
+
+**Response gợi ý (canonical — ưu tiên tên field cố định):**
+
+```json
+{
+  "intent": "CUOI_HOI",
+  "intent_label_vi": "Cưới hỏi",
+  "range_start": "2026-05-27",
+  "range_end": "2026-06-25",
+  "ranked_days": [
+    {
+      "rank": 1,
+      "date": "2026-06-03",
+      "score": 92,
+      "grade": "A",
+      "lunar_label": "初八",
+      "truc": "Định",
+      "gio_tot": [
+        { "chi": "Thìn", "start_hour": 7, "end_hour": 9, "label_vi": "Thìn 7–9h" }
+      ],
+      "reason_vi": "Trực Định · Can Chi thuận nhật chủ · giờ Hoàng đạo sáng."
+    }
+  ],
+  "score_methodology": {
+    "summary_vi": "Điểm tổng hợp từ Trực, sao, Can Chi với lá số, và giờ vàng — có trọng số theo việc đã chọn.",
+    "weights": [
+      { "factor": "truc", "label_vi": "Trực ngày", "max_points": 30 },
+      { "factor": "sao28", "label_vi": "Nhị thập bát tú", "max_points": 25 },
+      { "factor": "can_chi_laso", "label_vi": "Can chi · lá số", "max_points": 25 },
+      { "factor": "gio_vang", "label_vi": "Giờ vàng", "max_points": 20 }
+    ]
+  },
+  "empty_reason_vi": null
+}
+```
+
+**Empty (không có ngày trong khoảng):**
+
+- HTTP **200** + `"ranked_days": []` + `empty_reason_vi` (vd. *「Không có ngày đạt ngưỡng cho việc này trong khoảng đã chọn」*).
+- **Không** trả 404/422 mơ hồ — FE route `/tra-cuu/khong-co-ngay` cần meta `intent` + range.
+
+| Field | Bắt buộc | UI W6 |
+|-------|----------|-------|
+| `ranked_days[]` | Có (array, có thể rỗng) | Danh sách `/tra-cuu/ket-qua` |
+| `ranked_days[].date` | Có | `YYYY-MM-DD` — tap → `/ngay/:ngay` |
+| `ranked_days[].score` | Khuyến nghị | Chấm điểm + grade A/B/C |
+| `ranked_days[].rank` | Khuyến nghị | Thứ hạng 1…N |
+| `ranked_days[].reason_vi` | Khuyến nghị | Dòng tóm tắt dưới ngày |
+| `score_methodology` | Khuyến nghị | Collapsible **「Cách chọn ngày」** (hiện copy tĩnh — cần API) |
+
+**Acceptance:**
+
+- `mapChonNgayPayloadToResultDays()` đọc **`ranked_days` trước**, không cần heuristic array keys.
+- Response &lt; **8s** p95 cho `top_n=5`, range 90 ngày (align overlay slow threshold G10).
+- OpenAPI document đủ schema item `ranked_days[]`.
+
+---
+
+#### REQ-NLTT-01 · Edge `bat-tu` — tra cứu **không trừ credit** (W6 · consumer)
+
+> **Không thuộc tu-tru-api** — ghi ở đây để upstream biết NLTT sẽ gọi `POST /v1/chon-ngay` thường xuyên từ tab Tra cứu mà **không** coi là op trả phí theo lượng.
+
+**Spec pivot (màn 20):** `chon-ngay` từ `/tra-cuu` — **no credit deduct**; gating bằng subscription (`subscription_expires_at`), không `feature_credit_costs`.
+
+**Hiện trạng NLTT (2026-05-27):** Edge `bat-tu` vẫn map `chon-ngay` → `chon_ngay_30/60/90` và trừ `credits_balance` khi `is_free = false`. FE W6 đã ship; **billing chưa khớp spec**.
+
+**Đề xuất patch NLTT (một trong các cách):**
+
+| Cách | Mô tả |
+|------|--------|
+| A | Body flag `source: "tra_cuu"` → `featureKeyForBilling = null` |
+| B | Entitlement-only: có sub active → cho phép; legacy credits chỉ transition window (G4) |
+| C | `feature_credit_costs.chon_ngay_*` → `is_free = true` (chỉ dev/staging) |
+
+**Acceptance:** User có sub active tra cứu 5 lần liên tiếp — `credits_balance` không đổi; ledger không có dòng `chon_ngay_*` từ tab Tra cứu.
+
+---
+
 ### P2 — Lá số & luận Bát tự (màn 17–18)
 
 #### REQ-P2-01 · `GET /v1/la-so` — contract ngũ hành + trụ
@@ -322,6 +423,7 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | REQ-P3-03 | `purpose_rows[]` (`nen_lam` / `khong_nen` / `trung_lap`) trên day-detail | Màn 14 việc nên/tránh |
 | REQ-P3-04 | Rate limit header `X-RateLimit-Remaining` | Edge bat-tu hiển thị lỗi rõ |
 | REQ-P3-05 | Deprecate `/v1/weekly-summary` trong docs | Direction C bỏ tab Tuần |
+| REQ-P3-06 | `chon-ngay` echo `candidates_scanned` / `days_in_range` | Copy empty state + methodology (minh bạch) |
 
 ---
 
@@ -334,6 +436,7 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | P0 | — | Mở rộng `lich-thang` `days[].score`, `lunar_day` | 13 |
 | P1 | GET | `/v1/day-detail/luan-context` | Pipeline `day-luan-chat` |
 | P1 | GET | `/v1/day-compare` | Màn 15 follow-up |
+| P1 | — | Mở rộng `POST /v1/chon-ngay` → `ranked_days[]` + `score_methodology` | W6 màn 19–21 |
 | P2 | GET | `/v1/la-so/luu-nien` (hoặc `?year=`) | 18 |
 | P2 | — | `la-so` + `tu-tru` contract ổn định | 17, 18 |
 
@@ -358,6 +461,7 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
    - Personalized day-detail (có `breakdown` 4项)
    - Generic day-detail (anon)
    - la-so + luu-nien 2026
+   - `chon-ngay` với `ranked_days` (≥3 items) + empty `ranked_days: []`
 
 ---
 
@@ -369,6 +473,8 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | `luan-context` | `day-luan-context` (mới) | `day-luan-chat` Edge |
 | `day-compare` | `day-compare` (mới) | Màn 15 chip / chat |
 | `la-so/luu-nien` | `la-so-luu-nien` (mới) | `CBaziReadingScreen` |
+| `chon-ngay` `ranked_days[]` | `chon-ngay` (giữ op) | `tra-cuu.ket-qua`, `chon-ngay-result.ts` |
+| — | `bat-tu` REQ-NLTT-01 billing bypass | `/tra-cuu` overlay pick |
 
 ---
 
@@ -380,7 +486,8 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | OpenAPI JSON | https://tu-tru-api.fly.dev/openapi.json |
 | NLTT mapper day-detail | `app/lib/day-detail-view.ts` |
 | NLTT bat-tu proxy | `supabase/functions/bat-tu/index.ts` |
-| Pivot plan W4–W5 | `artifacts/plans/direction-c-pivot-plan.md` |
+| Pivot plan W4–W6 | `artifacts/plans/direction-c-pivot-plan.md` |
+| NLTT tra cứu pick | `app/lib/tra-cuu-pick.ts` · `app/hooks/useTraCuuPickOverlay.ts` |
 | FE Handoff Phase 8 | `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md` |
 | API spec nội bộ (hop-tuoi) | `artifacts/docs/api-spec.md` |
 
@@ -393,6 +500,8 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | T0 | Xác nhận REQ-P0-01..04 + sample JSON |
 | T1 | Ship P0 lên staging |
 | T2 | P1 `luan-context` + `day-compare` (blocking W5b chat pipeline) |
+| T2 | P1 `chon-ngay` `ranked_days[]` contract (W6 FE đã ship) |
 | T3 | P2 `la-so/luu-nien` + OpenAPI schemas đầy đủ |
+| T3 | NLTT REQ-NLTT-01 billing bypass tra cứu |
 
-**Owner phía NLTT:** Tech Lead — nhận PR/upstream release, cập nhật `bat-tu` ops + mappers, QA W4–W5.
+**Owner phía NLTT:** Tech Lead — nhận PR/upstream release, cập nhật `bat-tu` ops + mappers, QA W4–W6.

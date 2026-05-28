@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
+import { TraCuuMethodologyCollapsible } from "~/components/direction-c/TraCuuMethodologyCollapsible";
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
@@ -170,6 +171,8 @@ export default function TraCuuKetQuaRoute() {
             ))}
           </div>
         )}
+
+        <TraCuuMethodologyCollapsible />
       </div>
     </div>
   );
