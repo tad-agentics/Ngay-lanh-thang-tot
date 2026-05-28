@@ -8,7 +8,7 @@ import {
 } from "~/components/auth/c-auth-ui";
 import { LogoMark, Mono } from "~/components/brand";
 import { readOauthCallbackError } from "~/lib/auth-login-error";
-import { destinationAfterAuth } from "~/lib/pending-return-to";
+import { exchangeOAuthCodeFromUrl, resolvePostLoginPath } from "~/lib/auth-post-login";
 import { supabase } from "~/lib/supabase";
 
 const SESSION_WAIT_MS = 15_000;
@@ -91,45 +91,30 @@ export default function AuthCallback() {
     };
 
     const resolveDestination = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const uid = sessionData.session?.user?.id;
-      if (!uid) {
+      const dest = await resolvePostLoginPath();
+      if (dest === "/dang-nhap") {
         fail("Không xác minh được tài khoản Google. Thử lại.");
         return;
       }
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("onboarding_completed_at")
-        .eq("id", uid)
-        .maybeSingle();
-      goAuthed(destinationAfterAuth(prof?.onboarding_completed_at != null));
+      goAuthed(dest);
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) void resolveDestination();
-    });
+    let cleanup: (() => void) | undefined;
 
-    void supabase.auth
-      .getSession()
-      .then(({ data, error }) => {
-        if (!active || settled) return;
-        if (error) {
-          fail("Không xác minh được Google. Thử lại.");
-          return;
-        }
-        if (data.session) {
-          void resolveDestination();
-        }
-      })
-      .catch(() => {
-        if (!active || settled) return;
+    void (async () => {
+      const exchangeError = await exchangeOAuthCodeFromUrl();
+      if (!active || settled) return;
+      if (exchangeError) {
         fail("Không xác minh được Google. Thử lại.");
+        return;
+      }
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) void resolveDestination();
       });
 
-    const t = window.setTimeout(() => {
-      if (!active || settled) return;
       void supabase.auth
         .getSession()
         .then(({ data, error }) => {
@@ -140,22 +125,46 @@ export default function AuthCallback() {
           }
           if (data.session) {
             void resolveDestination();
-          } else {
-            fail(
-              "Không xác minh được Google trong thời gian chờ. Thử lại.",
-            );
           }
         })
         .catch(() => {
           if (!active || settled) return;
           fail("Không xác minh được Google. Thử lại.");
         });
-    }, SESSION_WAIT_MS);
+
+      const t = window.setTimeout(() => {
+        if (!active || settled) return;
+        void supabase.auth
+          .getSession()
+          .then(({ data, error }) => {
+            if (!active || settled) return;
+            if (error) {
+              fail("Không xác minh được Google. Thử lại.");
+              return;
+            }
+            if (data.session) {
+              void resolveDestination();
+            } else {
+              fail(
+                "Không xác minh được Google trong thời gian chờ. Thử lại.",
+              );
+            }
+          })
+          .catch(() => {
+            if (!active || settled) return;
+            fail("Không xác minh được Google. Thử lại.");
+          });
+      }, SESSION_WAIT_MS);
+
+      cleanup = () => {
+        window.clearTimeout(t);
+        subscription.unsubscribe();
+      };
+    })();
 
     return () => {
       active = false;
-      window.clearTimeout(t);
-      subscription.unsubscribe();
+      cleanup?.();
     };
   }, [navigate, verifyError]);
 

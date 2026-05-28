@@ -13,9 +13,9 @@ import {
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
 import { isInvalidLoginCredentials } from "~/lib/auth-login-error";
+import { resolvePostLoginPath } from "~/lib/auth-post-login";
 import {
   appendReturnToQuery,
-  destinationAfterAuth,
   returnToFromSearchParams,
   stashPendingReturnTo,
 } from "~/lib/pending-return-to";
@@ -24,18 +24,6 @@ import {
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
-
-async function resolvePostLoginPath(): Promise<string> {
-  const { data: sessionData } = await supabase.auth.getSession();
-  const uid = sessionData.session?.user?.id;
-  if (!uid) return "/dang-nhap";
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("onboarding_completed_at")
-    .eq("id", uid)
-    .maybeSingle();
-  return destinationAfterAuth(prof?.onboarding_completed_at != null);
-}
 
 export default function DangNhapEmail() {
   const navigate = useNavigate();

@@ -34,10 +34,30 @@ export function consumePendingReturnTo(): string | null {
   return sanitizeReturnTo(raw);
 }
 
+export type PostLoginProfile = {
+  onboarding_completed_at: string | null;
+  ngay_sinh: string | null;
+};
+
 /** After login — keep pending return_to through first-run if onboarding incomplete. */
-export function destinationAfterAuth(onboardingComplete: boolean): string {
-  if (!onboardingComplete) return "/gio-sinh";
+export function destinationAfterAuth(
+  onboardingComplete: boolean,
+  hasBirthDate = true,
+): string {
+  if (!onboardingComplete) {
+    if (!hasBirthDate) return "/dang-ky";
+    return "/gio-sinh";
+  }
   return consumePendingReturnTo() ?? "/lich";
+}
+
+export function destinationAfterAuthFromProfile(
+  prof: PostLoginProfile | null | undefined,
+): string {
+  const onboardingComplete = prof?.onboarding_completed_at != null;
+  const hasBirthDate =
+    prof?.ngay_sinh != null && String(prof.ngay_sinh).trim() !== "";
+  return destinationAfterAuth(onboardingComplete, hasBirthDate);
 }
 
 /** After first-run reveal CTA — honor stashed deep link from anon visit. */

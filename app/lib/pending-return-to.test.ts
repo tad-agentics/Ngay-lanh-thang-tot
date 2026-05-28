@@ -41,8 +41,12 @@ describe("pending-return-to", () => {
 
   it("keeps pending return_to through first-run", () => {
     stashPendingReturnTo("/lich/thang");
-    expect(destinationAfterAuth(false)).toBe("/gio-sinh");
+    expect(destinationAfterAuth(false, true)).toBe("/gio-sinh");
     expect(destinationAfterOnboarding()).toBe("/lich/thang");
+  });
+
+  it("sends Google-only signups without birth date to dang-ky", () => {
+    expect(destinationAfterAuth(false, false)).toBe("/dang-ky");
   });
 
   it("appends return_to to hrefs", () => {

@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import {
@@ -10,6 +10,8 @@ import {
   GoogleIcon,
 } from "~/components/auth/c-auth-ui";
 import { Logo } from "~/components/brand";
+import { resolvePostLoginPath } from "~/lib/auth-post-login";
+import { useAuth } from "~/lib/auth";
 import {
   appendReturnToQuery,
   returnToFromSearchParams,
@@ -22,6 +24,8 @@ import {
 import { supabase } from "~/lib/supabase";
 
 export default function DangNhap() {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const referralFromUrl = useMemo(
     () => referralParamFromSearchParams(searchParams),
@@ -55,6 +59,15 @@ export default function DangNhap() {
   useEffect(() => {
     if (returnTo) stashPendingReturnTo(returnTo);
   }, [returnTo]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    void resolvePostLoginPath().then((dest) => {
+      if (dest !== "/dang-nhap") {
+        navigate(dest, { replace: true });
+      }
+    });
+  }, [authLoading, user, navigate]);
 
   async function signInGoogle() {
     stashPendingReferralCode(referralFromUrl);
