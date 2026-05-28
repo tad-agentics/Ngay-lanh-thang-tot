@@ -67,10 +67,10 @@ export function DayLuanSectionedPanel({
       {rows.map((s, i) => (
         <div
           key={`${s.title}-${i}`}
-          className="pt-4"
           style={{
+            marginTop: i === 0 ? 16 : 16,
+            paddingTop: i === 0 ? 14 : 14,
             borderTop: i === 0 ? "none" : `1px solid ${CT.hairline2}`,
-            paddingTop: i === 0 ? 14 : undefined,
           }}
         >
           <div className="flex items-baseline justify-between gap-2">
@@ -78,7 +78,7 @@ export function DayLuanSectionedPanel({
             {s.score ? (
               <span
                 style={{
-                  fontFamily: "var(--font-display-2)",
+                  fontFamily: "var(--display-2)",
                   fontWeight: 700,
                   fontSize: 13,
                   color: CT.goldDeep,
@@ -90,14 +90,25 @@ export function DayLuanSectionedPanel({
             ) : null}
           </div>
           <div
-            className="mt-1 font-display text-base font-bold"
-            style={{ color: CT.ink, letterSpacing: "-0.005em" }}
+            style={{
+              marginTop: 4,
+              fontFamily: "var(--display-2)",
+              fontWeight: 700,
+              fontSize: 16,
+              color: CT.ink,
+              letterSpacing: "-0.005em",
+            }}
           >
             {s.verdict}
           </div>
           <p
-            className="mt-1.5 font-serif text-[13px] leading-relaxed"
-            style={{ color: CT.ink2 }}
+            className="font-serif text-[13px]"
+            style={{
+              marginTop: 6,
+              color: CT.ink2,
+              lineHeight: 1.6,
+              marginBottom: 0,
+            }}
           >
             {s.body}{" "}
             <button
@@ -137,7 +148,7 @@ export function DayLuanSectionedPanel({
             <span
               className="shrink-0"
               style={{
-                fontFamily: "var(--font-display-2)",
+                fontFamily: "var(--display-2)",
                 fontWeight: 700,
                 fontSize: 13,
                 color: CT.goldDeep,
@@ -152,19 +163,29 @@ export function DayLuanSectionedPanel({
 
       {totalScore != null ? (
         <div
-          className="mt-5 py-3.5 flex justify-between items-baseline"
-          style={{ borderTop: `2px solid ${CT.ink}` }}
+          className="flex justify-between items-baseline"
+          style={{
+            marginTop: 20,
+            padding: "14px 0",
+            borderTop: `2px solid ${CT.ink}`,
+          }}
         >
           <div
-            className="font-display text-base font-extrabold uppercase"
-            style={{ letterSpacing: "-0.005em" }}
+            style={{
+              fontFamily: "var(--display)",
+              fontWeight: 800,
+              fontSize: 16,
+              color: CT.ink,
+              textTransform: "uppercase",
+              letterSpacing: "-0.005em",
+            }}
           >
             Tổng điểm
           </div>
           <div className="flex items-baseline gap-1">
             <span
               style={{
-                fontFamily: "var(--font-display-2)",
+                fontFamily: "var(--display-2)",
                 fontWeight: 800,
                 fontSize: 32,
                 color: CT.goldDeep,
@@ -174,26 +195,38 @@ export function DayLuanSectionedPanel({
             >
               {totalScore}
             </span>
-            <span className="font-serif text-[13px]" style={{ color: CT.muted }}>
+            <span
+              className="font-serif text-[13px]"
+              style={{ color: CT.muted }}
+            >
               /100
             </span>
           </div>
         </div>
       ) : null}
 
-      <div className="mt-5">
+      <div style={{ marginTop: 18 }}>
         <Mono style={{ color: CT.muted, fontSize: 9 }}>Nguồn đối chiếu</Mono>
-        <div className="mt-2 flex flex-col gap-1.5">
+        <div className="mt-2 flex flex-col" style={{ gap: 6 }}>
           {DAY_LUAN_SOURCES.map(([n, t]) => (
             <div
               key={n}
               id={`nguon-${n.replace(/[[\]]/g, "")}`}
-              className="flex gap-2 font-serif text-xs leading-snug scroll-mt-24"
-              style={{ color: CT.ink2 }}
+              className="flex gap-2 scroll-mt-24"
+              style={{
+                fontFamily: "var(--serif)",
+                fontSize: 12,
+                color: CT.ink2,
+                lineHeight: 1.45,
+              }}
             >
               <span
-                className="font-mono text-[10px] min-w-6"
-                style={{ color: CT.goldDeep }}
+                style={{
+                  color: CT.goldDeep,
+                  fontFamily: "var(--mono)",
+                  fontSize: 10,
+                  minWidth: 24,
+                }}
               >
                 {n}
               </span>

@@ -3,7 +3,7 @@
 **Đối tượng:** Team vận hành / phát triển [API Chọn Ngày Bát Tự](https://tu-tru-api.fly.dev/docs#/)  
 **OpenAPI hiện tại:** `https://tu-tru-api.fly.dev/openapi.json` (info.version `0.1.0`)  
 **Consumer:** Ứng dụng **Ngày Lành Tháng Tốt** (Direction C) — proxy qua Supabase Edge `bat-tu`  
-**Cập nhật:** 2026-05-28 (sau housekeeping Direction C + migration repair prod)  
+**Cập nhật:** 2026-05-28 (REQ-P0-02: `reason_vi` + UI contract breakdown; score đồng bộ `ngay-hom-nay` ↔ `day-detail`)  
 **Liên quan:** `artifacts/plans/direction-c-pivot-plan.md` · W4–W10 · màn Tra cứu 19–21
 
 ---
@@ -15,7 +15,7 @@
 | ID | API phải làm | Ưu tiên | OpenAPI 0.1.0 | NLTT hiện tại | Trạng thái |
 |----|----------------|---------|---------------|---------------|------------|
 | **REQ-P0-01** | `day-detail` **không bắt buộc birth** khi xem lịch chung (anon `/ngay/:ngay`) | **P0** | `birth_date` required | FE gửi `{ date }` only; Edge không chặn | 🔴 **Chưa document / cần xác nhận runtime** |
-| **REQ-P0-02** | `breakdown[]` **đúng 4 phần tử** + `sources[]` trên `day-detail` & `chon-ngay/detail` | **P0** | `{}` rỗng | Đọc `breakdown` hoặc `layer3.breakdown`; fallback ghép từ Trực/sao/reason | 🟡 **Một phần** (field có lúc, không ổn định) |
+| **REQ-P0-02** | `breakdown[]` **đúng 4 phần tử** + `reason_vi` cá nhân hoá + `sources[]` trên `day-detail` & `chon-ngay/detail` | **P0** | `{}` rỗng | Đọc `breakdown`; FE fallback nhãn/giờ/generic copy khi thiếu `reason_vi` | 🟡 **Một phần** (điểm có lúc; `reason_vi` chưa đủ) |
 | **REQ-P0-03** | `score_methodology` trên day-detail / ngay-hom-nay / lich-thang / chon-ngay | **P0** | Không có | Copy tĩnh FE (`DayScoreMethodologyCollapsible`, `TraCuuMethodologyCollapsible`) | 🔴 **Chưa có** |
 | **REQ-P0-04** | `lich-thang` → `days[]` có `date`, `lunar_day`/`lunar_label`, `score`, `day_type` ổn định | **P0** | `{}` rỗng | Mapper quét ~10 key (`home-bat-tu.ts`) | 🟡 **Một phần** |
 | **REQ-P1-01** | Endpoint mới `GET /v1/day-detail/luan-context` | **P1** | Không có | Interim: `buildDayLuanPromptContext()` + prompt Edge; anchor raw `day-detail` | 🟡 **Interim NLTT** · API 🔴 |
@@ -59,7 +59,7 @@ Browser (Direction C)
 | Layer | Thuộc tu-tru-api | Thuộc NLTT Edge |
 |-------|-------------------|-----------------|
 | Điểm ngày, Trực, sao, giờ Hoàng/Hắc đạo | ✅ | — |
-| `breakdown[]` 4 yếu tố + tổng điểm | ✅ | — |
+| `breakdown[]` 4 yếu tố + tổng điểm + **`reason_vi`** | ✅ tu-tru-api | — (Edge `bat-tu` proxy; FE map 1:1) |
 | Lá số tứ trụ, ngũ hành, Dụng/Kỵ thần | ✅ | — |
 | Luận văn AI (anchor, Bát tự chi tiết, tiểu vận) | ❌ | ✅ `generate-reading` |
 | Thread chat follow-up, quota 10 câu/ngày | ❌ | ✅ pipeline riêng (chưa ship) |
@@ -71,7 +71,7 @@ Browser (Direction C)
 
 | Method | Path | bat-tu `op` | Route Direction C | Ghi chú API |
 |--------|------|-------------|-------------------|-------------|
-| GET | `/v1/ngay-hom-nay` | `ngay-hom-nay` | `/lich` | Cần score + methodology (P0-03) |
+| GET | `/v1/ngay-hom-nay` | `ngay-hom-nay` | `/lich` | **`score` cùng giá trị với `day-detail`** cùng ngày + profile (P0-02); methodology (P0-03) |
 | GET | `/v1/lich-thang` | `lich-thang` | `/lich/thang` | Cần `days[].score` ổn định (P0-04) |
 | GET | `/v1/day-detail` | `day-detail` | `/ngay/:ngay`, `/luan-ai/day-*` | **P0 blocker:** generic anon (P0-01) |
 | POST | `/v1/chon-ngay` | `chon-ngay` | `/tra-cuu` → `/tra-cuu/ket-qua` | Cần `ranked_days[]` (P1-04) |
@@ -127,50 +127,67 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
 
 ---
 
-#### REQ-P0-02 · `breakdown[]` ổn định — 4 yếu tố có nguồn (màn 15 + 14)
+#### REQ-P0-02 · `breakdown[]` ổn định — 4 yếu tố có nguồn + **lời giải thích cá nhân hoá** (màn 15 + 14)
 
-**API phải làm:** Trả **đúng 4 phần tử** `breakdown` (và `sources[]`) trên personalized responses.
+**API phải làm:** Trả **đúng 4 phần tử** `breakdown` (và `sources[]`) trên **personalized** responses (`day-detail`, `chon-ngay/detail`). Mỗi phần tử phải có **`reason_vi`** — câu giải thích **vì sao yếu tố đó hợp hoặc không hợp với lá số user**, tác động thế nào tới điểm ngày — **không** chỉ lặp tên Trực/sao/giờ.
 
-**NLTT hiện tại:** Đọc `breakdown` top-level hoặc `layer3.breakdown`; nếu thiếu, `buildDayLuanSectionRows()` fallback từ Trực/sao/reasonLines; `DAY_LUAN_SOURCES` hard-code [1]–[4].
+> **Owner:** **tu-tru-api** (engine Bát Tự upstream). **Không** thuộc NLTT Supabase Edge (`bat-tu` chỉ proxy pass-through) hay NLTT backend-developer (auth/RLS/billing). Gemini (`generate-reading`) viết **voice anchor** — **không** thay `breakdown[].reason_vi` trên UI.
+
+**Phân công UI NLTT (Direction C — `/luan-ai/day-*`, anchor turn):**
+
+| UI (maket) | Nguồn API | Ví dụ |
+|------------|-----------|-------|
+| **Verdict** (dòng đậm) | `breakdown[].type` | `Thu`, `Sao Thiên Lao`, `Nhâm Dần`, `Thìn 7–9h · Mùi 13–15h` |
+| **Body** (serif, có `[n]`) | **`breakdown[].reason_vi`** | *“Trực Thu thuận thu hoạch nhưng Hắc Đạo — nên tránh khởi sự lớn với mệnh Lộ Bàng Thổ…”* |
+| **Score chip** | `breakdown[].points` | `+24`, `-15`, `0` |
+| **Citation** | `breakdown[].source_ref` → `[1]`–`[4]` | Khớp `sources[]` |
+
+**NLTT hiện tại (interim — sẽ bỏ khi API ship P0-02):** `buildDayLuanSectionRows()` ghép body từ `reason_vi` tổng, `star_name`, `gio_tot`/`gio_xau`, hoặc copy generic — **không đạt spec**. FE **không** mở rộng heuristic; chờ upstream.
+
+**Shape cũ (deprecated — không ship thêm):**
+
+- Hàng `ĐIỂM CƠ BẢN` / `type: "neutral"` tách khỏi 4 yếu tố.
+- `breakdown` 1–2 phần tử + `reason_vi` top-level dán nhãn (`Hắc Đạo — Trực Thu — Sao Giác`).
+- Thiếu `id` / `can_chi_laso` → FE hiện placeholder *“Can Chi ngày được đối chiếu với mệnh…”*.
 
 **Yêu cầu response (personalized `day-detail` và `chon-ngay/detail`):**
 
 ```json
 {
-  "score": 76,
-  "grade": "B",
+  "score": 35,
+  "grade": "D",
   "breakdown": [
     {
       "id": "truc",
       "source": "Trực ngày",
       "source_ref": 1,
-      "type": "Định",
-      "points": 24,
-      "reason_vi": "Trực Định — vững vàng, hợp ký kết…"
+      "type": "Thu · Hắc Đạo",
+      "points": 0,
+      "reason_vi": "Trực Thu thuận việc thu hoạch, kết thúc chu kỳ — nhưng ngày Hắc Đạo (Thiên Lao) làm giảm độ an toàn cho việc quan trọng với mệnh Lộ Bàng Thổ của bạn."
     },
     {
       "id": "sao28",
       "source": "Nhị thập bát tú",
       "source_ref": 2,
-      "type": "Thiên Đức",
-      "points": 20,
-      "reason_vi": "…"
+      "type": "Sao Thiên Lao · Giác",
+      "points": -15,
+      "reason_vi": "Hung tinh Thiên Lao chiếu nhật — kỵ sự kiện công khai, ký kết lớn; trừ 15 điểm so với nền ngày."
     },
     {
       "id": "can_chi_laso",
       "source": "Can chi · tương sinh với lá số",
       "source_ref": 3,
-      "type": "Mậu Tuất → Quý Thủy",
-      "points": 18,
-      "reason_vi": "…"
+      "type": "Nhâm Dần",
+      "points": 0,
+      "reason_vi": "Can Nhâm (Thủy) và Chi Dần (Mộc) đối chiếu trụ Nhật và Dụng Thần trên lá số — không có xung mạnh với Lộ Bàng Thổ; không cộng thêm cũng không trừ thêm điểm."
     },
     {
       "id": "gio_vang",
       "source": "Giờ vàng trong ngày",
       "source_ref": 4,
       "type": "Thìn 7–9h · Mùi 13–15h",
-      "points": 14,
-      "reason_vi": "…"
+      "points": 0,
+      "reason_vi": "Buổi sáng có giờ Hoàng đạo Thìn thuận cho việc nhỏ; chiều Mùi ổn định nhưng không bù được hung sao — nên gom việc quan trọng vào khung giờ tốt nếu bắt buộc làm."
     }
   ],
   "sources": [
@@ -182,14 +199,49 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
 }
 ```
 
+**Quy tắc nội dung `reason_vi` (bắt buộc — team engine):**
+
+1. **Cá nhân hoá:** Nêu quan hệ với **mệnh / Dụng Thần / trụ Nhật** của user (từ birth profile), không chỉ mô tả lịch chung.
+2. **Giải thích điểm:** Nói rõ **vì sao cộng/trừ** (`points`), hoặc vì sao `0` (trung tính, không đáng kể) — user phải hiểu được tổng `score`.
+3. **Một yếu tố = một đoạn:** 1–3 câu tiếng Việt; **không** gộp cả 4 yếu tố vào một `reason_vi`.
+4. **`type` ≠ `reason_vi`:** `type` = nhãn ngắn (verdict UI); `reason_vi` = luận giải — **không** copy-paste cùng chuỗi.
+5. **Giờ vàng:** `reason_vi` giải thích **khung giờ nào thuận/kỵ với lá số** — **không** chỉ liệt kê `gio_tot[]`/`gio_xau[]` (danh sách giờ vẫn trả ở field riêng cho UI lịch tờ).
+6. **Ngôn ngữ:** Tiếng Việt; **không** enum engine (`neutral`, `penalty`, `bonus`) trong field hiển thị.
+
+**Anti-pattern (reject trong QA upstream):**
+
+| ❌ Không chấp nhận | ✅ Thay bằng |
+|-------------------|-------------|
+| `reason_vi`: *“Hắc Đạo (Thiên Lao) — Trực Thu — Sao Giác”* (chỉ nhãn) | Luận Trực + Hắc/Hoàng + tác động với mệnh user |
+| `reason_vi`: *“Thiên Lao · Giác”* | Luận hung/cát + vì sao `points` âm/dương |
+| `reason_vi` generic / placeholder | Luận Can Chi ngày ↔ lá số cụ thể |
+| `reason_vi` = chuỗi giờ Hoàng/Hắc đạo | Luận **ý nghĩa** khung giờ với user |
+| Hàng `ĐIỂM CƠ BẢN` +50 tách khỏi 4 yếu tố | Phân bổ điểm vào 4 `id`; tổng ≈ `score` |
+| `breakdown.length !== 4` | Luôn đủ 4 phần tử, thứ tự cố định |
+
+**Quy tắc điểm:**
+
 | Field | Bắt buộc | Ghi chú |
 |-------|----------|---------|
-| `breakdown` | Có (personalized) | **Đúng 4 phần tử**, thứ tự cố định |
-| `breakdown[].source_ref` | Khuyến nghị | Map citation `[1]`–`[4]` cho LLM + UI |
-| `breakdown[].points` | Có | Tổng ≈ `score` (±1 làm tròn OK) |
-| `sources[]` | Khuyến nghị | FE bỏ hard-code nguồn |
+| `breakdown` | Có (personalized) | **Đúng 4 phần tử**, thứ tự: `truc` → `sao28` → `can_chi_laso` → `gio_vang` |
+| `breakdown[].id` | Có | Enum cố định (4 giá trị trên) |
+| `breakdown[].type` | Có | Verdict ngắn — **tiếng Việt** |
+| **`breakdown[].reason_vi`** | **Có** | **Body UI + facts LLM** — xem quy tắc nội dung |
+| `breakdown[].points` | Có | **`sum(breakdown[].points) ≈ score`** (±1 làm tròn). **Không** hàng “điểm cơ bản” riêng |
+| `breakdown[].source_ref` | Có | `1`–`4` — map citation `[n]` |
+| `sources[]` | Có | 4 mục, `ref` khớp `source_ref` |
+| `score` | Có | **Cùng giá trị** với `GET /v1/day-detail` cùng `date` + birth profile (NLTT tab Hôm nay + luận AI dùng chung) |
 
-**Acceptance:** `buildDayLuanSectionRows()` không cần fallback heuristic.
+**Phạm vi generic (`mode=generic`, REQ-P0-01):** Có thể trả `breakdown_generic[]` với `reason_vi` **không** cá nhân hoá (lịch thuần). Personalized **bắt buộc** quy tắc trên.
+
+**Acceptance upstream:**
+
+1. Fixture JSON 1 ngày score thấp (vd. 35) — 4 `reason_vi` đạt checklist nội dung.
+2. `sum(points) ≈ score`; không key `ĐIỂM CƠ BẢN` / `neutral`.
+3. NLTT `buildDayLuanSectionRows()` map **trực tiếp** `type` + `reason_vi` + `points` — **không** fallback heuristic.
+4. `ngay-hom-nay.score === day-detail.score` cùng request profile (regression test).
+
+**Liên quan LLM:** Gemini **không** viết lại breakdown UI. Anchor voice dùng cùng facts (`reason_vi` qua REQ-P1-01 `luan-context`); breakdown trên màn là **deterministic từ engine** (FE-HANDOFF §Phase 8).
 
 ---
 
@@ -314,9 +366,11 @@ GET /v1/day-detail/luan-context
 
 | Field | Bắt buộc | Ghi chú LLM / UI |
 |-------|----------|------------------|
-| `breakdown_summary` | Có | **Đúng 4 phần tử**, `id` cố định (`truc`, `sao28`, `can_chi_laso`, `gio_vang`); `label_vi` tiếng Việt — **không** `neutral`/`penalty` |
-| `breakdown_summary[].source_ref` | Có | Map citation `[1]`–`[4]` cho follow-up Gemini |
-| `breakdown_summary[].points` | Khuyến nghị | Tổng ≈ `score`; **không** tách “điểm cơ bản” thành hàng riêng |
+| `breakdown_summary` | Có | **Đúng 4 phần tử**, `id` cố định — **cùng nội dung** với `day-detail.breakdown[]` (REQ-P0-02) |
+| `breakdown_summary[].reason_vi` | **Có** | **Cùng quy tắc P0-02** — cá nhân hoá, giải thích `points`; Gemini anchor/follow-up **chỉ paraphrase**, không bịa |
+| `breakdown_summary[].verdict_vi` | Có | = `breakdown[].type` |
+| `breakdown_summary[].source_ref` | Có | Map citation `[1]`–`[4]` |
+| `breakdown_summary[].points` | Có | **`sum ≈ score`** — không hàng điểm cơ bản riêng |
 | `sources[]` | Có | Trùng ref 1–4; FE + Edge dùng thay hard-code |
 | `scope_hint_vi` | Có | Inject system prompt follow-up |
 | `anchor_question_hint_vi` | Có | Neo câu hỏi trên `/luan-ai/day-*` |
@@ -325,10 +379,11 @@ GET /v1/day-detail/luan-context
 
 **Quy tắc nội dung (instruction cho team API, không phải prompt Gemini):**
 
-1. **Không** trả field engine thô (`type: "neutral"`, `ĐIỂM CƠ BẢN`) — gộp nền vào 4 yếu tố hoặc chỉ `score` tổng.
-2. `verdict_vi` = tên Trực / sao / Can Chi / khung giờ — **tiếng Việt**, không enum tiếng Anh.
-3. `gio_tot[]` / `gio_xau[]` = chuỗi hiển thị sẵn (`Thìn 7–9h`) hoặc object chuẩn hoá — NLTT flatten.
-4. Cùng nguồn dữ liệu với `day-detail` personalized — **không** tính lại logic khác.
+1. **`luan-context` = projection của `day-detail` personalized** — `breakdown_summary[]` copy/sinh từ cùng engine run; **không** tính logic khác.
+2. **`reason_vi` / `verdict_vi`:** Tuân REQ-P0-02 (cá nhân hoá, không nhãn, không list giờ thay luận).
+3. **Không** trả field engine thô (`type: "neutral"`, `ĐIỂM CƠ BẢN`) trong payload hiển thị.
+4. `gio_tot[]` / `gio_xau[]` = chuỗi hiển thị sẵn (`Thìn 7–9h`) — **bổ sung** cho `reason_vi` của `gio_vang`, không thay thế.
+5. `scope_hint_vi`, `anchor_question_hint_vi`, `suggested_followups` — copy product, có thể do NLTT giữ seed nếu thiếu.
 
 **NLTT hiện tại (interim 2026-05-28):**
 
@@ -522,13 +577,15 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 ### 6.1 Ranh giới LLM — ai làm gì
 
-| Việc | tu-tru-api | NLTT Edge |
-|------|------------|-----------|
+| Việc | tu-tru-api | NLTT Edge / FE |
+|------|------------|----------------|
+| Schema `breakdown[]` + **`reason_vi` cá nhân hoá** | ✅ REQ-P0-02 | Map 1:1 → UI breakdown (verdict=`type`, body=`reason_vi`) |
 | Schema `luan-context` + `day-compare` facts | ✅ REQ-P1-01/02 | Consume qua `bat-tu` |
-| Compact builder interim từ raw `day-detail` | ❌ | ✅ `_shared/day-luan-prompt-context.ts` (tạm) |
+| Compact builder interim từ raw `day-detail` | ❌ | ✅ `_shared/day-luan-prompt-context.ts` (**tạm** — bỏ khi P1-01 ship) |
 | System prompt anchor / follow-up | ❌ | ✅ `generate-reading` `DAY_DETAIL_*_SYSTEM` |
-| Citation `[1]–[4]` trong follow-up | Facts `source_ref` | Prompt + post-process (sau) |
+| Citation `[1]–[4]` trong follow-up | Facts `source_ref` + `reason_vi` | Prompt + post-process (sau) |
 | Quota 10 câu/ngày | ❌ | 🔴 Chưa server — FE sessionStorage tạm |
+| Heuristic ghép body breakdown từ nhãn/giờ | ❌ | 🔴 Interim only — **không mở rộng** |
 
 ---
 
@@ -539,8 +596,9 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 3. **Timezone:** default `Asia/Ho_Chi_Minh`; accept `YYYY-MM-DD` ngoài `dd/mm/yyyy` nếu có thể.
 4. **Staging:** deploy preview Fly; NLTT trỏ `BAT_TU_API_URL` staging QA.
 5. **Fixtures tối thiểu** (JSON mẫu gửi NLTT):
-   - Personalized `day-detail` (4-item `breakdown`)
-   - **`luan-context`** cho cùng ngày (mirror breakdown + sources)
+   - Personalized `day-detail` — **4-item `breakdown`**, mỗi item có `reason_vi` đạt checklist P0-02 (kèm ngày score 35 + ngày score 76)
+   - **`luan-context`** cho cùng ngày — `breakdown_summary` **mirror** `breakdown`
+   - Pair **`ngay-hom-nay` + `day-detail`** cùng profile — **`score` khớp**
    - **`day-compare`** (date_a vs date_b + delta_score)
    - Generic `day-detail` (anon, `personalized: false`)
    - `chon-ngay` với `ranked_days` (≥3) + empty `ranked_days: []`
@@ -558,7 +616,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `la-so/luu-nien` | `la-so-luu-nien` *(mới)* | `CBaziReadingScreen` + `generate-reading` |
 | `ranked_days[]` | `chon-ngay` *(giữ)* | Bỏ fallback array keys |
 | `score_methodology` | — | Render collapsible từ API |
-| `breakdown` + `sources` | — | Bỏ `DAY_LUAN_SOURCES` hard-code |
+| `breakdown` + `sources` + **`reason_vi`** | — | Map 1:1 UI; bỏ `DAY_LUAN_SOURCES` hard-code + FE heuristic body |
 
 ---
 

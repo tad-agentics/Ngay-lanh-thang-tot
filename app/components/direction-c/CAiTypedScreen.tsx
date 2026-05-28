@@ -33,10 +33,14 @@ function TypedBody({
   text,
   active,
   onComplete,
+  fontSize = 14,
+  marginTop = 6,
 }: {
   text: string;
   active: boolean;
   onComplete?: () => void;
+  fontSize?: number;
+  marginTop?: number;
 }) {
   const [len, setLen] = useState(0);
   const completedRef = useRef(false);
@@ -72,13 +76,14 @@ function TypedBody({
 
   return (
     <p
+      aria-live={active ? "polite" : undefined}
       style={{
-        marginTop: 6,
+        marginTop,
+        marginBottom: 0,
         fontFamily: "var(--serif)",
-        fontSize: 14,
+        fontSize,
         color: CT.ink,
-        lineHeight: 1.65,
-        margin: 0,
+        lineHeight: fontSize >= 14 ? 1.65 : 1.6,
       }}
     >
       {shown}
@@ -101,11 +106,17 @@ function TypedBody({
   );
 }
 
-function QuestionBlock({ question }: { question: string }) {
+function QuestionBlock({
+  question,
+  compact,
+}: {
+  question: string;
+  compact?: boolean;
+}) {
   return (
     <div
       style={{
-        padding: "12px 14px",
+        padding: compact ? "10px 14px" : "12px 14px",
         background: "rgba(154,124,34,0.06)",
         borderLeft: `2px solid ${CT.goldDeep}`,
       }}
@@ -113,10 +124,10 @@ function QuestionBlock({ question }: { question: string }) {
       <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Bạn hỏi</Mono>
       <div
         style={{
-          marginTop: 4,
+          marginTop: compact ? 3 : 4,
           fontFamily: "var(--serif)",
           fontStyle: "italic",
-          fontSize: 13.5,
+          fontSize: compact ? 13 : 13.5,
           color: CT.ink2,
           lineHeight: 1.5,
         }}
@@ -367,7 +378,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         }
       />
 
-      <div ref={scrollRef} className="flex-1 overflow-auto px-6 pt-2 pb-4">
+      <div ref={scrollRef} className="flex-1 overflow-auto px-6 pt-2 pb-6">
         {(detailLoading || profileLoading) && (
           <p className="font-serif text-sm" style={{ color: CT.muted }}>
             Đang tải…
@@ -440,10 +451,10 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
             {followUps.map((turn) => (
               <div
                 key={turn.id}
-                className="mt-5 pt-4"
+                className="mt-[22px] pt-[18px]"
                 style={{ borderTop: `1px solid ${CT.hairline}` }}
               >
-                <QuestionBlock question={turn.question} />
+                <QuestionBlock question={turn.question} compact />
                 {turn.loading ? (
                   <AiAnswerRow kicker="NLTT đang luận…" compact>
                     <p
@@ -476,6 +487,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                     <TypedBody
                       text={turn.answer}
                       active={!turn.typingDone}
+                      fontSize={13.5}
+                      marginTop={4}
                       onComplete={() =>
                         setFollowUps((prev) =>
                           prev.map((t) =>
@@ -491,7 +504,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
             {anchorDone && remainingChips.length > 0 && !quotaExhausted ? (
               <div
-                className="mt-5 pt-4"
+                className="mt-[22px] pt-4"
                 style={{ borderTop: `1px solid ${CT.hairline}` }}
               >
                 <Mono style={{ color: CT.muted, fontSize: 9 }}>Hỏi tiếp gợi ý</Mono>
@@ -502,7 +515,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                       type="button"
                       disabled={submitBusy}
                       onClick={() => void submitFollowUp(chip)}
-                      className="text-left py-2.5 px-3.5 font-serif text-[13px]"
+                      className="text-left py-2.5 px-3.5 font-serif text-[13px] leading-snug"
                       style={{
                         background: "#fff",
                         border: `1px solid ${CT.hairline}`,
@@ -524,7 +537,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
       {unlocked && !detailLoading && !detailError ? (
         <div
-          className="px-5 pt-2 pb-5"
+          className="px-5 pt-2 pb-[18px]"
           style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}
         >
           <div
@@ -556,7 +569,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-serif text-sm"
                 style={{
                   background: CT.forest,
-                  color: CT.cream,
+                  color: CT.gold,
                   border: "none",
                   opacity: submitBusy || !input.trim() ? 0.5 : 1,
                 }}
@@ -566,7 +579,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </button>
             ) : null}
           </div>
-          <div className="mt-1.5 px-1 flex items-baseline justify-between gap-2">
+          <div className="mt-[7px] px-1 flex items-baseline justify-between gap-2">
             {quotaExhausted ? (
               <span
                 className="w-full text-center font-serif italic text-[10.5px]"
@@ -586,6 +599,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   style={{
                     color: CT.muted,
                     fontSize: 9,
+                    letterSpacing: "0.08em",
+                    textTransform: "uppercase",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
