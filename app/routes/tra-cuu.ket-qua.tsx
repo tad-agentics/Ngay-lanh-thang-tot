@@ -3,9 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { Share2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { TraCuuMethodologyCollapsible } from "~/components/direction-c/TraCuuMethodologyCollapsible";
-import { CTopStrip } from "~/components/brand";
+import { BackBar } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { useProfile } from "~/hooks/useProfile";
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
@@ -140,10 +139,12 @@ export default function TraCuuKetQuaRoute() {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <CTopStrip />
-      <CTraCuuSegmentedNav />
+      <BackBar
+        title="Tra cứu · kết quả"
+        onBack={() => navigate("/tra-cuu")}
+      />
 
-      <div className="flex-1 overflow-auto px-6 pb-24 pt-0">
+      <div className="flex-1 overflow-auto px-6 pb-6 pt-3">
         <div
           className="font-serif text-[12.5px] leading-snug"
           style={{ color: CT.muted }}
@@ -163,8 +164,11 @@ export default function TraCuuKetQuaRoute() {
         </div>
 
         <div
-          className="mt-5 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[-0.005em]"
-          style={{ color: CT.ink }}
+          className="mt-5 text-sm font-bold uppercase tracking-[-0.005em]"
+          style={{
+            fontFamily: "var(--display-2)",
+            color: CT.ink,
+          }}
         >
           {days.length} ngày tốt nhất
         </div>
@@ -332,8 +336,11 @@ function ResultRow({
       ) : null}
       <div className="min-w-[54px]">
         <div
-          className="font-[family-name:var(--font-display)] text-2xl font-extrabold leading-none tabular-nums tracking-[-0.02em]"
-          style={{ color: isTop ? CT.red : CT.ink }}
+          className="text-2xl font-extrabold leading-none tabular-nums tracking-[-0.02em]"
+          style={{
+            fontFamily: "var(--display-2)",
+            color: isTop ? CT.red : CT.ink,
+          }}
         >
           {formatIsoDotShort(day.isoDate).split(".")[0]}
         </div>
@@ -354,8 +361,11 @@ function ResultRow({
       </div>
       <div className="min-w-[38px] text-right">
         <span
-          className="font-[family-name:var(--font-display)] text-[22px] font-extrabold tabular-nums tracking-[-0.02em]"
-          style={{ color: scoreDotColor(score) }}
+          className="text-[22px] font-extrabold tabular-nums tracking-[-0.02em]"
+          style={{
+            fontFamily: "var(--display-2)",
+            color: scoreDotColor(score),
+          }}
         >
           {score}
         </span>

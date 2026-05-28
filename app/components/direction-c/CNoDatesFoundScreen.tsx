@@ -1,7 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
 
-import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
-import { CTopStrip } from "~/components/brand";
+import { BackBar } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
 import type { TraCuuEmptyState } from "~/lib/tra-cuu-session";
 
@@ -34,10 +33,12 @@ export function CNoDatesFoundScreen({
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <CTopStrip />
-      <CTraCuuSegmentedNav />
+      <BackBar
+        title="Tra cứu · kết quả"
+        onBack={() => navigate("/tra-cuu")}
+      />
 
-      <div className="flex-1 overflow-auto px-6 pb-24 pt-0">
+      <div className="flex-1 overflow-auto px-6 pb-6 pt-3">
         <div className="text-[12.5px] leading-snug" style={{ color: CT.muted }}>
           Cho việc{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
@@ -76,8 +77,8 @@ export function CNoDatesFoundScreen({
           </svg>
 
           <h2
-            className="mt-5 font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
-            style={{ color: CT.ink }}
+            className="mt-5 text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            style={{ fontFamily: "var(--display)", color: CT.ink }}
           >
             Không có ngày tốt
           </h2>

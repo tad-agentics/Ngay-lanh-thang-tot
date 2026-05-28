@@ -146,8 +146,8 @@ export default function TraCuuRoute() {
         >
           <div>
             <div
-              className="font-[family-name:var(--font-display)] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
-              style={{ color: CT.ink }}
+              className="text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+              style={{ fontFamily: "var(--display)", color: CT.ink }}
             >
               {intentParts.main}
               {intentParts.accent ? (
@@ -227,8 +227,8 @@ export default function TraCuuRoute() {
               Từ ngày
             </div>
             <div
-              className="mt-0.5 font-[family-name:var(--font-display)] text-sm font-bold tracking-[-0.005em]"
-              style={{ color: CT.ink }}
+              className="mt-0.5 text-sm font-bold tracking-[-0.005em]"
+              style={{ fontFamily: "var(--display-2)", color: CT.ink }}
             >
               {formatIsoDot(rangeStart)}
             </div>
@@ -244,8 +244,8 @@ export default function TraCuuRoute() {
               Đến ngày
             </div>
             <div
-              className="mt-0.5 font-[family-name:var(--font-display)] text-sm font-bold tracking-[-0.005em]"
-              style={{ color: CT.ink }}
+              className="mt-0.5 text-sm font-bold tracking-[-0.005em]"
+              style={{ fontFamily: "var(--display-2)", color: CT.ink }}
             >
               {formatIsoDot(rangeEnd)}
             </div>
@@ -278,8 +278,12 @@ export default function TraCuuRoute() {
           type="button"
           disabled={busy || disabledForm || !profile?.ngay_sinh}
           onClick={() => void runLookup()}
-          className="mt-8 w-full cursor-pointer border-none py-[15px] font-[family-name:var(--font-display)] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
-          style={{ background: CT.forest, color: CT.cream }}
+          className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+          style={{
+            fontFamily: "var(--display-2)",
+            background: CT.forest,
+            color: CT.cream,
+          }}
         >
           {busy ? "Đang tra…" : "Tìm ngày tốt nhất"}
         </button>
