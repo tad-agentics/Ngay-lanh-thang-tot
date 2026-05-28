@@ -105,7 +105,7 @@ function QuestionBlock({ question }: { question: string }) {
   return (
     <div
       style={{
-        padding: "10px 14px",
+        padding: "12px 14px",
         background: "rgba(154,124,34,0.06)",
         borderLeft: `2px solid ${CT.goldDeep}`,
       }}
@@ -113,16 +113,33 @@ function QuestionBlock({ question }: { question: string }) {
       <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Bạn hỏi</Mono>
       <div
         style={{
-          marginTop: 3,
+          marginTop: 4,
           fontFamily: "var(--serif)",
           fontStyle: "italic",
-          fontSize: 13,
+          fontSize: 13.5,
           color: CT.ink2,
           lineHeight: 1.5,
         }}
       >
         &ldquo;{question}&rdquo;
       </div>
+    </div>
+  );
+}
+
+function AnchorLoadingSkeleton() {
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      {[0.9, 0.75, 0.6].map((w) => (
+        <div
+          key={w}
+          style={{
+            height: 10,
+            width: `${w * 100}%`,
+            background: "rgba(154,124,34,0.06)",
+          }}
+        />
+      ))}
     </div>
   );
 }
@@ -191,7 +208,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   const dayShort = formatDayIsoShort(iso);
   const score = detail?.score ?? null;
-  const anchorQuestion = anchorQuestionForScore(score);
+  const anchorQuestion = anchorQuestionForScore(score, iso);
   const sectionRows = buildDayLuanSectionRows(detail);
 
   const [anchorTypingDone, setAnchorTypingDone] = useState(false);
@@ -391,11 +408,15 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
             ) : null}
 
             {(readingLoading || showAnchorTyped) && (
-              <AiAnswerRow kicker={anchorKicker}>
+              <AiAnswerRow
+                kicker={
+                  readingLoading && !reading
+                    ? "NLTT đang luận…"
+                    : anchorKicker
+                }
+              >
                 {readingLoading && !reading ? (
-                  <p className="font-serif text-sm mt-2" style={{ color: CT.muted }}>
-                    Đang đối chiếu lá số với ngày này…
-                  </p>
+                  <AnchorLoadingSkeleton />
                 ) : (
                   <TypedBody
                     text={reading ?? ""}
@@ -410,6 +431,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               <DayLuanSectionedPanel
                 rows={sectionRows}
                 totalScore={detail?.score ?? null}
+                iso={iso}
+                canChi={detail?.canChi ?? "—"}
               />
             ) : null}
 

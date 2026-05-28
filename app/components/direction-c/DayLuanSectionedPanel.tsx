@@ -1,17 +1,32 @@
 import { Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
 import type { DayLuanSectionRow } from "~/lib/day-luan-sectioned";
-import { DAY_LUAN_SOURCES } from "~/lib/day-luan-sectioned";
+import {
+  DAY_LUAN_SOURCES,
+  formatDaySectionSubline,
+} from "~/lib/day-luan-sectioned";
 
 type DayLuanSectionedPanelProps = {
   rows: DayLuanSectionRow[];
   totalScore: number | null;
+  iso?: string;
+  canChi?: string;
   id?: string;
 };
+
+function scrollToSource(ref: string) {
+  const num = ref.replace(/[[\]]/g, "");
+  document.getElementById(`nguon-${num}`)?.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest",
+  });
+}
 
 export function DayLuanSectionedPanel({
   rows,
   totalScore,
+  iso,
+  canChi = "—",
   id = "chi-tiet",
 }: DayLuanSectionedPanelProps) {
   if (rows.length === 0 && totalScore == null) return null;
@@ -19,8 +34,9 @@ export function DayLuanSectionedPanel({
   return (
     <div
       id={id}
-      className="mt-5"
+      className="mt-[26px] pt-[18px]"
       style={{
+        borderTop: `1px solid ${CT.hairline}`,
         animation: "b-fade-in 320ms ease-out both",
       }}
     >
@@ -31,13 +47,27 @@ export function DayLuanSectionedPanel({
         }
       `}</style>
 
+      {iso ? (
+        <div className="flex items-baseline justify-between gap-2 mb-1">
+          <Mono style={{ color: CT.goldDeep, fontSize: 10 }}>
+            Phân tích chi tiết · 4 yếu tố
+          </Mono>
+          <span
+            className="font-serif text-[11.5px] shrink-0"
+            style={{ color: CT.muted }}
+          >
+            {formatDaySectionSubline(iso, canChi)}
+          </span>
+        </div>
+      ) : null}
+
       {rows.map((s, i) => (
         <div
           key={`${s.title}-${i}`}
           className="pt-4"
           style={{
-            borderTop:
-              i === 0 ? `1px solid ${CT.hairline}` : `1px solid ${CT.hairline2}`,
+            borderTop: i === 0 ? "none" : `1px solid ${CT.hairline2}`,
+            paddingTop: i === 0 ? 14 : undefined,
           }}
         >
           <div className="flex items-baseline justify-between gap-2">
@@ -66,7 +96,22 @@ export function DayLuanSectionedPanel({
             className="mt-1.5 font-serif text-[13px] leading-relaxed"
             style={{ color: CT.ink2 }}
           >
-            {s.body}
+            {s.body}{" "}
+            <button
+              type="button"
+              onClick={() => scrollToSource(s.sourceRef)}
+              className="inline p-0 align-baseline cursor-pointer"
+              style={{
+                color: CT.goldDeep,
+                fontFamily: "var(--mono)",
+                fontSize: 10,
+                background: "none",
+                border: "none",
+              }}
+              aria-label={`Nguồn ${s.sourceRef}`}
+            >
+              {s.sourceRef}
+            </button>
           </p>
         </div>
       ))}
@@ -108,7 +153,8 @@ export function DayLuanSectionedPanel({
           {DAY_LUAN_SOURCES.map(([n, t]) => (
             <div
               key={n}
-              className="flex gap-2 font-serif text-xs leading-snug"
+              id={`nguon-${n.replace(/[[\]]/g, "")}`}
+              className="flex gap-2 font-serif text-xs leading-snug scroll-mt-24"
               style={{ color: CT.ink2 }}
             >
               <span

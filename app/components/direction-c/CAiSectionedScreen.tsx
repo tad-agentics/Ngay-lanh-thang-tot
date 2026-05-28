@@ -78,6 +78,8 @@ export function CAiSectionedScreen({ iso }: { iso: string }) {
               <DayLuanSectionedPanel
                 rows={sections}
                 totalScore={detail.score ?? null}
+                iso={iso}
+                canChi={detail.canChi}
               />
             )}
           </>
