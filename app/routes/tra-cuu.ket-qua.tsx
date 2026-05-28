@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
-import { Share2 } from "lucide-react";
-import { toast } from "sonner";
 
 import { TraCuuMethodologyCollapsible } from "~/components/direction-c/TraCuuMethodologyCollapsible";
 import { BackBar } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { useProfile } from "~/hooks/useProfile";
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { scoreDotColor } from "~/lib/c-score";
@@ -16,8 +13,6 @@ import {
   loadTraCuuKetQua,
   persistTraCuuKetQua,
 } from "~/lib/tra-cuu-session";
-import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
-import { createShareToken } from "~/lib/share-token";
 
 function formatIsoDotShort(iso: string): string {
   const dt = new Date(`${iso}T12:00:00`);
@@ -88,7 +83,6 @@ function formatRangeRecap(start: string, end: string): string {
 export default function TraCuuKetQuaRoute() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile } = useProfile();
   const navState = location.state as ChonNgayKetQuaState | null;
   const [state, setState] = useState<ChonNgayKetQuaState | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -146,8 +140,8 @@ export default function TraCuuKetQuaRoute() {
 
       <div className="flex-1 overflow-auto px-6 pb-6 pt-3">
         <div
-          className="font-serif text-[12.5px] leading-snug"
-          style={{ color: CT.muted }}
+          className="font-serif text-[12.5px]"
+          style={{ color: CT.muted, lineHeight: 1.5 }}
         >
           Cho việc{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
@@ -192,99 +186,9 @@ export default function TraCuuKetQuaRoute() {
           </div>
         )}
 
-        {days[0] ? (
-          <TraCuuShareTopPick
-            day={days[0]}
-            intentLabel={state.intentLabel}
-            menh={profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? "—" : "—"}
-          />
-        ) : null}
-
         <TraCuuMethodologyCollapsible />
       </div>
     </div>
-  );
-}
-
-function formatShareDateLabel(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  if (!y || !m || !d) return iso;
-  return `${d}.${m}.${y}`;
-}
-
-function TraCuuShareTopPick({
-  day,
-  intentLabel,
-  menh,
-}: {
-  day: ResultDay;
-  intentLabel: string;
-  menh: string;
-}) {
-  const [busy, setBusy] = useState(false);
-
-  async function handleShare() {
-    if (busy) return;
-    setBusy(true);
-    const reasonShort =
-      day.reasons[0] ??
-      (day.truc !== "—" ? `${day.truc} · giờ tốt ${day.bestHour}` : "Ngày Hoàng Đạo, giờ tốt phù hợp");
-    const res = await createShareToken({
-      result_type: "day_pick",
-      payload: {
-        headline: `Ngày lành cho ${intentLabel}`,
-        summary: reasonShort,
-        event_label: intentLabel,
-        date_label: formatShareDateLabel(day.isoDate),
-        lunar_label: day.lunarLabel,
-        reason_short: reasonShort,
-        menh,
-        grade: day.grade,
-      },
-    });
-    setBusy(false);
-    if (!res.ok) {
-      toast.error(res.message);
-      return;
-    }
-    const shareUrl = `${window.location.origin}/x/${res.token}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: `Ngày lành — ${intentLabel}`,
-          text: reasonShort,
-          url: shareUrl,
-        });
-        return;
-      }
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Đã sao chép liên kết chia sẻ.");
-    } catch {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("Đã sao chép liên kết chia sẻ.");
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      disabled={busy}
-      onClick={() => void handleShare()}
-      className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 border px-4 py-3 disabled:opacity-60"
-      style={{
-        borderColor: CT.hairline,
-        background: "#fff",
-        color: CT.ink,
-        fontFamily: "var(--font-display-2)",
-        fontSize: 12,
-        fontWeight: 700,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-      }}
-    >
-      <Share2 size={14} aria-hidden />
-      {busy ? "Đang tạo thẻ…" : "Chia sẻ ngày đề xuất"}
-    </button>
   );
 }
 
@@ -308,8 +212,7 @@ function ResultRow({
   const why =
     day.reasons[0] ??
     (day.truc !== "—" ? `${day.truc} · giờ tốt ${day.bestHour}` : "Phù hợp với lá số của bạn");
-  const chi =
-    day.truc !== "—" ? day.truc : day.lunarLabel.split("·")[0]?.trim() ?? "—";
+  const metaChi = day.canChi !== "—" ? day.canChi : "—";
 
   return (
     <button
@@ -328,8 +231,13 @@ function ResultRow({
     >
       {isTop ? (
         <span
-          className="absolute right-3.5 top-2 font-[family-name:var(--font-mono)] text-[9px] font-extrabold uppercase tracking-[0.2em]"
-          style={{ color: CT.goldDeep, background: CT.gold, padding: "2px 6px" }}
+          className="absolute right-3.5 top-2 text-[9px] font-extrabold uppercase tracking-[0.2em]"
+          style={{
+            fontFamily: "var(--mono)",
+            color: CT.goldDeep,
+            background: CT.gold,
+            padding: "2px 6px",
+          }}
         >
           ★ ĐỀ XUẤT
         </span>
@@ -344,17 +252,20 @@ function ResultRow({
         >
           {formatIsoDotShort(day.isoDate).split(".")[0]}
         </div>
-        <div className="mt-0.5 font-serif text-[11px]" style={{ color: CT.muted }}>
+        <div className="mt-[3px] font-serif text-[11px]" style={{ color: CT.muted }}>
           Th {formatIsoDotShort(day.isoDate).split(".")[1]} · {weekdayShort(day.isoDate)}
         </div>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="mb-0.5 font-serif text-[11.5px]" style={{ color: CT.muted }}>
-          {chi} · {day.lunarLabel}
+        <div
+          className="mb-[3px] font-serif text-[11.5px]"
+          style={{ color: CT.muted }}
+        >
+          {metaChi} · {day.lunarLabel}
         </div>
         <div
-          className="font-serif text-[13px] italic leading-snug"
-          style={{ color: CT.ink2 }}
+          className="font-serif text-[13px] italic"
+          style={{ color: CT.ink2, lineHeight: 1.45 }}
         >
           {why}
         </div>

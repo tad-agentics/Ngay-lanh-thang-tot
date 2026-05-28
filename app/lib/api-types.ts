@@ -130,6 +130,8 @@ export interface ResultDay {
   isoDate: string;
   dateLabel: string;
   lunarLabel: string;
+  /** Can Chi ngày (meta row) — không nhầm với Trực. */
+  canChi: string;
   truc: string;
   bestHour: string;
   /** `gio_tot`-style slots từ API — ưu tiên khi format giờ tốt đọc được. */

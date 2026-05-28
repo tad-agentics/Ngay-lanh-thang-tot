@@ -54,11 +54,17 @@ describe("mapChonNgayPayloadToResultDays", () => {
         { date: "2026-01-01", score: 50, reason_vi: "Fallback row" },
       ],
       ranked_days: [
-        { date: "2026-06-06", score: 92, reason_vi: "Canonical ranked row" },
+        {
+          date: "2026-06-06",
+          score: 92,
+          can_chi_day: "Kỷ Tỵ",
+          reason_vi: "Canonical ranked row",
+        },
       ],
     });
     expect(rows).toHaveLength(1);
     expect(rows[0]?.isoDate).toBe("2026-06-06");
+    expect(rows[0]?.canChi).toBe("Kỷ Tỵ");
     expect(rows[0]?.reasons[0]).toContain("Canonical");
   });
 
