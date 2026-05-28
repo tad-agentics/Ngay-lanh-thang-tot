@@ -8,6 +8,12 @@ export type DayLuanSectionRow = {
   sourceRef: "[1]" | "[2]" | "[3]" | "[4]";
 };
 
+export type DayLuanSectionBundle = {
+  rows: DayLuanSectionRow[];
+  /** Legacy engine rows (Điểm cơ bản +50) — shown above Tổng điểm. */
+  baseScore: number | null;
+};
+
 export const DAY_LUAN_SOURCES: readonly [string, string][] = [
   ["[1]", "Hiệp Kỷ Biện Phương — Trực ngày"],
   ["[2]", "Ngọc Hạp Thông Thư — Thần sát"],
@@ -35,18 +41,49 @@ const CANONICAL_FACTORS: readonly {
 const BASE_SCORE_RE =
   /điểm cơ bản|base score|^neutral$|nền cố định ban đầu|mọi ngày bắt đầu/i;
 
-function formatScoreChip(points: number | null): string {
-  if (points == null || points === 0) return "";
+function formatScoreChip(points: number, showZero = false): string {
+  if (points === 0) return showZero ? "0" : "";
   return points > 0 ? `+${points}` : String(points);
+}
+
+function isBaseScoreRow(row: {
+  source: string;
+  type: string;
+  reasonVi: string;
+  id?: string;
+}): boolean {
+  if (row.id?.toLowerCase() === "base" || row.id?.toLowerCase() === "base_score") {
+    return true;
+  }
+  const hay = `${row.source} ${row.type} ${row.reasonVi}`.toLowerCase();
+  return BASE_SCORE_RE.test(hay) && !/trực|truc/.test(hay);
+}
+
+function extractBaseScore(detail: DayDetailViewModel): number | null {
+  let total = 0;
+  let found = false;
+  for (const row of detail.breakdown ?? []) {
+    if (!isBaseScoreRow(row)) continue;
+    total += row.points;
+    found = true;
+  }
+  return found ? total : null;
 }
 
 function bucketBreakdownRow(row: {
   source: string;
   type: string;
   reasonVi: string;
+  id?: string;
 }): FactorKey | null {
+  const id = row.id?.toLowerCase();
+  if (id === "truc") return "truc";
+  if (id === "sao28" || id === "sao_28") return "sao";
+  if (id === "can_chi_laso" || id === "can_chi") return "can_chi";
+  if (id === "gio_vang" || id === "gio") return "gio";
+
   const hay = `${row.source} ${row.type} ${row.reasonVi}`.toLowerCase();
-  if (BASE_SCORE_RE.test(hay) && !/trực|truc/.test(hay)) return null;
+  if (isBaseScoreRow(row)) return null;
   if (/trực|truc/.test(hay)) return "truc";
   if (/sao|28|tú|t\u00fa|thần|sat|star|hung|cat|thien|thiên|cương|cuong/.test(hay)) {
     return "sao";
@@ -72,12 +109,62 @@ function sumBreakdownPoints(
   };
 
   for (const row of detail.breakdown ?? []) {
+    if (isBaseScoreRow(row)) continue;
     const bucket = bucketBreakdownRow(row);
     if (!bucket) continue;
     sums[bucket] = (sums[bucket] ?? 0) + row.points;
   }
 
   return sums;
+}
+
+function resolveFactorPoints(
+  detail: DayDetailViewModel,
+  pointsByFactor: Record<FactorKey, number | null>,
+  baseScore: number | null,
+): Record<FactorKey, number> {
+  const resolved: Record<FactorKey, number> = {
+    truc: 0,
+    sao: 0,
+    can_chi: 0,
+    gio: 0,
+  };
+
+  const hasCanonicalFour = CANONICAL_FACTORS.every(
+    ({ key }) => pointsByFactor[key] != null,
+  );
+
+  if (hasCanonicalFour) {
+    for (const { key } of CANONICAL_FACTORS) {
+      resolved[key] = pointsByFactor[key]!;
+    }
+    return resolved;
+  }
+
+  if (baseScore != null) {
+    for (const { key } of CANONICAL_FACTORS) {
+      resolved[key] = pointsByFactor[key] ?? 0;
+    }
+    return resolved;
+  }
+
+  for (const { key } of CANONICAL_FACTORS) {
+    if (pointsByFactor[key] != null) {
+      resolved[key] = pointsByFactor[key]!;
+    }
+  }
+
+  const mappedSum = Object.values(resolved).reduce((a, b) => a + b, 0);
+  const total = detail.score;
+  if (
+    total != null &&
+    mappedSum !== total &&
+    CANONICAL_FACTORS.every(({ key }) => pointsByFactor[key] == null)
+  ) {
+    return resolved;
+  }
+
+  return resolved;
 }
 
 function pickCanChiBody(detail: DayDetailViewModel): string {
@@ -110,7 +197,8 @@ function pickGioBody(detail: DayDetailViewModel): string {
 function buildFactorRow(
   key: FactorKey,
   detail: DayDetailViewModel,
-  points: number | null,
+  points: number,
+  showZeroScores: boolean,
 ): DayLuanSectionRow {
   const meta = CANONICAL_FACTORS.find((f) => f.key === key)!;
 
@@ -127,7 +215,7 @@ function buildFactorRow(
         body:
           detail.trucDescription ||
           (detail.trucLine !== "—" ? detail.trucLine : "—"),
-        score: formatScoreChip(points),
+        score: formatScoreChip(points, showZeroScores),
       };
     }
     case "sao": {
@@ -151,7 +239,7 @@ function buildFactorRow(
         sourceRef: meta.sourceRef,
         verdict: starHead,
         body: bodyParts.join(" ").trim() || "—",
-        score: formatScoreChip(points),
+        score: formatScoreChip(points, showZeroScores),
       };
     }
     case "can_chi":
@@ -160,7 +248,7 @@ function buildFactorRow(
         sourceRef: meta.sourceRef,
         verdict: detail.canChi !== "—" ? detail.canChi : "—",
         body: pickCanChiBody(detail),
-        score: formatScoreChip(points),
+        score: formatScoreChip(points, showZeroScores),
       };
     case "gio":
       return {
@@ -168,21 +256,36 @@ function buildFactorRow(
         sourceRef: meta.sourceRef,
         verdict: detail.gioTot !== "—" ? detail.gioTot : "—",
         body: pickGioBody(detail),
-        score: formatScoreChip(points),
+        score: formatScoreChip(points, showZeroScores),
       };
   }
 }
 
 /** Always 4 canonical yếu tố — overlay API breakdown points when mappable. */
+export function buildDayLuanSectionBundle(
+  detail: DayDetailViewModel | null,
+): DayLuanSectionBundle {
+  if (!detail) return { rows: [], baseScore: null };
+
+  const baseScore = extractBaseScore(detail);
+  const pointsByFactor = sumBreakdownPoints(detail);
+  const resolved = resolveFactorPoints(detail, pointsByFactor, baseScore);
+  const hasCanonicalFour = CANONICAL_FACTORS.every(
+    ({ key }) => pointsByFactor[key] != null,
+  );
+  const showZeroScores = baseScore != null || hasCanonicalFour;
+
+  const rows = CANONICAL_FACTORS.map(({ key }) =>
+    buildFactorRow(key, detail, resolved[key], showZeroScores),
+  );
+
+  return { rows, baseScore };
+}
+
 export function buildDayLuanSectionRows(
   detail: DayDetailViewModel | null,
 ): DayLuanSectionRow[] {
-  if (!detail) return [];
-
-  const pointsByFactor = sumBreakdownPoints(detail);
-  return CANONICAL_FACTORS.map(({ key }) =>
-    buildFactorRow(key, detail, pointsByFactor[key]),
-  );
+  return buildDayLuanSectionBundle(detail).rows;
 }
 
 export function anchorQuestionForScore(

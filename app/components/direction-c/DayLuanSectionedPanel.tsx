@@ -9,6 +9,7 @@ import {
 type DayLuanSectionedPanelProps = {
   rows: DayLuanSectionRow[];
   totalScore: number | null;
+  baseScore?: number | null;
   iso?: string;
   canChi?: string;
   id?: string;
@@ -25,6 +26,7 @@ function scrollToSource(ref: string) {
 export function DayLuanSectionedPanel({
   rows,
   totalScore,
+  baseScore = null,
   iso,
   canChi = "—",
   id = "chi-tiet",
@@ -115,6 +117,26 @@ export function DayLuanSectionedPanel({
           </p>
         </div>
       ))}
+
+      {baseScore != null ? (
+        <div
+          className="mt-4 pt-3 flex items-baseline justify-between gap-2"
+          style={{ borderTop: `1px solid ${CT.hairline2}` }}
+        >
+          <Mono style={{ color: CT.muted, fontSize: 9 }}>Điểm nền</Mono>
+          <span
+            style={{
+              fontFamily: "var(--font-display-2)",
+              fontWeight: 700,
+              fontSize: 13,
+              color: CT.goldDeep,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            +{baseScore}
+          </span>
+        </div>
+      ) : null}
 
       {totalScore != null ? (
         <div

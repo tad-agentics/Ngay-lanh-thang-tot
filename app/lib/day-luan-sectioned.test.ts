@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { DayDetailViewModel } from "~/lib/day-detail-view";
 import {
   anchorQuestionForScore,
+  buildDayLuanSectionBundle,
   buildDayLuanSectionRows,
   formatDaySectionSubline,
 } from "~/lib/day-luan-sectioned";
@@ -54,10 +55,35 @@ describe("buildDayLuanSectionRows", () => {
   });
 
   it("maps hung-star penalty to sao factor, not base score row", () => {
-    const rows = buildDayLuanSectionRows(baseDetail);
-    expect(rows[0]?.score).toBe("");
+    const bundle = buildDayLuanSectionBundle(baseDetail);
+    const rows = bundle.rows;
+    expect(bundle.baseScore).toBe(50);
+    expect(rows[0]?.score).toBe("0");
     expect(rows[1]?.score).toBe("-15");
+    expect(rows[2]?.score).toBe("0");
+    expect(rows[3]?.score).toBe("0");
     expect(rows[1]?.verdict).toContain("Thiên Lao");
+  });
+
+  it("uses canonical four breakdown ids without base score row", () => {
+    const bundle = buildDayLuanSectionBundle({
+      ...baseDetail,
+      score: 76,
+      breakdown: [
+        { id: "truc", source: "Trực ngày", points: 24, reasonVi: "Trực Định", type: "Định" },
+        { id: "sao28", source: "Nhị thập bát tú", points: 20, reasonVi: "Thiên Đức", type: "Thiên Đức" },
+        {
+          id: "can_chi_laso",
+          source: "Can chi",
+          points: 18,
+          reasonVi: "Mậu Tuất",
+          type: "Mậu Tuất",
+        },
+        { id: "gio_vang", source: "Giờ vàng", points: 14, reasonVi: "Thìn", type: "Thìn" },
+      ],
+    });
+    expect(bundle.baseScore).toBeNull();
+    expect(bundle.rows.map((r) => r.score)).toEqual(["+24", "+20", "+18", "+14"]);
   });
 
   it("includes source refs for inline citations", () => {

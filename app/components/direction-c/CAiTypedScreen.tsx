@@ -13,7 +13,7 @@ import {
 } from "~/lib/day-luan-chat-quota";
 import {
   anchorQuestionForScore,
-  buildDayLuanSectionRows,
+  buildDayLuanSectionBundle,
   DAY_LUAN_SUGGESTED_CHIPS,
   formatDayIsoShort,
 } from "~/lib/day-luan-sectioned";
@@ -209,7 +209,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const dayShort = formatDayIsoShort(iso);
   const score = detail?.score ?? null;
   const anchorQuestion = anchorQuestionForScore(score, iso);
-  const sectionRows = buildDayLuanSectionRows(detail);
+  const sectionBundle = buildDayLuanSectionBundle(detail);
 
   const [anchorTypingDone, setAnchorTypingDone] = useState(false);
   const [followUps, setFollowUps] = useState<FollowUpTurn[]>([]);
@@ -429,7 +429,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
             {anchorDone ? (
               <DayLuanSectionedPanel
-                rows={sectionRows}
+                rows={sectionBundle.rows}
+                baseScore={sectionBundle.baseScore}
                 totalScore={detail?.score ?? null}
                 iso={iso}
                 canChi={detail?.canChi ?? "—"}

@@ -78,6 +78,8 @@ export interface DayDetailBreakdownRow {
   points: number;
   reasonVi: string;
   type: string;
+  /** tu-tru-api REQ-P0-02: truc | sao28 | can_chi_laso | gio_vang */
+  id?: string;
 }
 
 export type DayDetailPurposeVerdict = "nen_lam" | "khong_nen" | "trung_lap";
@@ -374,7 +376,8 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
         pickStr(o, ["reason_vi", "reasonVi", "reason", "note"]) || "—";
       const reasonVi = softenBreakdownReasonVi(reasonRaw);
       const type = pickStr(o, ["type", "kind"]) || "";
-      breakdown.push({ source, points: pts, reasonVi, type });
+      const id = pickStr(o, ["id"]) || undefined;
+      breakdown.push({ source, points: pts, reasonVi, type, id });
     }
   }
 
