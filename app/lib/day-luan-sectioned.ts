@@ -282,6 +282,10 @@ export function buildDayLuanSectionBundle(
   return { rows, baseScore };
 }
 
+export function formatLuanBaseScoreNote(baseScore: number): string {
+  return `Mọi ngày được chấm từ ${baseScore} điểm làm khởi điểm, rồi cộng hoặc trừ theo bốn yếu tố phía trên.`;
+}
+
 export function buildDayLuanSectionRows(
   detail: DayDetailViewModel | null,
 ): DayLuanSectionRow[] {

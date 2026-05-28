@@ -4,6 +4,7 @@ import type { DayLuanSectionRow } from "~/lib/day-luan-sectioned";
 import {
   DAY_LUAN_SOURCES,
   formatDaySectionSubline,
+  formatLuanBaseScoreNote,
 } from "~/lib/day-luan-sectioned";
 
 type DayLuanSectionedPanelProps = {
@@ -120,21 +121,32 @@ export function DayLuanSectionedPanel({
 
       {baseScore != null ? (
         <div
-          className="mt-4 pt-3 flex items-baseline justify-between gap-2"
+          className="mt-4 pt-3"
           style={{ borderTop: `1px solid ${CT.hairline2}` }}
         >
-          <Mono style={{ color: CT.muted, fontSize: 9 }}>Điểm nền</Mono>
-          <span
-            style={{
-              fontFamily: "var(--font-display-2)",
-              fontWeight: 700,
-              fontSize: 13,
-              color: CT.goldDeep,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            +{baseScore}
-          </span>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Mono style={{ color: CT.muted, fontSize: 9 }}>Điểm nền</Mono>
+              <p
+                className="mt-1 font-serif text-[12px] leading-snug"
+                style={{ color: CT.muted }}
+              >
+                {formatLuanBaseScoreNote(baseScore)}
+              </p>
+            </div>
+            <span
+              className="shrink-0"
+              style={{
+                fontFamily: "var(--font-display-2)",
+                fontWeight: 700,
+                fontSize: 13,
+                color: CT.goldDeep,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              +{baseScore}
+            </span>
+          </div>
         </div>
       ) : null}
 

@@ -6,6 +6,7 @@ import {
   buildDayLuanSectionBundle,
   buildDayLuanSectionRows,
   formatDaySectionSubline,
+  formatLuanBaseScoreNote,
 } from "~/lib/day-luan-sectioned";
 
 const baseDetail: DayDetailViewModel = {
@@ -89,6 +90,13 @@ describe("buildDayLuanSectionRows", () => {
   it("includes source refs for inline citations", () => {
     const rows = buildDayLuanSectionRows(baseDetail);
     expect(rows.map((r) => r.sourceRef)).toEqual(["[1]", "[2]", "[3]", "[4]"]);
+  });
+});
+
+describe("formatLuanBaseScoreNote", () => {
+  it("names the starting score in plain Vietnamese", () => {
+    expect(formatLuanBaseScoreNote(50)).toContain("50 điểm");
+    expect(formatLuanBaseScoreNote(50)).toContain("bốn yếu tố");
   });
 });
 
