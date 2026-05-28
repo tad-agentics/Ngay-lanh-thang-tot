@@ -90,3 +90,8 @@ export function addDaysIso(startIso: string, addDays: number): string | null {
   const day = String(t.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+/** UTC-safe ISO day shift — used for prev/next day nav on lịch-tờ. */
+export function addDaysToIso(iso: string, delta: number): string {
+  return addDaysIso(iso, delta) ?? iso;
+}

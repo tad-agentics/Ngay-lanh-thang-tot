@@ -12,7 +12,7 @@ import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useTodayLichData } from "~/hooks/useTodayLichData";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
-import { addDaysToIso } from "~/hooks/useStreak";
+import { addDaysToIso } from "~/lib/tu-tru-dates";
 
 export function CHomeScreen() {
   const navigate = useNavigate();

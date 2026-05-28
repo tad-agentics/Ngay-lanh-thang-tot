@@ -4,7 +4,7 @@ import { Link, useParams } from "react-router";
 import { Kanji, Mono, Ticket } from "~/components/brand";
 import { fetchShareResolve } from "~/lib/share-token";
 
-/** Public share resolve — forest ceremonial + Ticket phiếu (align with ShareCardCanvas). */
+/** Public share resolve — forest ceremonial + Ticket phiếu. */
 export default function PublicShareCardPage() {
   const { token } = useParams();
   const [err, setErr] = useState<string | null>(null);

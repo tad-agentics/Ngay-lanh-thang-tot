@@ -20,7 +20,7 @@ interface BackBarProps {
   dark?: boolean;
   /** Accent color override. */
   accent?: string;
-  /** Right-side slot — e.g. CreditsHeaderChip. */
+  /** Right-side slot — e.g. actions or badges. */
   endAdornment?: ReactNode;
 }
 

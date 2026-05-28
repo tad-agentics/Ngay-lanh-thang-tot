@@ -1,7 +1,7 @@
 /**
  * G3 — Expire stale pending PayOS orders (daily cron).
  * Schedule: 0 17 * * * UTC (~00:00 ICT next day) or via Dashboard Cron.
- * Auth: Authorization: Bearer CRON_SECRET (same as cron-push-habit).
+ * Auth: Authorization: Bearer CRON_SECRET.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";

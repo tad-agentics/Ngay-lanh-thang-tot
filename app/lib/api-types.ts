@@ -17,7 +17,6 @@ export interface Profile {
   subscription_expires_at: string | null;
   birth_data_locked_at: string | null;
   onboarding_completed_at: string | null;
-  push_enabled: boolean;
   created_at: string;
   updated_at: string;
 }

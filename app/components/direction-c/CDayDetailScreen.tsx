@@ -21,7 +21,7 @@ import { CT } from "~/lib/c-tokens";
 import { mastheadFromIso, weekdayFromIso } from "~/lib/lich-format";
 import { verdictLabelFromScore } from "~/lib/c-score";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
-import { addDaysToIso } from "~/hooks/useStreak";
+import { addDaysToIso } from "~/lib/tu-tru-dates";
 
 export function CDayDetailScreen() {
   const { ngay } = useParams();

@@ -1,6 +1,6 @@
 import { Navigate } from "react-router";
 
-/** Legacy route — CPickLoading is overlay on `/tra-cuu` (G10). */
-export default function TraCuuDangTimRoute() {
+/** Dropped in Direction C — overlay lives on `/tra-cuu` (G10). */
+export default function TraCuuDangTimRedirect() {
   return <Navigate to="/tra-cuu" replace />;
 }
