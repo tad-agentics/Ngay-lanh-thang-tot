@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "~/lib/auth";
 import { invokeGenerateReading } from "~/lib/generate-reading";
+import { shortenInlineReading } from "~/lib/inline-reading-text";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import {
   readTodayAiReadingSession,
@@ -54,17 +55,22 @@ export function useInlineDayReading({
 
       const cached = readTodayAiReadingSession(user.id, iso);
       if (cached) {
-        setText(cached);
+        setText(shortenInlineReading(cached));
         setLoading(false);
         return;
       }
 
       setLoading(true);
-      const r = await invokeGenerateReading({ endpoint, data: batTuPayload });
+      const r = await invokeGenerateReading({
+        endpoint,
+        data: batTuPayload,
+        variant: "inline",
+      });
       if (cancelled) return;
       if (r.reading) {
-        setText(r.reading);
-        writeTodayAiReadingSession(user.id, iso, r.reading);
+        const teaser = shortenInlineReading(r.reading);
+        setText(teaser);
+        writeTodayAiReadingSession(user.id, iso, teaser);
       } else {
         setText(null);
       }

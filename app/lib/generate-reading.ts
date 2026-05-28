@@ -14,6 +14,8 @@ export type GenerateReadingInput = {
   data: unknown;
   /** Optional follow-up question for day-detail anchor extensions. */
   question?: string;
+  /** Teaser on lịch tờ — short prompt for day-detail (full luận omits this). */
+  variant?: "inline";
 };
 
 export type GenerateReadingResponse = {

@@ -142,7 +142,7 @@ export function CDayDetailScreen() {
       {!online ? <COfflineBanner /> : null}
       <BackBar title={monthNum ? `Lịch tháng ${monthNum}` : "Chi tiết ngày"} />
 
-      <div className="flex-1 overflow-y-auto px-[22px] pb-[100px] pt-[18px]">
+      <div className="flex-1 overflow-y-auto px-[22px] pb-[100px] pt-1">
         {error ? <ErrorBanner message={error} /> : null}
         {loading ? (
           <p className="py-12 text-center font-serif text-sm" style={{ color: CT.muted }}>

@@ -253,6 +253,28 @@ const DAY_DETAIL_FOLLOW_UP_SYSTEM = `Bạn là chuyên gia phong thủy Việt N
 - Nếu câu hỏi ngoài phạm vi ngày/lá số: trả lời một câu từ chối lịch sự, gợi ý hỏi lại về ngày này.
 `;
 
+/** Teaser trên lịch tờ (Hôm nay + chi tiết ngày inline) — khớp maket CTodayReasoning. */
+const INLINE_LICH_TO_SYSTEM = `Bạn viết luận giải **rất ngắn** hiển thị trên thẻ lịch tờ (không phải bài luận dài).
+
+## ĐẦU VÀO / ĐẦU RA
+- JSON có "endpoint" và "data" (ngày đã tính + lá số khi có).
+- Một đoạn văn xuôi tiếng Việt duy nhất.
+
+## ĐỘ DÀI (bắt buộc)
+- **2–3 câu**, tổng **tối đa 220 ký tự** (khoảng 40–70 từ).
+- Luôn kết thúc bằng câu trọn vẹn có dấu chấm.
+
+## NỘI DUNG
+- Câu 1: nhịp chính của ngày (thuận / cần thận trọng) — có thể nhắc nhẹ trực hoặc sao nếu data có.
+- Câu 2: một gợi ý việc nên ưu tiên hoặc nên tránh (một ý, không liệt kê dài).
+- Câu 3 (tùy): **một** khung giờ tốt (vd. giờ Mùi) hoặc nhắc thời điểm trong ngày — không liệt kê cả danh sách giờ.
+
+## TUYỆT ĐỐI KHÔNG
+- KHÔNG viết dài hơn 3 câu; chi tiết đầy đủ người dùng xem qua "Hỏi tiếp".
+- KHÔNG markdown, emoji, tiếng Anh, phán tuyệt đối.
+- KHÔNG lặp bảng giờ tốt/xấu hay danh sách việc như lịch vạn sự.
+`;
+
 /** Bump khi đổi follow-up prompt. */
 const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-27-v1";
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
@@ -267,6 +289,8 @@ const CHON_NGAY_PROMPT_VER = "2026-05-10-gemini";
 const CHON_NGAY_CARDS_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi cấu hình output cho day-detail (max token / format). */
 const DAY_DETAIL_PROMPT_VER = "2026-05-10-gemini";
+/** Bump khi đổi INLINE_LICH_TO_SYSTEM — lịch tờ teaser. */
+const INLINE_LICH_TO_PROMPT_VER = "2026-05-28-v1";
 /** Version chung — bump khi đổi nhà cung cấp LLM hoặc model mặc định. Áp vào mọi cache key để vô hiệu hoá bản cũ. */
 const GLOBAL_LLM_VER = "2026-05-10-gemini-ar07";
 
@@ -305,6 +329,7 @@ const TIEU_VAN_LUU_NIEN_JSON_TIMEOUT_MS = 55_000;
 const LA_SO_CHI_TIET_TIMEOUT_MS = 45_000;
 
 const READING_MAX_TOKENS_DEFAULT = 512;
+const READING_MAX_TOKENS_INLINE_LICH_TO = 220;
 const READING_MAX_TOKENS_HOP_TUOI = 1_536;
 const READING_MAX_TOKENS_CHON_NGAY = 1_024;
 const READING_MAX_TOKENS_CHON_NGAY_CARDS = 2_048;
@@ -1030,6 +1055,8 @@ Deno.serve(async (req) => {
   const data = body.data;
   const question =
     typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
+  const variant =
+    body.variant === "inline" ? "inline" : "";
 
   if (!endpoint || data === undefined) {
     return ok(null, null);
@@ -1109,19 +1136,27 @@ Deno.serve(async (req) => {
           : endpoint === "day-detail"
             ? question
               ? DAY_DETAIL_FOLLOW_UP_VER
-              : DAY_DETAIL_PROMPT_VER
+              : variant === "inline"
+                ? INLINE_LICH_TO_PROMPT_VER
+                : DAY_DETAIL_PROMPT_VER
             : endpoint === "chon-ngay"
               ? CHON_NGAY_PROMPT_VER
               : endpoint === "chon-ngay-cards"
                 ? CHON_NGAY_CARDS_PROMPT_VER
-                : "";
+                : endpoint === "ngay-hom-nay"
+                  ? INLINE_LICH_TO_PROMPT_VER
+                  : "";
   // GLOBAL_LLM_VER ép invalidate mọi cache cũ khi đổi nhà cung cấp LLM, kể
   // cả endpoint chưa có per-endpoint version (ví dụ ngay-hom-nay).
-  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${question}\n${dataJson}`;
+  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify(
-    question ? { endpoint, data, question } : { endpoint, data },
+    question
+      ? { endpoint, data, question }
+      : variant
+        ? { endpoint, data, variant }
+        : { endpoint, data },
   );
   if (payload.length > MAX_BODY_CHARS) {
     return ok(null, null);
@@ -1381,6 +1416,12 @@ Deno.serve(async (req) => {
           READING_MAX_TOKENS_HOP_TUOI,
           HOP_TUOI_REQUEST_TIMEOUT_MS,
         )
+      : endpoint === "ngay-hom-nay"
+        ? await geminiCompletion(
+            INLINE_LICH_TO_SYSTEM,
+            payload,
+            READING_MAX_TOKENS_INLINE_LICH_TO,
+          )
       : endpoint === "day-detail"
         ? question
           ? await geminiCompletion(
@@ -1389,12 +1430,19 @@ Deno.serve(async (req) => {
               220,
               DAY_DETAIL_REQUEST_TIMEOUT_MS,
             )
-          : await geminiCompletion(
-              DAY_DETAIL_SYSTEM,
-              payload,
-              READING_MAX_TOKENS_DAY_DETAIL,
-              DAY_DETAIL_REQUEST_TIMEOUT_MS,
-            )
+          : variant === "inline"
+            ? await geminiCompletion(
+                INLINE_LICH_TO_SYSTEM,
+                payload,
+                READING_MAX_TOKENS_INLINE_LICH_TO,
+                DAY_DETAIL_REQUEST_TIMEOUT_MS,
+              )
+            : await geminiCompletion(
+                DAY_DETAIL_SYSTEM,
+                payload,
+                READING_MAX_TOKENS_DAY_DETAIL,
+                DAY_DETAIL_REQUEST_TIMEOUT_MS,
+              )
       : await geminiReading(payload);
   if (!reading) {
     return ok(null, null);
