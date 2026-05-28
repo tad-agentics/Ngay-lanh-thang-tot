@@ -2,11 +2,13 @@ import { Link, useNavigate } from "react-router";
 
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
+import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useTodayLichData } from "~/hooks/useTodayLichData";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
@@ -14,14 +16,26 @@ import { addDaysToIso } from "~/hooks/useStreak";
 
 export function CHomeScreen() {
   const navigate = useNavigate();
-  const { loading, error, today, menh, canBatTu, rawPayload, online, todayIso } =
-    useTodayLichData();
+  const { pending: recomputePending } = useLaSoRecomputeGate();
+  const {
+    loading,
+    error,
+    today,
+    menh,
+    canBatTu,
+    rawPayload,
+    online,
+    todayIso,
+    recomputePending: recomputePendingFromData,
+  } = useTodayLichData();
+
+  const showRecomputeSkeleton = recomputePending || recomputePendingFromData;
 
   const { text: readingText, loading: readingLoading } = useInlineDayReading({
     iso: todayIso,
     endpoint: "ngay-hom-nay",
     batTuPayload: rawPayload,
-    enabled: Boolean(today && rawPayload && online),
+    enabled: Boolean(today && rawPayload && online && !showRecomputeSkeleton),
   });
 
   const prevIso = addDaysToIso(todayIso, -1);
@@ -51,7 +65,7 @@ export function CHomeScreen() {
           </p>
         ) : null}
 
-        {loading ? (
+        {loading && !showRecomputeSkeleton ? (
           <p
             className="py-12 text-center font-serif text-sm"
             style={{ color: CT.muted }}
@@ -60,7 +74,9 @@ export function CHomeScreen() {
           </p>
         ) : null}
 
-        {today ? (
+        {showRecomputeSkeleton ? <CLichRecomputeSkeleton variant="page" /> : null}
+
+        {today && !showRecomputeSkeleton ? (
           <LichToPageCard
             {...ngayHomNayToLichCard(today, menh, todayIso)}
             quote={today.homeSummaryLine}

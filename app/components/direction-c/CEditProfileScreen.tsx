@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
+import { CConfirmDialog } from "~/components/direction-c/CConfirmDialog";
 import {
   Select,
   SelectContent,
@@ -10,29 +11,62 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useProfile } from "~/hooks/useProfile";
+import { useSavedPicks } from "~/hooks/useSavedPicks";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   ddMmYyyyInputToBatTuBirthDate,
+  ddMmYyyyInputToIsoDate,
   formatDdMmYyyyWithAutoSlash,
   gioiTinhToBatTuGender,
   gioSinhToBatTuBirthTime,
   isoYmdToDdMmYyyyInput,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import {
+  birthEditLimitReached,
+  birthEditsRemaining,
+} from "~/lib/birth-edit-limit";
 import { CT } from "~/lib/c-tokens";
+import { downloadUserDataJson } from "~/lib/export-user-data";
+import { clearUserReadingSessionCaches } from "~/lib/la-so-recompute-invalidate";
+import type { Profile } from "~/lib/profile-context";
 import { supabase } from "~/lib/supabase";
 
 const UNSET = "__unset__";
 
+const DELETE_ACCOUNT_EMAIL =
+  "mailto:privacy@ngaylanhthangtot.vn?subject=Y%C3%AAu%20c%E1%BA%A7u%20xo%C3%A1%20t%C3%A0i%20kho%E1%BA%A3n";
+
+function birthDataChanged(
+  profile: Profile,
+  ngaySinh: string,
+  birthTimeCode: string,
+  gioiTinh: "" | "nam" | "nu",
+): boolean {
+  const iso = ddMmYyyyInputToIsoDate(ngaySinh.trim());
+  const profileIso = profile.ngay_sinh?.slice(0, 10) ?? null;
+  if (iso !== profileIso) return true;
+  if (gioiTinh !== (profile.gioi_tinh ?? "")) return true;
+
+  const profileCode = gioSinhToBatTuBirthTime(profile.gio_sinh);
+  const nextCode =
+    birthTimeCode === UNSET ? undefined : Number.parseInt(birthTimeCode, 10);
+  return profileCode !== nextCode;
+}
+
 export function CEditProfileScreen() {
   const navigate = useNavigate();
   const { profile, loading, reload } = useProfile();
+  const { picks } = useSavedPicks();
   const [displayName, setDisplayName] = useState("");
   const [ngaySinh, setNgaySinh] = useState("");
   const [birthTimeCode, setBirthTimeCode] = useState(UNSET);
   const [gioiTinh, setGioiTinh] = useState<"" | "nam" | "nu">("");
   const [saving, setSaving] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!profile || loading) return;
@@ -43,33 +77,60 @@ export function CEditProfileScreen() {
     setGioiTinh(profile.gioi_tinh ?? "");
   }, [profile, loading]);
 
+  const { pending: recomputePending, failed: recomputeFailed } =
+    useLaSoRecomputeGate({
+      onReady: () => {
+        toast.success("Lá số đã chấm lại xong.");
+      },
+      onFailed: () => {
+        toast.error("Chấm lại lá số thất bại — thử lưu lại hoặc liên hệ hỗ trợ.");
+      },
+    });
+
+  const editsLeft = useMemo(
+    () => (profile ? birthEditsRemaining(profile) : 2),
+    [profile],
+  );
+  const atBirthLimit = profile ? birthEditLimitReached(profile) : false;
+
   async function handleSave() {
     if (!profile) return;
-    const birth_date = ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim());
-    if (!birth_date) {
-      toast.error("Ngày sinh cần đúng DD/MM/YYYY.");
+    const nameTrim = displayName.trim();
+    const nameChanged = nameTrim !== (profile.display_name ?? "").trim();
+    const birthChanged = birthDataChanged(
+      profile,
+      ngaySinh,
+      birthTimeCode,
+      gioiTinh,
+    );
+
+    if (!nameChanged && !birthChanged) {
+      toast.message("Không có thay đổi.");
       return;
     }
-    if (!gioiTinh) {
-      toast.error("Chọn giới tính.");
-      return;
+
+    if (birthChanged) {
+      if (atBirthLimit) {
+        toast.error("Liên hệ hỗ trợ nếu cần sửa thêm.");
+        return;
+      }
+      const birth_date = ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim());
+      if (!birth_date) {
+        toast.error("Ngày sinh cần đúng DD/MM/YYYY.");
+        return;
+      }
+      if (!gioiTinh) {
+        toast.error("Chọn giới tính.");
+        return;
+      }
     }
 
     setSaving(true);
-    const body: Record<string, unknown> = {
-      birth_date,
-      gender: gioiTinhToBatTuGender(gioiTinh),
-      tz: "Asia/Ho_Chi_Minh",
-    };
-    if (birthTimeCode !== UNSET) {
-      body.birth_time = Number(birthTimeCode);
-    }
 
-    const nameTrim = displayName.trim();
-    if (nameTrim && nameTrim !== (profile.display_name ?? "")) {
+    if (nameChanged) {
       const { error } = await supabase
         .from("profiles")
-        .update({ display_name: nameTrim })
+        .update({ display_name: nameTrim || null })
         .eq("id", profile.id);
       if (error) {
         setSaving(false);
@@ -78,16 +139,60 @@ export function CEditProfileScreen() {
       }
     }
 
-    const res = await invokeBatTu<unknown>({ op: "recompute-la-so", body });
-    setSaving(false);
-    if (!res.ok) {
-      toast.error(res.message ?? "Không cập nhật lá số được.");
-      return;
+    if (birthChanged) {
+      const body: Record<string, unknown> = {
+        birth_date: ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim()),
+        gender: gioiTinhToBatTuGender(gioiTinh as "nam" | "nu"),
+        tz: "Asia/Ho_Chi_Minh",
+      };
+      if (birthTimeCode !== UNSET) {
+        body.birth_time = Number(birthTimeCode);
+      }
+
+      const res = await invokeBatTu<unknown>({ op: "recompute-la-so", body });
+      if (!res.ok) {
+        setSaving(false);
+        if (res.code === "BIRTH_EDIT_LIMIT") {
+          toast.error("Liên hệ hỗ trợ nếu cần sửa thêm.");
+        } else {
+          toast.error(res.message ?? "Không cập nhật lá số được.");
+        }
+        if (nameChanged) {
+          await reload();
+          window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+        }
+        return;
+      }
+      clearUserReadingSessionCaches(profile.id);
     }
+
+    setSaving(false);
     await reload();
     window.dispatchEvent(new Event("ngaytot:profile-refresh"));
-    toast.success("Đã cập nhật hồ sơ và chấm lại lá số.");
+    toast.success(
+      birthChanged
+        ? "Đã cập nhật hồ sơ — đang chấm lại lá số."
+        : "Đã cập nhật tên hiển thị.",
+    );
     navigate("/toi", { replace: true });
+  }
+
+  function handleExportData() {
+    if (!profile || exporting) return;
+    setExporting(true);
+    try {
+      downloadUserDataJson(profile, picks);
+      toast.success("Đã tải file JSON.");
+    } catch {
+      toast.error("Không tải được dữ liệu.");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  function confirmDeleteAccount() {
+    setDeleteOpen(false);
+    window.location.href = DELETE_ACCOUNT_EMAIL;
   }
 
   if (loading || !profile) {
@@ -108,9 +213,9 @@ export function CEditProfileScreen() {
         endAdornment={
           <button
             type="button"
-            disabled={saving}
+            disabled={saving || recomputePending}
             onClick={() => void handleSave()}
-            className="cursor-pointer border-none bg-transparent p-0 font-serif text-[12.5px]"
+            className="cursor-pointer border-none bg-transparent p-0 font-serif text-[12.5px] disabled:opacity-50"
             style={{ color: CT.goldDeep }}
           >
             {saving ? "Đang lưu…" : "Lưu"}
@@ -122,6 +227,9 @@ export function CEditProfileScreen() {
         <p className="m-0 text-[13px] leading-snug" style={{ color: CT.muted }}>
           Sửa lá số sẽ chấm lại tất cả ngày trong lịch của bạn. Cẩn thận với giờ sinh — sai
           một canh, sai cả luận đoán.
+        </p>
+        <p className="mt-2 text-[12px]" style={{ color: CT.ink2 }}>
+          Còn {editsLeft} lần sửa ngày/giờ sinh trong 30 ngày.
         </p>
 
         <div className="mt-5 flex flex-col gap-[18px]">
@@ -191,7 +299,8 @@ export function CEditProfileScreen() {
               onChange={(e) =>
                 setNgaySinh(formatDdMmYyyyWithAutoSlash(e.target.value))
               }
-              className="mt-1 w-full border-0 border-b bg-transparent pb-1.5 pt-1 font-[family-name:var(--font-display-2)] text-[17px] font-semibold tracking-[-0.005em] outline-none"
+              disabled={atBirthLimit}
+              className="mt-1 w-full border-0 border-b bg-transparent pb-1.5 pt-1 font-[family-name:var(--font-display-2)] text-[17px] font-semibold tracking-[-0.005em] outline-none disabled:opacity-60"
               style={{ borderColor: CT.goldDeep, color: CT.ink }}
             />
           </label>
@@ -200,9 +309,13 @@ export function CEditProfileScreen() {
             <span className="text-[11.5px]" style={{ color: CT.muted }}>
               Giờ sinh — 12 canh
             </span>
-            <Select value={birthTimeCode} onValueChange={setBirthTimeCode}>
+            <Select
+              value={birthTimeCode}
+              onValueChange={setBirthTimeCode}
+              disabled={atBirthLimit}
+            >
               <SelectTrigger
-                className="mt-1 h-auto border-0 border-b bg-transparent px-0 pb-1.5 shadow-none"
+                className="mt-1 h-auto border-0 border-b bg-transparent px-0 pb-1.5 shadow-none disabled:opacity-60"
                 style={{ borderColor: CT.hairline }}
               >
                 <SelectValue placeholder="Chọn canh giờ" />
@@ -219,9 +332,20 @@ export function CEditProfileScreen() {
           </div>
         </div>
 
-        {profile.la_so_recompute_status === "pending" ? (
+        {atBirthLimit ? (
+          <p className="mt-4 text-sm" style={{ color: CT.red }}>
+            Liên hệ hỗ trợ nếu cần sửa thêm.
+          </p>
+        ) : null}
+
+        {recomputePending ? (
           <p className="mt-6 text-sm" style={{ color: CT.goldDeep }}>
             Đang chấm lại lá số…
+          </p>
+        ) : null}
+        {recomputeFailed ? (
+          <p className="mt-6 text-sm" style={{ color: CT.red }}>
+            Lần chấm lại gần nhất thất bại — thử lưu lại.
           </p>
         ) : null}
 
@@ -232,25 +356,81 @@ export function CEditProfileScreen() {
           <Mono className="text-[9px]" style={{ color: CT.red }}>
             Vùng nhạy cảm
           </Mono>
-          <Link
-            to="/toi/cai-dat"
-            className="mt-3 flex items-center justify-between no-underline"
-          >
-            <div>
-              <div
-                className="font-[family-name:var(--font-display-2)] text-[13.5px] font-semibold tracking-[-0.005em]"
-                style={{ color: CT.ink }}
-              >
-                Cài đặt & quyền riêng tư
+          <div className="mt-3 flex flex-col gap-3">
+            <button
+              type="button"
+              disabled={exporting}
+              onClick={() => handleExportData()}
+              className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent p-0 text-left disabled:opacity-60"
+            >
+              <div>
+                <div
+                  className="font-[family-name:var(--font-display-2)] text-[13.5px] font-semibold tracking-[-0.005em]"
+                  style={{ color: CT.ink }}
+                >
+                  Tải xuống dữ liệu
+                </div>
+                <div className="mt-0.5 text-[11.5px]" style={{ color: CT.muted }}>
+                  Lá số + sổ ngày — file JSON
+                </div>
               </div>
-              <div className="mt-0.5 text-[11.5px]" style={{ color: CT.muted }}>
-                Thông báo, PWA, xoá tài khoản
+              <span style={{ color: CT.goldDeep }}>›</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="flex w-full cursor-pointer items-center justify-between border-none bg-transparent p-0 text-left"
+            >
+              <div>
+                <div
+                  className="font-[family-name:var(--font-display-2)] text-[13.5px] font-semibold tracking-[-0.005em]"
+                  style={{ color: CT.red }}
+                >
+                  Xoá tài khoản
+                </div>
+                <div className="mt-0.5 text-[11.5px]" style={{ color: CT.muted }}>
+                  Không khôi phục được
+                </div>
               </div>
-            </div>
-            <span style={{ color: CT.goldDeep }}>›</span>
-          </Link>
+              <span style={{ color: CT.red }}>›</span>
+            </button>
+
+            <Link
+              to="/toi/cai-dat"
+              className="flex items-center justify-between no-underline"
+            >
+              <div>
+                <div
+                  className="font-[family-name:var(--font-display-2)] text-[13.5px] font-semibold tracking-[-0.005em]"
+                  style={{ color: CT.ink }}
+                >
+                  Cài đặt & quyền riêng tư
+                </div>
+                <div className="mt-0.5 text-[11.5px]" style={{ color: CT.muted }}>
+                  Thông báo, PWA, đăng xuất
+                </div>
+              </div>
+              <span style={{ color: CT.goldDeep }}>›</span>
+            </Link>
+          </div>
         </div>
       </div>
+
+      <CConfirmDialog
+        open={deleteOpen}
+        title={
+          <>
+            Xoá tài khoản
+            <br />
+            vĩnh viễn?
+          </>
+        }
+        description="Chúng tôi sẽ xử lý yêu cầu qua email trong thời hạn luật định. Hành động này không khôi phục được."
+        confirmLabel="Gửi yêu cầu"
+        onConfirm={confirmDeleteAccount}
+        onCancel={() => setDeleteOpen(false)}
+      />
     </div>
   );
 }

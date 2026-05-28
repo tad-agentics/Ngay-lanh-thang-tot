@@ -48,6 +48,14 @@ export function useTodayLichData() {
       return;
     }
 
+    if (profile.la_so_recompute_status === "pending") {
+      setLoading(true);
+      setToday(null);
+      setRawPayload(null);
+      setError(null);
+      return;
+    }
+
     if (!online) {
       const cached = readCached();
       setToday(cached);
@@ -95,6 +103,8 @@ export function useTodayLichData() {
     todayIso,
   ]);
 
+  const recomputePending = profile?.la_so_recompute_status === "pending";
+
   return {
     profile,
     profileLoading,
@@ -107,5 +117,6 @@ export function useTodayLichData() {
     canBatTu,
     online,
     todayIso,
+    recomputePending,
   };
 }

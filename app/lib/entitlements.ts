@@ -80,3 +80,30 @@ export function subscriptionStatusLine(
   if (!exp) return null;
   return `Lịch của bạn dùng đến ${exp}`;
 }
+
+/** Whole days until subscription_expires_at (ICT calendar day diff). Null if inactive. */
+export function subscriptionDaysUntil(
+  expires: string | null | undefined,
+): number | null {
+  if (!expires || !subscriptionActive(expires)) return null;
+  const end = new Date(expires);
+  const now = new Date();
+  end.setHours(12, 0, 0, 0);
+  now.setHours(12, 0, 0, 0);
+  return Math.max(0, Math.ceil((end.getTime() - now.getTime()) / 86_400_000));
+}
+
+/** G2 — amber urgency on Tab Tôi / lịch when ≤7 days remain. */
+export function subscriptionExpiryUrgent(
+  expires: string | null | undefined,
+): boolean {
+  const days = subscriptionDaysUntil(expires);
+  return days != null && days <= 7;
+}
+
+export function hasYearlySubscription(
+  profile: EntitlementProfile | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return hasYearlySub(profile);
+}

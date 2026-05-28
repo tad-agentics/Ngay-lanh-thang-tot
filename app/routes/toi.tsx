@@ -3,14 +3,19 @@ import { Link, useNavigate } from "react-router";
 import { Mono } from "~/components/brand";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
-import { scoreDotColor } from "~/lib/c-score";
-import { CT } from "~/lib/c-tokens";
-import { subscriptionActive } from "~/lib/entitlements";
-import { laSoJsonToChiTiet, laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { useSubscription } from "~/hooks/useSubscription";
+import { scoreDotColor } from "~/lib/c-score";
+import { CT } from "~/lib/c-tokens";
+import {
+  hasYearlySubscription,
+  subscriptionActive,
+  subscriptionExpiryUrgent,
+} from "~/lib/entitlements";
+import { laSoJsonToChiTiet, laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 
 const PILLAR_LABELS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
 
@@ -69,6 +74,10 @@ export default function ToiRoute() {
     useEntitlements();
   const { picks, loading: picksLoading } = useSavedPicks();
 
+  const expiryUrgent = subscriptionExpiryUrgent(expiresAt);
+  const yearlySub = hasYearlySubscription(profile);
+  const { pending: recomputePending } = useLaSoRecomputeGate();
+
   const displayName = profile?.display_name ?? "—";
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
   const chiTiet = profile
@@ -116,32 +125,71 @@ export default function ToiRoute() {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <div className="flex-1 overflow-auto px-6 pb-24 pt-5">
-        <div>
-          <div
-            className="font-[family-name:var(--font-display)] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
-            style={{ color: CT.ink }}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div
+              className="font-[family-name:var(--font-display)] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+              style={{ color: CT.ink }}
+            >
+              {displayName}
+            </div>
+            <div className="mt-1 font-serif text-[12.5px]" style={{ color: CT.muted }}>
+              {[ageLabel, laso?.menh ? `mệnh ${laso.menh}` : null]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
+          </div>
+          <Link
+            to="/toi/sua-ho-so"
+            className="shrink-0 border px-2.5 py-1 font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.1em] no-underline"
+            style={{
+              color: CT.goldDeep,
+              borderColor: "rgba(154,124,34,0.4)",
+            }}
           >
-            {displayName}
-          </div>
-          <div className="mt-1 font-serif text-[12.5px]" style={{ color: CT.muted }}>
-            {[ageLabel, laso?.menh ? `mệnh ${laso.menh}` : null]
-              .filter(Boolean)
-              .join(" · ")}
-          </div>
+            Sửa
+          </Link>
         </div>
+
+        {recomputePending ? (
+          <div
+            className="mt-4 border-l-[3px] px-3 py-2.5 font-serif text-[12.5px] leading-snug"
+            style={{
+              borderColor: CT.goldDeep,
+              background: "rgba(154,124,34,0.08)",
+              color: CT.ink2,
+            }}
+          >
+            Đang chấm lại lá số — lịch có thể cập nhật trong giây lát.
+          </div>
+        ) : null}
 
         <div
           className="mt-7 px-4 py-3.5"
-          style={{ background: CT.forest, color: CT.cream }}
+          style={{
+            background: expiryUrgent ? "rgba(154,124,34,0.12)" : CT.forest,
+            color: expiryUrgent ? CT.ink : CT.cream,
+            border: expiryUrgent ? `1px solid ${CT.goldDeep}` : "none",
+          }}
         >
           <div className="flex items-baseline justify-between">
-            <Mono style={{ color: CT.gold, fontSize: 9, letterSpacing: "0.18em" }}>
+            <Mono
+              style={{
+                color: expiryUrgent ? CT.goldDeep : CT.gold,
+                fontSize: 9,
+                letterSpacing: "0.18em",
+              }}
+            >
               Lịch của tôi · {subscriptionPlanLabel(expiresAt)}
             </Mono>
             {daysLeft != null ? (
               <span
                 className="font-serif text-[11px]"
-                style={{ color: "rgba(237,231,211,0.6)" }}
+                style={{
+                  color: expiryUrgent
+                    ? CT.goldDeep
+                    : "rgba(237,231,211,0.6)",
+                }}
               >
                 còn {daysLeft} ngày
               </span>
@@ -149,9 +197,12 @@ export default function ToiRoute() {
           </div>
           <div
             className="mt-2 font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            style={{ color: expiryUrgent ? CT.ink : undefined }}
           >
             {isActive && expiryFormatted
-              ? `Dùng đến ${expiryFormatted}`
+              ? expiryUrgent
+                ? `Sắp hết · đến ${expiryFormatted}`
+                : `Dùng đến ${expiryFormatted}`
               : "Chưa có lịch cá nhân"}
           </div>
           {isActive ? (
@@ -170,11 +221,24 @@ export default function ToiRoute() {
           ) : null}
           <button
             type="button"
-            onClick={() => void navigate("/dat-lich")}
+            onClick={() =>
+              void navigate(
+                isActive && !yearlySub
+                  ? "/dat-lich?plan=goi_12thang"
+                  : "/dat-lich",
+              )
+            }
             className="mt-3.5 w-full cursor-pointer border-none py-3 font-[family-name:var(--font-display)] text-xs font-extrabold uppercase tracking-[0.08em]"
-            style={{ background: CT.gold, color: CT.forest }}
+            style={{
+              background: expiryUrgent ? CT.forest : CT.gold,
+              color: expiryUrgent ? CT.cream : CT.forest,
+            }}
           >
-            {isActive ? "Gia hạn · nâng gói" : "Đặt lịch cá nhân"}
+            {isActive
+              ? yearlySub
+                ? "Gia hạn · nâng gói"
+                : "Nâng lên lịch năm"
+              : "Đặt lịch cá nhân"}
           </button>
         </div>
 
@@ -343,6 +407,11 @@ export default function ToiRoute() {
             Tiện ích · cài đặt
           </Mono>
           {[
+            {
+              t: "Sửa hồ sơ",
+              sub: "tên · ngày sinh · giờ sinh",
+              to: "/toi/sua-ho-so",
+            },
             { t: "Cài đặt", sub: "thông báo · tài khoản · hỗ trợ", to: "/toi/cai-dat" },
           ].map((row, i, arr) => (
             <Link

@@ -3,7 +3,10 @@ import { Link } from "react-router";
 
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
+import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
+import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { buildCalendarDaysForMonth, formatLichThangMonthKey } from "~/lib/home-bat-tu";
@@ -11,7 +14,6 @@ import type { CalendarDay } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { scoreDotColor, scoreFromDayType } from "~/lib/c-score";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
-import { useProfile } from "~/hooks/useProfile";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 const WEEKDAY_SHORT = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"] as const;
@@ -183,6 +185,7 @@ function MonthGrid({
 
 export function CMonthScreen() {
   const { profile, loading: profileLoading } = useProfile();
+  const { pending: recomputePending } = useLaSoRecomputeGate();
   const todayIso = todayIsoInVn();
   const [year, setYear] = useState(() => Number(todayIso.slice(0, 4)));
   const [month, setMonth] = useState(() => Number(todayIso.slice(5, 7)));
@@ -197,6 +200,12 @@ export function CMonthScreen() {
 
   useEffect(() => {
     if (profileLoading || !profile) return;
+    if (profile.la_so_recompute_status === "pending") {
+      setLoading(true);
+      setDays([]);
+      setError(null);
+      return;
+    }
     const body = profileToBatTuPersonQuery(profile);
     if (!body.birth_date) {
       setLoading(false);
@@ -319,7 +328,9 @@ export function CMonthScreen() {
         </div>
 
         {error ? <ErrorBanner message={error} /> : null}
-        {loading ? (
+        {recomputePending || profile?.la_so_recompute_status === "pending" ? (
+          <CLichRecomputeSkeleton variant="month" />
+        ) : loading ? (
           <p className="py-12 text-center font-serif text-sm" style={{ color: CT.muted }}>
             Đang tải lịch tháng…
           </p>
