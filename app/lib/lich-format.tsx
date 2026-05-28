@@ -73,7 +73,10 @@ export function ngayHomNayToLichCard(
     data.goodForChips.length > 0
       ? data.goodForChips.join(", ")
       : data.saoTotCsv || "—";
-  const tranh = data.saoXauCsv || "—";
+  const tranh =
+    data.avoidForChips.length > 0
+      ? data.avoidForChips.join(", ")
+      : data.saoXauCsv || "—";
   const gio =
     data.gioTotDisplay && data.gioTotDisplay !== "—"
       ? data.gioTotDisplay

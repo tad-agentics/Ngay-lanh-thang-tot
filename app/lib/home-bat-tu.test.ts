@@ -99,6 +99,40 @@ describe("parseNgayHomNayForHome", () => {
     });
     expect(v?.score).toBe(87);
   });
+
+  it("parses avoid_for and daily_advice strings (tu-tru-api ngay-hom-nay)", () => {
+    const v = parseNgayHomNayForHome({
+      date: "2026-05-12",
+      gio_tot: [{ chi_name: "Tý", range: "23:00-01:00" }],
+      good_for: ["Khai trương", "Ký kết hợp đồng"],
+      avoid_for: ["Phẫu thuật"],
+      daily_advice: {
+        nen_lam: "Hoàng Đạo (Kim Quỹ) — thuận lợi. Phù hợp: Nhập trạch.",
+        nen_tranh: "Không có gì đặc biệt.",
+      },
+    });
+    expect(v).not.toBeNull();
+    expect(v!.goodForChips).toEqual(["Khai trương", "Ký kết hợp đồng", "Nhập trạch"]);
+    expect(v!.avoidForChips).toEqual(["Phẫu thuật"]);
+  });
+
+  it("falls back to summary.tot/xau and hoang_dao.star_name when no good_for", () => {
+    const v = parseNgayHomNayForHome({
+      date: "2026-05-01",
+      hoang_dao: { is_hoang_dao: false, star_name: "Bạch Hổ" },
+      summary: {
+        tot: ["Sao Giác"],
+        xau: ["Hắc Đạo (Bạch Hổ)", "Nguyệt Kỵ"],
+      },
+      gio_tot: [{ chi_name: "Tý", range: "23:00-01:00" }],
+    });
+    expect(v).not.toBeNull();
+    expect(v!.saoTotCsv).toContain("Sao Giác");
+    expect(v!.saoXauCsv).toContain("Nguyệt Kỵ");
+    const card = ngayHomNayToLichCard(v!, null, "2026-05-01");
+    expect(card.rows.find((r) => r.key === "Nên")?.value).toContain("Sao Giác");
+    expect(card.rows.find((r) => r.key === "Tránh")?.value).toContain("Nguyệt Kỵ");
+  });
 });
 
 describe("ngayHomNayToLichCard", () => {

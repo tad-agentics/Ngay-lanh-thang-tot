@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 
-import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
@@ -269,7 +268,6 @@ export function CMonthScreen() {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink }}
     >
-      <CTopStrip />
       <CLichSegmentedNav />
 
       {!online ? <COfflineBanner /> : null}

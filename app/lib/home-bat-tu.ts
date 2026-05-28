@@ -107,7 +107,60 @@ function dedupeLabels(labels: string[]): string[] {
 
 function stringGoodForList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((s) => s.trim());
+  return raw
+    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    .map((s) => s.trim());
+}
+
+const PLACEHOLDER_ADVICE_RE =
+  /^không có gì đặc biệt\.?$/iu;
+
+/** tu-tru-api: `daily_advice.nen_lam` — "Phù hợp: Khai trương, Ký kết." */
+export function parseAdviceStringToActivities(text: string): string[] {
+  const t = text.trim();
+  if (!t || PLACEHOLDER_ADVICE_RE.test(t)) return [];
+
+  const phuHop = /phù hợp\s*:\s*(.+?)(?:\.|$)/iu.exec(t);
+  if (phuHop?.[1]) {
+    return phuHop[1]
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  const tranh = /(?:nên tránh|tránh)\s*:\s*(.+?)(?:\.|$)/iu.exec(t);
+  if (tranh?.[1]) {
+    return tranh[1]
+      .split(/[,;]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  if (t.length < 120 && !/—|thuận lợi|hoàng đạo|hắc đạo/iu.test(t)) {
+    const parts = t.split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+    if (parts.length > 1) return parts;
+  }
+
+  if (t.length <= 96) return [t];
+  return [];
+}
+
+function parseActivityList(raw: unknown): string[] {
+  if (Array.isArray(raw)) return stringGoodForList(raw);
+  if (typeof raw === "string" && raw.trim()) {
+    return parseAdviceStringToActivities(raw);
+  }
+  return [];
+}
+
+function labelsFromSummaryBlock(
+  nested: Record<string, unknown>,
+  key: "tot" | "xau",
+): string[] {
+  const summary = asRecord(nested.summary);
+  if (!summary) return [];
+  const alt = key === "tot" ? "good" : "bad";
+  return labelsFromMixedArray(summary[key] ?? summary[alt]);
 }
 
 const WEEKDAY_SHORT_VI = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] as const;
@@ -388,6 +441,7 @@ export interface NgayHomNayHome {
   saoTotCsv: string;
   saoXauCsv: string;
   goodForChips: string[];
+  avoidForChips: string[];
   gioTotChis: string[];
   /** Maket lịch tờ: `Thìn 7–9h, Mùi 13–15h`. */
   gioTotDisplay: string;
@@ -483,20 +537,44 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
   const trucDisplay =
     (trucRaw.replace(/^trực\s+/i, "").trim() || trucRaw.trim()) || "—";
 
+  const hoangDao = asRecord(nested.hoang_dao ?? nested.hoangDao);
+  const starName = hoangDao ? pickStr(hoangDao, ["star_name", "starName"]) : "";
+  const isHoangDao = hoangDao?.is_hoang_dao === true;
+  const isHacDao = hoangDao?.is_hoang_dao === false;
+
   const catThanLabels = dedupeLabels([
     ...labelsFromMixedArray(nested.cat_than ?? nested.catThan),
     ...labelsFromMixedArray(nested.than_sat ?? nested.thanSat),
     ...labelsFromMixedArray(nested.cai_than ?? nested.caiThan),
+    ...labelsFromSummaryBlock(nested, "tot"),
+    ...(starName && (isHoangDao || (!isHacDao && dayType === "hoang-dao"))
+      ? [starName]
+      : []),
   ]);
-  const hungSatLabels = dedupeLabels(
-    labelsFromMixedArray(
+  const hungSatLabels = dedupeLabels([
+    ...labelsFromMixedArray(
       nested.hung_ngay ?? nested.hungNgay ?? nested.hung_sat ?? nested.hungSat,
     ),
-  );
+    ...labelsFromSummaryBlock(nested, "xau"),
+    ...(starName && isHacDao ? [`Hắc Đạo (${starName})`] : []),
+  ]);
   const saoTotCsv = catThanLabels.length ? catThanLabels.join(", ") : "—";
   const saoXauCsv = hungSatLabels.length ? hungSatLabels.join(", ") : "—";
 
-  const goodForChips = stringGoodForList(nested.good_for ?? nested.goodFor ?? nested.nen_lam);
+  const dailyAdvice =
+    asRecord(nested.daily_advice ?? nested.dailyAdvice) ?? {};
+
+  const goodForChips = dedupeLabels([
+    ...parseActivityList(nested.good_for ?? nested.goodFor),
+    ...parseActivityList(dailyAdvice.nen_lam ?? dailyAdvice.nenLam),
+    ...parseActivityList(nested.nen_lam ?? nested.nenLam),
+  ]);
+
+  const avoidForChips = dedupeLabels([
+    ...parseActivityList(nested.avoid_for ?? nested.avoidFor ?? nested.tranh),
+    ...parseActivityList(dailyAdvice.nen_tranh ?? dailyAdvice.nenTranh),
+    ...parseActivityList(nested.nen_tranh ?? nested.nenTranh),
+  ]);
 
   const gioTotChis = extractChiLabelsFromGioSlots(
     nested.gio_tot ?? nested.gioTot ?? nested.gio_hoang_dao ?? nested.gioHoangDao,
@@ -538,6 +616,7 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     saoTotCsv,
     saoXauCsv,
     goodForChips,
+    avoidForChips,
     gioTotChis,
     gioTotDisplay,
     gioXauChis,

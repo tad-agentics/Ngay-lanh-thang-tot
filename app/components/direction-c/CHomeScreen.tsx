@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router";
 
-import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
@@ -51,7 +50,6 @@ export function CHomeScreen() {
       }}
     >
       {!online ? <COfflineBanner /> : null}
-      <CTopStrip dark={offlineMode} />
       <CLichSegmentedNav dark={offlineMode} />
 
       <div className="flex-1 overflow-y-auto px-[22px] pb-[100px] pt-[18px]">
