@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { queryKeys } from "~/lib/query-keys";
+import { clearLichThangCachesForUser } from "~/lib/lich-thang-cache";
 
 export const LA_SO_RECOMPUTED_EVENT = "ngaytot:la-so-recomputed";
 
@@ -29,6 +30,7 @@ export function invalidateLaSoRecomputeCaches(
   queryClient?: QueryClient,
 ): void {
   clearUserReadingSessionCaches(userId);
+  clearLichThangCachesForUser(userId);
   if (queryClient) {
     void queryClient.invalidateQueries({
       queryKey: queryKeys.lichThangRoot(userId),

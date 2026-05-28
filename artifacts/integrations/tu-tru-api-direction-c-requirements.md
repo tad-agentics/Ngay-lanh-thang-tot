@@ -217,6 +217,8 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
 
 **Phạm vi:** `day-detail`, `ngay-hom-nay`, `lich-thang` (per-day nếu có score), `chon-ngay` response.
 
+**NLTT UI (Direction C):** Collapsible *Cách tính điểm* chỉ render trên **`/ngay/:ngay`** (`DayScoreMethodologyCollapsible`) và tra cứu (`TraCuuMethodologyCollapsible`) — **không** trên **`/lich/thang`**. Tab Tháng chỉ hiện chấm màu tóm tắt (Tốt/Khá/Bình/Tránh) từ `score` hoặc fallback `day_type`; **không** hiện `breakdown[]` từng lớp (breakdown thuộc REQ-P0-02, scope `day-detail` / `chon-ngay/detail`).
+
 ---
 
 #### REQ-P0-04 · `GET /v1/lich-thang` — score + âm lịch trên từng ô
@@ -230,7 +232,7 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
 | `score` | number 0–100 hoặc null | Chấm màu |
 | `day_type` | enum | `tot` / `trung` / `xau` fallback |
 
-**NLTT hiện tại:** `buildCalendarDaysForMonth()` quét nhiều alias field.
+**NLTT hiện tại:** `buildCalendarDaysForMonth()` quét nhiều alias field; `CMonthScreen` map `score` → màu chấm (`c-score.ts`), fallback Hoàng/Hắc đạo khi thiếu điểm. Subline *chấm theo mệnh {menh}* từ `profiles.la_so`. Không có methodology collapsible trên grid — user xem breakdown trên `/ngay/:ngay` sau khi tap ô.
 
 ---
 

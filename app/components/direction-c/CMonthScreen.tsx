@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -6,11 +6,9 @@ import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeS
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
+import { useLichThangData } from "~/hooks/useLichThangData";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useProfile } from "~/hooks/useProfile";
-import { invokeBatTu } from "~/lib/bat-tu";
-import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { buildCalendarDaysForMonth, formatLichThangMonthKey, parseLichThangLunarMonthLabel } from "~/lib/home-bat-tu";
 import type { CalendarDay } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { scoreDotColor, scoreFromDayType } from "~/lib/c-score";
@@ -32,7 +30,6 @@ function MonthGrid({
 }) {
   const startDay = new Date(year, month - 1, 1).getDay();
   const mondayFirst = (startDay + 6) % 7;
-  const daysInMonth = new Date(year, month, 0).getDate();
   const prevMonthDays = new Date(year, month - 1, 0).getDate();
 
   type Cell = {
@@ -200,54 +197,29 @@ export function CMonthScreen() {
   const todayIso = todayIsoInVn();
   const [year, setYear] = useState(() => Number(todayIso.slice(0, 4)));
   const [month, setMonth] = useState(() => Number(todayIso.slice(5, 7)));
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [days, setDays] = useState<CalendarDay[]>([]);
-  const [lunarMonthLabel, setLunarMonthLabel] = useState<string | null>(null);
+
+  const {
+    days,
+    lunarMonthLabel,
+    loading,
+    refreshing,
+    error,
+    recomputePending: hookRecomputePending,
+  } = useLichThangData({
+    profile,
+    profileLoading,
+    year,
+    month,
+    online,
+  });
 
   const menh = useMemo(() => {
     const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
     return laso?.menh ?? "bạn";
   }, [profile]);
 
-  useEffect(() => {
-    if (profileLoading || !profile) return;
-    if (profile.la_so_recompute_status === "pending") {
-      setLoading(true);
-      setDays([]);
-      setError(null);
-      return;
-    }
-    const body = profileToBatTuPersonQuery(profile);
-    if (!body.birth_date) {
-      setLoading(false);
-      setError("Cần ngày sinh trên hồ sơ.");
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    void (async () => {
-      const res = await invokeBatTu<unknown>({
-        op: "lich-thang",
-        body: { ...body, month: formatLichThangMonthKey(year, month) },
-      });
-      if (cancelled) return;
-      if (!res.ok) {
-        setError(res.message ?? "Không tải lịch tháng.");
-        setDays([]);
-        setLunarMonthLabel(null);
-      } else {
-        const built = buildCalendarDaysForMonth(month, year, res.data);
-        setDays(built);
-        setLunarMonthLabel(parseLichThangLunarMonthLabel(res.data));
-      }
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [profile, profileLoading, year, month]);
+  const showRecomputeSkeleton = recomputePending || hookRecomputePending;
+  const showInitialLoading = loading && days.length === 0 && !showRecomputeSkeleton;
 
   function shiftMonth(delta: number) {
     let m = month + delta;
@@ -346,25 +318,26 @@ export function CMonthScreen() {
           ) : null}
           chấm theo mệnh{" "}
           <strong style={{ color: CT.ink, fontWeight: 600 }}>{menh}</strong>
-          {" · "}
-          <Link
-            to="/tra-cuu"
-            style={{ color: CT.goldDeep, textDecoration: "none" }}
-          >
-            đổi việc
-          </Link>
+          {refreshing ? (
+            <>
+              {" · "}
+              <span style={{ color: CT.goldDeep, fontStyle: "italic" }}>
+                Đang cập nhật…
+              </span>
+            </>
+          ) : null}
         </div>
 
         {error ? <ErrorBanner message={error} /> : null}
-        {recomputePending || profile?.la_so_recompute_status === "pending" ? (
+        {showRecomputeSkeleton ? (
           <CLichRecomputeSkeleton variant="month" />
-        ) : loading ? (
+        ) : showInitialLoading ? (
           <p className="py-12 text-center font-serif text-sm" style={{ color: CT.muted }}>
             Đang tải lịch tháng…
           </p>
-        ) : (
+        ) : days.length > 0 ? (
           <MonthGrid year={year} month={month} days={days} todayIso={todayIso} />
-        )}
+        ) : null}
 
         <div
           style={{
