@@ -1,17 +1,18 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { PayCheckoutSheet } from "~/components/PayCheckoutSheet";
 import { Mono } from "~/components/brand";
-import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
+import type { PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
+import { subscriptionStatusLine } from "~/lib/entitlements";
 import { createPayosCheckout } from "~/lib/payos";
 import {
   ADDON_SKUS,
   SUBSCRIPTION_SKUS,
   UI_PACKAGES,
 } from "~/lib/packages";
+import { useProfile } from "~/hooks/useProfile";
 
 const SUBSCRIPTION_TIERS = UI_PACKAGES.filter((p) =>
   SUBSCRIPTION_SKUS.includes(p.sku),
@@ -61,13 +62,34 @@ function priceNumber(label: string): string {
 
 export default function DatLichRoute() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { profile } = useProfile();
   const [busySku, setBusySku] = useState<PackageSku | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [checkoutPayload, setCheckoutPayload] =
-    useState<CreatePayosCheckoutResponse | null>(null);
   const [failedSku, setFailedSku] = useState<PackageSku | null>(null);
+  const tierRefs = useRef<Partial<Record<PackageSku, HTMLDivElement | null>>>({});
+
+  const planParam = searchParams.get("plan");
+  const preselectedSku = useMemo((): PackageSku | null => {
+    if (planParam && SUBSCRIPTION_SKUS.includes(planParam as PackageSku)) {
+      return planParam as PackageSku;
+    }
+    return null;
+  }, [planParam]);
+
+  const statusLine = subscriptionStatusLine(profile);
+
+  useEffect(() => {
+    if (!preselectedSku) return;
+    const el = tierRefs.current[preselectedSku];
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [preselectedSku]);
 
   async function checkout(sku: PackageSku) {
+    if (ADDON_SKUS.includes(sku)) {
+      navigate(`/luan/mua/xac-nhan?sku=${sku}&start=1`);
+      return;
+    }
+
     setFailedSku(null);
     setBusySku(sku);
     const origin = window.location.origin;
@@ -82,13 +104,9 @@ export default function DatLichRoute() {
       toast.error(result.message);
       return;
     }
-    setCheckoutPayload(result.data);
-    setSheetOpen(true);
-  }
-
-  function handleSheetOpen(open: boolean) {
-    setSheetOpen(open);
-    if (!open) setCheckoutPayload(null);
+    navigate("/dat-lich/xac-nhan", {
+      state: { sku, checkout: result.data },
+    });
   }
 
   return (
@@ -126,6 +144,15 @@ export default function DatLichRoute() {
           </span>
         </h1>
 
+        {statusLine ? (
+          <p
+            className="mt-3 font-serif text-[13px] leading-snug"
+            style={{ color: CT.ink2 }}
+          >
+            {statusLine}
+          </p>
+        ) : null}
+
         <div
           className="mt-5 flex items-baseline gap-2.5 border-b pb-1.5"
           style={{ borderColor: CT.ink }}
@@ -150,16 +177,24 @@ export default function DatLichRoute() {
             const hero = pkg.featured;
             const isBusy = busySku === pkg.sku;
             const isFailed = failedSku === pkg.sku;
+            const isPreselected = preselectedSku === pkg.sku;
             const price = priceNumber(pkg.priceLabel);
 
             return (
               <div
                 key={pkg.sku}
+                ref={(el) => {
+                  tierRefs.current[pkg.sku] = el;
+                }}
                 className="relative px-4 py-4"
                 style={{
                   background: hero ? CT.forest : "#fff",
                   color: hero ? CT.cream : CT.ink,
-                  border: hero ? `1.5px solid ${CT.gold}` : `1px solid ${CT.hairline}`,
+                  border: hero
+                    ? `1.5px solid ${CT.gold}`
+                    : isPreselected
+                      ? `2px solid ${CT.goldDeep}`
+                      : `1px solid ${CT.hairline}`,
                   boxShadow: hero ? "0 12px 26px rgba(29,49,41,0.2)" : "none",
                 }}
               >
@@ -230,7 +265,7 @@ export default function DatLichRoute() {
                         className="font-[family-name:var(--font-display)] text-[11px] font-bold"
                         style={{ color: CT.gold }}
                       >
-                        ≈ 53% rẻ hơn
+                        tiết kiệm 52,6%
                       </span>
                     </div>
                     <div
@@ -309,7 +344,7 @@ export default function DatLichRoute() {
           style={{ color: CT.muted }}
         >
           Mọi gói đều có: lịch cá nhân theo lá số · trang hôm nay · tháng · tra
-          cứu ngày tốt không giới hạn · hợp tuổi · chuyển lịch.
+          cứu ngày tốt không giới hạn · hợp tuổi.
         </p>
 
         <div
@@ -427,12 +462,6 @@ export default function DatLichRoute() {
           Hoàn tiền 7 ngày · không tự gia hạn
         </p>
       </div>
-
-      <PayCheckoutSheet
-        open={sheetOpen}
-        onOpenChange={handleSheetOpen}
-        payload={checkoutPayload}
-      />
     </div>
   );
 }

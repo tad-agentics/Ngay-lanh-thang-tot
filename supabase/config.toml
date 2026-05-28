@@ -452,3 +452,11 @@ verify_jwt = false
 # CLI config.toml does not support a [crons] table (invalid keys as of supabase CLI 2.75).
 [functions.cron-push-habit]
 verify_jwt = false
+
+# G3 — expire pending PayOS orders older than 24h (daily cron).
+[functions.cron-payos-expire-orphans]
+verify_jwt = false
+
+# Ops — verify PayOS Edge secrets are configured (no values exposed).
+[functions.payos-config-health]
+verify_jwt = false

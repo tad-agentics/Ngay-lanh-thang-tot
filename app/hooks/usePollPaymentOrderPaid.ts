@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import { supabase } from "~/lib/supabase";
+import { TERMINAL_PAYMENT_ORDER_STATUSES } from "~/lib/pay-checkout-timeout";
 
 const DEFAULT_INTERVAL_MS = 4_000;
 const DEFAULT_MAX_ATTEMPTS = 45;
@@ -15,6 +16,7 @@ export function usePollPaymentOrderPaid(
   options: {
     onPaid: () => void | Promise<void>;
     onGiveUp?: () => void;
+    onTerminal?: () => void;
     intervalMs?: number;
     maxAttempts?: number;
   },
@@ -22,13 +24,16 @@ export function usePollPaymentOrderPaid(
   const {
     onPaid,
     onGiveUp,
+    onTerminal,
     intervalMs = DEFAULT_INTERVAL_MS,
     maxAttempts = DEFAULT_MAX_ATTEMPTS,
   } = options;
   const onPaidRef = useRef(onPaid);
   const onGiveUpRef = useRef(onGiveUp);
+  const onTerminalRef = useRef(onTerminal);
   onPaidRef.current = onPaid;
   onGiveUpRef.current = onGiveUp;
+  onTerminalRef.current = onTerminal;
 
   useEffect(() => {
     if (!enabled || !orderId) return;
@@ -50,6 +55,10 @@ export function usePollPaymentOrderPaid(
       if (cancelled) return true;
       if (row?.status === "paid") {
         await onPaidRef.current();
+        return true;
+      }
+      if (row?.status && TERMINAL_PAYMENT_ORDER_STATUSES.has(row.status)) {
+        onTerminalRef.current?.();
         return true;
       }
       return false;

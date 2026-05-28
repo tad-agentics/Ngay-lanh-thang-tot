@@ -83,7 +83,7 @@ export function CreditGate({
         message={`Cần ${row.credit_cost} lượng để dùng tính năng này. Bạn đang có ${balance} lượng.`}
       />
       <Button asChild className="w-full sm:w-auto">
-        <Link to="/app/mua-luong">Mua lượng</Link>
+        <Link to="/dat-lich">Đặt lịch</Link>
       </Button>
     </div>
   );

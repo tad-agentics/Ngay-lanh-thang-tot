@@ -464,7 +464,7 @@ export default function AppToi() {
               </Mono>
             </div>
             <Link
-              to="/app/mua-luong"
+              to="/dat-lich"
               style={{
                 fontFamily: "var(--display-2)",
                 fontWeight: 800,

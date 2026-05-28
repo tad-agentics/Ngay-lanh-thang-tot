@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   CHECKOUT_PACKAGE_SKUS,
   generateOrderCode,
@@ -18,6 +18,12 @@ function json(
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+function appendOrderIdToUrl(raw: string, orderId: string): string {
+  const u = new URL(raw);
+  u.searchParams.set("order_id", orderId);
+  return u.toString();
 }
 
 function isValidRedirectUrl(raw: string): boolean {
@@ -156,14 +162,6 @@ Deno.serve(async (req) => {
 
   const pkg = PACKAGES[package_sku];
   const orderCode = generateOrderCode();
-  const signature = await signPaymentRequest({
-    amount: pkg.amountVnd,
-    cancelUrl: cancel_url,
-    description: pkg.description,
-    orderCode,
-    returnUrl: return_url,
-    checksumKey: payosChecksum,
-  });
 
   const admin = createClient(supabaseUrl, serviceKey);
   const { data: orderRow, error: insErr } = await admin
@@ -194,12 +192,23 @@ Deno.serve(async (req) => {
     );
   }
 
+  const returnWithOrder = appendOrderIdToUrl(return_url, orderRow.id);
+
+  const signature = await signPaymentRequest({
+    amount: pkg.amountVnd,
+    cancelUrl: cancel_url,
+    description: pkg.description,
+    orderCode,
+    returnUrl: returnWithOrder,
+    checksumKey: payosChecksum,
+  });
+
   const payosBody = {
     orderCode,
     amount: pkg.amountVnd,
     description: pkg.description,
     cancelUrl: cancel_url,
-    returnUrl: return_url,
+    returnUrl: returnWithOrder,
     signature,
   };
 

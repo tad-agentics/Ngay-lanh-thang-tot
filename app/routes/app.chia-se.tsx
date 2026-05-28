@@ -122,7 +122,7 @@ function ChiaSeCard({
       <>
         <ErrorBanner message={createErr} />
         <Link
-          to="/app/mua-luong"
+          to="/dat-lich"
           className="inline-block text-sm text-primary underline underline-offset-4 mt-2"
         >
           Mua lượng

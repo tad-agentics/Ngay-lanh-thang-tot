@@ -31,7 +31,7 @@ export function CreditsHeaderChip({
   return (
     <button
       type="button"
-      onClick={() => void navigate("/app/mua-luong")}
+      onClick={() => void navigate("/dat-lich")}
       className={cn(
         "flex items-center gap-1.5 px-2.5 py-1.5 shrink-0 border",
         forDarkSurface

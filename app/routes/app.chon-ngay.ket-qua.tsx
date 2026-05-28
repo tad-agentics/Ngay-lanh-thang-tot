@@ -170,7 +170,7 @@ export default function AppChonNgayKetQua() {
   async function runDetailUnlock() {
     if (!state || !profile?.ngay_sinh) return;
     if (!canBulkDetail) {
-      navigate("/app/mua-luong");
+      navigate("/dat-lich");
       return;
     }
     const base = profileToBatTuPersonQuery(profile);
@@ -372,7 +372,7 @@ export default function AppChonNgayKetQua() {
                         asChild
                         className="w-full rounded-2xl border-0 bg-[#C9A64A] font-bold text-black shadow-none hover:bg-[#B8943F]"
                       >
-                        <Link to="/app/mua-luong">Mua thêm lượng</Link>
+                        <Link to="/dat-lich">Đặt lịch</Link>
                       </Button>
                     </>
                   )}

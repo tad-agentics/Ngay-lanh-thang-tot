@@ -450,7 +450,7 @@ export default function AppTieuVan() {
                   Cần {cost} lượng · Số dư: {subActive ? "∞" : (profile?.credits_balance ?? 0)} lượng
                 </p>
                 <Button type="button" asChild>
-                  <Link to="/app/mua-luong" state={{ returnTo: "/app/tieu-van" }}>Mua thêm lượng</Link>
+                  <Link to="/dat-lich" state={{ returnTo: "/app/tieu-van" }}>Đặt lịch</Link>
                 </Button>
               </>
             )}

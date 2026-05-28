@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
@@ -15,6 +15,8 @@ export default function LuanMuaXacNhanRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const skuParam = searchParams.get("sku");
+  const autoStart = searchParams.get("start") === "1";
+  const autoStartedRef = useRef(false);
   const sku: PackageSku | null =
     skuParam && VALID_SKUS.has(skuParam as PackageSku)
       ? (skuParam as PackageSku)
@@ -32,6 +34,12 @@ export default function LuanMuaXacNhanRoute() {
       navigate("/dat-lich", { replace: true });
     }
   }, [sku, navigate]);
+
+  useEffect(() => {
+    if (!sku || !autoStart || autoStartedRef.current || sheetOpen) return;
+    autoStartedRef.current = true;
+    void startCheckout();
+  }, [autoStart, sheetOpen, sku]);
 
   async function startCheckout() {
     if (!sku) return;
@@ -129,6 +137,16 @@ export default function LuanMuaXacNhanRoute() {
           if (!open) setCheckoutPayload(null);
         }}
         payload={checkoutPayload}
+        successPath={(orderId) =>
+          `/luan/mua/thanh-cong?sku=${sku}&order_id=${encodeURIComponent(orderId)}`
+        }
+        retryTo={`/luan/mua/xac-nhan?sku=${sku}&start=1`}
+        backTo="/toi"
+        onRetry={() => {
+          setCheckoutPayload(null);
+          setSheetOpen(false);
+          void startCheckout();
+        }}
       />
     </div>
   );
