@@ -18,7 +18,7 @@
 | **REQ-P0-02** | `breakdown[]` **đúng 4 phần tử** + `sources[]` trên `day-detail` & `chon-ngay/detail` | **P0** | `{}` rỗng | Đọc `breakdown` hoặc `layer3.breakdown`; fallback ghép từ Trực/sao/reason | 🟡 **Một phần** (field có lúc, không ổn định) |
 | **REQ-P0-03** | `score_methodology` trên day-detail / ngay-hom-nay / lich-thang / chon-ngay | **P0** | Không có | Copy tĩnh FE (`DayScoreMethodologyCollapsible`, `TraCuuMethodologyCollapsible`) | 🔴 **Chưa có** |
 | **REQ-P0-04** | `lich-thang` → `days[]` có `date`, `lunar_day`/`lunar_label`, `score`, `day_type` ổn định | **P0** | `{}` rỗng | Mapper quét ~10 key (`home-bat-tu.ts`) | 🟡 **Một phần** |
-| **REQ-P1-01** | Endpoint mới `GET /v1/day-detail/luan-context` | **P1** | Không có | Chưa có Edge `day-luan-chat`; anchor dùng `generate-reading` + raw day-detail | 🔴 **Chưa có** |
+| **REQ-P1-01** | Endpoint mới `GET /v1/day-detail/luan-context` | **P1** | Không có | Interim: `buildDayLuanPromptContext()` + prompt Edge; anchor raw `day-detail` | 🟡 **Interim NLTT** · API 🔴 |
 | **REQ-P1-02** | Endpoint mới `GET /v1/day-compare` | **P1** | Không có | Chip 「So sánh với ngày mai」 — copy tĩnh, LLM có thể bịa số | 🔴 **Chưa có** |
 | **REQ-P1-03** | Cùng schema day-detail ↔ chon-ngay/detail | **P1** | `{}` rỗng | Hai mapper riêng (`day-detail-view`, `chon-ngay-detail`) | 🟡 **Một phần** |
 | **REQ-P1-04** | `POST /v1/chon-ngay` → **`ranked_days[]`** canonical + `empty_reason_vi` | **P1** | `{}` rỗng | Ưu tiên `ranked_days`, fallback 11 array keys | 🟡 **Một phần** |
@@ -242,28 +242,140 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
 
 #### REQ-P1-01 · `GET /v1/day-detail/luan-context` (endpoint mới)
 
-**API phải làm:** Payload compact deterministic cho prompt LLM (anchor + follow-up scope-lock).
+**API phải làm:** Payload compact **deterministic** cho prompt LLM (anchor + follow-up scope-lock). tu-tru-api **không** gọi Gemini — chỉ bàn giao facts đã chuẩn hoá.
+
+**Contract URL:**
 
 ```
 GET /v1/day-detail/luan-context
   ?birth_date=dd/mm/yyyy&birth_time=&gender=&date=YYYY-MM-DD&tz=Asia/Ho_Chi_Minh
 ```
 
-**Response gợi ý:** `date_iso`, `score`, `menh_user`, `breakdown_summary[]`, `gio_tot[]`, `sources[]`, `scope_hint_vi`, `suggested_followups[]`.
+**Response canonical (schema cố định — NLTT map 1:1 sang Gemini):**
 
-**NLTT sau khi ship:** Edge op `day-luan-context` (mới) → `day-luan-chat`.
+```json
+{
+  "date_iso": "2026-05-28",
+  "score": 35,
+  "grade": "D",
+  "can_chi_day": "Nhâm Dần",
+  "menh_user": "Lộ Bàng Thổ",
+  "breakdown_summary": [
+    {
+      "id": "truc",
+      "label_vi": "Trực ngày",
+      "source_ref": 1,
+      "verdict_vi": "Thu",
+      "points": 8,
+      "reason_vi": "Trực Thu — thu hoạch, kết thúc chu kỳ…"
+    },
+    {
+      "id": "sao28",
+      "label_vi": "Nhị thập bát tú",
+      "source_ref": 2,
+      "verdict_vi": "Sao Thiên Lao",
+      "points": -15,
+      "reason_vi": "Hung tinh Thiên Cương…"
+    },
+    {
+      "id": "can_chi_laso",
+      "label_vi": "Can chi · tương sinh với lá số bạn",
+      "source_ref": 3,
+      "verdict_vi": "Nhâm Dần",
+      "points": 12,
+      "reason_vi": "Can Chi ngày đối chiếu Dụng Thần…"
+    },
+    {
+      "id": "gio_vang",
+      "label_vi": "Giờ vàng trong ngày",
+      "source_ref": 4,
+      "verdict_vi": "Thìn 7–9h",
+      "points": 0,
+      "reason_vi": "Giờ Hoàng đạo buổi sáng…"
+    }
+  ],
+  "gio_tot": ["Thìn 7–9h"],
+  "gio_xau": ["Tỵ 9–11h"],
+  "sources": [
+    { "ref": 1, "title_vi": "Hiệp Kỷ Biện Phương — Trực ngày" },
+    { "ref": 2, "title_vi": "Ngọc Hạp Thông Thư — Thần sát" },
+    { "ref": 3, "title_vi": "Tứ trụ — tương sinh tương khắc với lá số" },
+    { "ref": 4, "title_vi": "Lịch Vạn Niên — giờ Hoàng đạo" }
+  ],
+  "scope_hint_vi": "Chỉ trả lời về ngày 28.05 và lá số của bạn — không chat tự do.",
+  "anchor_question_hint_vi": "Tại sao ngày 28.05 được 35 điểm với mệnh Lộ Bàng Thổ?",
+  "suggested_followups": [
+    "Giờ nào trong ngày tốt nhất?",
+    "Ngày này có nên ký hợp đồng không?",
+    "So sánh với ngày mai"
+  ]
+}
+```
+
+| Field | Bắt buộc | Ghi chú LLM / UI |
+|-------|----------|------------------|
+| `breakdown_summary` | Có | **Đúng 4 phần tử**, `id` cố định (`truc`, `sao28`, `can_chi_laso`, `gio_vang`); `label_vi` tiếng Việt — **không** `neutral`/`penalty` |
+| `breakdown_summary[].source_ref` | Có | Map citation `[1]`–`[4]` cho follow-up Gemini |
+| `breakdown_summary[].points` | Khuyến nghị | Tổng ≈ `score`; **không** tách “điểm cơ bản” thành hàng riêng |
+| `sources[]` | Có | Trùng ref 1–4; FE + Edge dùng thay hard-code |
+| `scope_hint_vi` | Có | Inject system prompt follow-up |
+| `anchor_question_hint_vi` | Có | Neo câu hỏi trên `/luan-ai/day-*` |
+| `suggested_followups` | Khuyến nghị | Chip gợi ý — có thể giữ seed FE nếu thiếu |
+| `menh_user` | Khuyến nghị | Nạp Âm / mệnh từ lá số — bắt buộc cá nhân hoá voice |
+
+**Quy tắc nội dung (instruction cho team API, không phải prompt Gemini):**
+
+1. **Không** trả field engine thô (`type: "neutral"`, `ĐIỂM CƠ BẢN`) — gộp nền vào 4 yếu tố hoặc chỉ `score` tổng.
+2. `verdict_vi` = tên Trực / sao / Can Chi / khung giờ — **tiếng Việt**, không enum tiếng Anh.
+3. `gio_tot[]` / `gio_xau[]` = chuỗi hiển thị sẵn (`Thìn 7–9h`) hoặc object chuẩn hoá — NLTT flatten.
+4. Cùng nguồn dữ liệu với `day-detail` personalized — **không** tính lại logic khác.
+
+**NLTT hiện tại (interim 2026-05-28):**
+
+- Edge `generate-reading` gọi `buildDayLuanPromptContext()` trong `supabase/functions/_shared/day-luan-prompt-context.ts` — **mirror** schema trên từ raw `day-detail` cho tới khi upstream ship endpoint.
+- Prompt Gemini: `DAY_DETAIL_SYSTEM` / `DAY_DETAIL_FOLLOW_UP_SYSTEM` trong `generate-reading/index.ts` — follow-up **bắt buộc** citation `[1]–[4]`.
+- Chưa có: SSE `day-luan-chat`, quota server `profiles.daily_chat_*`, `thread_id`.
+
+**NLTT sau khi API ship:** bat-tu op `day-luan-context` → thay interim builder; bỏ heuristic map breakdown.
+
+**Acceptance upstream:**
+
+- OpenAPI schema + fixture JSON 1 ngày (score thấp + hung sao).
+- `breakdown_summary.length === 4` luôn; không key tiếng Anh trong `verdict_vi`.
+- `sources.length === 4` với ref 1–4.
 
 ---
 
 #### REQ-P1-02 · `GET /v1/day-compare` (endpoint mới)
 
-**API phải làm:** Facts so sánh 2 ngày — LLM không được bịa `delta_score`.
+**API phải làm:** Facts so sánh 2 ngày — LLM **không được bịa** `delta_score` (chip 「So sánh với ngày mai」).
 
 ```
 GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 ```
 
-**Response:** `date_a`, `date_b`, `comparison_vi`, `delta_score`, `better_for[]`.
+**Response:**
+
+```json
+{
+  "date_a": "2026-05-28",
+  "date_b": "2026-05-29",
+  "score_a": 35,
+  "score_b": 62,
+  "delta_score": 27,
+  "better_for": ["ký hợp đồng", "họp quan trọng"],
+  "comparison_vi": "Ngày mai Can Chi thuận Dụng Thần hơn — điểm cao hơn 27.",
+  "sources": [{ "ref": 3, "title_vi": "Tứ trụ — tương sinh tương khắc với lá số" }]
+}
+```
+
+| Field | Bắt buộc | Ghi chú |
+|-------|----------|---------|
+| `delta_score` | Có | `score_b - score_a` (signed) — Edge inject vào follow-up prompt |
+| `comparison_vi` | Khuyến nghị | 1–2 câu facts; Gemini chỉ diễn đạt lại |
+| `better_for` | Khuyến nghị | Gợi ý việc nên ưu tiên ở ngày tốt hơn |
+
+**NLTT hiện tại:** Follow-up chip gọi Gemini thuần — có nguy cơ bịa số. Sau khi ship: Edge prefetch `day-compare` khi user hỏi/so sánh.
 
 ---
 
@@ -402,11 +514,21 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 ## 6. Non-goals (không yêu cầu tu-tru-api)
 
-- SSE streaming chat, `thread_id`, quota — NLTT Edge + Postgres
-- Gọi Gemini / OpenAI
+- Gọi Gemini / OpenAI hoặc viết **system prompt** LLM
+- SSE streaming chat, `thread_id`, quota 10 câu/ngày — NLTT Edge `generate-reading` (+ sau này `day-luan-chat`) + Postgres
 - Auth user, subscription, PayOS
 - Multi-profile gia đình (Direction C dropped)
 - Web Push / habit streak (Direction C dropped 2026-05-28)
+
+### 6.1 Ranh giới LLM — ai làm gì
+
+| Việc | tu-tru-api | NLTT Edge |
+|------|------------|-----------|
+| Schema `luan-context` + `day-compare` facts | ✅ REQ-P1-01/02 | Consume qua `bat-tu` |
+| Compact builder interim từ raw `day-detail` | ❌ | ✅ `_shared/day-luan-prompt-context.ts` (tạm) |
+| System prompt anchor / follow-up | ❌ | ✅ `generate-reading` `DAY_DETAIL_*_SYSTEM` |
+| Citation `[1]–[4]` trong follow-up | Facts `source_ref` | Prompt + post-process (sau) |
+| Quota 10 câu/ngày | ❌ | 🔴 Chưa server — FE sessionStorage tạm |
 
 ---
 
@@ -418,6 +540,8 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 4. **Staging:** deploy preview Fly; NLTT trỏ `BAT_TU_API_URL` staging QA.
 5. **Fixtures tối thiểu** (JSON mẫu gửi NLTT):
    - Personalized `day-detail` (4-item `breakdown`)
+   - **`luan-context`** cho cùng ngày (mirror breakdown + sources)
+   - **`day-compare`** (date_a vs date_b + delta_score)
    - Generic `day-detail` (anon, `personalized: false`)
    - `chon-ngay` với `ranked_days` (≥3) + empty `ranked_days: []`
    - `la-so` + `luu-nien?year=2026`
@@ -447,6 +571,8 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | NLTT mapper day-detail | `app/lib/day-detail-view.ts` |
 | NLTT mapper chọn ngày | `app/lib/chon-ngay-result.ts` |
 | NLTT luận 4 yếu tố | `app/lib/day-luan-sectioned.ts` |
+| NLTT luan-context interim (Edge) | `supabase/functions/_shared/day-luan-prompt-context.ts` |
+| NLTT Gemini prompts | `supabase/functions/generate-reading/index.ts` |
 | NLTT bat-tu proxy | `supabase/functions/bat-tu/index.ts` |
 | NLTT tra cứu pick | `app/lib/tra-cuu-pick.ts` |
 | Pivot plan | `artifacts/plans/direction-c-pivot-plan.md` |

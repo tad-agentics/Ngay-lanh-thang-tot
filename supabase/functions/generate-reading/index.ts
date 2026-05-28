@@ -16,6 +16,7 @@ import {
   inPivotCreditTransition,
   readPivotTransitionUntil,
 } from "../_shared/entitlements.ts";
+import { buildDayLuanPromptContext } from "../_shared/day-luan-prompt-context.ts";
 
 type ServiceClient = ReturnType<typeof createClient>;
 
@@ -219,38 +220,46 @@ const CHON_NGAY_CARDS_JSON_RETRY =
 const DAY_DETAIL_SYSTEM = `Bạn là chuyên gia phong thủy và lịch số Việt Nam, viết luận giải cho màn chi tiết 1 ngày.
 
 ## BỐI CẢNH GIAO DIỆN (bắt buộc tuân thủ)
-- Màn này đã có block dữ liệu kỹ thuật riêng (giờ tốt/giờ xấu, trực, sao, việc hợp/không hợp...).
-- Đoạn của bạn là lớp “luận giải tổng quan”: giúp người dùng hiểu nhịp ngày và biết làm gì — không thay thế bảng giờ hay danh sách việc bên dưới.
+- JSON đầu vào là **luan_context** — facts đã rút gọn từ engine Bát Tự (không phải chat tự do).
+- UI đã hiển thị block **Phân tích chi tiết · 4 yếu tố** + nguồn [1]–[4] bên dưới — **không lặp lại bảng điểm từng yếu tố**.
+- Đoạn của bạn là lớp “voice”: giải thích vì sao ngày được chấm như vậy với **mệnh/lá số** — giúp người dùng hiểu nhịp ngày và biết làm gì.
+
+## NGUỒN TRÍCH DẪN (chỉ dùng khi cần nhắc lý do cụ thể)
+- [1] Trực ngày · [2] Nhị thập bát tú · [3] Can chi · lá số · [4] Giờ Hoàng đạo
+- Chi tiết nằm trong \`breakdown_summary\` và \`sources\` — **không bịa** ngoài JSON.
 
 ## ĐẦU VÀO / ĐẦU RA
-- Đầu vào: JSON với "endpoint":"day-detail" và "data" là dữ liệu ngày đã tính.
-- Đầu ra: một đoạn văn xuôi tiếng Việt liền mạch, đủ sâu để có giá trị thực tế.
+- Đầu vào: JSON với "endpoint":"day-detail", "luan_context": { date_iso, score, menh_user, breakdown_summary, gio_tot, gio_xau, sources, scope_hint_vi, anchor_question_hint_vi }.
+- Đầu ra: một đoạn văn xuôi tiếng Việt liền mạch (không markdown, không emoji).
 
 ## ĐỘ DÀI VÀ CẤU TRÚC (bắt buộc)
-- Viết **9–14 câu**, tổng khoảng **280–420 từ** (không quá ngắn).
-- Luôn **kết thúc bằng một câu trọn vẹn** có dấu chấm, không dừng giữa ý.
+- Viết **9–14 câu**, tổng khoảng **280–420 từ**.
+- Luôn **kết thúc bằng một câu trọn vẹn** có dấu chấm.
+- Bám \`anchor_question_hint_vi\` — trả lời vì sao ngày đó được chấm với mệnh user (có \`score\` thì giải thích định tính, **không đọc lại số điểm** như báo cáo).
 
-## NỘI DUNG THEO THỨ TỰ (vẫn chỉ một khối văn xuôi, không tiêu đề)
-1) 2–3 câu mở đầu: nhịp chính của ngày (thuận/chững/cần thận trọng), neo vào ý nghĩa thực tế — có thể nhắn nhẹ trực/sao/hoàng hắc đạo nếu data có, nhưng **không đọc lại như báo cáo**.
-2) 3–4 câu: gợi ý **công việc & ra quyết định** — nên ưu tiên loại việc gì, cách chia nhịp trong ngày, điều nên hoãn hoặc làm cẩn trọng.
-3) 2–3 câu: **quan hệ & giao tiếp** — họp, thương lượng, hẹn gặp: nên giữ thái độ gì, tránh kích động hay cam kết vội khi data gợi ý căng.
-4) 1–2 câu: **điều chỉnh thân tâm** — ngủ nghỉ, giữ nhịp, một lời nhắc bình an (không lời khuyên y tế cụ thể).
-5) 1 câu cuối (tùy data): gợi **một** khung thời điểm phù hợp — ưu tiên nói theo **can giờ** (vd. giờ Thìn, giờ Ngọ) hoặc “đầu ngày / giữa ngày / cuối ngày”; **tránh** chuỗi “3–7 giờ” dễ bị cắt. Không liệt kê cả danh sách giờ tốt/xấu.
+## NỘI DUNG THEO THỨ TỰ (một khối văn xuôi, không tiêu đề)
+1) 2–3 câu: nhịp chính của ngày — neo Trực/sao/Can Chi từ \`breakdown_summary\` nếu có.
+2) 3–4 câu: công việc & quyết định — nên ưu tiên / hoãn gì.
+3) 2–3 câu: quan hệ & giao tiếp.
+4) 1–2 câu: điều chỉnh thân tâm (không tư vấn y tế).
+5) 1 câu cuối: **một** khung giờ tốt từ \`gio_tot\` (can giờ, vd. giờ Thìn) — không liệt kê cả danh sách.
 
 ## TUYỆT ĐỐI KHÔNG
-- KHÔNG liệt kê toàn bộ giờ tốt hoặc toàn bộ giờ xấu.
-- KHÔNG lướt qua hàng chục “việc hợp/không hợp” như lịch vạn sự; tối đa **một** ví dụ việc nếu giúp minh họa.
-- KHÔNG nêu điểm số, phần trăm, hạng A/B/C trừ khi JSON có rõ và cần thiết — ưu tiên diễn giải định tính.
-- KHÔNG markdown, KHÔNG emoji, KHÔNG tiếng Anh, KHÔNG phán tuyệt đối.
+- KHÔNG liệt kê toàn bộ giờ tốt/xấu; KHÔNG lướt 26 mục đích.
+- KHÔNG lặp verbatim \`breakdown_summary[].reason_vi\`.
+- KHÔNG tiếng Anh, KHÔNG phán tuyệt đối, KHÔNG nói chuyện ngoài \`scope_hint_vi\`.
 `;
 
-const DAY_DETAIL_FOLLOW_UP_SYSTEM = `Bạn là chuyên gia phong thủy Việt Nam. Trả lời câu hỏi ngắn gọn về MỘT ngày cụ thể trong JSON data.
+const DAY_DETAIL_FOLLOW_UP_SYSTEM = `Bạn là chuyên gia phong thủy Việt Nam. Trả lời câu hỏi ngắn về MỘT ngày cụ thể trong JSON luan_context.
+
+## PHẠM VI
+- Chỉ dùng facts trong \`luan_context\` (breakdown_summary, gio_tot, gio_xau, menh_user, score).
+- Tuân \`scope_hint_vi\`. Câu hỏi ngoài ngày/lá số: một câu từ chối lịch sự, gợi ý hỏi lại về ngày này.
 
 ## ĐẦU RA
-- 2–3 câu tiếng Việt, khoảng 120–180 ký tự.
-- Chỉ dựa trên data ngày và lá số trong JSON — không bịa.
-- Không markdown, không emoji.
-- Nếu câu hỏi ngoài phạm vi ngày/lá số: trả lời một câu từ chối lịch sự, gợi ý hỏi lại về ngày này.
+- **2–3 câu** tiếng Việt, **120–180 ký tự** tổng.
+- **Bắt buộc** có **ít nhất một** trích dẫn [1], [2], [3] hoặc [4] gắn với lý do bạn nêu (map: Trực→[1], Sao→[2], Can chi/lá số→[3], Giờ→[4]).
+- Không markdown, không emoji, không bịa số so sánh ngày khác (trừ khi JSON có sẵn).
 `;
 
 /** Teaser trên lịch tờ (Hôm nay + chi tiết ngày inline) — khớp maket CTodayReasoning. */
@@ -276,7 +285,7 @@ const INLINE_LICH_TO_SYSTEM = `Bạn viết luận giải **rất ngắn** hiể
 `;
 
 /** Bump khi đổi follow-up prompt. */
-const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-27-v1";
+const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
 const LA_SO_CHI_TIET_CACHE_VER = "2026-05-10-gemini-ar07-sectioned";
 /** Bump khi đổi SYSTEM_PROMPT cho tieu-van/luu-nien — làm mới reading_cache. */
@@ -288,7 +297,7 @@ const CHON_NGAY_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi CHON_NGAY_CARDS_JSON_SYSTEM — làm mới reading_cache thẻ ngày. */
 const CHON_NGAY_CARDS_PROMPT_VER = "2026-05-10-gemini";
 /** Bump khi đổi cấu hình output cho day-detail (max token / format). */
-const DAY_DETAIL_PROMPT_VER = "2026-05-10-gemini";
+const DAY_DETAIL_PROMPT_VER = "2026-05-28-luan-context-v1";
 /** Bump khi đổi INLINE_LICH_TO_SYSTEM — lịch tờ teaser. */
 const INLINE_LICH_TO_PROMPT_VER = "2026-05-28-v1";
 /** Version chung — bump khi đổi nhà cung cấp LLM hoặc model mặc định. Áp vào mọi cache key để vô hiệu hoá bản cũ. */
@@ -1125,7 +1134,26 @@ Deno.serve(async (req) => {
     }
   }
 
-  const dataJson = stableStringify(data);
+  const promptBody: Record<string, unknown> =
+    endpoint === "day-detail" && data !== null && typeof data === "object"
+      ? {
+          endpoint: "day-detail",
+          luan_context: buildDayLuanPromptContext(data),
+          ...(question ? { question } : {}),
+          ...(variant === "inline" ? { variant: "inline" } : {}),
+        }
+      : {
+          endpoint,
+          data,
+          ...(question ? { question } : {}),
+          ...(variant === "inline" ? { variant: "inline" } : {}),
+        };
+
+  const dataJson = stableStringify(
+    endpoint === "day-detail" && data !== null && typeof data === "object"
+      ? (promptBody.luan_context as unknown)
+      : data,
+  );
   const endpointVer =
     endpoint === "la-so-chi-tiet"
       ? LA_SO_CHI_TIET_CACHE_VER
@@ -1151,13 +1179,7 @@ Deno.serve(async (req) => {
   const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
-  const payload = stableStringify(
-    question
-      ? { endpoint, data, question }
-      : variant
-        ? { endpoint, data, variant }
-        : { endpoint, data },
-  );
+  const payload = stableStringify(promptBody);
   if (payload.length > MAX_BODY_CHARS) {
     return ok(null, null);
   }
