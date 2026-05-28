@@ -136,6 +136,28 @@ function gradeFromIndex(i: number): ResultGrade {
   return "C";
 }
 
+/** UI body on `/tra-cuu/ket-qua` — `reason_vi` first; legacy `reasons[]` only if prose absent. */
+function pickReasonsForUi(obj: Record<string, unknown>): string[] {
+  const prose = pickString(obj, [
+    "reason_vi",
+    "summary_vi",
+    "one_liner",
+    "summary",
+    "mo_ta",
+  ]);
+  if (prose !== "—") return [prose];
+
+  const r = obj.reasons ?? obj.ly_do ?? obj.giai_thich;
+  if (
+    Array.isArray(r) &&
+    r.length > 0 &&
+    r.every((x) => typeof x === "string")
+  ) {
+    return r as string[];
+  }
+  return [];
+}
+
 /** `sourceIndex` = position in API array (0-based); drives default A/B/C when rank/score absent. */
 function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
   const obj = asRecord(raw);
@@ -153,24 +175,7 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
     grade = gradeFromIndex(rk - 1);
   }
 
-  const reasons: string[] = [];
-  const r = obj.reasons ?? obj.ly_do ?? obj.giai_thich;
-  if (
-    Array.isArray(r) &&
-    r.length > 0 &&
-    r.every((x) => typeof x === "string")
-  ) {
-    reasons.push(...(r as string[]));
-  } else {
-    const prose = pickString(obj, [
-      "reason_vi",
-      "summary_vi",
-      "one_liner",
-      "summary",
-      "mo_ta",
-    ]);
-    if (prose !== "—") reasons.push(prose);
-  }
+  const reasons = pickReasonsForUi(obj);
 
   const bestHourSlots = pickBestHourSlots(obj);
 

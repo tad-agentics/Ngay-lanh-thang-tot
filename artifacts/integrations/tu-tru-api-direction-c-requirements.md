@@ -505,6 +505,15 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 **Phân tách field:** `truc` = Trực ngày (engine / breakdown) — **không** dùng thay `can_chi_day` trên meta row. `lunar_label` = chuỗi âm lịch hiển thị (tiếng Việt).
 
+**`reason_vi` vs `reasons[]` (engine internal):**
+
+| Field | UI `/tra-cuu/ket-qua` | Ghi chú |
+|-------|----------------------|---------|
+| **`reason_vi`** | ✅ Body italic — **duy nhất** field hiển thị khi có | 1–3 câu cá nhân hoá; **không** chuỗi `(+20)` factor |
+| `reasons[]` / `scoring_factors[]` | ❌ **Không map UI** | Log chấm điểm nội bộ (Trực + điểm, Cát tinh + intent…). NLTT chỉ fallback **tạm** khi thiếu `reason_vi` — upstream **không** coi đây là copy hiển thị |
+
+**NLTT mapper (2026-05-28):** `pickReasonsForUi()` — **`reason_vi` trước**, `reasons[]` sau. Khi upstream ship prose đúng spec, body đổi ngay **không cần** đổi FE thêm.
+
 **Field checklist (acceptance):**
 
 | Field | Priority | Rule |
@@ -524,6 +533,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 - **`can_chi_day` thiếu** — FE hiển thị `— · {lunar}`; user không biết Can Chi ngày
 - Dùng **`truc`** làm meta row (vd. `Định · Mùng 3…`) — sai maket
 - `reason_vi` = copy `truc` + list `gio_tot`
+- **`reasons[]` chứa dump factor `(+N)` làm nguồn UI** — phải sinh `reason_vi` prose riêng
 - Thiếu `score` → FE invent 85/88/78 từ rank
 - Empty search trả 404 hoặc `{}` **không** có `empty_reason_vi`
 
@@ -533,13 +543,14 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 - NLTT `mapChonNgayPayloadToResultDays()` accept **11 fallback array keys** — dấu hiệu shape upstream chưa ổn định
 - Mapper đọc `can_chi_day` / alias; meta row **không còn** dùng `truc` — nếu API thiếu Can Chi → `—`
+- **`reason_vi`:** FE ưu tiên prose khi có; nếu chỉ có `reasons[]` dump → UI vẫn hiện log engine (chờ upstream)
 - `tra-cuu.ket-qua.tsx` dùng `gradeToScore()` khi thiếu `score`
 - `TraCuuMethodologyCollapsible` — copy tĩnh, chưa đọc `score_methodology`
 - `CNoDatesFoundScreen` — copy empty tĩnh, chưa đọc `empty_reason_vi`
 
 **NLTT blocked until upstream ships:**
 
-1. Bỏ `gradeToScore` / fallback Trực·giờ trên `/tra-cuu/ket-qua` — map 1:1 `reason_vi` + `score`
+1. Bỏ fallback `reasons[]` / Trực·giờ trên `/tra-cuu/ket-qua` khi `reason_vi` đã ship — body = `reason_vi` only
 2. Render `TraCuuMethodologyCollapsible` từ `score_methodology.summary_vi` (+ `weights` nếu có)
 3. Render empty state body từ `empty_reason_vi`
 4. Bỏ multi-key array parsing khi `ranked_days[]` được guarantee

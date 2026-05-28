@@ -68,6 +68,23 @@ describe("mapChonNgayPayloadToResultDays", () => {
     expect(rows[0]?.reasons[0]).toContain("Canonical");
   });
 
+  it("prefers reason_vi over reasons[] for ket-qua body", () => {
+    const rows = mapChonNgayPayloadToResultDays({
+      ranked_days: [
+        {
+          date: "2026-06-06",
+          score: 88,
+          reason_vi: "Ngày thuận ký kết với nhật chủ Ất Mộc — buổi sáng có giờ Hoàng đạo.",
+          reasons: [
+            "Trực Mãn — ngày tốt (+20). Trực Mãn — hợp với Ký kết hợp đồng (+15).",
+          ],
+        },
+      ],
+    });
+    expect(rows[0]?.reasons[0]).toContain("nhật chủ");
+    expect(rows[0]?.reasons[0]).not.toContain("(+20)");
+  });
+
   it("returns empty when payload has no recognizable array", () => {
     expect(mapChonNgayPayloadToResultDays({ foo: 1 })).toEqual([]);
   });
