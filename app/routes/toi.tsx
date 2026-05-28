@@ -79,10 +79,16 @@ export default function ToiRoute() {
 
   const upcoming = picks
     .filter((p) => p.day_iso && daysUntil(p.day_iso))
+    .sort(
+      (a, b) =>
+        new Date(`${a.day_iso!}T12:00:00`).getTime() -
+        new Date(`${b.day_iso!}T12:00:00`).getTime(),
+    )
     .slice(0, 3)
     .map((p) => ({
+      iso: p.day_iso!,
       d: formatPickDate(p.day_iso!),
-      v: p.label ?? "Việc đã đánh dấu",
+      v: p.label ?? "Ngày đã đánh dấu",
       s: p.score ?? 78,
       in: daysUntil(p.day_iso)!,
     }));
@@ -240,28 +246,23 @@ export default function ToiRoute() {
           className="mt-9 border-t pt-5"
           style={{ borderColor: CT.hairline }}
         >
-          <div className="mb-3 flex items-baseline justify-between">
-            <Mono style={{ color: CT.muted, fontSize: 9 }}>Ngày sắp tới · đã đánh dấu</Mono>
-            <Link
-              to="/toi/so-viec"
-              className="font-serif text-xs no-underline"
-              style={{ color: CT.goldDeep }}
-            >
-              Xem sổ →
-            </Link>
-          </div>
+          <Mono style={{ color: CT.muted, fontSize: 9, display: "block", marginBottom: 6 }}>
+            Ngày sắp tới · đã đánh dấu
+          </Mono>
           {picksLoading ? (
             <p className="font-serif text-xs" style={{ color: CT.muted }}>
               Đang tải…
             </p>
           ) : upcoming.length > 0 ? (
             upcoming.map((r, i) => (
-              <div
-                key={`${r.d}-${i}`}
-                className="flex items-baseline gap-3.5 py-3"
+              <Link
+                key={r.iso}
+                to={`/ngay/${r.iso}`}
+                className="flex items-baseline gap-3.5 py-3 no-underline"
                 style={{
                   borderBottom:
                     i < upcoming.length - 1 ? `1px solid ${CT.hairline2}` : "none",
+                  color: CT.ink,
                 }}
               >
                 <div className="min-w-[50px]">
@@ -284,11 +285,12 @@ export default function ToiRoute() {
                 >
                   {r.s}
                 </div>
-              </div>
+              </Link>
             ))
           ) : (
             <p className="font-serif text-xs leading-relaxed" style={{ color: CT.muted }}>
-              Chưa có ngày đánh dấu — tra cứu ngày lành và lưu vào sổ.
+              Chưa có ngày đánh dấu — mở chi tiết ngày từ lịch hoặc tra cứu và chọn
+              &ldquo;Đánh dấu để nhắc trước 1 ngày&rdquo;.
             </p>
           )}
         </div>
@@ -341,8 +343,6 @@ export default function ToiRoute() {
             Tiện ích · cài đặt
           </Mono>
           {[
-            { t: "Sổ việc", sub: "ngày đã đánh dấu", to: "/toi/so-viec" },
-            { t: "Phong thuỷ", sub: "hướng · màu · số theo mệnh", to: "/tien-ich/phong-thuy" },
             { t: "Cài đặt", sub: "thông báo · tài khoản · hỗ trợ", to: "/toi/cai-dat" },
           ].map((row, i, arr) => (
             <Link

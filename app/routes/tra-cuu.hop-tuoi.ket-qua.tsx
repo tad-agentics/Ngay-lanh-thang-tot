@@ -53,7 +53,7 @@ function HopTuoiSaveButton({
       score: panel.score ?? undefined,
     });
     setSaving(false);
-    if (r.ok) toast.success("Đã lưu kết quả hợp tuổi vào sổ.");
+    if (r.ok) toast.success("Đã lưu kết quả hợp tuổi.");
     else toast.error(r.error ?? "Không lưu được.");
   }
 
@@ -62,7 +62,7 @@ function HopTuoiSaveButton({
       type="button"
       disabled={saving}
       onClick={() => void handleSave()}
-      className="cursor-pointer border-none bg-transparent p-0 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.14em]"
+      className="cursor-pointer border-none bg-transparent p-0 font-serif text-xs"
       style={{ color: CT.goldDeep }}
     >
       {saving ? "…" : "Lưu"}

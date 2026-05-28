@@ -767,7 +767,7 @@ Implement `sanitizeReturnTo()` — reject external URLs, max length 200.
 | **share-og Edge** | Update template → **lịch-tờ visual** (not old phiếu-only) | Reuse Edge; new OG dimensions |
 | **share-resolve** | Unchanged contract | No birth data in token |
 
-**Not in v1:** `CSoList`, `CEmptySo` (sổ việc).
+**Not in v1:** `CSoList`, `CEmptySo` (màn sổ đầy đủ) — v1 chỉ preview **「Ngày sắp tới · đã đánh dấu」** trên `/toi` (màn 28); đánh dấu từ `/ngay/:ngay`.
 
 ### G7 — Daily notification flow (retention-critical)
 

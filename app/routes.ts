@@ -38,7 +38,6 @@ export default [
     route("toi/la-so", "routes/toi.la-so.tsx"),
     route("toi/luan-bat-tu", "routes/toi.luan-bat-tu.tsx"),
     route("toi/luan-tieu-van", "routes/toi.luan-tieu-van.tsx"),
-    route("toi/so-viec", "routes/toi.so-viec.tsx"),
     route("gio-sinh", "routes/gio-sinh.tsx"),
     route("dang-dung-lich", "routes/dang-dung-lich.tsx"),
     route("lich-da-mo", "routes/lich-da-mo.tsx"),

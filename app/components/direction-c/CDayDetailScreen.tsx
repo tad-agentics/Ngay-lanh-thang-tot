@@ -115,7 +115,7 @@ export function CDayDetailScreen() {
       score: score ?? undefined,
     });
     setSaving(false);
-    if (r.ok) toast.success("Đã lưu vào sổ việc.");
+    if (r.ok) toast.success("Đã đánh dấu — sẽ nhắc trước 1 ngày.");
     else toast.error(r.error ?? "Không lưu được.");
   }
 
