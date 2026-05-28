@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Download, LogOut } from "lucide-react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -11,30 +10,7 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { CT } from "~/lib/c-tokens";
 import { subscriptionDaysUntil } from "~/lib/entitlements";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
-
-type InstallState = "unknown" | "installable" | "installed" | "ios";
-
-const DISMISSED_KEY = "pwa_install_dismissed";
 const APP_VERSION = "1.0.4";
-
-function isIos(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
-}
-
-function isInStandaloneMode(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    ("standalone" in window.navigator &&
-      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
-        true)
-  );
-}
 
 type RowProps = {
   label: string;
@@ -60,7 +36,7 @@ function SettingsRow({
   const inner = (
     <>
       <div
-        className="font-[family-name:var(--font-display-2)] text-sm font-semibold tracking-[-0.005em]"
+        className="font-[family-name:var(--display-2)] text-sm font-semibold tracking-[-0.005em]"
         style={{ color: danger ? CT.red : CT.ink }}
       >
         {label}
@@ -111,7 +87,7 @@ function SettingsSection({
   children: ReactNode;
 }) {
   return (
-    <section className="mt-6 first:mt-2">
+    <section className="mt-[26px] first:mt-2">
       <Mono className="mb-1 text-[9px]" style={{ color: CT.muted }}>
         {title}
       </Mono>
@@ -120,18 +96,75 @@ function SettingsSection({
   );
 }
 
+function LegalPickerDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(24,21,14,0.55)" }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="legal-picker-title"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[390px] px-6 pb-8 pt-5 sm:rounded-none"
+        style={{ background: CT.paper, fontFamily: "var(--serif)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Mono style={{ color: CT.muted, fontSize: 9 }}>Pháp lý</Mono>
+        <h3
+          id="legal-picker-title"
+          className="mt-1.5 font-[family-name:var(--display-2)] text-base font-semibold tracking-[-0.005em]"
+          style={{ color: CT.ink }}
+        >
+          Điều khoản · Bảo mật
+        </h3>
+        <div className="mt-4 flex flex-col gap-2">
+          <Link
+            to="/dieu-khoan"
+            onClick={onClose}
+            className="block border py-3 text-center font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em] no-underline"
+            style={{ borderColor: CT.hairline, color: CT.ink }}
+          >
+            Điều khoản sử dụng
+          </Link>
+          <Link
+            to="/chinh-sach-bao-mat"
+            onClick={onClose}
+            className="block border py-3 text-center font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em] no-underline"
+            style={{ borderColor: CT.hairline, color: CT.ink }}
+          >
+            Chính sách bảo mật
+          </Link>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="mt-3 w-full cursor-pointer border-none bg-transparent py-2 text-center font-serif text-[12.5px]"
+          style={{ color: CT.muted }}
+        >
+          Huỷ
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function CSettingsScreen() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { profile } = useProfile();
   const { expiresAt, isActive } = useSubscription();
-  const [installState, setInstallState] = useState<InstallState>("unknown");
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem(DISMISSED_KEY) === "true",
-  );
   const [logoutOpen, setLogoutOpen] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
 
   const planLabel = useMemo(() => {
     if (!isActive || !expiresAt) return "chưa có gói";
@@ -145,41 +178,6 @@ export function CSettingsScreen() {
     return `${tier} · còn ${days} ngày`;
   }, [expiresAt, isActive]);
 
-  useEffect(() => {
-    if (isInStandaloneMode()) {
-      setInstallState("installed");
-      return;
-    }
-    if (isIos()) {
-      setInstallState("ios");
-      return;
-    }
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setInstallState("installable");
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    const installedHandler = () => setInstallState("installed");
-    window.addEventListener("appinstalled", installedHandler);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", installedHandler);
-    };
-  }, []);
-
-  async function handleInstall() {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      setInstallState("installed");
-      setDeferredPrompt(null);
-      localStorage.setItem(DISMISSED_KEY, "true");
-      setDismissed(true);
-    }
-  }
-
   async function confirmLogout() {
     setLogoutOpen(false);
     await signOut();
@@ -188,41 +186,12 @@ export function CSettingsScreen() {
 
   return (
     <div
-      className="flex min-h-full flex-col pb-10"
+      className="flex min-h-[100svh] flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar title="Cài đặt" />
 
-      <div className="flex-1 overflow-auto px-6 pb-8">
-        {!dismissed && installState !== "installed" ? (
-          <div
-            className="mt-2 border px-4 py-4"
-            style={{ borderColor: CT.hairline }}
-          >
-            <p className="m-0 font-[family-name:var(--font-display-2)] text-base font-semibold">
-              Thêm vào màn hình chính
-            </p>
-            <p className="mt-1 text-sm leading-snug" style={{ color: CT.muted }}>
-              Mở nhanh như app — không cần nhớ đường link.
-            </p>
-            {installState === "installable" ? (
-              <button
-                type="button"
-                onClick={() => void handleInstall()}
-                className="mt-3 flex w-full cursor-pointer items-center justify-center gap-2 border-none py-3 font-[family-name:var(--font-display-2)] text-xs font-bold uppercase tracking-[0.06em]"
-                style={{ background: CT.forest, color: CT.cream }}
-              >
-                <Download size={14} />
-                Cài ứng dụng
-              </button>
-            ) : (
-              <p className="mt-2 text-sm" style={{ color: CT.muted }}>
-                Safari / Chrome: Chia sẻ → Thêm vào Màn hình chính.
-              </p>
-            )}
-          </div>
-        ) : null}
-
+      <div className="flex-1 overflow-auto px-6 pb-[100px] pt-1">
         <SettingsSection title="Tài khoản">
           <SettingsRow
             label="Email"
@@ -240,11 +209,7 @@ export function CSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Lịch của tôi">
-          <SettingsRow
-            label="Gói hiện tại"
-            value={planLabel}
-            to="/dat-lich"
-          />
+          <SettingsRow label="Gói hiện tại" value={planLabel} to="/dat-lich" />
           <SettingsRow
             label="Lịch sử thanh toán"
             href="mailto:hotro@ngaylanhthangtot.vn?subject=Y%C3%AAu%20c%E1%BA%A7u%20l%E1%BB%8Bch%20s%E1%BB% AD%20thanh%20to%C3%A1n"
@@ -263,12 +228,13 @@ export function CSettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Hỗ trợ">
-          <SettingsRow label="Câu hỏi thường gặp" to="/" />
+          <SettingsRow label="Câu hỏi thường gặp" to="/#hoi-dap" />
+          <SettingsRow label="Liên hệ" href="mailto:hotro@ngaylanhthangtot.vn" />
           <SettingsRow
-            label="Liên hệ"
-            href="mailto:hotro@ngaylanhthangtot.vn"
+            label="Điều khoản · Bảo mật"
+            onClick={() => setLegalOpen(true)}
+            last
           />
-          <SettingsRow label="Điều khoản · Bảo mật" to="/dieu-khoan" last />
         </SettingsSection>
 
         <div
@@ -278,33 +244,22 @@ export function CSettingsScreen() {
           <button
             type="button"
             onClick={() => setLogoutOpen(true)}
-            className="flex w-full cursor-pointer items-center gap-2 border-none bg-transparent py-3 text-left"
+            className="w-full cursor-pointer border-none bg-transparent py-3 text-left font-[family-name:var(--display-2)] text-sm font-semibold tracking-[-0.005em]"
+            style={{ color: CT.red }}
           >
-            <LogOut size={14} style={{ color: CT.red }} />
-            <span
-              className="font-[family-name:var(--font-display-2)] text-sm font-semibold tracking-[-0.005em]"
-              style={{ color: CT.red }}
-            >
-              Đăng xuất
-            </span>
+            Đăng xuất
           </button>
         </div>
 
         <p
-          className="mt-6 text-center font-[family-name:var(--font-mono)] text-[9.5px] tracking-[0.06em]"
+          className="mt-6 text-center font-[family-name:var(--mono)] text-[9.5px] tracking-[0.06em]"
           style={{ color: CT.muted }}
         >
           v{APP_VERSION} · ngaylanhthangtot.vn
         </p>
-
-        <Link
-          to="/toi"
-          className="mt-4 block text-center text-sm no-underline"
-          style={{ color: CT.goldDeep }}
-        >
-          ← Quay lại Tôi
-        </Link>
       </div>
+
+      <LegalPickerDialog open={legalOpen} onClose={() => setLegalOpen(false)} />
 
       <CConfirmDialog
         open={logoutOpen}

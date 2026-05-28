@@ -418,8 +418,8 @@ For each screen: **Component** (canvas) → **Route** → **FE data** → **BE w
 
 | | |
 |---|---|
-| **FE** | Notifications, account, đăng xuất → `CConfirmDialog` (39) |
-| **BE** | `push_subscriptions`; `signOut` |
+| **FE** | Account, gói, hiển thị, hỗ trợ, đăng xuất → `CConfirmDialog` (39). **Không** section Thông báo (push retired 2026-05-27). |
+| **BE** | `signOut` only |
 
 #### ~~24 · CChuyenLich~~ — **Dropped**
 
@@ -433,7 +433,7 @@ Chuyển lịch âm ↔ dương **không ship** Direction C (2026-05-27). Legacy
 
 | # | Component | Trigger | FE | BE |
 |---|---|---|---|---|
-| 31 | CNotifPerm | First load post-onboarding | Sheet → browser prompt | `push_subscriptions` insert |
+| ~~31~~ | ~~CNotifPerm~~ | — | **Retired** (2026-05-27) — no Web Push v1 | — |
 | 32 | CNoDatesFound | Empty search | Inline at 21 | — |
 | 33 | CBaziLocked | No entitlement | Inline at 18 | — |
 | 34 | CMeLocked | Non-yearly | Tile variant at 28 | — |
@@ -477,7 +477,7 @@ Sequential: Backend → Frontend → QA per wave. **Commerce (W8) after Daily + 
 | **W7** | TOOLS 22–23 | hợp tuổi (24 chuyển lịch dropped) | 1d |
 | **W8** | COMMERCE 25–27 | `/dat-lich`, PayOS webhook (G3), addon BE | 2.5d |
 | **W9** | ACCOUNT 28–29 | `/toi`, `/toi/sua-ho-so`, G1 recompute | 2d |
-| **W10** | EDGE 30–40 | settings, share (G6), notif (G7), G2 banners | 3.5d |
+| **W10** | EDGE 30–40 | settings, share (G6), G2 banners | 3.5d |
 | **W11** | LANDING | `c-landing.jsx`, pricing copy N1 | 2d |
 | **Cleanup** | — | 302 redirects N6, retire B routes, grep N5 | 1.5d |
 
@@ -505,7 +505,7 @@ Sequential: Backend → Frontend → QA per wave. **Commerce (W8) after Daily + 
 
 **W9:** CMe N4 card preview · CEditProfile + G1 full policy · birth edit limit 2/30d
 
-**W10:** CSubExpired · share sender+public G6 · share-og lịch-tờ · daily push G7 · expiry banners G2 · standalone pay 35–36 FE
+**W10:** CSubExpired · share sender+public G6 · share-og lịch-tờ · expiry banners G2 · standalone pay 35–36 FE
 
 **W11:** landing sections · sticky mobile CTA · anon teaser B3 only on landing
 
@@ -769,20 +769,9 @@ Implement `sanitizeReturnTo()` — reject external URLs, max length 200.
 
 **Not in v1:** `CSoList`, `CEmptySo` (màn sổ đầy đủ) — v1 chỉ preview **「Ngày sắp tới · đã đánh dấu」** trên `/toi` (màn 28); đánh dấu từ `/ngay/:ngay`.
 
-### G7 — Daily notification flow (retention-critical)
+### ~~G7 — Daily notification flow~~ — **Retired v1** (2026-05-27)
 
-**Ship in Wave 10** — không optional. Pivot mất ~50% retention nếu thiếu daily nudge.
-
-| Param | Value |
-|---|---|
-| Default send | **06:00** local user time |
-| Timezone | Store `profiles.timezone` or `push_subscriptions.tz` — default `Asia/Ho_Chi_Minh` |
-| Cron | `cron-push-daily-lich` — hourly tick, send if user's local hour == 6 AND minute < 15 |
-| Quiet hours | **22:00–07:00 local** — skip (except T-1 expiry reminder at 08:00) |
-| Payload | *"Trang lịch hôm nay đã mở 🌿"* → `/lich` |
-| Audience | `push_enabled=true` + active sub + `push_subscriptions` row |
-| Opt-out | `/toi/cai-dat` toggle → `profiles.push_enabled=false` |
-| Replace | Retire `cron-push-habit` habit/streak copy |
+Web Push, `push_subscriptions`, `profiles.push_enabled`, `CNotifPerm`, và section **Thông báo** trên `/toi/cai-dat` **không ship** Direction C v1. Migration `20260527150000_direction_c_retire_push_habit_pin.sql`. Có thể revisit post-launch nếu retention data yêu cầu.
 
 ### G8 — Wave dependency order (v2 — locked)
 
@@ -796,7 +785,7 @@ W0 Foundation → W1 Launch → W2 Auth → W3 First Run
 → W7 Tools
 → W8 Commerce          ← after user sees value in Tab 1–2
 → W9 Account (+ CEditProfile / G1)
-→ W10 Edge + Share + Notifications (G2 banners, G6, G7)
+→ W10 Edge + Share (G2 banners, G6)
 → W11 Landing
 → Cross-cleanup
 ```
@@ -857,7 +846,7 @@ Allowlist: `Ticket.tsx`, `/share/*`, `/x/*`, transition comments, `app_config` m
 | W6 Picks + W7 Tools | **3d** |
 | W8 Commerce + webhook hardening | **2.5d** |
 | W9 Account + G1 recompute | **2d** |
-| W10 Edge + Share + Notif + G2/G6/G7 | **3.5d** |
+| W10 Edge + Share + G2/G6 | **3.5d** |
 | W11 Landing | **2d** |
 | Cleanup + docs | **1.5d** |
 | **Total** | **~18–22 dev-days** (+ QA gate per wave) |

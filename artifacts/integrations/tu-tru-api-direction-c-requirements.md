@@ -3,7 +3,7 @@
 **Đối tượng:** Team vận hành / phát triển [API Chọn Ngày Bát Tự](https://tu-tru-api.fly.dev/docs#/)  
 **OpenAPI hiện tại:** `https://tu-tru-api.fly.dev/openapi.json` (info.version `0.1.0`)  
 **Consumer:** Ứng dụng **Ngày Lành Tháng Tốt** (Direction C) — proxy qua Supabase Edge `bat-tu`  
-**Cập nhật:** 2026-05-28 (màn 17–18: thuật ngữ `luu-nien` ≠ `tieu-van`; REQ-P2-01b/04/05; sửa mapping màn 18)  
+**Cập nhật:** 2026-05-28 (audit: fixture điểm P0-02/P1-01; taxonomy score; màn 17–18 FE vs API; entitlement Tiểu Vận)  
 **Liên quan:** `artifacts/plans/direction-c-pivot-plan.md` · W4–W10 · màn Lá số 17–18 · Tra cứu 19–21
 
 ---
@@ -23,7 +23,7 @@
 | **REQ-P1-03** | Cùng schema day-detail ↔ chon-ngay/detail | **P1** | `{}` rỗng | Hai mapper riêng (`day-detail-view`, `chon-ngay-detail`) | 🟡 **Một phần** |
 | **REQ-P1-04** | `POST /v1/chon-ngay` → **`ranked_days[]`** canonical + `empty_reason_vi` | **P1** | `{}` rỗng | Ưu tiên `ranked_days`, fallback 11 array keys | 🟡 **Một phần** |
 | **REQ-P2-01** | `GET /v1/la-so` + **`POST /v1/tu-tru`** — contract UI màn 17 (pillars, ngũ hành, đại vận) | **P2** | `{}` rỗng | Mapper `la-so-ui.ts` đọc nhiều alias từ `profiles.la_so` | 🟡 **Một phần** |
-| **REQ-P2-01b** | `GET /v1/la-so` — facts cho Gemini **`la-so-chi-tiet`** (màn 18 §01–02) | **P2** | `{}` rỗng | FE ship interim: `la-so` → `generate-reading` `la-so-chi-tiet` | 🟡 **Interim NLTT** · API 🔴 |
+| **REQ-P2-01b** | `GET /v1/la-so` — facts cho Gemini **`la-so-chi-tiet`** (màn 18 interim MVP) | **P2** | `{}` rỗng | FE ship interim: `la-so` → `generate-reading` `la-so-chi-tiet` (5 aspect) | 🟡 **Interim NLTT** · API 🔴 |
 | **REQ-P2-02** | `GET /v1/la-so/luu-nien?year=` — facts **vận năm** (≠ `tieu-van` vận tháng) | **P2** | Không có | Edge có prompt `luu-nien`; FE màn 18 **chưa gọi** | 🔴 **Chưa có** |
 | **REQ-P2-03** | `POST /v1/tu-tru` → `engine_version` / `computed_at` | **P2** | Không có | G1 recompute dựa policy NLTT, chưa có stamp upstream | 🔴 **Chưa có** |
 | **REQ-P2-04** | **`POST /v1/tu-tru` ≡ `GET /v1/la-so`** cùng birth — shape khớp cho cache `profiles.la_so` | **P2** | Không document | Onboarding lưu tu-tru; màn 17 đọc cache, màn 18 fetch la-so | 🔴 **Chưa khóa** |
@@ -84,12 +84,14 @@ Browser (Direction C)
 | GET | `/v1/la-so/luu-nien` | *(chưa có op)* | `/toi/luan-bat-tu` §03 vận năm *(Make)* | Facts vận **năm** (P2-02) — **≠** `tieu-van` |
 | GET | `/v1/tieu-van` | `tieu-van` | `/toi/luan-tieu-van` | **Vận tháng** — không nhầm với lưu niên / SKU "Tiểu Vận năm" |
 | POST | `/v1/hop-tuoi` | `hop-tuoi` | `/tra-cuu/hop-tuoi` | `criteria[].points` (P3-07); FE `source: tra_cuu` (REQ-NLTT-01) |
-| GET | `/v1/phong-thuy` | `phong-thuy` | `/toi/luan-bat-tu` §04 *(Make)* | `year=` Phi Tinh (P2-05); op có sẵn, chưa wire FE |
+| GET | `/v1/phong-thuy` | `phong-thuy` | `/toi/luan-bat-tu` §04 *(Make)* · `tien-ich/phong-thuy` → redirect `/lich` | `year=` Phi Tinh (P2-05); op có sẵn, **chưa wire** màn 18 |
 | GET | `/v1/convert-date` | `convert-date` | Nội bộ Edge only | Không route C |
 | GET | `/v1/weekly-summary` | `weekly-summary` | **Dropped C** | Deprecate docs (P3-05) |
+| POST | `/v1/tu-tru` *(preview)* | `tu-tru-preview` | Onboarding preview | Không lưu `profiles.la_so` |
+| GET | `/v1/share/{token}` | `share` | `/x/:token`, `/share/:token` | OG resolve |
 | POST/GET | `/v1/profile` | `profile` | Sync birth | Đang dùng |
 
-**Gap OpenAPI chung:** Response schema hầu hết `{}` — NLTT map linh hoạt (`day-detail-view.ts`, `home-bat-tu.ts`, `chon-ngay-result.ts`). **API phải publish schema thật** cho mọi field P0/P1.
+**Gap OpenAPI chung:** Response schema hầu hết `{}` — NLTT map linh hoạt (`day-detail-view.ts`, `home-bat-tu.ts`, `chon-ngay-result.ts`, `la-so-ui.ts`). **API phải publish schema thật** cho mọi field **P0/P1/P2**.
 
 ---
 
@@ -166,7 +168,7 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
       "source": "Trực ngày",
       "source_ref": 1,
       "type": "Thu · Hắc Đạo",
-      "points": 0,
+      "points": 8,
       "reason_vi": "Trực Thu thuận việc thu hoạch, kết thúc chu kỳ — nhưng ngày Hắc Đạo (Thiên Lao) làm giảm độ an toàn cho việc quan trọng với mệnh Lộ Bàng Thổ của bạn."
     },
     {
@@ -182,16 +184,16 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
       "source": "Can chi · tương sinh với lá số",
       "source_ref": 3,
       "type": "Nhâm Dần",
-      "points": 0,
-      "reason_vi": "Can Nhâm (Thủy) và Chi Dần (Mộc) đối chiếu trụ Nhật và Dụng Thần trên lá số — không có xung mạnh với Lộ Bàng Thổ; không cộng thêm cũng không trừ thêm điểm."
+      "points": 12,
+      "reason_vi": "Can Nhâm (Thủy) và Chi Dần (Mộc) đối chiếu trụ Nhật và Dụng Thần trên lá số — hơi thuận với Lộ Bàng Thổ; cộng 12 điểm so với nền ngày."
     },
     {
       "id": "gio_vang",
       "source": "Giờ vàng trong ngày",
       "source_ref": 4,
       "type": "Thìn 7–9h · Mùi 13–15h",
-      "points": 0,
-      "reason_vi": "Buổi sáng có giờ Hoàng đạo Thìn thuận cho việc nhỏ; chiều Mùi ổn định nhưng không bù được hung sao — nên gom việc quan trọng vào khung giờ tốt nếu bắt buộc làm."
+      "points": 30,
+      "reason_vi": "Buổi sáng có giờ Hoàng đạo Thìn thuận cho việc nhỏ; chiều Mùi ổn định — khung giờ mang phần lớn điểm còn lại (+30) sau khi trừ hung sao."
     }
   ],
   "sources": [
@@ -247,13 +249,30 @@ GET /v1/day-detail/generic?date=YYYY-MM-DD&tz=...
 
 **Liên quan LLM:** Gemini **không** viết lại breakdown UI. Anchor voice dùng cùng facts (`reason_vi` qua REQ-P1-01 `luan-context`); breakdown trên màn là **deterministic từ engine** (FE-HANDOFF §Phase 8).
 
+> **Fixture trên:** `8 + (-15) + 12 + 30 = 35` — mọi ví dụ JSON trong doc **phải** tuân `sum(breakdown[].points) ≈ score`.
+
+---
+
+#### REQ-P0-02a · Taxonomy điểm — canonical API vs FE interim
+
+**Canonical (upstream — dùng cho `breakdown[]`, `score_methodology`, `luan-context`):**
+
+| `breakdown[].id` / `score_methodology.weights[].factor` | Nhãn UI (REQ-P0-03) | `max_points` gợi ý |
+|--------------------------------------------------------|---------------------|-------------------|
+| `truc` | Trực ngày | 30 |
+| `sao28` | Nhị thập bát tú | 25 |
+| `can_chi_laso` | Can chi · lá số | 25 |
+| `gio_vang` | Giờ vàng | 20 |
+
+**FE interim (chỉ collapsible copy tĩnh — bỏ khi ship P0-03):** `DayScoreMethodologyCollapsible` dùng nhãn marketing *Hoàng-đạo 40% · Trực 20% · Sao 25% · Tương sinh 15%* — **không** map 1:1 `id` engine. Upstream **không** adopt bộ % này; NLTT thay bằng `score_methodology.weights[]` từ API.
+
 ---
 
 #### REQ-P0-03 · `score` + `score_methodology` block (màn 12–14, tra cứu)
 
 **API phải làm:** Trả block methodology thay vì để FE copy tĩnh.
 
-**NLTT hiện tại:** `DayScoreMethodologyCollapsible` / `TraCuuMethodologyCollapsible` — weights hard-code (40/20/25/15%).
+**NLTT hiện tại:** `DayScoreMethodologyCollapsible` / `TraCuuMethodologyCollapsible` — copy tĩnh (xem REQ-P0-02a FE interim). **Target:** render từ `score_methodology` API với `factor` = `truc` \| `sao28` \| `can_chi_laso` \| `gio_vang`.
 
 ```json
 {
@@ -346,8 +365,8 @@ GET /v1/day-detail/luan-context
       "label_vi": "Giờ vàng trong ngày",
       "source_ref": 4,
       "verdict_vi": "Thìn 7–9h",
-      "points": 0,
-      "reason_vi": "Giờ Hoàng đạo buổi sáng…"
+      "points": 30,
+      "reason_vi": "Giờ Hoàng đạo buổi sáng thuận cho việc nhỏ; khung chiều ổn — cộng phần lớn điểm còn lại sau hung sao."
     }
   ],
   "gio_tot": ["Thìn 7–9h"],
@@ -383,7 +402,7 @@ GET /v1/day-detail/luan-context
 
 **Quy tắc nội dung (instruction cho team API, không phải prompt Gemini):**
 
-1. **`luan-context` = projection của `day-detail` personalized** — `breakdown_summary[]` copy/sinh từ cùng engine run; **không** tính logic khác.
+1. **`luan-context` = projection của `day-detail` personalized** — `breakdown_summary[]` copy/sinh từ cùng engine run; **không** tính logic khác. **`sum(breakdown_summary[].points) ≈ score`** — mirror fixture REQ-P0-02 (vd. `8 + (-15) + 12 + 30 = 35`).
 2. **`reason_vi` / `verdict_vi`:** Tuân REQ-P0-02 (cá nhân hoá, không nhãn, không list giờ thay luận).
 3. **Không** trả field engine thô (`type: "neutral"`, `ĐIỂM CƠ BẢN`) trong payload hiển thị.
 4. `gio_tot[]` / `gio_xau[]` = chuỗi hiển thị sẵn (`Thìn 7–9h`) — **bổ sung** cho `reason_vi` của `gio_vang`, không thay thế.
@@ -577,7 +596,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 ---
 
-#### REQ-NLTT-01 · Edge billing — tra cứu **không trừ credit**
+#### REQ-NLTT-01 · Edge billing — tra cứu **không trừ credit** *(NLTT only — không thuộc P1 API)*
 
 > **Không thuộc tu-tru-api** — ghi để upstream biết call volume từ `/tra-cuu`.
 
@@ -602,36 +621,54 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 > **NLTT Edge:** prompt `generate-reading` tách rõ — `tieu-van` luận **tháng**; `luu-nien` luận **năm** (`supabase/functions/generate-reading/index.ts`).
 
-**Màn 18 (`/toi/luan-bat-tu`) — Make `CBaziReadingFull` gộp 5 block:**
+> **⚠️ Product gap (entitlement):** Gói/SKU **「Luận giải Tiểu Vận năm」** (`luan_tieu_van`, `tieu_van_reading_expires_at`) mở route `/toi/luan-tieu-van?year=` — nhưng code hiện tại gọi **`GET /v1/tieu-van`** cho **một tháng** (`month = {year}-{tháng hiện tại}`), **không** phải lưu niên 12 tháng. Để khớp copy gói + Make, cần wire **`luu-nien`** (REQ-P2-02) hoặc đổi positioning SKU.
 
-| § Make | Nguồn engine | Gemini (nếu có) | FE hiện tại |
-|--------|--------------|-----------------|------------|
-| 01 Mệnh tổng quan | `GET /v1/la-so` | `la-so-chi-tiet` *(một phần)* | 🟡 header từ `profiles.la_so` |
-| 02 Tính cách | `GET /v1/la-so` | `la-so-chi-tiet` | ✅ ship interim |
+**Màn 18 (`/toi/luan-bat-tu`) — Make target vs FE interim:**
+
+| § Make (target) | Nguồn engine | Gemini | FE hiện tại (2026-05-28) |
+|-----------------|--------------|--------|---------------------------|
+| 01 Mệnh tổng quan | `GET /v1/la-so` facts | ❌ *(không có section `la-so-chi-tiet`)* | 🟡 header `laSoJsonToRevealProps(profile.la_so)` only |
+| 02 Tính cách | `GET /v1/la-so` | `la-so-chi-tiet` → `tinh_cach` | 🟡 nằm trong 5 aspect (không tách block Make) |
 | 03 Vận năm | `GET /v1/la-so/luu-nien?year=` | `luu-nien` | 🔴 chưa wire |
 | 04 Phong thủy | `GET /v1/phong-thuy?year=` | *(optional prose)* | 🔴 chưa wire |
-| 05 Quý nhân · lưu ý | lá số + lưu niên | `luu-nien` hoặc block riêng | 🔴 chưa wire |
+| 05 Quý nhân · lưu ý | lá số + lưu niên | `luu-nien` hoặc facts | 🔴 chưa wire |
+
+**Interim MVP màn 18:** toàn bộ body luận = **5 section** `la-so-chi-tiet` (`tinh_cach`, `su_nghiep`, `tai_van`, `suc_khoe`, `tinh_duyen`) — đánh số 01–05 động trong `CBaziReadingScreen`; title có năm (`Luận giải Bát tự · 2026`) nhưng nội dung **chưa** theo vận năm.
 
 ---
 
-#### REQ-P2-01 · `GET /v1/la-so` + `POST /v1/tu-tru` — contract UI màn 17
+#### REQ-P2-01 · `GET /v1/la-so` + `POST /v1/tu-tru` — contract màn 17
 
 **Consumer:** `/toi/la-so` (`CLaSoFullScreen`) đọc **`profiles.la_so`** (output onboarding / G1 recompute). Mapper: `app/lib/la-so-ui.ts` · fixtures: `app/lib/la-so-ui.test.ts`.
 
 **API phải làm:** Document + guarantee fields (snake_case canonical; camelCase optional):
 
-| Field | Ghi chú UI |
-|-------|------------|
-| `pillars.{year,month,day,hour}` | Mỗi trụ: `can.name`, `chi.name` — UI cột **Giờ → Ngày → Tháng → Năm** |
-| `_raw.element_counts` | `{ Kim, Moc, Thuy, Hoa, Tho }` hoặc tương đương — NLTT tính **%** ngũ hành (tổng = 100) |
+| Field | Mapper cần | UI màn 17 shipped |
+|-------|--------------|-------------------|
+| `pillars.{year,month,day,hour}` | ✅ | ✅ 4 trụ (Giờ → Ngày → Tháng → Năm) |
+| `_raw.element_counts` / `ngu_hanh` | ✅ | ✅ biểu đồ ngũ hành % |
+| `nhat_chu`, `menh` | ✅ | ✅ headline Mệnh |
+| `dung_than`, `ky_than` | ✅ | ✅ card Dụng/Kỵ |
+| `dai_van.current` | ✅ | ✅ một dòng đại vận hiện tại |
+| `pillars.year.nap_am.mo_ta` | ✅ (`extractMenhTagline`) | 🔴 tagline Make **chưa render** |
+| `dai_van.cycles[]` / `dai_van_list[]` | ✅ | 🔴 timeline đại vận **chưa render** |
+| `thap_than.dominant` | ✅ | 🔴 **chưa render** |
+| `cuong_nhuoc` | ✅ (P2-01b) | 🔴 **chưa render** (chỉ dùng Gemini) |
+
+**Chi tiết field (API contract):**
+
+| Field | Ghi chú |
+|-------|---------|
+| `pillars.{year,month,day,hour}` | Mỗi trụ: `can.name`, `chi.name` |
+| `_raw.element_counts` | `{ Kim, Moc, Thuy, Hoa, Tho }` — NLTT tính **%** (tổng = 100) |
 | `ngu_hanh` / `element_counts` | Fallback nếu thiếu `_raw` |
 | `nhat_chu` | Object `{ can_name, hanh }` hoặc string |
 | `menh` | `{ nap_am_name, hanh }` hoặc string; `pillars.year.nap_am.mo_ta` cho tagline *(Make)* |
-| `dung_than`, `ky_than` | `{ element, name }` — card Dụng/Kỵ thần |
+| `dung_than`, `ky_than` | `{ element, name }` |
 | `dai_van.current` | `{ display, age_range, age_range_lunar?, start_age?, end_age? }` |
-| `dai_van.cycles[]` hoặc `dai_van_list[]` | Timeline đại vận; `current` khớp đúng hàng `isActive` |
-| `thap_than.dominant` | Fallback hiển thị cát tinh / Thập thần |
-| `cuong_nhuoc` | Cường nhược nhật chủ — dùng cho Gemini (P2-01b) |
+| `dai_van.cycles[]` hoặc `dai_van_list[]` | Timeline; `current` khớp hàng `isActive` |
+| `thap_than.dominant` | Fallback cát tinh / Thập thần |
+| `cuong_nhuoc` | Cường nhược nhật chủ — P2-01b |
 
 **Không yêu cầu:** văn luận dài từ engine (thuộc NLTT Gemini).
 
@@ -648,8 +685,8 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `nhat_chu` + `hanh` + `cuong_nhuoc` | `tinh_cach` |
 | `thap_than` (dominant + per-pillar nếu có) | `tinh_cach`, `su_nghiep` |
 | `dung_than`, `ky_than` | `su_nghiep`, `tai_van`, `suc_khoe` |
-| `pillars` đủ 4 trụ | Neo câu luận |
-| `menh` / nap_âm | Mệnh tổng quan |
+| `pillars` đủ 4 trụ | Neo câu luận (mọi aspect) |
+| `menh` / nap_âm | Bối cảnh `tinh_cach`, `su_nghiep` |
 | `dai_van.current` | `tai_van` *(optional)* |
 
 **NLTT hiện tại:** FE gọi `bat-tu` op `la-so` → `invokeGenerateReading({ endpoint: "la-so-chi-tiet", data: laso.data })`. Interim ship; cần upstream khóa shape.
@@ -688,6 +725,8 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 **API phải làm:** Cùng `birth_date` + `birth_time` + `gender` → response tu-tru **chứa superset** field P2-01 (ít nhất `_raw.element_counts`, `pillars`, `dai_van`, `thap_than`, `cuong_nhuoc`). OpenAPI ghi rõ field nào xuất hiện ở cả hai endpoint.
 
+**NLTT dự kiến:** `mergeLaSoJsonForChiTietDisplay()` + `extractLaSoChiTietEnrichment()` (`la-so-ui.ts`, có test) — gộp `_raw.element_counts` từ live `GET /v1/la-so` vào cache `profiles.la_so` khi parity khóa; **chưa wire route**.
+
 ---
 
 #### REQ-P2-05 · `GET /v1/phong-thuy?year=` — màn 18 §04 Phong thủy
@@ -704,7 +743,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `huong_tot_nam_nay[]`, `huong_xau_nam_nay[]` | Overlay lưu niên năm |
 | `hoa_giai[]` | Gợi ý hóa giải sao xấu |
 
-**NLTT hiện tại:** Op `phong-thuy` có trong Edge (`year` trong queryKeys); **chưa wire** vào `CBaziReadingScreen`. Không gộp vào `luu-nien`.
+**NLTT hiện tại:** Op `phong-thuy` có trong Edge (`year` trong queryKeys); **chưa wire** vào `CBaziReadingScreen`. Route `tien-ich/phong-thuy` chỉ redirect `/lich` (bookmark). Không gộp vào `luu-nien`.
 
 ---
 

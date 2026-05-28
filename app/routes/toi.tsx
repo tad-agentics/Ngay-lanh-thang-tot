@@ -355,7 +355,7 @@ export default function ToiRoute() {
             },
             {
               t: "Cài đặt",
-              sub: "thông báo · tài khoản · hỗ trợ",
+              sub: "tài khoản · gói · hỗ trợ",
               to: "/toi/cai-dat",
             },
           ].map((row, i, arr) => (
