@@ -17,13 +17,15 @@ export function CLichSegmentedNav({ dark = false }: CLichSegmentedNavProps) {
   const active = location.pathname.startsWith("/lich/thang") ? 1 : 0;
 
   return (
-    <CSegmented
-      dark={dark}
-      options={OPTIONS.map((o) => ({ label: o.label, to: o.to }))}
-      activeIndex={active}
-      onSelect={(i) => {
-        void navigate(OPTIONS[i]?.to ?? "/lich");
-      }}
-    />
+    <div className="pt-4">
+      <CSegmented
+        dark={dark}
+        options={OPTIONS.map((o) => ({ label: o.label, to: o.to }))}
+        activeIndex={active}
+        onSelect={(i) => {
+          void navigate(OPTIONS[i]?.to ?? "/lich");
+        }}
+      />
+    </div>
   );
 }

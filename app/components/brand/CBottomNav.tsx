@@ -112,7 +112,7 @@ export function CBottomNav({ active, dark = false }: CBottomNavProps) {
       className="pointer-events-none fixed bottom-6 left-0 right-0 z-40 flex justify-center px-[22px]"
     >
       <div
-        className="pointer-events-auto flex w-full max-w-[min(100%,22rem)] gap-1 rounded-full px-1.5 py-1.5 backdrop-blur-[14px]"
+        className="pointer-events-auto flex w-full max-w-[min(100%,22rem)] gap-1 rounded-full px-[5px] py-[7px] backdrop-blur-[14px]"
         style={{
           background: bg,
           border,
@@ -128,7 +128,7 @@ export function CBottomNav({ active, dark = false }: CBottomNavProps) {
             <NavLink
               key={tab.id}
               to={TAB_ROUTES[tab.id]}
-              className="flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center rounded-full no-underline"
+              className="flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center rounded-full px-1 py-1.5 no-underline"
               style={{
                 background: isActive
                   ? dark
@@ -139,8 +139,9 @@ export function CBottomNav({ active, dark = false }: CBottomNavProps) {
             >
               <Icon active={isActive} dark={dark} />
               <span
-                className="mt-0.5 font-[family-name:var(--font-display)] text-[10px] font-semibold uppercase tracking-wide"
+                className="mt-[3px] font-[family-name:var(--display-2)] text-[10px] uppercase tracking-[0.04em]"
                 style={{
+                  fontWeight: isActive ? 700 : 600,
                   color: isActive
                     ? dark
                       ? "var(--gold)"
