@@ -35,6 +35,10 @@ const HOP_OTHER_BIRTH_TIME_DEFAULT = "__default__";
 
 const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
+/** Maket CHopTuoi: label + value row aligned across 2-col grid. */
+const FIELD_VALUE_ROW =
+  "mt-[3px] flex h-5 w-full min-w-0 items-center text-[13px] font-semibold tracking-[-0.005em]";
+
 const PURPOSE_OPTIONS = [
   { label: "cưới hỏi", value: "PHU_THE" },
   { label: "hợp tác", value: "DOI_TAC" },
@@ -238,28 +242,30 @@ export default function TraCuuHopTuoiRoute() {
             style={{ ...DISPLAY2, color: CT.ink }}
           />
           <div className="mt-2.5 grid grid-cols-2 gap-3.5">
-            <div>
+            <div className="min-w-0">
               <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
                 Ngày sinh
               </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="DD/MM/YYYY"
-                maxLength={10}
-                value={form.ngaySinh}
-                aria-invalid={hopOtherNgayInvalid}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
-                  }))
-                }
-                className="mt-0.5 w-full border-none bg-transparent p-0 text-[13px] font-semibold tracking-[-0.005em] outline-none tabular-nums"
-                style={{ ...DISPLAY2, color: CT.ink }}
-              />
+              <div className={FIELD_VALUE_ROW}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="DD/MM/YYYY"
+                  maxLength={10}
+                  value={form.ngaySinh}
+                  aria-invalid={hopOtherNgayInvalid}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
+                    }))
+                  }
+                  className="h-full w-full min-w-0 border-none bg-transparent p-0 outline-none tabular-nums placeholder:font-normal placeholder:text-[13px]"
+                  style={{ ...DISPLAY2, color: CT.ink }}
+                />
+              </div>
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
                 Giờ sinh
               </div>
@@ -271,10 +277,15 @@ export default function TraCuuHopTuoiRoute() {
               >
                 <SelectTrigger
                   aria-label="Giờ sinh đối phương"
-                  className="mt-0.5 h-auto w-full cursor-pointer border-none bg-transparent p-0 text-[13px] font-semibold tracking-[-0.005em] shadow-none [&>svg]:hidden"
+                  size="sm"
+                  className={`${FIELD_VALUE_ROW} cursor-pointer !h-5 !min-h-5 !justify-start gap-0 border-none bg-transparent p-0 shadow-none !rounded-none data-[size=sm]:!h-5 [&>svg]:hidden`}
                   style={{ ...DISPLAY2, color: CT.ink }}
                 >
-                  <SelectValue placeholder="Chọn giờ sinh" />
+                  <SelectValue asChild>
+                    <span className="truncate">
+                      {formatBirthTimeShort(form.otherBirthTime)}
+                    </span>
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem
