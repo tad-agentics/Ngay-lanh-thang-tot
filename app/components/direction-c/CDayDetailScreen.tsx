@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -26,14 +26,21 @@ import {
 import { yearCanChiFromLunarDisplay } from "~/lib/home-bat-tu";
 import { verdictLabelFromScore } from "~/lib/c-score";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { findSavedPickForDay } from "~/lib/saved-picks-upcoming";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
+
+type NgayNavState = {
+  markLabel?: string;
+  intentLabel?: string;
+};
 
 export function CDayDetailScreen() {
   const { ngay } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const online = useOnlineStatus();
   const { user, profile, loading: profileLoading } = useOptionalProfile();
-  const { savePick } = useSavedPicks();
+  const { savePick, picks } = useSavedPicks();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -43,6 +50,8 @@ export function CDayDetailScreen() {
   );
 
   const iso = ngay ?? "";
+  const navState = location.state as NgayNavState | null;
+  const savedPick = iso ? findSavedPickForDay(picks, iso) : undefined;
   const birthQuery = useMemo(
     () => (profile ? profileToBatTuPersonQuery(profile) : null),
     [profile],
@@ -112,15 +121,17 @@ export function CDayDetailScreen() {
   }, [menh, personalized]);
 
   async function handleSavePick() {
-    if (!detail || !iso || saving || !user) return;
+    if (!detail || !iso || saving || !user || savedPick) return;
     setSaving(true);
+    const intentLabel = navState?.markLabel ?? navState?.intentLabel;
     const label =
+      intentLabel ??
       detail.goodFor[0] ??
       detail.catThanLabels[0] ??
       `Ngày ${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
     const r = await savePick({
       source_endpoint: "day-detail",
-      payload: detail,
+      payload: rawPayload ?? detail,
       label,
       day_iso: iso,
       score: score ?? undefined,
@@ -235,20 +246,24 @@ export function CDayDetailScreen() {
             {user && personalized ? (
               <button
                 type="button"
-                disabled={saving}
+                disabled={saving || Boolean(savedPick)}
                 onClick={() => void handleSavePick()}
-                className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:opacity-60"
+                className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
                 style={{
                   padding: 12,
-                  background: CT.forest,
-                  color: CT.cream,
+                  background: savedPick ? CT.hairline2 : CT.forest,
+                  color: savedPick ? CT.muted : CT.cream,
                   fontFamily: "var(--display-2)",
                   fontWeight: 800,
                   fontSize: 12,
                   letterSpacing: "0.08em",
                 }}
               >
-                {saving ? "Đang lưu…" : "Đánh dấu để nhắc trước 1 ngày"}
+                {savedPick
+                  ? "Đã đánh dấu · xem trên tab Tôi"
+                  : saving
+                    ? "Đang lưu…"
+                    : "Đánh dấu để nhắc trước 1 ngày"}
               </button>
             ) : null}
           </>

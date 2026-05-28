@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import { QueryProvider } from "~/components/QueryProvider";
+import { SavedPicksGate } from "~/components/SavedPicksGate";
 import { SiteBanner } from "~/components/SiteBanner";
 import { Toaster } from "~/components/ui/sonner";
 import { AuthProvider } from "~/lib/auth";
@@ -60,9 +61,11 @@ export default function App() {
   return (
     <QueryProvider>
       <AuthProvider>
-        <SiteBanner />
-        <Outlet />
-        <Toaster richColors position="top-center" />
+        <SavedPicksGate>
+          <SiteBanner />
+          <Outlet />
+          <Toaster richColors position="top-center" />
+        </SavedPicksGate>
       </AuthProvider>
     </QueryProvider>
   );

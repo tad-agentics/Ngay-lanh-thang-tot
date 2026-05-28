@@ -1,5 +1,6 @@
 import type { SavedPick } from "~/hooks/useSavedPicks";
 import type { Profile } from "~/lib/profile-context";
+import { pickScoreNumber } from "~/lib/saved-picks-upcoming";
 
 export type UserDataExport = {
   exported_at: string;
@@ -42,7 +43,7 @@ export function buildUserDataExport(
       source_endpoint: p.source_endpoint,
       label: p.label,
       day_iso: p.day_iso,
-      score: p.score,
+      score: pickScoreNumber(p.score),
       payload: p.payload,
     })),
   };

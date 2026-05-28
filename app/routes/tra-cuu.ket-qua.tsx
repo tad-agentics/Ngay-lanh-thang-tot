@@ -182,6 +182,7 @@ export default function TraCuuKetQuaRoute() {
                 index={i}
                 total={days.length}
                 payload={state.payload}
+                markLabel={state.intentLabel}
               />
             ))}
           </div>
@@ -288,11 +289,13 @@ function ResultRow({
   index,
   total,
   payload,
+  markLabel,
 }: {
   day: ResultDay;
   index: number;
   total: number;
   payload: unknown;
+  markLabel: string;
 }) {
   const navigate = useNavigate();
   const isTop = index === 0;
@@ -307,7 +310,11 @@ function ResultRow({
   return (
     <button
       type="button"
-      onClick={() => void navigate(`/ngay/${day.isoDate}`)}
+      onClick={() =>
+        void navigate(`/ngay/${day.isoDate}`, {
+          state: { markLabel },
+        })
+      }
       className="relative flex w-full cursor-pointer items-baseline gap-4 border-none px-3.5 py-4 text-left"
       style={{
         background: isTop ? "rgba(154,124,34,0.12)" : "transparent",

@@ -2,7 +2,6 @@ import { Link, useNavigate } from "react-router";
 
 import { Mono } from "~/components/brand";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
-import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
@@ -15,7 +14,8 @@ import {
   subscriptionActive,
   subscriptionExpiryUrgent,
 } from "~/lib/entitlements";
-import { laSoJsonToChiTiet, laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { laSoJsonToChiTiet, laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { upcomingSavedPicks } from "~/lib/saved-picks-upcoming";
 
 const PILLAR_LABELS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
 
@@ -25,26 +25,6 @@ function ageFromNgaySinh(ngaySinh: string | null): string | null {
   if (!Number.isFinite(y)) return null;
   const age = new Date().getFullYear() - y;
   return age > 0 ? `${age} tuổi` : null;
-}
-
-function daysUntil(iso: string | null): string | null {
-  if (!iso) return null;
-  const target = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  const now = new Date();
-  now.setHours(12, 0, 0, 0);
-  const diff = Math.ceil((target.getTime() - now.getTime()) / 86_400_000);
-  if (diff < 0) return null;
-  if (diff === 0) return "hôm nay";
-  if (diff < 30) return `${diff} ngày nữa`;
-  if (diff < 60) return "~1 tháng";
-  return `~${Math.round(diff / 30)} tháng`;
-}
-
-function formatPickDate(iso: string): string {
-  const dt = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  const d = String(dt.getDate()).padStart(2, "0");
-  const m = String(dt.getMonth() + 1).padStart(2, "0");
-  return `${d}.${m}`;
 }
 
 function subscriptionPlanLabel(expiresAt: string | null): string {
@@ -70,9 +50,8 @@ export default function ToiRoute() {
   const navigate = useNavigate();
   const { profile } = useProfile();
   const { expiryFormatted, isActive, expiresAt } = useSubscription();
-  const { canUseBaziReading: baziUnlocked, canUseTieuVanReading: tieuVanUnlocked } =
-    useEntitlements();
-  const { picks, loading: picksLoading } = useSavedPicks();
+  const { canUseBaziReading: baziUnlocked } = useEntitlements();
+  const { picks, loading: picksLoading, error: picksError } = useSavedPicks();
 
   const expiryUrgent = subscriptionExpiryUrgent(expiresAt);
   const yearlySub = hasYearlySubscription(profile);
@@ -84,23 +63,8 @@ export default function ToiRoute() {
     ? laSoJsonToChiTiet(profile.la_so as import("~/lib/api-types").LaSoJson | null)
     : null;
   const ageLabel = profile ? ageFromNgaySinh(profile.ngay_sinh) : null;
-  const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
 
-  const upcoming = picks
-    .filter((p) => p.day_iso && daysUntil(p.day_iso))
-    .sort(
-      (a, b) =>
-        new Date(`${a.day_iso!}T12:00:00`).getTime() -
-        new Date(`${b.day_iso!}T12:00:00`).getTime(),
-    )
-    .slice(0, 3)
-    .map((p) => ({
-      iso: p.day_iso!,
-      d: formatPickDate(p.day_iso!),
-      v: p.label ?? "Ngày đã đánh dấu",
-      s: p.score ?? 78,
-      in: daysUntil(p.day_iso)!,
-    }));
+  const upcoming = upcomingSavedPicks(picks, { limit: 3 });
 
   const pillars = PILLAR_LABELS.map((label, i) => {
     const can = chiTiet?.thienCan[i] ?? "—";
@@ -124,31 +88,19 @@ export default function ToiRoute() {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <div className="flex-1 overflow-auto px-6 pb-24 pt-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div
-              className="font-[family-name:var(--font-display)] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
-              style={{ color: CT.ink }}
-            >
-              {displayName}
-            </div>
-            <div className="mt-1 font-serif text-[12.5px]" style={{ color: CT.muted }}>
-              {[ageLabel, laso?.menh ? `mệnh ${laso.menh}` : null]
-                .filter(Boolean)
-                .join(" · ")}
-            </div>
-          </div>
-          <Link
-            to="/toi/sua-ho-so"
-            className="shrink-0 border px-2.5 py-1 font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.1em] no-underline"
-            style={{
-              color: CT.goldDeep,
-              borderColor: "rgba(154,124,34,0.4)",
-            }}
+      <div className="flex-1 overflow-auto px-6 pb-[100px] pt-5">
+        <div>
+          <div
+            className="font-[family-name:var(--display)] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+            style={{ color: CT.ink }}
           >
-            Sửa
-          </Link>
+            {displayName}
+          </div>
+          <div className="mt-1 font-serif text-[12.5px]" style={{ color: CT.muted }}>
+            {[ageLabel, laso?.menh ? `mệnh ${laso.menh}` : null]
+              .filter(Boolean)
+              .join(" · ")}
+          </div>
         </div>
 
         {recomputePending ? (
@@ -196,7 +148,7 @@ export default function ToiRoute() {
             ) : null}
           </div>
           <div
-            className="mt-2 font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            className="mt-2 font-[family-name:var(--display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ color: expiryUrgent ? CT.ink : undefined }}
           >
             {isActive && expiryFormatted
@@ -228,7 +180,7 @@ export default function ToiRoute() {
                   : "/dat-lich",
               )
             }
-            className="mt-3.5 w-full cursor-pointer border-none py-3 font-[family-name:var(--font-display)] text-xs font-extrabold uppercase tracking-[0.08em]"
+            className="mt-3.5 w-full cursor-pointer border-none p-3 font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-[0.08em]"
             style={{
               background: expiryUrgent ? CT.forest : CT.gold,
               color: expiryUrgent ? CT.cream : CT.forest,
@@ -245,24 +197,26 @@ export default function ToiRoute() {
         {baziUnlocked ? (
           <Link
             to="/toi/luan-bat-tu"
-            className="relative mt-5 block cursor-pointer border px-4 py-3.5 no-underline"
+            className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
             style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
           >
             <div className="flex items-baseline gap-2">
               <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
-              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Đã mở</Mono>
+              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
+              </Mono>
             </div>
             <div
-              className="mt-1.5 font-[family-name:var(--font-display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+              className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
               style={{ color: CT.ink }}
             >
-              Luận giải Bát tự
+              Luận giải Bát tự năm
             </div>
             <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
               tính cách · vận năm · phong thuỷ · quý nhân
             </div>
             <div
-              className="mt-2.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-[0.06em]"
+              className="mt-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"
               style={{ color: CT.goldDeep }}
             >
               Đọc ngay →
@@ -273,13 +227,11 @@ export default function ToiRoute() {
         ) : (
           <Link
             to="/dat-lich"
-            className="mt-5 block border px-4 py-3.5 no-underline"
+            className="mt-[22px] block border px-4 py-3.5 no-underline"
             style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
           >
             <Mono style={{ color: CT.muted, fontSize: 9 }}>Luận giải Bát tự</Mono>
-            <div
-              className="mt-1.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-[-0.005em]"
-            >
+            <div className="mt-1.5 font-[family-name:var(--display)] text-base font-extrabold uppercase tracking-[-0.005em]">
               Mở khóa luận giải
             </div>
             <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
@@ -288,26 +240,8 @@ export default function ToiRoute() {
           </Link>
         )}
 
-        {tieuVanUnlocked ? (
-          <Link
-            to={`/toi/luan-tieu-van?year=${new Date().getFullYear()}`}
-            className="mt-4 block border px-4 py-3.5 no-underline"
-            style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
-          >
-            <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Đã mở · Tiểu Vận</Mono>
-            <div className="mt-1.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-[-0.005em]">
-              Luận giải Tiểu Vận
-            </div>
-            <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-              vận tháng · phong thuỷ năm
-            </div>
-          </Link>
-        ) : isActive ? (
-          <CMeLockedTieuVanCard />
-        ) : null}
-
         <div
-          className="mt-9 border-t pt-5"
+          className="mt-9 border-t pt-[22px]"
           style={{ borderColor: CT.hairline }}
         >
           <Mono style={{ color: CT.muted, fontSize: 9, display: "block", marginBottom: 6 }}>
@@ -317,10 +251,14 @@ export default function ToiRoute() {
             <p className="font-serif text-xs" style={{ color: CT.muted }}>
               Đang tải…
             </p>
+          ) : picksError ? (
+            <p className="font-serif text-xs leading-relaxed" style={{ color: CT.red }}>
+              Không tải được sổ ngày ({picksError}). Thử tải lại trang.
+            </p>
           ) : upcoming.length > 0 ? (
             upcoming.map((r, i) => (
               <Link
-                key={r.iso}
+                key={r.id}
                 to={`/ngay/${r.iso}`}
                 className="flex items-baseline gap-3.5 py-3 no-underline"
                 style={{
@@ -331,7 +269,7 @@ export default function ToiRoute() {
               >
                 <div className="min-w-[50px]">
                   <div
-                    className="font-[family-name:var(--font-display)] text-[17px] font-extrabold tabular-nums tracking-[-0.015em]"
+                    className="font-[family-name:var(--display-2)] text-[17px] font-extrabold tabular-nums tracking-[-0.015em]"
                     style={{ color: CT.ink }}
                   >
                     {r.d}
@@ -344,7 +282,7 @@ export default function ToiRoute() {
                   {r.v}
                 </div>
                 <div
-                  className="font-[family-name:var(--font-display)] text-sm font-bold tabular-nums"
+                  className="font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
                   style={{ color: scoreDotColor(r.s) }}
                 >
                   {r.s}
@@ -360,13 +298,13 @@ export default function ToiRoute() {
         </div>
 
         <div
-          className="mt-9 border-t pt-5"
+          className="mt-9 border-t pt-[22px]"
           style={{ borderColor: CT.hairline }}
         >
           <div className="flex items-baseline justify-between">
             <Mono style={{ color: CT.muted, fontSize: 9 }}>Lá số tứ trụ</Mono>
             <Link
-              to={hasLaso ? "/toi/la-so" : "/toi/la-so"}
+              to="/toi/la-so"
               className="font-serif text-xs no-underline"
               style={{ color: CT.goldDeep }}
             >
@@ -387,7 +325,7 @@ export default function ToiRoute() {
                   {p.label}
                 </div>
                 <div
-                  className="mt-1 font-[family-name:var(--font-display)] text-xs font-bold tracking-[-0.005em]"
+                  className="mt-1 font-[family-name:var(--display-2)] text-xs font-bold tracking-[-0.005em]"
                   style={{ color: p.hi ? CT.goldDeep : CT.ink }}
                 >
                   {p.value}
@@ -398,7 +336,7 @@ export default function ToiRoute() {
         </div>
 
         <div
-          className="mt-9 border-t pt-5"
+          className="mt-9 border-t pt-[22px]"
           style={{ borderColor: CT.hairline }}
         >
           <Mono
@@ -412,7 +350,11 @@ export default function ToiRoute() {
               sub: "tên · ngày sinh · giờ sinh",
               to: "/toi/sua-ho-so",
             },
-            { t: "Cài đặt", sub: "tài khoản · hiển thị · hỗ trợ", to: "/toi/cai-dat" },
+            {
+              t: "Cài đặt",
+              sub: "thông báo · tài khoản · hỗ trợ",
+              to: "/toi/cai-dat",
+            },
           ].map((row, i, arr) => (
             <Link
               key={row.to}
@@ -426,7 +368,7 @@ export default function ToiRoute() {
             >
               <div>
                 <div
-                  className="font-[family-name:var(--font-display)] text-sm font-bold tracking-[-0.005em]"
+                  className="font-[family-name:var(--display-2)] text-sm font-bold tracking-[-0.005em]"
                   style={{ color: CT.ink }}
                 >
                   {row.t}
@@ -443,7 +385,7 @@ export default function ToiRoute() {
         </div>
 
         <div
-          className="mt-7 text-center font-[family-name:var(--font-mono)] text-[9px] tracking-[0.06em]"
+          className="mt-7 text-center font-[family-name:var(--mono)] text-[9px] tracking-[0.06em]"
           style={{ color: CT.muted }}
         >
           v1.0.4 · ngaylanhthangtot.vn
