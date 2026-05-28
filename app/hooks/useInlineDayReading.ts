@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "~/lib/auth";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { shortenInlineReading } from "~/lib/inline-reading-text";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import {
-  readTodayAiReadingSession,
+  hasSeenInlineReading,
+  markInlineReadingSeen,
+  readTodayAiReadingCache,
   writeTodayAiReadingSession,
 } from "~/lib/today-reading-cache";
 
@@ -21,17 +23,40 @@ export function useInlineDayReading({
   enabled: boolean;
 }) {
   const { user } = useAuth();
+  const payloadRef = useRef(batTuPayload);
+  payloadRef.current = batTuPayload;
+
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [instantTyping, setInstantTyping] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !batTuPayload || !user) {
+    if (!enabled || !iso || !user) {
       setText(null);
       setLoading(false);
+      setInstantTyping(false);
+      return;
+    }
+
+    const userId = user.id;
+    const cached = readTodayAiReadingCache(userId, iso);
+    if (cached) {
+      setText(shortenInlineReading(cached));
+      setLoading(false);
+      setInstantTyping(true);
+      return;
+    }
+
+    if (!batTuPayload) {
+      setText(null);
+      setLoading(false);
+      setInstantTyping(hasSeenInlineReading(userId, iso));
       return;
     }
 
     let cancelled = false;
+    setInstantTyping(hasSeenInlineReading(userId, iso));
+
     void (async () => {
       const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
       const unlock = await invokeReadingUnlock({
@@ -53,24 +78,26 @@ export function useInlineDayReading({
         return;
       }
 
-      const cached = readTodayAiReadingSession(user.id, iso);
-      if (cached) {
-        setText(shortenInlineReading(cached));
+      const cachedAgain = readTodayAiReadingCache(userId, iso);
+      if (cachedAgain) {
+        setText(shortenInlineReading(cachedAgain));
         setLoading(false);
+        setInstantTyping(true);
         return;
       }
 
       setLoading(true);
       const r = await invokeGenerateReading({
         endpoint,
-        data: batTuPayload,
+        data: payloadRef.current,
         variant: "inline",
       });
       if (cancelled) return;
       if (r.reading) {
         const teaser = shortenInlineReading(r.reading);
         setText(teaser);
-        writeTodayAiReadingSession(user.id, iso, teaser);
+        writeTodayAiReadingSession(userId, iso, teaser);
+        setInstantTyping(false);
       } else {
         setText(null);
       }
@@ -82,9 +109,17 @@ export function useInlineDayReading({
     };
   }, [enabled, batTuPayload, user, iso, endpoint]);
 
+  const markTypingSeen = () => {
+    if (!user?.id || !iso) return;
+    markInlineReadingSeen(user.id, iso);
+    setInstantTyping(true);
+  };
+
   return {
     text,
     loading,
+    instantTyping,
+    markTypingSeen,
     canAskFollowUp: Boolean(user),
   };
 }

@@ -30,7 +30,12 @@ export function CHomeScreen() {
 
   const showRecomputeSkeleton = recomputePending || recomputePendingFromData;
 
-  const { text: readingText, loading: readingLoading } = useInlineDayReading({
+  const {
+    text: readingText,
+    loading: readingLoading,
+    instantTyping,
+    markTypingSeen,
+  } = useInlineDayReading({
     iso: todayIso,
     endpoint: "ngay-hom-nay",
     batTuPayload: rawPayload,
@@ -98,6 +103,8 @@ export function CHomeScreen() {
                   text={readingText}
                   fallbackText={today.homeSummaryLine}
                   loading={readingLoading}
+                  instant={instantTyping}
+                  onTypingComplete={markTypingSeen}
                   onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
                 />
               )

@@ -16,14 +16,17 @@ export function todayAiReadingSessionKey(userId: string, dayIso: string): string
   return `ngaytot_today_ai_reading:${userId}:${dayIso}`;
 }
 
-export function readTodayAiReadingSession(
-  userId: string,
-  dayIso: string,
-): string | null {
+function todayAiReadingLocalKey(userId: string, dayIso: string): string {
+  return `ngaytot_today_ai_reading_local:${userId}:${dayIso}`;
+}
+
+function inlineReadingSeenKey(userId: string, dayIso: string): string {
+  return `ngaytot_inline_reading_seen:${userId}:${dayIso}`;
+}
+
+function readCachedReading(key: string): string | null {
   try {
-    const raw = sessionStorage.getItem(
-      todayAiReadingSessionKey(userId, dayIso),
-    );
+    const raw = localStorage.getItem(key) ?? sessionStorage.getItem(key);
     if (!raw) return null;
     const t = raw.trim();
     return t.length > 0 ? t : null;
@@ -32,18 +35,61 @@ export function readTodayAiReadingSession(
   }
 }
 
+function writeCachedReading(key: string, text: string): void {
+  const value = text.trim().slice(0, MAX_TODAY_READING_CACHE_CHARS);
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* quota / private mode */
+  }
+  try {
+    sessionStorage.setItem(key, value);
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export function readTodayAiReadingSession(
+  userId: string,
+  dayIso: string,
+): string | null {
+  return readCachedReading(todayAiReadingSessionKey(userId, dayIso));
+}
+
+/** Persistent inline luận — localStorage + sessionStorage (survives tab refresh). */
+export function readTodayAiReadingCache(
+  userId: string,
+  dayIso: string,
+): string | null {
+  return (
+    readCachedReading(todayAiReadingLocalKey(userId, dayIso)) ??
+    readTodayAiReadingSession(userId, dayIso)
+  );
+}
+
 export function writeTodayAiReadingSession(
   userId: string,
   dayIso: string,
   text: string,
 ): void {
+  const value = text.trim().slice(0, MAX_TODAY_READING_CACHE_CHARS);
+  writeCachedReading(todayAiReadingSessionKey(userId, dayIso), value);
+  writeCachedReading(todayAiReadingLocalKey(userId, dayIso), value);
+}
+
+export function hasSeenInlineReading(userId: string, dayIso: string): boolean {
   try {
-    sessionStorage.setItem(
-      todayAiReadingSessionKey(userId, dayIso),
-      text.trim().slice(0, MAX_TODAY_READING_CACHE_CHARS),
-    );
+    return localStorage.getItem(inlineReadingSeenKey(userId, dayIso)) === "1";
   } catch {
-    /* quota / private mode */
+    return false;
+  }
+}
+
+export function markInlineReadingSeen(userId: string, dayIso: string): void {
+  try {
+    localStorage.setItem(inlineReadingSeenKey(userId, dayIso), "1");
+  } catch {
+    /* ignore */
   }
 }
 

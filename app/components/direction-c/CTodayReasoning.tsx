@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { LogoMark, Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
@@ -9,6 +9,9 @@ export type CTodayReasoningProps = {
   text: string | null;
   fallbackText?: string | null;
   loading?: boolean;
+  /** Skip typewriter when luận was loaded from cache or already revealed once. */
+  instant?: boolean;
+  onTypingComplete?: () => void;
   sources?: readonly string[];
   ctaLabel?: string;
   onCtaClick?: () => void;
@@ -19,6 +22,8 @@ export function CTodayReasoning({
   text,
   fallbackText,
   loading = false,
+  instant = false,
+  onTypingComplete,
   sources = DEFAULT_SOURCES,
   ctaLabel = "Hỏi tiếp về ngày này",
   onCtaClick,
@@ -26,16 +31,28 @@ export function CTodayReasoning({
 }: CTodayReasoningProps) {
   const fullText = (text ?? fallbackText ?? "").trim();
   const [n, setN] = useState(0);
+  const typingDoneRef = useRef(false);
 
   useEffect(() => {
+    typingDoneRef.current = false;
+    if (instant || loading) {
+      setN(fullText.length);
+      return;
+    }
     setN(0);
-  }, [fullText]);
+  }, [fullText, instant, loading]);
 
   useEffect(() => {
-    if (loading || !fullText || n >= fullText.length) return;
+    if (loading || instant || !fullText || n >= fullText.length) return;
     const id = window.setTimeout(() => setN((prev) => prev + 1), 18);
     return () => window.clearTimeout(id);
-  }, [n, fullText, loading]);
+  }, [n, fullText, loading, instant]);
+
+  useEffect(() => {
+    if (loading || !fullText || n < fullText.length || typingDoneRef.current) return;
+    typingDoneRef.current = true;
+    onTypingComplete?.();
+  }, [loading, fullText, n, onTypingComplete]);
 
   if (!fullText && !loading) return null;
 

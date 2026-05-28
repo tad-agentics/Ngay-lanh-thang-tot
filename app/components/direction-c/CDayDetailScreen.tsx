@@ -61,7 +61,12 @@ export function CDayDetailScreen() {
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
   const birthDate = birthQuery?.birth_date ?? null;
 
-  const { text: readingText, loading: readingLoading } = useInlineDayReading({
+  const {
+    text: readingText,
+    loading: readingLoading,
+    instantTyping,
+    markTypingSeen,
+  } = useInlineDayReading({
     iso,
     endpoint: "day-detail",
     batTuPayload: rawPayload,
@@ -199,6 +204,8 @@ export function CDayDetailScreen() {
                     text={readingText}
                     fallbackText={detail.reasonLines[0] ?? null}
                     loading={readingLoading}
+                    instant={instantTyping}
+                    onTypingComplete={markTypingSeen}
                     onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
                     showCta={Boolean(user)}
                   />
