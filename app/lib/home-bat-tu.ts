@@ -19,6 +19,22 @@ function pickStr(obj: Record<string, unknown>, keys: string[]): string {
   return "";
 }
 
+function pickNumber(obj: Record<string, unknown>, keys: string[]): number | null {
+  for (const k of keys) {
+    const v = obj[k];
+    if (typeof v === "number" && Number.isFinite(v)) return Math.round(v);
+    if (typeof v === "string" && /^\d+$/.test(v.trim())) {
+      return Number.parseInt(v.trim(), 10);
+    }
+  }
+  return null;
+}
+
+/** Edge `lich-thang` expects `month` as YYYY-MM. */
+export function formatLichThangMonthKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
 function labelsFromMixedArray(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
@@ -287,6 +303,8 @@ export interface NgayHomNayHome {
   gioTotChis: string[];
   gioXauChis: string[];
   homeSummaryLine: string;
+  /** Engine score 0–100 when present; else map from dayType in UI. */
+  score: number | null;
 }
 
 /** Map engine /v1/ngay-hom-nay JSON → home cards (flexible keys). */
@@ -398,6 +416,11 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
       "hint_vi",
     ]) || pickStr(root, ["summary_vi", "one_liner"]);
 
+  let score =
+    pickNumber(nested, ["score", "diem", "total_score", "totalScore"]) ??
+    pickNumber(asRecord(nested.scores) ?? {}, ["total", "value", "score"]) ??
+    pickNumber(root, ["score", "diem"]);
+
   return {
     dayType,
     solarDateVi,
@@ -412,6 +435,7 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     gioTotChis,
     gioXauChis,
     homeSummaryLine,
+    score,
   };
 }
 
@@ -616,12 +640,16 @@ export function buildCalendarDaysForMonth(
       if (!iso) continue;
       const dayType = inferDayType(o);
       const { lunarDay, lunarMonth } = pickLunarDayMonth(o);
+      const score =
+        pickNumber(o, ["score", "diem", "total_score", "totalScore"]) ??
+        pickNumber(asRecord(o.scores) ?? {}, ["total", "value", "score"]);
       byIso.set(iso, {
         isoDate: iso,
         dayType,
         isToday: iso === todayIso,
         lunarDay,
         lunarMonth,
+        score,
       });
     }
   }

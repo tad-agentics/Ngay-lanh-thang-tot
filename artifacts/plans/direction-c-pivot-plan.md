@@ -266,46 +266,41 @@ For each screen: **Component** (canvas) → **Route** → **FE data** → **BE w
 
 ### Band 4 — Tab 1 · Lịch (daily loop)
 
+> **Canonical UI:** `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md` — C12/C13/C14 paper-default; inline `<CTodayReasoning>` on C12 + C14; C15/C16 merged per FE-HANDOFF §6.
+
 #### 12 · CHomePage → `/lich` [Hôm nay]
 
 | | |
 |---|---|
-| **FE** | Forest BG; lịch-tờ inset; verdict band; Nên/Tránh/Giờ; `CSegmented` [Hôm nay\|Tháng]; `CBottomNav active=0` |
+| **FE** | **Paper-default** BG; lịch-tờ white card; `CLichSegmentedNav`; inline `<CTodayReasoning>` (typed reveal + CTA → `/luan-ai/day-:iso`); `CBottomNav active=0` |
 | **BE** | `bat-tu` op `ngay-hom-nay` with profile birth payload |
-| **Response** | `{ solar, lunar, canChi, score, verdict, nen, tranh, gioTot[] }` |
+| **Response** | `{ solar, lunar, canChi, score, verdict, nen, tranh, gioTot[] }` — score from engine when present |
 | **Sub gate** | If expired → overlay `CSubExpired` (38) |
-| **Offline** | Cache last `ngay-hom-nay` in IndexedDB → `COfflineHome` (40) |
+| **Offline** | `useOfflineCalendar` + `readTodayHomeSession` / `writeTodayHomeSession` (sessionStorage) + `COfflineBanner` |
 
 #### 13 · CMonthSpread → `/lich/thang`
 
 | | |
 |---|---|
-| **FE** | 12-month dot grid colored by score; tap day → `/ngay/:ngay` |
-| **BE** | `bat-tu` op `lich-thang` `{ year, month }` |
+| **FE** | Month grid; lunar day from `lich-thang` payload (`CalendarDay.lunarDay`); score dot from engine score or dayType fallback; tap day → `/ngay/:ngay` |
+| **BE** | `bat-tu` op `lich-thang` `{ birth_*, month: "YYYY-MM" }` |
 | **Nav** | `CBottomNav active=0` |
 
-#### 14 · CDayDetail → `/ngay/:ngay`
+#### 14 · CDayDetail → `/ngay/:ngay` (public — G5)
 
 | | |
 |---|---|
-| **FE** | Paper surface; lịch-tờ anatomy; collapsible "Cách tính điểm"; CTA "Luận chi tiết" |
-| **BE** | `bat-tu` op `day-detail` `{ date, birth }` |
-| **Nav** | `BackBar` only |
+| **FE** | Paper surface; lịch-tờ anatomy; collapsible **"Cách tính điểm"**; inline `<CTodayReasoning>` when personalized; anon generic view + login CTA |
+| **BE** | `bat-tu` op `day-detail` — `{ date }` anon generic; `{ date, birth_* }` personalized |
+| **Nav** | `BackBar` only (no bottom nav) |
 
-#### 15 · CAITyped → `/luan-ai/:context`
+#### 15 · CAITyped → `/luan-ai/:context` (+ `/day-du` sectioned)
 
 | | |
 |---|---|
-| **FE** | Typed streaming reveal (interval cursor) |
+| **FE** | Typed streaming reveal (interval cursor); sectioned full view on `/day-du` |
 | **BE** | `generate-reading` Edge `{ context: "day-2026-06-17" }` |
-| **Gate** | Active subscription |
-
-#### 16 · CAISectioned → `/luan-ai/:context/day-du`
-
-| | |
-|---|---|
-| **FE** | Sectioned cards + inline citations |
-| **BE** | Same Edge; `mode: "sectioned"` or second call with stored reading id |
+| **Gate** | Active subscription / reading-unlock |
 
 #### 17 · CLaSoFull → `/toi/la-so`
 

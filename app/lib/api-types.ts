@@ -120,6 +120,8 @@ export interface CalendarDay {
   isToday: boolean;
   lunarDay: number;
   lunarMonth: number;
+  /** Engine score when present in `lich-thang` payload. */
+  score?: number | null;
 }
 
 export type ResultGrade = "A" | "B" | "C";

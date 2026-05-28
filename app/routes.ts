@@ -14,6 +14,7 @@ export default [
   route("terms", "routes/terms.tsx"),
   route("x/:token", "routes/x.$token.tsx"),
   route("share/:token", "routes/share.$token.tsx"),
+  route("ngay/:ngay", "routes/ngay.$ngay.tsx"),
   route("auth/callback", "routes/auth.callback.tsx"),
   route("dang-nhap", "routes/dang-nhap.tsx"),
   route("dang-nhap/email", "routes/dang-nhap.email.tsx"),
@@ -25,7 +26,6 @@ export default [
   layout("routes/authenticated.tsx", [
     route("lich", "routes/lich.tsx"),
     route("lich/thang", "routes/lich.thang.tsx"),
-    route("ngay/:ngay", "routes/ngay.$ngay.tsx"),
     route("tra-cuu", "routes/tra-cuu.tsx"),
     route("tra-cuu/ket-qua", "routes/tra-cuu.ket-qua.tsx"),
     route("tra-cuu/dang-tim", "routes/tra-cuu.dang-tim.tsx"),

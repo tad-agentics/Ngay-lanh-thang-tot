@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 
+import { useOfflineCalendar } from "~/hooks/useOfflineCalendar";
+import { useEntitlements } from "~/hooks/useEntitlements";
+import { useProfile } from "~/hooks/useProfile";
+import { useAuth } from "~/lib/auth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
@@ -7,16 +11,21 @@ import {
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
-import { useEntitlements } from "~/hooks/useEntitlements";
-import { useProfile } from "~/hooks/useProfile";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 export function useTodayLichData() {
+  const { user } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const { canUseCalendar } = useEntitlements();
+  const todayIso = todayIsoInVn();
+  const { online, readCached, writeCached } = useOfflineCalendar(
+    user?.id,
+    todayIso,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [today, setToday] = useState<NgayHomNayHome | null>(null);
+  const [rawPayload, setRawPayload] = useState<unknown | null>(null);
 
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
   const menh = laso?.menh ?? null;
@@ -27,13 +36,24 @@ export function useTodayLichData() {
     if (!canUseCalendar) {
       setLoading(false);
       setToday(null);
+      setRawPayload(null);
       setError(null);
       return;
     }
     if (!profile || !canBatTu) {
       setLoading(false);
       setToday(null);
+      setRawPayload(null);
       setError(profile && !canBatTu ? "Cần ngày sinh trên hồ sơ để mở lịch." : null);
+      return;
+    }
+
+    if (!online) {
+      const cached = readCached();
+      setToday(cached);
+      setRawPayload(null);
+      setError(cached ? null : "Không có dữ liệu ngoại tuyến cho hôm nay.");
+      setLoading(false);
       return;
     }
 
@@ -45,14 +65,18 @@ export function useTodayLichData() {
       const body = profileToBatTuPersonQuery(profile);
       const res = await invokeBatTu<unknown>({
         op: "ngay-hom-nay",
-        body: { ...body, date: todayIsoInVn() },
+        body: { ...body, date: todayIso },
       });
       if (cancelled) return;
       if (!res.ok) {
         setError(res.message ?? "Không tải được lịch hôm nay.");
         setToday(null);
+        setRawPayload(null);
       } else {
-        setToday(parseNgayHomNayForHome(res.data));
+        const parsed = parseNgayHomNayForHome(res.data);
+        setToday(parsed);
+        setRawPayload(res.data);
+        if (parsed) writeCached(parsed);
       }
       setLoading(false);
     })();
@@ -60,7 +84,16 @@ export function useTodayLichData() {
     return () => {
       cancelled = true;
     };
-  }, [profile, profileLoading, canBatTu, canUseCalendar]);
+  }, [
+    profile,
+    profileLoading,
+    canBatTu,
+    canUseCalendar,
+    online,
+    readCached,
+    writeCached,
+    todayIso,
+  ]);
 
   return {
     profile,
@@ -68,8 +101,11 @@ export function useTodayLichData() {
     loading,
     error,
     today,
+    rawPayload,
     menh,
     hasLaso: profile ? profileHasLaso(profile.la_so) : false,
     canBatTu,
+    online,
+    todayIso,
   };
 }

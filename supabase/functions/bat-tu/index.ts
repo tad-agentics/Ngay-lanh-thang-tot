@@ -125,6 +125,7 @@ const ANONYMOUS_OPS = new Set([
   "weekly-summary",
   "convert-date",
   "lich-thang",
+  "day-detail",
 ]);
 
 const VALID_OPS = new Set([
@@ -408,10 +409,10 @@ function buildUpstream(
       break;
 
     case "day-detail":
-      if (!body.birth_date || !body.date) {
+      if (!body.date) {
         return {
           ok: false,
-          message: "Thiếu birth_date hoặc date (GET /v1/day-detail).",
+          message: "Thiếu date YYYY-MM-DD (GET /v1/day-detail).",
         };
       }
       spec = {

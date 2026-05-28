@@ -6,7 +6,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { buildCalendarDaysForMonth } from "~/lib/home-bat-tu";
+import { buildCalendarDaysForMonth, formatLichThangMonthKey } from "~/lib/home-bat-tu";
 import type { CalendarDay } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { scoreDotColor, scoreFromDayType } from "~/lib/c-score";
@@ -37,6 +37,7 @@ function MonthGrid({
     otherMonth: boolean;
     score?: number;
     iso?: string;
+    lunarDay?: number;
   };
 
   const cells: Cell[] = [];
@@ -48,8 +49,12 @@ function MonthGrid({
     cells.push({
       d: solar,
       otherMonth: false,
-      score: scoreFromDayType(day.dayType),
+      score:
+        day.score != null && Number.isFinite(day.score)
+          ? day.score
+          : scoreFromDayType(day.dayType),
       iso: day.isoDate,
+      lunarDay: day.lunarDay > 0 ? day.lunarDay : undefined,
     });
   }
   let j = 1;
@@ -95,7 +100,7 @@ function MonthGrid({
             (c.d === Number(todayIso.slice(8, 10)) &&
               !c.otherMonth &&
               month === Number(todayIso.slice(5, 7)));
-          const lunarDay = c.otherMonth ? null : ((c.d + 14) % 30) + 1;
+          const lunarDay = c.otherMonth ? null : c.lunarDay ?? null;
           const inner = (
             <div
               style={{
@@ -146,7 +151,7 @@ function MonthGrid({
                   color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
                 }}
               >
-                {c.otherMonth ? "·" : lunarDay}
+                {c.otherMonth ? "·" : lunarDay ?? "·"}
               </div>
               {!c.otherMonth && c.score != null ? (
                 <span
@@ -204,7 +209,7 @@ export function CMonthScreen() {
     void (async () => {
       const res = await invokeBatTu<unknown>({
         op: "lich-thang",
-        body: { ...body, year, month },
+        body: { ...body, month: formatLichThangMonthKey(year, month) },
       });
       if (cancelled) return;
       if (!res.ok) {

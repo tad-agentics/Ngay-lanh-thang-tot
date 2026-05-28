@@ -48,7 +48,10 @@ export function ngayHomNayToLichCard(
   quote: string | null;
   rows: LichRow[];
 } {
-  const score = scoreFromDayType(data.dayType);
+  const score =
+    data.score != null && Number.isFinite(data.score)
+      ? data.score
+      : scoreFromDayType(data.dayType);
   const weekday =
     data.headerSubline.split("·")[0]?.trim() || weekdayFromIso(iso);
 
@@ -81,14 +84,7 @@ export function ngayHomNayToLichCard(
       </>
     ),
     verdictLabel: verdictLabelFromScore(score),
-    verdictSub: menh ? (
-      <>
-        cho mệnh {menh} ·{" "}
-        <span style={{ color: CT.goldDeep }}>tại sao? ›</span>
-      </>
-    ) : (
-      <span style={{ color: CT.goldDeep }}>tại sao? ›</span>
-    ),
+    verdictSub: menh ? <>cho mệnh {menh}</> : null,
     score,
     quote: data.homeSummaryLine || null,
     rows: [

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCalendarDaysForMonth,
+  formatLichThangMonthKey,
   parseNgayHomNayForHome,
   parseWeeklyGoodDayCount,
   parseWeeklySummaryForScreen,
@@ -65,6 +66,21 @@ describe("parseNgayHomNayForHome", () => {
     expect(v!.goodForChips[0]).toBe("Khai trương");
     expect(v!.gioXauChis).toEqual(["Dần", "Ngọ"]);
     expect(v!.headerSubline).toContain("Bính Tuất");
+  });
+
+  it("reads engine score when present", () => {
+    const v = parseNgayHomNayForHome({
+      solar_date: "2026-05-11",
+      score: 87,
+    });
+    expect(v?.score).toBe(87);
+  });
+});
+
+describe("formatLichThangMonthKey", () => {
+  it("formats month as YYYY-MM", () => {
+    expect(formatLichThangMonthKey(2026, 6)).toBe("2026-06");
+    expect(formatLichThangMonthKey(2026, 12)).toBe("2026-12");
   });
 });
 
@@ -144,5 +160,16 @@ describe("buildCalendarDaysForMonth", () => {
     });
     expect(days[0]?.dayType).toBe("hac-dao");
     expect(days[1]?.dayType).toBe("hoang-dao");
+    expect(days[0]?.lunarDay).toBe(13);
+    expect(days[1]?.lunarDay).toBe(14);
+  });
+
+  it("reads score from month day rows", () => {
+    const days = buildCalendarDaysForMonth(6, 2026, {
+      days: [{ date: "2026-06-17", score: 91, lunar_day: 3 }],
+    });
+    expect(days[16]?.isoDate).toBe("2026-06-17");
+    expect(days[16]?.score).toBe(91);
+    expect(days[16]?.lunarDay).toBe(3);
   });
 });

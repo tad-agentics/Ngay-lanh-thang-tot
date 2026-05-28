@@ -24,6 +24,7 @@ export type LichToPageCardProps = {
   onPrev?: () => void;
   onNext?: () => void;
   onVerdictClick?: () => void;
+  afterRows?: ReactNode;
 };
 
 export function LichToPageCard({
@@ -41,6 +42,7 @@ export function LichToPageCard({
   onPrev,
   onNext,
   onVerdictClick,
+  afterRows,
 }: LichToPageCardProps) {
   return (
     <div
@@ -250,6 +252,8 @@ export function LichToPageCard({
           </div>
         ))}
       </div>
+
+      {afterRows}
 
       {(prevLabel || nextLabel) && (
         <div

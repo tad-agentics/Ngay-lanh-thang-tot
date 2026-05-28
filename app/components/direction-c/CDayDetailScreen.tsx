@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar } from "~/components/brand";
+import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
+import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
+import { useInlineDayReading } from "~/hooks/useInlineDayReading";
+import { useOptionalProfile } from "~/hooks/useOptionalProfile";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -13,53 +17,70 @@ import { CT } from "~/lib/c-tokens";
 import { mastheadFromIso, weekdayFromIso } from "~/lib/lich-format";
 import { verdictLabelFromScore } from "~/lib/c-score";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
-import { useProfile } from "~/hooks/useProfile";
 import { addDaysToIso } from "~/hooks/useStreak";
 
 export function CDayDetailScreen() {
   const { ngay } = useParams();
   const navigate = useNavigate();
-  const { profile, loading: profileLoading } = useProfile();
+  const { user, profile, loading: profileLoading } = useOptionalProfile();
   const { savePick } = useSavedPicks();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [rawPayload, setRawPayload] = useState<unknown | null>(null);
   const [detail, setDetail] = useState<ReturnType<typeof parseDayDetailForView> | null>(
     null,
   );
 
   const iso = ngay ?? "";
+  const birthQuery = useMemo(
+    () => (profile ? profileToBatTuPersonQuery(profile) : null),
+    [profile],
+  );
+  const personalized = Boolean(birthQuery?.birth_date);
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
+  const birthDate = birthQuery?.birth_date ?? null;
+
+  const { text: readingText, loading: readingLoading } = useInlineDayReading({
+    iso,
+    endpoint: "day-detail",
+    batTuPayload: rawPayload,
+    enabled: Boolean(detail && rawPayload && personalized && user),
+  });
 
   useEffect(() => {
-    if (profileLoading || !profile || !iso) return;
-    const body = profileToBatTuPersonQuery(profile);
-    if (!body.birth_date) {
-      setLoading(false);
-      setError("Cần ngày sinh trên hồ sơ.");
-      return;
-    }
+    if (profileLoading || !iso) return;
+
     let cancelled = false;
     setLoading(true);
     setError(null);
+
     void (async () => {
+      const body =
+        personalized && birthQuery
+          ? { ...birthQuery, date: iso }
+          : { date: iso };
+
       const res = await invokeBatTu<unknown>({
         op: "day-detail",
-        body: { ...body, date: iso },
+        body,
       });
       if (cancelled) return;
       if (!res.ok) {
         setError(res.message ?? "Không tải chi tiết ngày.");
         setDetail(null);
+        setRawPayload(null);
       } else {
+        setRawPayload(res.data);
         setDetail(parseDayDetailForView(res.data));
       }
       setLoading(false);
     })();
+
     return () => {
       cancelled = true;
     };
-  }, [profile, profileLoading, iso]);
+  }, [profileLoading, iso, personalized, birthDate, birthQuery]);
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
   const nextIso = iso ? addDaysToIso(iso, 1) : "";
@@ -67,8 +88,20 @@ export function CDayDetailScreen() {
 
   const score = detail?.score ?? null;
 
+  const verdictSub = useMemo(() => {
+    if (menh) return <>cho mệnh {menh}</>;
+    if (!personalized) {
+      return (
+        <Link to="/dang-nhap" className="underline" style={{ color: CT.goldDeep }}>
+          Đăng nhập để xem cho mệnh bạn
+        </Link>
+      );
+    }
+    return null;
+  }, [menh, personalized]);
+
   async function handleSavePick() {
-    if (!detail || !iso || saving) return;
+    if (!detail || !iso || saving || !user) return;
     setSaving(true);
     const label =
       detail.goodFor[0] ??
@@ -124,7 +157,7 @@ export function CDayDetailScreen() {
               verdictLabel={
                 score != null ? verdictLabelFromScore(score) : detail.grade || "—"
               }
-              verdictSub={menh ? <>cho mệnh {menh}</> : null}
+              verdictSub={verdictSub}
               score={score}
               quote={detail.reasonLines[0] ?? null}
               rows={[
@@ -162,26 +195,40 @@ export function CDayDetailScreen() {
               }
               onPrev={() => void navigate(`/ngay/${prevIso}`)}
               onNext={() => void navigate(`/ngay/${nextIso}`)}
-              onVerdictClick={() => void navigate(`/luan-ai/day-${iso}`)}
+              afterRows={
+                personalized ? (
+                  <CTodayReasoning
+                    text={readingText}
+                    fallbackText={detail.reasonLines[0] ?? null}
+                    loading={readingLoading}
+                    onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
+                    showCta={Boolean(user)}
+                  />
+                ) : null
+              }
             />
 
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void handleSavePick()}
-              className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:opacity-60"
-              style={{
-                padding: 12,
-                background: CT.forest,
-                color: CT.cream,
-                fontFamily: "var(--font-display)",
-                fontWeight: 800,
-                fontSize: 12,
-                letterSpacing: "0.08em",
-              }}
-            >
-              {saving ? "Đang lưu…" : "Đánh dấu để nhắc trước 1 ngày"}
-            </button>
+            <DayScoreMethodologyCollapsible />
+
+            {user && personalized ? (
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => void handleSavePick()}
+                className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:opacity-60"
+                style={{
+                  padding: 12,
+                  background: CT.forest,
+                  color: CT.cream,
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 800,
+                  fontSize: 12,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {saving ? "Đang lưu…" : "Đánh dấu để nhắc trước 1 ngày"}
+              </button>
+            ) : null}
           </>
         ) : null}
       </div>
