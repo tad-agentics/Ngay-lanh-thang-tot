@@ -223,6 +223,22 @@ describe("hopTuoiPayloadToPanel", () => {
     expect(p?.gradLabel).toBe("Rất hợp");
   });
 
+  it("v1 with criteria enriches points for ket-qua breakdown", () => {
+    const p = hopTuoiPayloadToPanel({
+      overall_score: 82,
+      nap_am_1: "Canh Ngọ",
+      nap_am_2: "Mậu Thìn",
+      criteria: [
+        { name: "Thiên Can", sentiment: "positive", description: "Canh × Mậu" },
+        { name: "Địa Chi", sentiment: "positive", description: "Ngọ × Thìn" },
+      ],
+    });
+    expect(p?.apiVersion).toBe(1);
+    expect(p?.criteriaRows).toHaveLength(2);
+    expect(p?.criteriaRows.every((r) => r.points != null)).toBe(true);
+    expect(formatHopTuoiCriterionPoints(p!.criteriaRows[0]!)).toMatch(/^\+/);
+  });
+
   it("returns null for non-object", () => {
     expect(hopTuoiPayloadToPanel(null)).toBeNull();
   });

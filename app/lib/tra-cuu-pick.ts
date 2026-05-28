@@ -7,7 +7,7 @@ import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 
-/** Edge `bat-tu` REQ-NLTT-01 — subscription gate, no credit deduct. Not sent upstream. */
+/** Edge `bat-tu` REQ-NLTT-01 — Tab Tra cứu (`chon-ngay`, `hop-tuoi`): sub gate, no credit. Not sent upstream. */
 export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
 
 export const TRA_CUU_PICK_MIN_OVERLAY_MS = 800;

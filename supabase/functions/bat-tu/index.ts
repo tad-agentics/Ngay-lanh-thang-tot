@@ -1184,7 +1184,7 @@ Deno.serve(async (req) => {
    * Anonymous ops use the cache path above (lines 768–770) only.
    * `tu-tru` (lập lá số) luôn miễn phí — `featureKeyForBilling` null cho op đó.
    * `la-so` (luận giải chi tiết lá số) không trừ lượng.
-   * Tra cứu tab `/tra-cuu` (REQ-NLTT-01): `source=tra_cuu` — sub gate only, no credit.
+   * Tra cứu tab `/tra-cuu` (REQ-NLTT-01): `source=tra_cuu` on `chon-ngay` + `hop-tuoi` — sub gate only, no credit.
    */
   const featureKey = resolveFeatureKey(op, body);
   const phongThuyTeaser =

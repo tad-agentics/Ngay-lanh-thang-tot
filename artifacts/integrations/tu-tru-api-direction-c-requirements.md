@@ -79,7 +79,7 @@ Browser (Direction C)
 | POST | `/v1/tu-tru` | `tu-tru` / `recompute-la-so` | Onboarding, G1 | Cần version stamp (P2-03) |
 | GET | `/v1/la-so` | `la-so` | `/toi/luan-bat-tu` payload | Cần contract ổn định (P2-01) |
 | GET | `/v1/tieu-van` | `tieu-van` | `/toi/luan-tieu-van` | Đang dùng |
-| POST | `/v1/hop-tuoi` | `hop-tuoi` | `/tra-cuu/hop-tuoi` | Khuyến nghị `criteria[].points` (P3-07) |
+| POST | `/v1/hop-tuoi` | `hop-tuoi` | `/tra-cuu/hop-tuoi` | `criteria[].points` (P3-07); FE `source: tra_cuu` (REQ-NLTT-01) |
 | GET | `/v1/phong-thuy` | `phong-thuy` | **Hold** — không route C v1 | Không yêu cầu pivot |
 | GET | `/v1/convert-date` | `convert-date` | Nội bộ Edge only | Không route C |
 | GET | `/v1/weekly-summary` | `weekly-summary` | **Dropped C** | Deprecate docs (P3-05) |
@@ -579,9 +579,9 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 | Bước | Chi tiết |
 |------|----------|
-| FE | `invokeBatTu({ op: "chon-ngay", body: { …, source: "tra_cuu" } })` — `source` **không** forward upstream |
+| FE | `source: "tra_cuu"` trên Tab Tra cứu: `chon-ngay` + **`hop-tuoi`** — `source` **không** forward upstream |
 | Edge | `isTraCuuPickChonNgay()` → gate `canUseCalendar()`; **không** deduct credit |
-| Trạng thái | ✅ Shipped 2026-05-27 |
+| Trạng thái | ✅ Shipped 2026-05-27 (chon-ngay); ✅ hop-tuoi 2026-05-28 |
 
 ---
 
@@ -624,7 +624,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | REQ-P3-04 | `X-RateLimit-Remaining` | Lỗi generic |
 | REQ-P3-05 | Deprecate `/v1/weekly-summary` trong docs | Op vẫn trong Edge |
 | REQ-P3-06 | `chon-ngay` echo `candidates_scanned` | Empty copy tĩnh |
-| REQ-P3-07 | `hop-tuoi` `criteria[].points` per tiêu chí | Heuristic từ `overall_score` trên `/tra-cuu/hop-tuoi/ket-qua` |
+| REQ-P3-07 | `hop-tuoi` `criteria[].points` per tiêu chí | NLTT `enrichCriterionPoints()` heuristic trên `/tra-cuu/hop-tuoi/ket-qua` khi thiếu; bỏ khi upstream ship |
 
 ---
 

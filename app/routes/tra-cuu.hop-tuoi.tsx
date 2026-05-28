@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
+import { CHopTuoiLoadingScreen } from "~/components/direction-c/CHopTuoiLoadingScreen";
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   ddMmYyyyInputToBatTuBirthDate,
@@ -17,14 +25,15 @@ import {
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { CT } from "~/lib/c-tokens";
-import {
-  hopTuoiPayloadToPanel,
-} from "~/lib/hop-tuoi-result";
+import { hopTuoiPayloadToPanel } from "~/lib/hop-tuoi-result";
 import { persistHopTuoiKetQua } from "~/lib/hop-tuoi-session";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { BAT_TU_SOURCE_TRA_CUU } from "~/lib/tra-cuu-pick";
 import { useProfile } from "~/hooks/useProfile";
 
 const HOP_OTHER_BIRTH_TIME_DEFAULT = "__default__";
+
+const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
 const PURPOSE_OPTIONS = [
   { label: "cưới hỏi", value: "PHU_THE" },
@@ -32,6 +41,17 @@ const PURPOSE_OPTIONS = [
   { label: "cộng sự", value: "DOI_TAC" },
   { label: "sống chung", value: "PHU_THE" },
 ] as const;
+
+function formatBirthTimeShort(value: string): string {
+  if (value === HOP_OTHER_BIRTH_TIME_DEFAULT) {
+    return "Ngọ · 11–12h";
+  }
+  const code = Number.parseInt(value, 10);
+  const opt = BAT_TU_BIRTH_TIME_OPTIONS.find((o) => o.value === code);
+  if (!opt) return "—";
+  const short = opt.label.replace(/^Giờ\s+/i, "").split("(")[0]?.trim();
+  return short ?? opt.label;
+}
 
 function formatProfileBirthLine(profile: {
   ngay_sinh: string | null;
@@ -82,17 +102,6 @@ export default function TraCuuHopTuoiRoute() {
   const birthLine = profile ? formatProfileBirthLine(profile) : "—";
   const ageLabel = profile ? ageFromNgaySinh(profile.ngay_sinh) : null;
 
-  const otherTimeLabel = useMemo(() => {
-    if (form.otherBirthTime === HOP_OTHER_BIRTH_TIME_DEFAULT) {
-      return "Ngọ · 11–12h";
-    }
-    const code = Number.parseInt(form.otherBirthTime, 10);
-    const opt = BAT_TU_BIRTH_TIME_OPTIONS.find((o) => o.value === code);
-    if (!opt) return "—";
-    const short = opt.label.replace(/^Giờ\s+/i, "").split("(")[0]?.trim();
-    return short ?? opt.label;
-  }, [form.otherBirthTime]);
-
   const hopOtherNgayInvalid =
     form.ngaySinh.trim().length > 0 &&
     ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null &&
@@ -136,6 +145,7 @@ export default function TraCuuHopTuoiRoute() {
           ...(form.relationshipType.trim()
             ? { relationship_type: form.relationshipType.trim() }
             : {}),
+          source: BAT_TU_SOURCE_TRA_CUU,
         },
       });
 
@@ -154,12 +164,12 @@ export default function TraCuuHopTuoiRoute() {
       }
 
       const ketQuaState = {
-          panel: mapped,
-          payload: res.data,
-          otherName: form.otherName.trim() || "Đối phương",
-          selfName: profile.display_name ?? "Bạn",
-          purposeLabel: form.purposeLabel,
-        };
+        panel: mapped,
+        payload: res.data,
+        otherName: form.otherName.trim() || "Đối phương",
+        selfName: profile.display_name ?? "Bạn",
+        purposeLabel: form.purposeLabel,
+      };
       persistHopTuoiKetQua(ketQuaState);
       navigate("/tra-cuu/hop-tuoi/ket-qua", {
         state: ketQuaState,
@@ -182,13 +192,13 @@ export default function TraCuuHopTuoiRoute() {
 
   return (
     <div
-      className="flex min-h-full flex-col"
+      className="relative flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <CTopStrip />
       <CTraCuuSegmentedNav />
 
-      <div className="flex-1 overflow-auto px-6 pb-24 pt-0">
+      <div className="flex-1 overflow-auto px-6 pb-24 pt-[22px]">
         <div className="font-serif text-[13px]" style={{ color: CT.muted }}>
           Bạn
         </div>
@@ -197,7 +207,8 @@ export default function TraCuuHopTuoiRoute() {
           style={{ background: CT.forest, color: CT.cream }}
         >
           <div
-            className="font-[family-name:var(--font-display)] text-[15px] font-bold tracking-[-0.005em]"
+            className="text-[15px] font-bold tracking-[-0.005em]"
+            style={{ ...DISPLAY2, color: CT.cream }}
           >
             {profile.display_name ?? "Bạn"}
           </div>
@@ -211,7 +222,7 @@ export default function TraCuuHopTuoiRoute() {
           </div>
         </div>
 
-        <div className="mt-5 font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="mt-[22px] font-serif text-[13px]" style={{ color: CT.muted }}>
           Đối phương
         </div>
         <div
@@ -223,8 +234,8 @@ export default function TraCuuHopTuoiRoute() {
             placeholder="Họ tên (tuỳ chọn)"
             value={form.otherName}
             onChange={(e) => setForm((f) => ({ ...f, otherName: e.target.value }))}
-            className="w-full border-none bg-transparent p-0 font-[family-name:var(--font-display)] text-[15px] font-bold tracking-[-0.005em] outline-none"
-            style={{ color: CT.ink }}
+            className="w-full border-none bg-transparent p-0 text-[15px] font-bold tracking-[-0.005em] outline-none"
+            style={{ ...DISPLAY2, color: CT.ink }}
           />
           <div className="mt-2.5 grid grid-cols-2 gap-3.5">
             <div>
@@ -244,37 +255,45 @@ export default function TraCuuHopTuoiRoute() {
                     ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
                   }))
                 }
-                className="mt-0.5 w-full border-none bg-transparent p-0 font-[family-name:var(--font-display)] text-[13px] font-semibold tracking-[-0.005em] outline-none tabular-nums"
-                style={{ color: CT.ink }}
+                className="mt-0.5 w-full border-none bg-transparent p-0 text-[13px] font-semibold tracking-[-0.005em] outline-none tabular-nums"
+                style={{ ...DISPLAY2, color: CT.ink }}
               />
             </div>
             <div>
               <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
                 Giờ sinh
               </div>
-              <div
-                className="mt-0.5 font-[family-name:var(--font-display)] text-[13px] font-semibold tracking-[-0.005em]"
-                style={{ color: CT.ink }}
-              >
-                {otherTimeLabel}
-              </div>
-              <select
+              <Select
                 value={form.otherBirthTime}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, otherBirthTime: e.target.value }))
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, otherBirthTime: v }))
                 }
-                className="mt-1 w-full cursor-pointer border bg-white px-1 py-1 font-serif text-[11px] outline-none"
-                style={{ borderColor: CT.hairline2, color: CT.muted }}
               >
-                <option value={HOP_OTHER_BIRTH_TIME_DEFAULT}>
-                  Không biết — Giờ Ngọ
-                </option>
-                {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={String(opt.value)}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger
+                  aria-label="Giờ sinh đối phương"
+                  className="mt-0.5 h-auto w-full cursor-pointer border-none bg-transparent p-0 text-[13px] font-semibold tracking-[-0.005em] shadow-none [&>svg]:hidden"
+                  style={{ ...DISPLAY2, color: CT.ink }}
+                >
+                  <SelectValue placeholder="Chọn giờ sinh" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem
+                    value={HOP_OTHER_BIRTH_TIME_DEFAULT}
+                    textValue="Ngọ · 11–12h"
+                  >
+                    Không biết — Giờ Ngọ (11–13h)
+                  </SelectItem>
+                  {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
+                    <SelectItem
+                      key={opt.value}
+                      value={String(opt.value)}
+                      textValue={formatBirthTimeShort(String(opt.value))}
+                    >
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="mt-3 flex gap-1">
@@ -285,8 +304,9 @@ export default function TraCuuHopTuoiRoute() {
                   key={g}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, gioiTinh: g }))}
-                  className="flex-1 cursor-pointer border-none py-2 text-center font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.06em]"
+                  className="flex-1 cursor-pointer border-none py-2 text-center text-[11px] font-bold uppercase tracking-[0.06em]"
                   style={{
+                    ...DISPLAY2,
                     background: sel ? CT.forest : "transparent",
                     color: sel ? CT.cream : CT.muted,
                     border: sel ? "none" : `1px solid ${CT.hairline}`,
@@ -299,7 +319,7 @@ export default function TraCuuHopTuoiRoute() {
           </div>
         </div>
 
-        <div className="mt-5 font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="mt-[22px] font-serif text-[13px]" style={{ color: CT.muted }}>
           Để
         </div>
         <div className="mt-2 font-serif text-[13px] leading-relaxed" style={{ color: CT.ink }}>
@@ -346,8 +366,8 @@ export default function TraCuuHopTuoiRoute() {
             ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null
           }
           onClick={() => void handleSubmit()}
-          className="mt-8 w-full cursor-pointer border-none py-[15px] font-[family-name:var(--font-display)] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
-          style={{ background: CT.forest, color: CT.cream }}
+          className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+          style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
         >
           {busy ? "Đang phân tích…" : "Xem độ hợp"}
         </button>
@@ -358,6 +378,18 @@ export default function TraCuuHopTuoiRoute() {
           </div>
         ) : null}
       </div>
+
+      {busy ? (
+        <div
+          className="absolute inset-0 z-20 flex flex-col"
+          style={{ background: CT.paper }}
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <CHopTuoiLoadingScreen purposeLabel={form.purposeLabel} />
+        </div>
+      ) : null}
     </div>
   );
 }

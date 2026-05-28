@@ -1,6 +1,6 @@
 /** Direction C entitlement helpers — shared by bat-tu, generate-reading, payos-webhook. */
 
-/** NLTT-only body flag on `bat-tu` op `chon-ngay` — REQ-NLTT-01; never forwarded upstream. */
+/** NLTT-only body flag on Tab Tra cứu `bat-tu` ops — REQ-NLTT-01; never forwarded upstream. */
 export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
 
 export type ProfileEntitlements = {
@@ -25,10 +25,10 @@ export function isTraCuuPickChonNgay(
   op: string,
   body: Record<string, unknown>,
 ): boolean {
-  return (
-    op === "chon-ngay" &&
-    String(body.source ?? "").toLowerCase() === BAT_TU_SOURCE_TRA_CUU
-  );
+  if (String(body.source ?? "").toLowerCase() !== BAT_TU_SOURCE_TRA_CUU) {
+    return false;
+  }
+  return op === "chon-ngay" || op === "hop-tuoi";
 }
 
 export function canUseBaziReading(profile: ProfileEntitlements): boolean {

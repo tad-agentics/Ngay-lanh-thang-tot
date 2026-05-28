@@ -4,9 +4,7 @@ import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
-import {
-  formatHopTuoiCriterionPoints,
-} from "~/lib/hop-tuoi-result";
+import { formatHopTuoiCriterionPoints } from "~/lib/hop-tuoi-result";
 import {
   loadHopTuoiKetQua,
   persistHopTuoiKetQua,
@@ -17,6 +15,9 @@ import {
   stashTraCuuIntentPreset,
 } from "~/lib/hop-tuoi-ui";
 import { CT } from "~/lib/c-tokens";
+
+const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
+const DISPLAY = { fontFamily: "var(--display)" } as const;
 
 function gradHeadline(label: string): string {
   return label.toUpperCase();
@@ -159,8 +160,8 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             style={{ borderColor: CT.hairline }}
           >
             <div
-              className="font-[family-name:var(--font-display)] text-sm font-bold tracking-[-0.005em]"
-              style={{ color: CT.ink }}
+              className="text-sm font-bold tracking-[-0.005em]"
+              style={{ ...DISPLAY2, color: CT.ink }}
             >
               {selfName}
             </div>
@@ -171,8 +172,8 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             </div>
           </div>
           <span
-            className="font-[family-name:var(--font-mono)] text-sm"
-            style={{ color: CT.goldDeep }}
+            className="text-sm"
+            style={{ fontFamily: "var(--mono)", color: CT.goldDeep }}
           >
             ×
           </span>
@@ -181,8 +182,8 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             style={{ borderColor: CT.hairline }}
           >
             <div
-              className="font-[family-name:var(--font-display)] text-sm font-bold tracking-[-0.005em]"
-              style={{ color: CT.ink }}
+              className="text-sm font-bold tracking-[-0.005em]"
+              style={{ ...DISPLAY2, color: CT.ink }}
             >
               {otherName}
             </div>
@@ -201,8 +202,8 @@ export default function TraCuuHopTuoiKetQuaRoute() {
           {showScore ? (
             <div className="mt-2.5 flex items-baseline justify-center gap-1.5">
               <span
-                className="font-[family-name:var(--font-display)] text-[96px] font-extrabold leading-[0.85] tabular-nums tracking-[-0.04em]"
-                style={{ color: CT.goldDeep }}
+                className="text-[96px] font-extrabold leading-[0.85] tabular-nums tracking-[-0.04em]"
+                style={{ ...DISPLAY2, color: CT.goldDeep }}
               >
                 {panel.score}
               </span>
@@ -212,15 +213,15 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             </div>
           ) : null}
           <div
-            className="mt-2 font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
-            style={{ color: CT.ink }}
+            className="mt-2 text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            style={{ ...DISPLAY, color: CT.ink }}
           >
             {gradHeadline(panel.gradLabel)}
           </div>
           {quote ? (
             <p
-              className="mx-auto mt-2 max-w-[320px] font-serif text-[13.5px] italic leading-snug"
-              style={{ color: CT.ink2 }}
+              className="mx-auto mt-2 max-w-[320px] font-serif text-[13.5px] italic"
+              style={{ color: CT.ink2, lineHeight: 1.55 }}
             >
               &ldquo;{quote}&rdquo;
             </p>
@@ -240,21 +241,21 @@ export default function TraCuuHopTuoiKetQuaRoute() {
               >
                 <div className="flex-1">
                   <div
-                    className="font-[family-name:var(--font-display)] text-[13.5px] font-bold uppercase tracking-[-0.005em]"
-                    style={{ color: CT.ink }}
+                    className="text-[13.5px] font-bold uppercase tracking-[-0.005em]"
+                    style={{ ...DISPLAY2, color: CT.ink }}
                   >
                     {row.t}
                   </div>
                   <div
-                    className="mt-0.5 font-serif text-xs leading-snug"
-                    style={{ color: CT.ink2 }}
+                    className="mt-0.5 font-serif text-xs"
+                    style={{ color: CT.ink2, lineHeight: 1.45 }}
                   >
                     {row.v}
                   </div>
                 </div>
                 <span
-                  className="font-[family-name:var(--font-display)] text-base font-bold tabular-nums tracking-[-0.01em]"
-                  style={{ color: CT.goldDeep }}
+                  className="text-base font-bold tabular-nums tracking-[-0.01em]"
+                  style={{ ...DISPLAY2, color: CT.goldDeep }}
                 >
                   {row.s}
                 </span>
@@ -275,30 +276,21 @@ export default function TraCuuHopTuoiKetQuaRoute() {
               {nextStep.kicker}
             </Mono>
             <div
-              className="mt-1.5 font-serif text-[13.5px] leading-snug"
-              style={{ color: CT.ink }}
+              className="mt-1.5 font-serif text-[13.5px]"
+              style={{ color: CT.ink, lineHeight: 1.55 }}
             >
               {nextStep.body}
             </div>
             <Link
               to="/tra-cuu"
               onClick={handleTraCuuClick}
-              className="mt-3 inline-block px-3.5 py-2 no-underline font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.08em]"
-              style={{ background: CT.forest, color: CT.cream }}
+              className="mt-3 inline-block px-3.5 py-2 no-underline text-[11px] font-bold uppercase tracking-[0.08em]"
+              style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
             >
               {nextStep.cta}
             </Link>
           </div>
         ) : null}
-
-        <button
-          type="button"
-          onClick={() => navigate("/tra-cuu/hop-tuoi")}
-          className="mt-6 w-full cursor-pointer border bg-transparent py-3 font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.08em]"
-          style={{ borderColor: CT.hairline, color: CT.ink }}
-        >
-          Kiểm tra lại
-        </button>
       </div>
     </div>
   );

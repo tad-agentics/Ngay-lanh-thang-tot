@@ -515,8 +515,7 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
   ]);
   const advice = adviceRaw !== "—" ? adviceRaw : null;
 
-  const criteriaRowsRaw =
-    apiVersion === 2 ? pickCriteriaRows(nested) : [];
+  const criteriaRowsRaw = pickCriteriaRows(nested);
 
   const relationshipTypeRaw = pickStr(nested, [
     "relationship_type",
@@ -611,6 +610,9 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
     naphAmRelation = "Hai Nạp Âm tương tác — xem chi tiết trong lá số từng người.";
   }
 
+  const criteriaRowsEnriched = enrichCriterionPoints(criteriaRowsRaw, score);
+  const criteriaLinesEnriched = criteriaRowsEnriched.map((r) => r.name);
+
   return {
     apiVersion: 1,
     score,
@@ -621,8 +623,8 @@ export function hopTuoiPayloadToPanel(data: unknown): HopTuoiPanelView | null {
     naphAmRelation,
     verdict: null,
     verdictLevel: null,
-    criteriaLines: [],
-    criteriaRows: [],
+    criteriaLines: criteriaLinesEnriched,
+    criteriaRows: criteriaRowsEnriched,
     reading: null,
     advice: null,
     relationshipType: null,
