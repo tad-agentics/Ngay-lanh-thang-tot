@@ -11,6 +11,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 
 import type { Database } from "~/lib/database.types";
+import { displayNameFromAuthUser } from "~/lib/profile-display-name";
 import { tryConsumePendingReferralClaim } from "~/lib/referral-claim";
 import { supabase } from "~/lib/supabase";
 
@@ -32,6 +33,7 @@ function useProfileState(user: User): ProfileContextValue {
   const [error, setError] = useState<string | null>(null);
   const loadSeqRef = useRef(0);
   const userId = user.id;
+  const syncedNameRef = useRef(false);
 
   const load = useCallback(async (mode: "full" | "silent") => {
     const seq = ++loadSeqRef.current;
@@ -50,7 +52,31 @@ function useProfileState(user: User): ProfileContextValue {
 
   useEffect(() => {
     void load("full");
+    syncedNameRef.current = false;
   }, [load, userId]);
+
+  useEffect(() => {
+    if (!profile || profile.display_name?.trim() || syncedNameRef.current) return;
+    const fromAuth = displayNameFromAuthUser(user);
+    if (!fromAuth) return;
+    syncedNameRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      const { error: upErr } = await supabase
+        .from("profiles")
+        .update({ display_name: fromAuth })
+        .eq("id", userId)
+        .is("display_name", null);
+      if (cancelled || upErr) {
+        syncedNameRef.current = false;
+        return;
+      }
+      void load("silent");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, user, userId, load]);
 
   useEffect(() => {
     let cancelled = false;

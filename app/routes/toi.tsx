@@ -7,6 +7,7 @@ import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { useSubscription } from "~/hooks/useSubscription";
+import { useAuth } from "~/lib/auth";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
 import {
@@ -15,6 +16,7 @@ import {
   subscriptionExpiryUrgent,
 } from "~/lib/entitlements";
 import { laSoJsonToChiTiet, laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { resolveProfileDisplayName } from "~/lib/profile-display-name";
 import { upcomingSavedPicks } from "~/lib/saved-picks-upcoming";
 
 const PILLAR_LABELS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
@@ -48,6 +50,7 @@ function subscriptionProgress(expiresAt: string | null): number {
 
 export default function ToiRoute() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { profile } = useProfile();
   const { expiryFormatted, isActive, expiresAt } = useSubscription();
   const { canUseBaziReading: baziUnlocked } = useEntitlements();
@@ -57,7 +60,7 @@ export default function ToiRoute() {
   const yearlySub = hasYearlySubscription(profile);
   const { pending: recomputePending } = useLaSoRecomputeGate();
 
-  const displayName = profile?.display_name ?? "—";
+  const displayName = resolveProfileDisplayName(profile, user);
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
   const chiTiet = profile
     ? laSoJsonToChiTiet(profile.la_so as import("~/lib/api-types").LaSoJson | null)
