@@ -1,18 +1,20 @@
 import { Link } from "react-router";
 
 import { Mono } from "~/components/brand";
+import { useAuth } from "~/lib/auth";
+import { useLastPaidSubscriptionSku } from "~/hooks/useLastPaidSubscriptionSku";
 import { useSubscription } from "~/hooks/useSubscription";
 import { CT } from "~/lib/c-tokens";
 import { UI_PACKAGES } from "~/lib/packages";
 
-type CSubExpiredProps = {
-  onDismiss?: () => void;
-};
-
 /** Direction C — subscription expired full-screen blocker (artboard 38). */
-export function CSubExpired({ onDismiss }: CSubExpiredProps) {
+export function CSubExpired() {
+  const { user } = useAuth();
   const { expiryFormatted } = useSubscription();
+  const lastPaidSku = useLastPaidSubscriptionSku(user?.id);
+  const renewSku = lastPaidSku ?? "goi_12thang";
   const yearly = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
+  const renewPkg = UI_PACKAGES.find((p) => p.sku === renewSku) ?? yearly;
 
   return (
     <div
@@ -91,29 +93,29 @@ export function CSubExpired({ onDismiss }: CSubExpiredProps) {
           . Lá số tứ trụ vẫn được lưu — không cần lập lại.
         </p>
 
-        {yearly ? (
+        {renewPkg ? (
           <div
             className="relative mt-5 w-full max-w-[320px] px-4 py-3.5 text-left"
             style={{ background: CT.forest, color: CT.cream }}
           >
             <Mono className="text-[9px]" style={{ color: CT.gold }}>
-              Khuyên dùng
+              {renewSku === "goi_12thang" ? "Khuyên dùng" : "Gói trước đây của bạn"}
             </Mono>
             <div className="mt-1 font-[family-name:var(--font-display)] text-lg font-extrabold uppercase tracking-[-0.005em]">
-              {yearly.title}
+              {renewPkg.title}
             </div>
             <div
               className="mt-1.5 font-[family-name:var(--font-display-2)] text-[22px] font-extrabold tabular-nums"
               style={{ color: CT.gold }}
             >
-              {yearly.priceLabel}
+              {renewPkg.priceLabel}
             </div>
             <Link
-              to="/dat-lich?plan=goi_12thang"
+              to={`/dat-lich?plan=${renewSku}`}
               className="mt-3 block w-full py-2.5 text-center font-[family-name:var(--font-display-2)] text-xs font-extrabold uppercase tracking-[0.08em] no-underline"
               style={{ background: CT.gold, color: CT.forest }}
             >
-              Đặt lịch năm
+              Gia hạn lịch
             </Link>
           </div>
         ) : null}
@@ -125,17 +127,6 @@ export function CSubExpired({ onDismiss }: CSubExpiredProps) {
         >
           Xem các gói khác →
         </Link>
-
-        {onDismiss ? (
-          <button
-            type="button"
-            onClick={onDismiss}
-            className="mt-6 cursor-pointer border-none bg-transparent font-serif text-sm"
-            style={{ color: CT.muted }}
-          >
-            Để sau
-          </button>
-        ) : null}
       </div>
     </div>
   );

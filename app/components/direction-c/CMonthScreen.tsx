@@ -5,7 +5,9 @@ import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
+import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -186,6 +188,7 @@ function MonthGrid({
 export function CMonthScreen() {
   const { profile, loading: profileLoading } = useProfile();
   const { pending: recomputePending } = useLaSoRecomputeGate();
+  const online = useOnlineStatus();
   const todayIso = todayIsoInVn();
   const [year, setYear] = useState(() => Number(todayIso.slice(0, 4)));
   const [month, setMonth] = useState(() => Number(todayIso.slice(5, 7)));
@@ -256,6 +259,8 @@ export function CMonthScreen() {
     >
       <CTopStrip />
       <CLichSegmentedNav />
+
+      {!online ? <COfflineBanner /> : null}
 
       <div className="flex-1 overflow-y-auto px-6 pb-24 pt-2">
         <div

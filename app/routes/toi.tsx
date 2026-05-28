@@ -412,7 +412,7 @@ export default function ToiRoute() {
               sub: "tên · ngày sinh · giờ sinh",
               to: "/toi/sua-ho-so",
             },
-            { t: "Cài đặt", sub: "thông báo · tài khoản · hỗ trợ", to: "/toi/cai-dat" },
+            { t: "Cài đặt", sub: "tài khoản · hiển thị · hỗ trợ", to: "/toi/cai-dat" },
           ].map((row, i, arr) => (
             <Link
               key={row.to}

@@ -3,21 +3,21 @@ import { useLocation } from "react-router";
 
 import { AppShellViewport } from "~/components/AppShellViewport";
 import { CBottomNav } from "~/components/brand/CBottomNav";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { getActiveTab, shouldShowNav } from "~/lib/nav-config";
 
 type AuthenticatedMobileShellProps = {
   children: ReactNode;
-  /** Forest-dark pages use dark nav variant */
-  darkNav?: boolean;
 };
 
-export function AuthenticatedMobileShell({
-  children,
-  darkNav = false,
-}: AuthenticatedMobileShellProps) {
+export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellProps) {
   const location = useLocation();
+  const online = useOnlineStatus();
   const showNav = shouldShowNav(location.pathname);
   const activeTab = getActiveTab(location.pathname);
+  const lichTab =
+    location.pathname === "/lich" || location.pathname.startsWith("/lich/");
+  const darkNav = !online && lichTab;
   return (
     <AppShellViewport>
       <div

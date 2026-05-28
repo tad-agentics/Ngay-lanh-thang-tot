@@ -40,15 +40,19 @@ export function CHomeScreen() {
 
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
+  const offlineMode = !online;
 
   return (
     <main
       className="flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink }}
+      style={{
+        background: offlineMode ? CT.forest : CT.paper,
+        color: offlineMode ? CT.cream : CT.ink,
+      }}
     >
       {!online ? <COfflineBanner /> : null}
-      <CTopStrip />
-      <CLichSegmentedNav />
+      <CTopStrip dark={offlineMode} />
+      <CLichSegmentedNav dark={offlineMode} />
 
       <div className="flex-1 overflow-y-auto px-[22px] pb-24 pt-2">
         {error ? <ErrorBanner message={error} /> : null}
@@ -85,14 +89,32 @@ export function CHomeScreen() {
             onPrev={() => void navigate(`/ngay/${prevIso}`)}
             onNext={() => void navigate(`/ngay/${nextIso}`)}
             afterRows={
-              <CTodayReasoning
-                text={readingText}
-                fallbackText={today.homeSummaryLine}
-                loading={readingLoading}
-                onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
-              />
+              offlineMode ? (
+                <p
+                  className="mt-3 font-serif text-xs italic leading-snug"
+                  style={{ color: CT.muted }}
+                >
+                  Luận giải đầy đủ cần kết nối lại.
+                </p>
+              ) : (
+                <CTodayReasoning
+                  text={readingText}
+                  fallbackText={today.homeSummaryLine}
+                  loading={readingLoading}
+                  onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
+                />
+              )
             }
           />
+        ) : null}
+
+        {offlineMode ? (
+          <p
+            className="mt-4 text-center font-serif text-xs italic leading-snug"
+            style={{ color: "rgba(237,231,211,0.5)" }}
+          >
+            Tra cứu, hợp tuổi, luận giải AI cần online — sẽ trở lại khi có mạng.
+          </p>
         ) : null}
       </div>
     </main>

@@ -4,9 +4,11 @@ import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar } from "~/components/brand";
+import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
+import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useOptionalProfile } from "~/hooks/useOptionalProfile";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
@@ -22,6 +24,7 @@ import { addDaysToIso } from "~/hooks/useStreak";
 export function CDayDetailScreen() {
   const { ngay } = useParams();
   const navigate = useNavigate();
+  const online = useOnlineStatus();
   const { user, profile, loading: profileLoading } = useOptionalProfile();
   const { savePick } = useSavedPicks();
   const [loading, setLoading] = useState(true);
@@ -124,6 +127,7 @@ export function CDayDetailScreen() {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink }}
     >
+      {!online ? <COfflineBanner /> : null}
       <BackBar title={monthNum ? `Lịch tháng ${monthNum}` : "Chi tiết ngày"} />
 
       <div className="flex-1 overflow-y-auto px-[22px] pb-8 pt-1">

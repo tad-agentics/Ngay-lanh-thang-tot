@@ -5,8 +5,8 @@
  * iCloud sync row omitted (PWA, not iOS-native).
  */
 
-import { useEffect, useState, type CSSProperties } from "react";
-import { Link, useNavigate } from "react-router";
+import { type CSSProperties } from "react";
+import { Link } from "react-router";
 import { Bell, Copy, ExternalLink, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,7 +17,6 @@ import type { LaSoJson } from "~/lib/api-types";
 import { useProfile } from "~/hooks/useProfile";
 import { subscriptionActive } from "~/lib/subscription";
 import { laSoJsonToChiTiet, profileHasLaso } from "~/lib/la-so-ui";
-import { supabase } from "~/lib/supabase";
 
 function formatNgaySinhDisplay(iso: string | null | undefined): string | null {
   if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return null;
@@ -85,39 +84,8 @@ function Toggle({
 }
 
 export default function AppToi() {
-  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { profile, loading } = useProfile();
-  const [pushCount, setPushCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    void (async () => {
-      const { data, error } = await supabase
-        .from("push_subscriptions")
-        .select("id")
-        .eq("user_id", user.id);
-      if (cancelled) return;
-      setPushCount(error ? 0 : (data?.length ?? 0));
-    })();
-    return () => { cancelled = true; };
-  }, [user]);
-
-  async function onPushToggle(checked: boolean) {
-    if (!user) return;
-    if (checked) {
-      void navigate("/app/thong-bao-quyen");
-      return;
-    }
-    const { error } = await supabase
-      .from("push_subscriptions")
-      .delete()
-      .eq("user_id", user.id);
-    if (error) { toast.error(error.message); return; }
-    setPushCount(0);
-    toast.success("Đã tắt đăng ký thông báo đẩy.");
-  }
 
   async function copyReferralCode() {
     if (!profile?.referral_code) return;
@@ -149,7 +117,6 @@ export default function AppToi() {
 
   const hasSub = profile ? subscriptionActive(profile.subscription_expires_at) : false;
   const creditsBalance = loading ? "…" : hasSub ? "∞" : String(profile?.credits_balance ?? 0);
-  const pushEnabled = pushCount != null && pushCount > 0;
 
   type SettingsRow =
     | { type: "toggle"; label: string; sub: string | null; value: boolean; loading?: boolean; onChange: (v: boolean) => void }
@@ -159,14 +126,6 @@ export default function AppToi() {
     | { type: "action"; label: string; sub: string | null; danger?: boolean; action: () => void };
 
   const settingsRows: SettingsRow[] = [
-    {
-      type: "toggle",
-      label: "Thông báo",
-      sub: "3 nhịp · 7:00 · giờ tốt · cuối tuần",
-      value: pushEnabled,
-      loading: pushCount === null,
-      onChange: (v) => void onPushToggle(v),
-    },
     {
       type: "link",
       label: "Nhịp hàng ngày",
