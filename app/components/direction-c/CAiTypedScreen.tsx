@@ -371,12 +371,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       className="min-h-[100svh] flex flex-col"
       style={{ background: CT.paper, color: CT.ink }}
     >
-      <BackBar
-        title={`Luận giải · ngày ${dayShort}`}
-        endAdornment={
-          <Mono style={{ color: CT.muted, fontSize: 9 }}>AI · có nguồn</Mono>
-        }
-      />
+      <BackBar title={`Luận giải · ngày ${dayShort}`} />
 
       <div ref={scrollRef} className="flex-1 overflow-auto px-6 pt-2 pb-6">
         {(detailLoading || profileLoading) && (
