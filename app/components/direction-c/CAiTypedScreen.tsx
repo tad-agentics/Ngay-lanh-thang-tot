@@ -1,21 +1,54 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, LogoMark, Mono } from "~/components/brand";
+import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import { CT } from "~/lib/c-tokens";
-import { weekdayFromIso } from "~/lib/lich-format";
-import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
-import { luanContextToParam } from "~/lib/luan-context";
+import {
+  DAY_LUAN_MAX_FOLLOW_UPS,
+  incrementDayLuanFollowUpCount,
+  readDayLuanFollowUpCount,
+} from "~/lib/day-luan-chat-quota";
+import {
+  anchorQuestionForScore,
+  buildDayLuanSectionRows,
+  DAY_LUAN_SUGGESTED_CHIPS,
+  formatDayIsoShort,
+} from "~/lib/day-luan-sectioned";
 
-const TYPED_MS = 14;
+const TYPED_MS = 18;
 
-function TypedBody({ text, active }: { text: string; active: boolean }) {
+type FollowUpTurn = {
+  id: string;
+  question: string;
+  answer: string | null;
+  loading: boolean;
+  error: string | null;
+  typingDone: boolean;
+};
+
+function TypedBody({
+  text,
+  active,
+  onComplete,
+}: {
+  text: string;
+  active: boolean;
+  onComplete?: () => void;
+}) {
   const [len, setLen] = useState(0);
+  const completedRef = useRef(false);
+
   useEffect(() => {
+    completedRef.current = false;
     if (!active || !text) {
       setLen(text.length);
+      if (text && onComplete && !completedRef.current) {
+        completedRef.current = true;
+        onComplete();
+      }
       return;
     }
     setLen(0);
@@ -23,12 +56,20 @@ function TypedBody({ text, active }: { text: string; active: boolean }) {
     const id = window.setInterval(() => {
       i += 1;
       setLen(i);
-      if (i >= text.length) window.clearInterval(id);
+      if (i >= text.length) {
+        window.clearInterval(id);
+        if (onComplete && !completedRef.current) {
+          completedRef.current = true;
+          onComplete();
+        }
+      }
     }, TYPED_MS);
     return () => window.clearInterval(id);
-  }, [text, active]);
+  }, [text, active, onComplete]);
+
   const shown = text.slice(0, len);
   const typing = active && len < text.length;
+
   return (
     <p
       style={{
@@ -51,18 +92,90 @@ function TypedBody({ text, active }: { text: string; active: boolean }) {
             background: CT.ink,
             marginLeft: 2,
             verticalAlign: "middle",
-            animation: "ldc-cursor-blink 1s steps(2) infinite",
+            animation: "b-cursor-blink 1s steps(2) infinite",
           }}
         />
       ) : null}
-      <style>{`@keyframes ldc-cursor-blink { 50% { opacity: 0; } }`}</style>
+      <style>{`@keyframes b-cursor-blink { 50% { opacity: 0; } }`}</style>
     </p>
   );
 }
 
+function QuestionBlock({ question }: { question: string }) {
+  return (
+    <div
+      style={{
+        padding: "10px 14px",
+        background: "rgba(154,124,34,0.06)",
+        borderLeft: `2px solid ${CT.goldDeep}`,
+      }}
+    >
+      <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Bạn hỏi</Mono>
+      <div
+        style={{
+          marginTop: 3,
+          fontFamily: "var(--serif)",
+          fontStyle: "italic",
+          fontSize: 13,
+          color: CT.ink2,
+          lineHeight: 1.5,
+        }}
+      >
+        &ldquo;{question}&rdquo;
+      </div>
+    </div>
+  );
+}
+
+function AiAnswerRow({
+  kicker,
+  children,
+  compact,
+}: {
+  kicker: string;
+  children: ReactNode;
+  compact?: boolean;
+}) {
+  const size = compact ? 26 : 32;
+  const logo = compact ? 18 : 22;
+  return (
+    <div
+      className="flex gap-3 items-start"
+      style={{ marginTop: compact ? 14 : 22, gap: compact ? 10 : 12 }}
+    >
+      <div
+        className="shrink-0 flex items-center justify-center overflow-hidden rounded-full"
+        style={{
+          width: size,
+          height: size,
+          background: CT.forest,
+          marginTop: 2,
+        }}
+      >
+        <LogoMark size={logo} dark />
+      </div>
+      <div className="flex-1 min-w-0">
+        <Mono style={{ color: CT.muted, fontSize: 9 }}>{kicker}</Mono>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function chipWasAsked(chip: string, asked: string[]): boolean {
+  const c = chip.toLowerCase();
+  return asked.some((q) => {
+    const t = q.toLowerCase();
+    return t.includes(c) || c.includes(t);
+  });
+}
+
 export function CAiTypedScreen({ iso }: { iso: string }) {
-  const navigate = useNavigate();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const turnEndRef = useRef<HTMLDivElement>(null);
+
   const {
+    profile,
     profileLoading,
     detailLoading,
     detailError,
@@ -73,17 +186,157 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     unlockBusy,
     subActive,
     unlockAndLoad,
+    askFollowUp,
   } = useDayLuanReading(iso);
 
-  const titleDate = formatIsoDateLichHeader(iso);
+  const dayShort = formatDayIsoShort(iso);
   const score = detail?.score ?? null;
-  const question =
-    score != null
-      ? `Tại sao hôm nay được ${score} điểm với mệnh của tôi?`
-      : "Tại sao hôm nay được chấm như vậy với mệnh của tôi?";
+  const anchorQuestion = anchorQuestionForScore(score);
+  const sectionRows = buildDayLuanSectionRows(detail);
 
-  const showTyped = Boolean(reading && unlocked && !readingLoading);
+  const [anchorTypingDone, setAnchorTypingDone] = useState(false);
+  const [followUps, setFollowUps] = useState<FollowUpTurn[]>([]);
+  const [input, setInput] = useState("");
+  const [submitBusy, setSubmitBusy] = useState(false);
+  const [quotaUsed, setQuotaUsed] = useState(0);
+
+  const userId = profile?.id ?? "";
+  useEffect(() => {
+    if (!userId) return;
+    setQuotaUsed(readDayLuanFollowUpCount(userId, iso));
+  }, [userId, iso]);
+
+  const quotaRemaining = Math.max(0, DAY_LUAN_MAX_FOLLOW_UPS - quotaUsed);
+  const quotaExhausted = quotaRemaining <= 0;
+
+  const showAnchorTyped = Boolean(reading && unlocked && !readingLoading);
+  const anchorDone = showAnchorTyped && anchorTypingDone;
   const locked = !unlocked && !readingLoading && !detailLoading && !profileLoading;
+
+  useEffect(() => {
+    setAnchorTypingDone(false);
+    setFollowUps([]);
+  }, [iso]);
+
+  useEffect(() => {
+    if (!anchorDone) return;
+    if (window.location.hash !== "#chi-tiet") return;
+    window.requestAnimationFrame(() => {
+      document.getElementById("chi-tiet")?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [anchorDone]);
+
+  const scrollToLatest = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      turnEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  }, []);
+
+  const submitFollowUp = useCallback(
+    async (rawQuestion: string) => {
+      const question = rawQuestion.trim();
+      if (!question || submitBusy || quotaExhausted || !unlocked) return;
+
+      const turnId = `${Date.now()}`;
+      setFollowUps((prev) => [
+        ...prev,
+        { id: turnId, question, answer: null, loading: true, error: null, typingDone: false },
+      ]);
+      setInput("");
+      scrollToLatest();
+
+      setSubmitBusy(true);
+      const res = await askFollowUp(question);
+      setSubmitBusy(false);
+
+      if (!res.ok || !res.reading) {
+        setFollowUps((prev) =>
+          prev.map((t) =>
+            t.id === turnId
+              ? {
+                  ...t,
+                  loading: false,
+                  error: res.message ?? "Không kết nối được. Thử lại ›",
+                }
+              : t,
+          ),
+        );
+        return;
+      }
+
+      if (userId) {
+        incrementDayLuanFollowUpCount(userId, iso);
+        setQuotaUsed(readDayLuanFollowUpCount(userId, iso));
+      }
+
+      setFollowUps((prev) =>
+        prev.map((t) =>
+          t.id === turnId
+            ? { ...t, loading: false, answer: res.reading, error: null }
+            : t,
+        ),
+      );
+    },
+    [
+      askFollowUp,
+      iso,
+      quotaExhausted,
+      scrollToLatest,
+      submitBusy,
+      unlocked,
+      userId,
+    ],
+  );
+
+  const retryFollowUp = useCallback(
+    async (turnId: string, question: string) => {
+      setFollowUps((prev) =>
+        prev.map((t) =>
+          t.id === turnId ? { ...t, loading: true, error: null, answer: null } : t,
+        ),
+      );
+      setSubmitBusy(true);
+      const res = await askFollowUp(question);
+      setSubmitBusy(false);
+      if (!res.ok || !res.reading) {
+        setFollowUps((prev) =>
+          prev.map((t) =>
+            t.id === turnId
+              ? {
+                  ...t,
+                  loading: false,
+                  error: res.message ?? "Không kết nối được. Thử lại ›",
+                }
+              : t,
+          ),
+        );
+        return;
+      }
+      if (userId) {
+        incrementDayLuanFollowUpCount(userId, iso);
+        setQuotaUsed(readDayLuanFollowUpCount(userId, iso));
+      }
+      setFollowUps((prev) =>
+        prev.map((t) =>
+          t.id === turnId
+            ? { ...t, loading: false, answer: res.reading, error: null }
+            : t,
+        ),
+      );
+    },
+    [askFollowUp, iso, userId],
+  );
+
+  const askedQuestions = [
+    anchorQuestion,
+    ...followUps.map((f) => f.question),
+  ];
+  const remainingChips = DAY_LUAN_SUGGESTED_CHIPS.filter(
+    (chip) => !chipWasAsked(chip, askedQuestions),
+  );
+
+  const anchorKicker =
+    anchorDone || !showAnchorTyped ? "NLTT luận" : "NLTT đang luận…";
 
   return (
     <main
@@ -91,11 +344,13 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       style={{ background: CT.paper, color: CT.ink }}
     >
       <BackBar
-        title={`Luận giải · ${titleDate}`}
-        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>AI</Mono>}
+        title={`Luận giải · ngày ${dayShort}`}
+        endAdornment={
+          <Mono style={{ color: CT.muted, fontSize: 9 }}>AI · có nguồn</Mono>
+        }
       />
 
-      <div className="flex-1 overflow-auto px-6 pt-2 pb-4">
+      <div ref={scrollRef} className="flex-1 overflow-auto px-6 pt-2 pb-4">
         {(detailLoading || profileLoading) && (
           <p className="font-serif text-sm" style={{ color: CT.muted }}>
             Đang tải…
@@ -105,27 +360,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
         {!detailLoading && !detailError ? (
           <>
-            <div
-              style={{
-                padding: "12px 14px",
-                background: "rgba(154,124,34,0.06)",
-                borderLeft: `2px solid ${CT.goldDeep}`,
-              }}
-            >
-              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Bạn hỏi</Mono>
-              <div
-                style={{
-                  marginTop: 4,
-                  fontFamily: "var(--serif)",
-                  fontStyle: "italic",
-                  fontSize: 13.5,
-                  color: CT.ink2,
-                  lineHeight: 1.5,
-                }}
-              >
-                &ldquo;{question}&rdquo;
-              </div>
-            </div>
+            <QuestionBlock question={anchorQuestion} />
 
             {locked ? (
               <div className="mt-6 text-center">
@@ -155,71 +390,192 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </div>
             ) : null}
 
-            {(readingLoading || showTyped) && (
-              <div className="mt-6 flex gap-3 items-start">
-                <div
-                  className="shrink-0 flex items-center justify-center overflow-hidden rounded-full"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    background: CT.forest,
-                    marginTop: 2,
-                  }}
-                >
-                  <LogoMark size={22} dark />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <Mono style={{ color: CT.muted, fontSize: 9 }}>NLTT đang luận</Mono>
-                  {readingLoading && !reading ? (
-                    <p className="font-serif text-sm mt-2" style={{ color: CT.muted }}>
-                      Đang đối chiếu lá số với ngày {weekdayFromIso(iso)}…
-                    </p>
-                  ) : (
-                    <TypedBody text={reading ?? ""} active={showTyped} />
-                  )}
-                </div>
-              </div>
+            {(readingLoading || showAnchorTyped) && (
+              <AiAnswerRow kicker={anchorKicker}>
+                {readingLoading && !reading ? (
+                  <p className="font-serif text-sm mt-2" style={{ color: CT.muted }}>
+                    Đang đối chiếu lá số với ngày này…
+                  </p>
+                ) : (
+                  <TypedBody
+                    text={reading ?? ""}
+                    active={showAnchorTyped && !anchorTypingDone}
+                    onComplete={() => setAnchorTypingDone(true)}
+                  />
+                )}
+              </AiAnswerRow>
             )}
 
-            {detail?.canChi ? (
+            {anchorDone ? (
+              <DayLuanSectionedPanel
+                rows={sectionRows}
+                totalScore={detail?.score ?? null}
+              />
+            ) : null}
+
+            {followUps.map((turn) => (
               <div
-                className="mt-5 pt-3.5"
-                style={{
-                  borderTop: `1px solid ${CT.hairline}`,
-                  fontFamily: "var(--serif)",
-                  fontSize: 12,
-                  color: CT.muted,
-                  lineHeight: 1.5,
-                }}
+                key={turn.id}
+                className="mt-5 pt-4"
+                style={{ borderTop: `1px solid ${CT.hairline}` }}
               >
-                Đối chiếu:{" "}
-                <span style={{ color: CT.ink2 }}>Hiệp Kỷ Biện Phương</span>,{" "}
-                <span style={{ color: CT.ink2 }}>Ngọc Hạp Thông Thư</span>… ·{" "}
-                {detail.canChi}
+                <QuestionBlock question={turn.question} />
+                {turn.loading ? (
+                  <AiAnswerRow kicker="NLTT đang luận…" compact>
+                    <p
+                      className="font-serif text-sm mt-1"
+                      style={{ color: CT.muted, minHeight: 20 }}
+                    >
+                      <span
+                        aria-hidden
+                        style={{
+                          display: "inline-block",
+                          width: 7,
+                          height: 14,
+                          background: CT.ink,
+                          animation: "b-cursor-blink 1s steps(2) infinite",
+                        }}
+                      />
+                    </p>
+                  </AiAnswerRow>
+                ) : turn.error ? (
+                  <button
+                    type="button"
+                    className="mt-3 font-serif text-sm text-left"
+                    style={{ color: CT.red, background: "none", border: "none", padding: 0 }}
+                    onClick={() => void retryFollowUp(turn.id, turn.question)}
+                  >
+                    {turn.error}
+                  </button>
+                ) : turn.answer ? (
+                  <AiAnswerRow kicker="NLTT luận" compact>
+                    <TypedBody
+                      text={turn.answer}
+                      active={!turn.typingDone}
+                      onComplete={() =>
+                        setFollowUps((prev) =>
+                          prev.map((t) =>
+                            t.id === turn.id ? { ...t, typingDone: true } : t,
+                          ),
+                        )
+                      }
+                    />
+                  </AiAnswerRow>
+                ) : null}
+              </div>
+            ))}
+
+            {anchorDone && remainingChips.length > 0 && !quotaExhausted ? (
+              <div
+                className="mt-5 pt-4"
+                style={{ borderTop: `1px solid ${CT.hairline}` }}
+              >
+                <Mono style={{ color: CT.muted, fontSize: 9 }}>Hỏi tiếp gợi ý</Mono>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {remainingChips.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      disabled={submitBusy}
+                      onClick={() => void submitFollowUp(chip)}
+                      className="text-left py-2.5 px-3.5 font-serif text-[13px]"
+                      style={{
+                        background: "#fff",
+                        border: `1px solid ${CT.hairline}`,
+                        color: CT.ink2,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
 
-            {showTyped ? (
-              <div className="mt-5">
-                <button
-                  type="button"
-                  onClick={() =>
-                    void navigate(`/luan-ai/${luanContextToParam(iso)}/day-du`)
-                  }
-                  className="w-full py-3 font-display text-xs font-extrabold uppercase tracking-wider"
-                  style={{
-                    background: "transparent",
-                    color: CT.ink,
-                    border: `1px solid ${CT.goldDeep}`,
-                  }}
-                >
-                  Xem luận giải đầy đủ có nguồn →
-                </button>
-              </div>
-            ) : null}
+            <div ref={turnEndRef} aria-hidden className="h-1" />
           </>
         ) : null}
       </div>
+
+      {unlocked && !detailLoading && !detailError ? (
+        <div
+          className="px-5 pt-2 pb-5"
+          style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}
+        >
+          <div
+            className="flex items-center gap-2.5 py-2.5 px-3.5"
+            style={{
+              background: quotaExhausted ? "rgba(0,0,0,0.02)" : "#fff",
+              border: `1px solid ${CT.hairline}`,
+              borderRadius: 999,
+              pointerEvents: quotaExhausted ? "none" : "auto",
+            }}
+          >
+            <input
+              type="text"
+              value={input}
+              disabled={quotaExhausted || submitBusy}
+              placeholder={`Hỏi tiếp về ngày ${dayShort}…`}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void submitFollowUp(input);
+              }}
+              className="flex-1 min-w-0 border-0 outline-none bg-transparent font-serif text-[13px]"
+              style={{ color: quotaExhausted ? CT.muted : CT.ink }}
+            />
+            {!quotaExhausted ? (
+              <button
+                type="button"
+                disabled={submitBusy || !input.trim()}
+                onClick={() => void submitFollowUp(input)}
+                className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-serif text-sm"
+                style={{
+                  background: CT.forest,
+                  color: CT.cream,
+                  border: "none",
+                  opacity: submitBusy || !input.trim() ? 0.5 : 1,
+                }}
+                aria-label="Gửi"
+              >
+                ↑
+              </button>
+            ) : null}
+          </div>
+          <div className="mt-1.5 px-1 flex items-baseline justify-between gap-2">
+            {quotaExhausted ? (
+              <span
+                className="w-full text-center font-serif italic text-[10.5px]"
+                style={{ color: CT.muted }}
+              >
+                Hết câu hôm nay · quay lại sáng mai
+              </span>
+            ) : (
+              <>
+                <span
+                  className="font-serif italic text-[10.5px]"
+                  style={{ color: CT.muted }}
+                >
+                  Chỉ trả lời về ngày này và lá số của bạn
+                </span>
+                <Mono
+                  style={{
+                    color: CT.muted,
+                    fontSize: 9,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  còn{" "}
+                  <span style={{ color: CT.goldDeep, fontWeight: 700 }}>
+                    {quotaRemaining}/{DAY_LUAN_MAX_FOLLOW_UPS}
+                  </span>{" "}
+                  câu hôm nay
+                </Mono>
+              </>
+            )}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

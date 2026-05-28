@@ -228,7 +228,17 @@ const DAY_DETAIL_SYSTEM = `Bạn là chuyên gia phong thủy và lịch số Vi
 - KHÔNG markdown, KHÔNG emoji, KHÔNG tiếng Anh, KHÔNG phán tuyệt đối.
 `;
 
-/** Thời hạn cache (ms) theo quy ước sản phẩm */
+const DAY_DETAIL_FOLLOW_UP_SYSTEM = `Bạn là chuyên gia phong thủy Việt Nam. Trả lời câu hỏi ngắn gọn về MỘT ngày cụ thể trong JSON data.
+
+## ĐẦU RA
+- 2–3 câu tiếng Việt, khoảng 120–180 ký tự.
+- Chỉ dựa trên data ngày và lá số trong JSON — không bịa.
+- Không markdown, không emoji.
+- Nếu câu hỏi ngoài phạm vi ngày/lá số: trả lời một câu từ chối lịch sự, gợi ý hỏi lại về ngày này.
+`;
+
+/** Bump khi đổi follow-up prompt. */
+const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-27-v1";
 /** Đổi khi format cache / parser chi tiết đổi — tránh giữ bản luận giải một khối cũ trong DB. */
 const LA_SO_CHI_TIET_CACHE_VER = "2026-05-10-gemini-ar07-sectioned";
 /** Bump khi đổi SYSTEM_PROMPT cho tieu-van/luu-nien — làm mới reading_cache. */
@@ -1002,6 +1012,8 @@ Deno.serve(async (req) => {
   const endpoint =
     typeof body.endpoint === "string" ? body.endpoint.trim() : "";
   const data = body.data;
+  const question =
+    typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
 
   if (!endpoint || data === undefined) {
     return ok(null, null);
@@ -1056,7 +1068,9 @@ Deno.serve(async (req) => {
         : endpoint === "hop-tuoi"
           ? HOP_TUOI_PROMPT_VER
           : endpoint === "day-detail"
-            ? DAY_DETAIL_PROMPT_VER
+            ? question
+              ? DAY_DETAIL_FOLLOW_UP_VER
+              : DAY_DETAIL_PROMPT_VER
             : endpoint === "chon-ngay"
               ? CHON_NGAY_PROMPT_VER
               : endpoint === "chon-ngay-cards"
@@ -1064,10 +1078,12 @@ Deno.serve(async (req) => {
                 : "";
   // GLOBAL_LLM_VER ép invalidate mọi cache cũ khi đổi nhà cung cấp LLM, kể
   // cả endpoint chưa có per-endpoint version (ví dụ ngay-hom-nay).
-  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${dataJson}`;
+  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${question}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
-  const payload = stableStringify({ endpoint, data });
+  const payload = stableStringify(
+    question ? { endpoint, data, question } : { endpoint, data },
+  );
   if (payload.length > MAX_BODY_CHARS) {
     return ok(null, null);
   }
@@ -1327,12 +1343,19 @@ Deno.serve(async (req) => {
           HOP_TUOI_REQUEST_TIMEOUT_MS,
         )
       : endpoint === "day-detail"
-        ? await geminiCompletion(
-            DAY_DETAIL_SYSTEM,
-            payload,
-            READING_MAX_TOKENS_DAY_DETAIL,
-            DAY_DETAIL_REQUEST_TIMEOUT_MS,
-          )
+        ? question
+          ? await geminiCompletion(
+              DAY_DETAIL_FOLLOW_UP_SYSTEM,
+              payload,
+              220,
+              DAY_DETAIL_REQUEST_TIMEOUT_MS,
+            )
+          : await geminiCompletion(
+              DAY_DETAIL_SYSTEM,
+              payload,
+              READING_MAX_TOKENS_DAY_DETAIL,
+              DAY_DETAIL_REQUEST_TIMEOUT_MS,
+            )
       : await geminiReading(payload);
   if (!reading) {
     return ok(null, null);

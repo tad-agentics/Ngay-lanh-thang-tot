@@ -112,17 +112,50 @@ export function useDayLuanReading(iso: string) {
     return { ok: true as const };
   }, [payload, unlockBusy, subActive, iso, loadReading]);
 
+  const askFollowUp = useCallback(
+    async (question: string) => {
+      if (!payload || !unlocked) {
+        return {
+          ok: false as const,
+          reading: null as string | null,
+          message: "Cần mở luận giải trước.",
+        };
+      }
+      const q = question.trim();
+      if (!q) {
+        return {
+          ok: false as const,
+          reading: null as string | null,
+          message: "Nhập câu hỏi.",
+        };
+      }
+      const r = await invokeGenerateReading({
+        endpoint: "day-detail",
+        data: payload,
+        question: q,
+      });
+      return {
+        ok: true as const,
+        reading: r.reading?.trim() ?? null,
+        message: undefined as string | undefined,
+      };
+    },
+    [payload, unlocked],
+  );
+
   return {
     profile,
     profileLoading,
     detailLoading,
     detailError,
     detail,
+    payload,
     reading,
     readingLoading,
     unlocked,
     unlockBusy,
     subActive,
     unlockAndLoad,
+    askFollowUp,
   };
 }

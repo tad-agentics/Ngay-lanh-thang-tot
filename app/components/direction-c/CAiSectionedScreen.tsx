@@ -2,8 +2,10 @@ import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, Mono } from "~/components/brand";
+import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import { CT } from "~/lib/c-tokens";
+import { buildDayLuanSectionRows } from "~/lib/day-luan-sectioned";
 import { weekdayFromIso } from "~/lib/lich-format";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
 
@@ -18,39 +20,7 @@ export function CAiSectionedScreen({ iso }: { iso: string }) {
   } = useDayLuanReading(iso);
 
   const loading = profileLoading || detailLoading;
-  const sections = (detail?.breakdown ?? []).map((row) => ({
-    title: row.source,
-    verdict: row.type || "—",
-    body: row.reasonVi,
-    score: row.points >= 0 ? `+${row.points}` : String(row.points),
-  }));
-
-  if (!loading && sections.length === 0 && detail) {
-    if (detail.trucTitle) {
-      sections.push({
-        title: "Trực ngày",
-        verdict: detail.trucTitle,
-        body: detail.trucDescription || detail.trucLine,
-        score: "",
-      });
-    }
-    if (detail.starLine) {
-      sections.push({
-        title: "Nhị thập bát tú",
-        verdict: detail.starLine.split("·")[0]?.trim() ?? detail.starLine,
-        body: detail.starLine,
-        score: "",
-      });
-    }
-    for (const line of detail.reasonLines.slice(0, 2)) {
-      sections.push({
-        title: "Luận giải",
-        verdict: detail.grade,
-        body: line,
-        score: "",
-      });
-    }
-  }
+  const sections = buildDayLuanSectionRows(detail);
 
   return (
     <main
@@ -105,106 +75,10 @@ export function CAiSectionedScreen({ iso }: { iso: string }) {
                 </Link>
               </div>
             ) : (
-              <>
-                {sections.map((s, i) => (
-                  <div
-                    key={`${s.title}-${i}`}
-                    className="mt-4 pt-4"
-                    style={{
-                      borderTop:
-                        i === 0
-                          ? `1px solid ${CT.hairline}`
-                          : `1px solid ${CT.hairline2}`,
-                    }}
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <Mono style={{ color: CT.muted, fontSize: 9 }}>{s.title}</Mono>
-                      {s.score ? (
-                        <span
-                          style={{
-                            fontFamily: "var(--display-2)",
-                            fontWeight: 700,
-                            fontSize: 13,
-                            color: CT.goldDeep,
-                            fontVariantNumeric: "tabular-nums",
-                          }}
-                        >
-                          {s.score}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div
-                      className="mt-1 font-display text-base font-bold"
-                      style={{ color: CT.ink, letterSpacing: "-0.005em" }}
-                    >
-                      {s.verdict}
-                    </div>
-                    <p
-                      className="mt-1.5 font-serif text-[13px] leading-relaxed"
-                      style={{ color: CT.ink2 }}
-                    >
-                      {s.body}
-                    </p>
-                  </div>
-                ))}
-
-                {detail.score != null ? (
-                  <div
-                    className="mt-5 py-3.5 flex justify-between items-baseline"
-                    style={{ borderTop: `2px solid ${CT.ink}` }}
-                  >
-                    <div
-                      className="font-display text-base font-extrabold uppercase"
-                      style={{ letterSpacing: "-0.005em" }}
-                    >
-                      Tổng điểm
-                    </div>
-                    <div className="flex items-baseline gap-1">
-                      <span
-                        style={{
-                          fontFamily: "var(--display-2)",
-                          fontWeight: 800,
-                          fontSize: 32,
-                          color: CT.goldDeep,
-                          lineHeight: 1,
-                          letterSpacing: "-0.015em",
-                        }}
-                      >
-                        {detail.score}
-                      </span>
-                      <span className="font-serif text-[13px]" style={{ color: CT.muted }}>
-                        /100
-                      </span>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="mt-5">
-                  <Mono style={{ color: CT.muted, fontSize: 9 }}>Nguồn đối chiếu</Mono>
-                  <div className="mt-2 flex flex-col gap-1.5">
-                    {[
-                      ["[1]", "Hiệp Kỷ Biện Phương — Trực ngày"],
-                      ["[2]", "Ngọc Hạp Thông Thư — Thần sát"],
-                      ["[3]", "Tứ trụ — tương sinh tương khắc với lá số"],
-                      ["[4]", "Lịch Vạn Niên — giờ Hoàng đạo"],
-                    ].map(([n, t]) => (
-                      <div
-                        key={n}
-                        className="flex gap-2 font-serif text-xs leading-snug"
-                        style={{ color: CT.ink2 }}
-                      >
-                        <span
-                          className="font-mono text-[10px] min-w-6"
-                          style={{ color: CT.goldDeep }}
-                        >
-                          {n}
-                        </span>
-                        <span>{t}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
+              <DayLuanSectionedPanel
+                rows={sections}
+                totalScore={detail.score ?? null}
+              />
             )}
           </>
         ) : null}

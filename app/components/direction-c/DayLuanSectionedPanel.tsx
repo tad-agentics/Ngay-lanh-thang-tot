@@ -1,0 +1,127 @@
+import { Mono } from "~/components/brand";
+import { CT } from "~/lib/c-tokens";
+import type { DayLuanSectionRow } from "~/lib/day-luan-sectioned";
+import { DAY_LUAN_SOURCES } from "~/lib/day-luan-sectioned";
+
+type DayLuanSectionedPanelProps = {
+  rows: DayLuanSectionRow[];
+  totalScore: number | null;
+  id?: string;
+};
+
+export function DayLuanSectionedPanel({
+  rows,
+  totalScore,
+  id = "chi-tiet",
+}: DayLuanSectionedPanelProps) {
+  if (rows.length === 0 && totalScore == null) return null;
+
+  return (
+    <div
+      id={id}
+      className="mt-5"
+      style={{
+        animation: "b-fade-in 320ms ease-out both",
+      }}
+    >
+      <style>{`
+        @keyframes b-fade-in {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: none; }
+        }
+      `}</style>
+
+      {rows.map((s, i) => (
+        <div
+          key={`${s.title}-${i}`}
+          className="pt-4"
+          style={{
+            borderTop:
+              i === 0 ? `1px solid ${CT.hairline}` : `1px solid ${CT.hairline2}`,
+          }}
+        >
+          <div className="flex items-baseline justify-between gap-2">
+            <Mono style={{ color: CT.muted, fontSize: 9 }}>{s.title}</Mono>
+            {s.score ? (
+              <span
+                style={{
+                  fontFamily: "var(--font-display-2)",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: CT.goldDeep,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {s.score}
+              </span>
+            ) : null}
+          </div>
+          <div
+            className="mt-1 font-display text-base font-bold"
+            style={{ color: CT.ink, letterSpacing: "-0.005em" }}
+          >
+            {s.verdict}
+          </div>
+          <p
+            className="mt-1.5 font-serif text-[13px] leading-relaxed"
+            style={{ color: CT.ink2 }}
+          >
+            {s.body}
+          </p>
+        </div>
+      ))}
+
+      {totalScore != null ? (
+        <div
+          className="mt-5 py-3.5 flex justify-between items-baseline"
+          style={{ borderTop: `2px solid ${CT.ink}` }}
+        >
+          <div
+            className="font-display text-base font-extrabold uppercase"
+            style={{ letterSpacing: "-0.005em" }}
+          >
+            Tổng điểm
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span
+              style={{
+                fontFamily: "var(--font-display-2)",
+                fontWeight: 800,
+                fontSize: 32,
+                color: CT.goldDeep,
+                lineHeight: 1,
+                letterSpacing: "-0.015em",
+              }}
+            >
+              {totalScore}
+            </span>
+            <span className="font-serif text-[13px]" style={{ color: CT.muted }}>
+              /100
+            </span>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-5">
+        <Mono style={{ color: CT.muted, fontSize: 9 }}>Nguồn đối chiếu</Mono>
+        <div className="mt-2 flex flex-col gap-1.5">
+          {DAY_LUAN_SOURCES.map(([n, t]) => (
+            <div
+              key={n}
+              className="flex gap-2 font-serif text-xs leading-snug"
+              style={{ color: CT.ink2 }}
+            >
+              <span
+                className="font-mono text-[10px] min-w-6"
+                style={{ color: CT.goldDeep }}
+              >
+                {n}
+              </span>
+              <span>{t}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

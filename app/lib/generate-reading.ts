@@ -11,6 +11,8 @@ export type LaSoChiTietSection = {
 export type GenerateReadingInput = {
   endpoint: string;
   data: unknown;
+  /** Optional follow-up question for day-detail anchor extensions. */
+  question?: string;
 };
 
 export type GenerateReadingResponse = {

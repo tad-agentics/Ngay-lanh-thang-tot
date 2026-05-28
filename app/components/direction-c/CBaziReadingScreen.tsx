@@ -6,6 +6,12 @@ import { CBaziLockedScreen } from "~/components/direction-c/CBaziLockedScreen";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import {
+  baziReadingCacheRevision,
+  currentYearVn,
+  persistBaziReadingSession,
+  readBaziReadingSession,
+} from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
 import { canUseBaziReading } from "~/lib/entitlements";
 import {
@@ -22,6 +28,7 @@ export function CBaziReadingScreen() {
   const genRef = useRef(0);
   const unlocked = canUseBaziReading(profile);
   const reveal = profile?.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
+  const year = currentYearVn();
 
   useEffect(() => {
     if (profileLoading || !profile) return;
@@ -29,11 +36,21 @@ export function CBaziReadingScreen() {
       setLoading(false);
       return;
     }
+
     const body = profileToBatTuPersonQuery(profile);
     if (!body.birth_date) {
       setLoading(false);
       return;
     }
+
+    const revision = baziReadingCacheRevision(profile);
+    const cached = readBaziReadingSession(profile.id, revision);
+    if (cached && cached.length > 0) {
+      setSections(normalizeLaSoSectionsInput(cached));
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
     const gen = ++genRef.current;
     setLoading(true);
@@ -56,13 +73,56 @@ export function CBaziReadingScreen() {
           : reading?.trim()
             ? [{ id: "tong_hop", title: "Luận giải", text: reading.trim() }]
             : [];
-      setSections(normalizeLaSoSectionsInput(fromModel));
+      const normalized = normalizeLaSoSectionsInput(fromModel);
+      setSections(normalized);
+      if (normalized.length > 0) {
+        persistBaziReadingSession(profile.id, revision, normalized);
+      }
       setLoading(false);
     })();
+
     return () => {
       cancelled = true;
     };
   }, [profile, profileLoading, unlocked]);
+
+  const retryLoad = () => {
+    if (!profile || !unlocked) return;
+    const body = profileToBatTuPersonQuery(profile);
+    if (!body.birth_date) return;
+    const gen = ++genRef.current;
+    setLoading(true);
+    void (async () => {
+      const laso = await invokeBatTu<unknown>({ op: "la-so", body });
+      if (gen !== genRef.current) return;
+      if (!laso.ok) {
+        setLoading(false);
+        toast.error(laso.message ?? "Không tải lá số.");
+        return;
+      }
+      const { reading, sections: sec } = await invokeGenerateReading({
+        endpoint: "la-so-chi-tiet",
+        data: laso.data,
+      });
+      if (gen !== genRef.current) return;
+      const fromModel =
+        sec && sec.length > 0
+          ? sec
+          : reading?.trim()
+            ? [{ id: "tong_hop", title: "Luận giải", text: reading.trim() }]
+            : [];
+      const normalized = normalizeLaSoSectionsInput(fromModel);
+      setSections(normalized);
+      if (normalized.length > 0) {
+        persistBaziReadingSession(
+          profile.id,
+          baziReadingCacheRevision(profile),
+          normalized,
+        );
+      }
+      setLoading(false);
+    })();
+  };
 
   if (profileLoading) {
     return (
@@ -85,7 +145,7 @@ export function CBaziReadingScreen() {
       style={{ background: CT.paper, color: CT.ink }}
     >
       <BackBar
-        title="Luận giải Bát tự · 2026"
+        title={`Luận giải Bát tự · ${year}`}
         endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>AI · có nguồn</Mono>}
       />
 
@@ -106,7 +166,10 @@ export function CBaziReadingScreen() {
           <div className="mt-4">
             <h2 className="font-display text-[28px] font-extrabold uppercase leading-none">
               {reveal.nhatChu} ·{" "}
-              <span className="font-serif italic font-bold normal-case" style={{ color: CT.goldDeep }}>
+              <span
+                className="font-serif italic font-bold normal-case"
+                style={{ color: CT.goldDeep }}
+              >
                 {reveal.menh}
               </span>
             </h2>
@@ -118,9 +181,19 @@ export function CBaziReadingScreen() {
             Đang luận giải theo lá số…
           </p>
         ) : sections.length === 0 ? (
-          <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
-            Chưa có nội dung. Thử tải lại sau.
-          </p>
+          <div className="mt-8 text-center">
+            <p className="font-serif text-sm" style={{ color: CT.muted }}>
+              Chưa có nội dung. Thử tải lại sau.
+            </p>
+            <button
+              type="button"
+              onClick={retryLoad}
+              className="mt-4 py-2.5 px-5 font-display text-xs font-extrabold uppercase tracking-wider"
+              style={{ background: CT.forest, color: CT.cream, border: "none" }}
+            >
+              Tải lại
+            </button>
+          </div>
         ) : (
           sections.map((s, i) => (
             <section key={s.id} className="mt-6">

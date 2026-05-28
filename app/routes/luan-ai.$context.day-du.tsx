@@ -1,8 +1,8 @@
 import { Navigate, useParams } from "react-router";
 
-import { CAiSectionedScreen } from "~/components/direction-c/CAiSectionedScreen";
-import { parseLuanContext } from "~/lib/luan-context";
+import { parseLuanContext, luanContextToParam } from "~/lib/luan-context";
 
+/** Legacy route — sectioned breakdown lives on `/luan-ai/:context#chi-tiet`. */
 export default function LuanAiDayDuRoute() {
   const { context } = useParams();
   const parsed = parseLuanContext(context);
@@ -11,5 +11,10 @@ export default function LuanAiDayDuRoute() {
     return <Navigate to="/lich" replace />;
   }
 
-  return <CAiSectionedScreen iso={parsed.iso} />;
+  return (
+    <Navigate
+      to={`/luan-ai/${luanContextToParam(parsed.iso)}#chi-tiet`}
+      replace
+    />
+  );
 }
