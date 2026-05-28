@@ -19,6 +19,7 @@ import {
 import { stashPendingReturnTo } from "~/lib/pending-return-to";
 import { ProfileProvider } from "~/lib/profile-context";
 import {
+  isSubExpiredBlocked,
   setSubExpiredBlocked,
   subscribeSubExpired,
 } from "~/lib/sub-expired";
@@ -136,7 +137,8 @@ function AuthenticatedShellWithProfile({
   }
 
   const subscriptionBlocked =
-    !canUseCalendar && !isSubscriptionExemptPath(location.pathname);
+    (!canUseCalendar || isSubExpiredBlocked()) &&
+    !isSubscriptionExemptPath(location.pathname);
 
   if (subscriptionBlocked) {
     return (

@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
+import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
 export type LaSoChiTietSection = {
@@ -114,6 +115,42 @@ export function normalizeLaSoSectionsInput(raw: unknown): LaSoChiTietSection[] {
   return normalizeLaSoSections(raw) ?? [];
 }
 
+type GenerateReadingErrorBody = {
+  error?: { code?: string; message?: string };
+  error_code?: string;
+  message?: string;
+};
+
+function parseGenerateReadingError(
+  body: unknown,
+): { code: string; message: string } | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const rec = body as GenerateReadingErrorBody;
+  if (rec.error && typeof rec.error === "object") {
+    const code =
+      typeof rec.error.code === "string" ? rec.error.code : "GENERATE_READING";
+    const message =
+      typeof rec.error.message === "string" && rec.error.message.length
+        ? rec.error.message
+        : "Không tạo luận giải được.";
+    return { code, message };
+  }
+  if (typeof rec.error_code === "string") {
+    return {
+      code: rec.error_code,
+      message:
+        typeof rec.message === "string" && rec.message.length
+          ? rec.message
+          : "Không tạo luận giải được.",
+    };
+  }
+  return null;
+}
+
+function handleGenerateReadingErrorCode(code: string): void {
+  if (isSubExpiredCode(code)) notifySubExpired();
+}
+
 /**
  * Gọi Edge luận giải (`generate-reading`) — luôn HTTP 200.
  * `reading` / `sections` / `dayReadings` tùy endpoint có thể null.
@@ -137,21 +174,32 @@ export async function invokeGenerateReading(
           : {}),
       });
     if (error) {
-      if (import.meta.env.DEV) {
-        if (error instanceof FunctionsHttpError) {
-          try {
-            const body = (await error.context.json()) as unknown;
+      if (error instanceof FunctionsHttpError) {
+        try {
+          const body = (await error.context.json()) as unknown;
+          const parsed = parseGenerateReadingError(body);
+          if (parsed) {
+            handleGenerateReadingErrorCode(parsed.code);
+          }
+          if (import.meta.env.DEV) {
             console.warn("[luận-giải]", error.message, body);
-          } catch {
+          }
+        } catch {
+          if (import.meta.env.DEV) {
             console.warn("[luận-giải]", error.message);
           }
-        } else {
-          console.warn("[luận-giải]", error);
         }
+      } else if (import.meta.env.DEV) {
+        console.warn("[luận-giải]", error);
       }
       return { reading: null, sections: null, dayReadings: null };
     }
     if (data && typeof data === "object" && !Array.isArray(data)) {
+      const parsedErr = parseGenerateReadingError(data);
+      if (parsedErr) {
+        handleGenerateReadingErrorCode(parsedErr.code);
+        return { reading: null, sections: null, dayReadings: null };
+      }
       const d = data as Record<string, unknown>;
       const readingRaw = d.reading;
       const reading =

@@ -3,6 +3,7 @@ import { useLocation } from "react-router";
 
 import { AppShellViewport } from "~/components/AppShellViewport";
 import { CBottomNav } from "~/components/brand/CBottomNav";
+import { CSubscriptionExpiryBanner } from "~/components/direction-c/CSubscriptionExpiryBanner";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { getActiveTab, shouldShowNav } from "~/lib/nav-config";
 
@@ -24,6 +25,7 @@ export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellP
         className="min-h-0 flex-1 overflow-y-auto"
         style={{ paddingBottom: showNav ? 88 : 0 }}
       >
+        {lichTab ? <CSubscriptionExpiryBanner /> : null}
         {children}
       </div>
       {showNav && activeTab ? (

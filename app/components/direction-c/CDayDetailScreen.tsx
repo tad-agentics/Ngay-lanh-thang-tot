@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { CSubExpired } from "~/components/CSubExpired";
 import { BackBar } from "~/components/brand";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
@@ -15,6 +16,7 @@ import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
+import { canUseCalendar } from "~/lib/entitlements";
 import { CT } from "~/lib/c-tokens";
 import { mastheadFromIso, weekdayFromIso } from "~/lib/lich-format";
 import { verdictLabelFromScore } from "~/lib/c-score";
@@ -41,6 +43,7 @@ export function CDayDetailScreen() {
     [profile],
   );
   const personalized = Boolean(birthQuery?.birth_date);
+  const calendarBlocked = Boolean(user && profile && personalized && !canUseCalendar(profile));
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
   const birthDate = birthQuery?.birth_date ?? null;
 
@@ -52,7 +55,7 @@ export function CDayDetailScreen() {
   });
 
   useEffect(() => {
-    if (profileLoading || !iso) return;
+    if (profileLoading || !iso || calendarBlocked) return;
 
     let cancelled = false;
     setLoading(true);
@@ -83,7 +86,7 @@ export function CDayDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [profileLoading, iso, personalized, birthDate, birthQuery]);
+  }, [profileLoading, iso, personalized, birthDate, birthQuery, calendarBlocked]);
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
   const nextIso = iso ? addDaysToIso(iso, 1) : "";
@@ -118,8 +121,12 @@ export function CDayDetailScreen() {
       score: score ?? undefined,
     });
     setSaving(false);
-    if (r.ok) toast.success("Đã đánh dấu — sẽ nhắc trước 1 ngày.");
+    if (r.ok) toast.success("Đã lưu vào sổ ngày trên tab Tôi.");
     else toast.error(r.error ?? "Không lưu được.");
+  }
+
+  if (!profileLoading && calendarBlocked) {
+    return <CSubExpired />;
   }
 
   return (

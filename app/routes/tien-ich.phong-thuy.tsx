@@ -1,5 +1,5 @@
-import { CPhongThuyScreen } from "~/components/direction-c/CPhongThuyScreen";
+import { Navigate } from "react-router";
 
 export default function TienIchPhongThuyRoute() {
-  return <CPhongThuyScreen />;
+  return <Navigate to="/lich" replace />;
 }

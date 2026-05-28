@@ -132,6 +132,33 @@ const ANONYMOUS_OPS = new Set([
   "day-detail",
 ]);
 
+/** Personalized calendar ops — gate when JWT + birth_date present. */
+const CALENDAR_GATE_OPS = new Set([
+  "ngay-hom-nay",
+  "lich-thang",
+  "day-detail",
+]);
+
+function bodyHasBirthDate(body: Record<string, unknown>): boolean {
+  const v = body.birth_date;
+  return v != null && String(v).trim() !== "";
+}
+
+async function resolveUserIdFromRequest(
+  req: Request,
+  supabaseUrl: string,
+  anonKey: string,
+): Promise<string | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData?.user) return null;
+  return userData.user.id;
+}
+
 const VALID_OPS = new Set([
   "ngay-hom-nay",
   "weekly-summary",
@@ -1021,6 +1048,41 @@ Deno.serve(async (req) => {
       );
     }
     userId = u.id;
+  }
+
+  if (CALENDAR_GATE_OPS.has(op)) {
+    const calendarUserId =
+      userId ?? (await resolveUserIdFromRequest(req, supabaseUrl, anonKey));
+    if (calendarUserId && bodyHasBirthDate(body)) {
+      const { data: subProfile, error: subErr } = await admin
+        .from("profiles")
+        .select("subscription_expires_at")
+        .eq("id", calendarUserId)
+        .maybeSingle();
+      if (subErr || !subProfile) {
+        return json(
+          {
+            error: {
+              code: "PROFILE_MISSING",
+              message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
+            },
+          },
+          400,
+        );
+      }
+      if (!canUseCalendar(subProfile)) {
+        return json(
+          {
+            error: {
+              code: "SUB_EXPIRED",
+              message:
+                "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục xem lịch cá nhân.",
+            },
+          },
+          402,
+        );
+      }
+    }
   }
 
   const traCuuPick = isTraCuuPickChonNgay(op, body);

@@ -66,6 +66,9 @@ export function useTraCuuPickOverlay() {
             });
             return;
           }
+          if (result.code === "SUB_EXPIRED") {
+            return;
+          }
           toast.error(result.message);
           return;
         }

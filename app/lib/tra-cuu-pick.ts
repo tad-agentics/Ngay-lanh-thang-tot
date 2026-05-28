@@ -24,7 +24,11 @@ export type TraCuuPickPending = {
 export type TraCuuPickResult =
   | { ok: true; ketQua: ChonNgayKetQuaState }
   | { ok: false; code: "NO_DAYS"; ketQua: Omit<ChonNgayKetQuaState, "payload"> }
-  | { ok: false; code: "API" | "INVALID_RANGE" | "NO_PROFILE"; message: string };
+  | {
+      ok: false;
+      code: "API" | "SUB_EXPIRED" | "INVALID_RANGE" | "NO_PROFILE";
+      message: string;
+    };
 
 export function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -58,6 +62,9 @@ export async function runTraCuuChonNgay(
   });
 
   if (!res.ok) {
+    if (res.code === "SUB_EXPIRED") {
+      return { ok: false, code: "SUB_EXPIRED", message: res.message };
+    }
     return { ok: false, code: "API", message: res.message };
   }
 

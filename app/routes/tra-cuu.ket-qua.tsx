@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { TraCuuMethodologyCollapsible } from "~/components/direction-c/TraCuuMethodologyCollapsible";
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { useProfile } from "~/hooks/useProfile";
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { scoreDotColor } from "~/lib/c-score";
@@ -14,6 +17,8 @@ import {
   loadTraCuuKetQua,
   persistTraCuuKetQua,
 } from "~/lib/tra-cuu-session";
+import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { createShareToken } from "~/lib/share-token";
 
 function formatIsoDotShort(iso: string): string {
   const dt = new Date(`${iso}T12:00:00`);
@@ -84,6 +89,7 @@ function formatRangeRecap(start: string, end: string): string {
 export default function TraCuuKetQuaRoute() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { profile } = useProfile();
   const navState = location.state as ChonNgayKetQuaState | null;
   const [state, setState] = useState<ChonNgayKetQuaState | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -181,9 +187,99 @@ export default function TraCuuKetQuaRoute() {
           </div>
         )}
 
+        {days[0] ? (
+          <TraCuuShareTopPick
+            day={days[0]}
+            intentLabel={state.intentLabel}
+            menh={profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? "—" : "—"}
+          />
+        ) : null}
+
         <TraCuuMethodologyCollapsible />
       </div>
     </div>
+  );
+}
+
+function formatShareDateLabel(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}.${m}.${y}`;
+}
+
+function TraCuuShareTopPick({
+  day,
+  intentLabel,
+  menh,
+}: {
+  day: ResultDay;
+  intentLabel: string;
+  menh: string;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function handleShare() {
+    if (busy) return;
+    setBusy(true);
+    const reasonShort =
+      day.reasons[0] ??
+      (day.truc !== "—" ? `${day.truc} · giờ tốt ${day.bestHour}` : "Ngày Hoàng Đạo, giờ tốt phù hợp");
+    const res = await createShareToken({
+      result_type: "day_pick",
+      payload: {
+        headline: `Ngày lành cho ${intentLabel}`,
+        summary: reasonShort,
+        event_label: intentLabel,
+        date_label: formatShareDateLabel(day.isoDate),
+        lunar_label: day.lunarLabel,
+        reason_short: reasonShort,
+        menh,
+        grade: day.grade,
+      },
+    });
+    setBusy(false);
+    if (!res.ok) {
+      toast.error(res.message);
+      return;
+    }
+    const shareUrl = `${window.location.origin}/x/${res.token}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Ngày lành — ${intentLabel}`,
+          text: reasonShort,
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Đã sao chép liên kết chia sẻ.");
+    } catch {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Đã sao chép liên kết chia sẻ.");
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => void handleShare()}
+      className="mt-5 flex w-full cursor-pointer items-center justify-center gap-2 border px-4 py-3 disabled:opacity-60"
+      style={{
+        borderColor: CT.hairline,
+        background: "#fff",
+        color: CT.ink,
+        fontFamily: "var(--font-display-2)",
+        fontSize: 12,
+        fontWeight: 700,
+        letterSpacing: "0.06em",
+        textTransform: "uppercase",
+      }}
+    >
+      <Share2 size={14} aria-hidden />
+      {busy ? "Đang tạo thẻ…" : "Chia sẻ ngày đề xuất"}
+    </button>
   );
 }
 

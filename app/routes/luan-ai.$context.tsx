@@ -1,6 +1,8 @@
 import { Navigate, useParams } from "react-router";
 
 import { CAiTypedScreen } from "~/components/direction-c/CAiTypedScreen";
+import { CBaziReadingScreen } from "~/components/direction-c/CBaziReadingScreen";
+import { CTieuVanLuanScreen } from "~/components/direction-c/CTieuVanLuanScreen";
 import { parseLuanContext } from "~/lib/luan-context";
 
 export default function LuanAiContextRoute() {
@@ -8,13 +10,11 @@ export default function LuanAiContextRoute() {
   const parsed = parseLuanContext(context);
 
   if (parsed.kind === "bazi-year") {
-    return <Navigate to="/toi/luan-bat-tu" replace />;
+    return <CBaziReadingScreen />;
   }
 
   if (parsed.kind === "tieu-van") {
-    return (
-      <Navigate to={`/toi/luan-tieu-van?year=${parsed.year}`} replace />
-    );
+    return <CTieuVanLuanScreen year={parsed.year} />;
   }
 
   if (parsed.kind === "invalid") {

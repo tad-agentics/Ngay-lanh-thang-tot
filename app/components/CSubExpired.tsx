@@ -127,6 +127,14 @@ export function CSubExpired() {
         >
           Xem các gói khác →
         </Link>
+
+        <Link
+          to="/toi/cai-dat"
+          className="mt-5 block text-[12.5px] no-underline"
+          style={{ color: CT.goldDeep }}
+        >
+          Cài đặt tài khoản →
+        </Link>
       </div>
     </div>
   );
