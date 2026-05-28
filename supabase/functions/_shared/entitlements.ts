@@ -1,5 +1,8 @@
 /** Direction C entitlement helpers — shared by bat-tu, generate-reading, payos-webhook. */
 
+/** NLTT-only body flag on `bat-tu` op `chon-ngay` — REQ-NLTT-01; never forwarded upstream. */
+export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
+
 export type ProfileEntitlements = {
   subscription_expires_at: string | null;
   bazi_reading_unlocked_at: string | null;
@@ -16,6 +19,16 @@ export function subscriptionActive(
 
 export function canUseCalendar(profile: ProfileEntitlements): boolean {
   return subscriptionActive(profile.subscription_expires_at);
+}
+
+export function isTraCuuPickChonNgay(
+  op: string,
+  body: Record<string, unknown>,
+): boolean {
+  return (
+    op === "chon-ngay" &&
+    String(body.source ?? "").toLowerCase() === BAT_TU_SOURCE_TRA_CUU
+  );
 }
 
 export function canUseBaziReading(profile: ProfileEntitlements): boolean {

@@ -11,6 +11,10 @@ import {
   redisSetExString,
 } from "./redis-cache.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import {
+  canUseCalendar,
+  isTraCuuPickChonNgay,
+} from "../_shared/entitlements.ts";
 
 /**
  * GET /v1/phong-thuy + `detail=teaser`: bỏ các key paywall khỏi JSON trả client
@@ -1019,6 +1023,38 @@ Deno.serve(async (req) => {
     userId = u.id;
   }
 
+  const traCuuPick = isTraCuuPickChonNgay(op, body);
+  if (traCuuPick && userId) {
+    const { data: subProfile, error: subErr } = await admin
+      .from("profiles")
+      .select("subscription_expires_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (subErr || !subProfile) {
+      return json(
+        {
+          error: {
+            code: "PROFILE_MISSING",
+            message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
+          },
+        },
+        400,
+      );
+    }
+    if (!canUseCalendar(subProfile)) {
+      return json(
+        {
+          error: {
+            code: "SUB_EXPIRED",
+            message:
+              "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục tra cứu ngày tốt.",
+          },
+        },
+        402,
+      );
+    }
+  }
+
   if (op === "recompute-la-so" && userId) {
     const allowed = await assertBirthEditAllowed(admin, userId);
     if (!allowed.ok) {
@@ -1086,6 +1122,7 @@ Deno.serve(async (req) => {
    * Anonymous ops use the cache path above (lines 768–770) only.
    * `tu-tru` (lập lá số) luôn miễn phí — `featureKeyForBilling` null cho op đó.
    * `la-so` (luận giải chi tiết lá số) không trừ lượng.
+   * Tra cứu tab `/tra-cuu` (REQ-NLTT-01): `source=tra_cuu` — sub gate only, no credit.
    */
   const featureKey = resolveFeatureKey(op, body);
   const phongThuyTeaser =
@@ -1097,6 +1134,7 @@ Deno.serve(async (req) => {
   }
   if (op === "la-so") featureKeyForBilling = null;
   if (phongThuyTeaser) featureKeyForBilling = null;
+  if (traCuuPick) featureKeyForBilling = null;
   let chargedAmount = 0;
 
   if (featureKeyForBilling && userId) {

@@ -361,17 +361,17 @@ GET /v1/day-compare
 
 **Spec pivot (màn 20):** `chon-ngay` từ `/tra-cuu` — **no credit deduct**; gating bằng subscription (`subscription_expires_at`), không `feature_credit_costs`.
 
-**Hiện trạng NLTT (2026-05-27):** Edge `bat-tu` vẫn map `chon-ngay` → `chon_ngay_30/60/90` và trừ `credits_balance` khi `is_free = false`. FE W6 đã ship; **billing chưa khớp spec**.
+**Trạng thái NLTT:** ✅ **Shipped** (Edge `bat-tu` + FE `tra-cuu-pick.ts`, 2026-05-27)
 
-**Đề xuất patch NLTT (một trong các cách):**
+**Cách triển khai (Cách A + sub gate):**
 
-| Cách | Mô tả |
-|------|--------|
-| A | Body flag `source: "tra_cuu"` → `featureKeyForBilling = null` |
-| B | Entitlement-only: có sub active → cho phép; legacy credits chỉ transition window (G4) |
-| C | `feature_credit_costs.chon_ngay_*` → `is_free = true` (chỉ dev/staging) |
+| Bước | Chi tiết |
+|------|----------|
+| FE | `invokeBatTu({ op: "chon-ngay", body: { …, source: "tra_cuu" } })` — key **không** forward upstream (`jsonKeys` whitelist) |
+| Edge | `isTraCuuPickChonNgay()` → `canUseCalendar()` hoặc `402 SUB_EXPIRED`; `featureKeyForBilling = null` (không trừ lượng, kể cả G4 legacy window) |
+| Legacy | `/app/chon-ngay` **không** gửi `source` — vẫn deduct credits trong `pivot_transition_until` nếu hết sub |
 
-**Acceptance:** User có sub active tra cứu 5 lần liên tiếp — `credits_balance` không đổi; ledger không có dòng `chon_ngay_*` từ tab Tra cứu.
+**Acceptance:** User có sub active tra cứu 5 lần liên tiếp — `credits_balance` không đổi; ledger không có dòng `chon_ngay_*` với `metadata.source = tra_cuu`.
 
 ---
 
@@ -502,6 +502,6 @@ GET /v1/la-so/luu-nien?birth_date=…&birth_time=…&gender=…&year=2026
 | T2 | P1 `luan-context` + `day-compare` (blocking W5b chat pipeline) |
 | T2 | P1 `chon-ngay` `ranked_days[]` contract (W6 FE đã ship) |
 | T3 | P2 `la-so/luu-nien` + OpenAPI schemas đầy đủ |
-| T3 | NLTT REQ-NLTT-01 billing bypass tra cứu |
+| ~~T3~~ | ~~NLTT REQ-NLTT-01 billing bypass tra cứu~~ ✅ shipped Edge + FE |
 
 **Owner phía NLTT:** Tech Lead — nhận PR/upstream release, cập nhật `bat-tu` ops + mappers, QA W4–W6.

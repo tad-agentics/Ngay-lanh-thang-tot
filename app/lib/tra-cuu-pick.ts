@@ -7,6 +7,9 @@ import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { isoDateToDdMmYyyy } from "~/lib/tu-tru-dates";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 
+/** Edge `bat-tu` REQ-NLTT-01 — subscription gate, no credit deduct. Not sent upstream. */
+export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
+
 export const TRA_CUU_PICK_MIN_OVERLAY_MS = 800;
 export const TRA_CUU_PICK_SLOW_MS = 8000;
 
@@ -50,6 +53,7 @@ export async function runTraCuuChonNgay(
       range_start: rs,
       range_end: re,
       top_n: 5,
+      source: BAT_TU_SOURCE_TRA_CUU,
     },
   });
 
