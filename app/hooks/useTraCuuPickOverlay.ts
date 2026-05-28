@@ -10,6 +10,10 @@ import {
   TRA_CUU_PICK_SLOW_MS,
   type TraCuuPickPending,
 } from "~/lib/tra-cuu-pick";
+import {
+  persistTraCuuEmpty,
+  persistTraCuuKetQua,
+} from "~/lib/tra-cuu-session";
 
 export function useTraCuuPickOverlay() {
   const navigate = useNavigate();
@@ -55,6 +59,7 @@ export function useTraCuuPickOverlay() {
 
         if (!result.ok) {
           if (result.code === "NO_DAYS") {
+            persistTraCuuEmpty(result.ketQua);
             navigate("/tra-cuu/khong-co-ngay", {
               replace: true,
               state: result.ketQua,
@@ -68,6 +73,7 @@ export function useTraCuuPickOverlay() {
         await refreshProfile();
         if (cancelledRef.current || runId !== runIdRef.current) return;
 
+        persistTraCuuKetQua(result.ketQua);
         navigate("/tra-cuu/ket-qua", {
           replace: false,
           state: result.ketQua,

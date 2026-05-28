@@ -3,14 +3,9 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
-import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
+import type { TraCuuEmptyState } from "~/lib/tra-cuu-session";
 
-type EmptyState = {
-  intentLabel?: string;
-  daysInclusive?: number;
-  rangeStart?: string;
-  rangeEnd?: string;
-};
+type EmptyState = TraCuuEmptyState;
 
 function formatRangeRecap(start?: string, end?: string): string {
   if (!start || !end) return "trong khoảng đã chọn";
@@ -21,14 +16,18 @@ function formatRangeRecap(start?: string, end?: string): string {
   return `từ ${fmt(start)} đến ${fmt(end)}`;
 }
 
-export function CNoDatesFoundScreen() {
+export function CNoDatesFoundScreen({
+  state: stateProp,
+}: {
+  state?: EmptyState;
+} = {}) {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state ?? {}) as EmptyState &
-    Partial<ChonNgayKetQuaState>;
-  const intent = state.intentLabel ?? "việc này";
-  const range = formatRangeRecap(state.rangeStart, state.rangeEnd);
-  const days = state.daysInclusive ?? 30;
+  const raw =
+    stateProp ?? (location.state as Partial<EmptyState> | null) ?? {};
+  const intent = raw.intentLabel ?? "việc này";
+  const range = formatRangeRecap(raw.rangeStart, raw.rangeEnd);
+  const days = raw.daysInclusive ?? 30;
 
   return (
     <div

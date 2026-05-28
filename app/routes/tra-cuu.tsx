@@ -14,6 +14,7 @@ import {
   localTodayIsoDate,
 } from "~/lib/tu-tru-dates";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
+import { consumeTraCuuFormPreset } from "~/lib/tra-cuu-session";
 import { consumeTraCuuIntentPreset } from "~/lib/hop-tuoi-ui";
 import { useProfile } from "~/hooks/useProfile";
 
@@ -61,9 +62,15 @@ export default function TraCuuRoute() {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
-    const preset = consumeTraCuuIntentPreset();
-    if (preset) {
-      setIntent(preset.intent);
+    const formPreset = consumeTraCuuFormPreset();
+    if (formPreset) {
+      setIntent(formPreset.intent);
+      setRangeDays(formPreset.daysInclusive);
+      return;
+    }
+    const hopPreset = consumeTraCuuIntentPreset();
+    if (hopPreset) {
+      setIntent(hopPreset.intent);
     }
   }, []);
 

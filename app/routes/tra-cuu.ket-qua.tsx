@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
@@ -6,10 +6,14 @@ import { TraCuuMethodologyCollapsible } from "~/components/direction-c/TraCuuMet
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
+import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
-import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { mapChonNgayPayloadToResultDays } from "~/lib/chon-ngay-result";
+import {
+  loadTraCuuKetQua,
+  persistTraCuuKetQua,
+} from "~/lib/tra-cuu-session";
 
 function formatIsoDotShort(iso: string): string {
   const dt = new Date(`${iso}T12:00:00`);
@@ -38,6 +42,7 @@ function extractScoreFromPayload(
   if (!payload || typeof payload !== "object") return fallback;
   const root = payload as Record<string, unknown>;
   const arrays = [
+    root.ranked_days,
     root.recommended_dates,
     root.top_dates,
     root.days,
@@ -79,13 +84,29 @@ function formatRangeRecap(start: string, end: string): string {
 export default function TraCuuKetQuaRoute() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = location.state as ChonNgayKetQuaState | null;
+  const navState = location.state as ChonNgayKetQuaState | null;
+  const [state, setState] = useState<ChonNgayKetQuaState | null>(null);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!state?.payload) {
+    if (navState?.payload) {
+      persistTraCuuKetQua(navState);
+      setState(navState);
+      setHydrated(true);
+      return;
+    }
+    const stored = loadTraCuuKetQua();
+    if (stored?.payload) {
+      setState(stored);
+    }
+    setHydrated(true);
+  }, [navState]);
+
+  useEffect(() => {
+    if (hydrated && !state?.payload) {
       navigate("/tra-cuu", { replace: true });
     }
-  }, [state, navigate]);
+  }, [hydrated, state, navigate]);
 
   const days = useMemo(
     () => (state?.payload ? mapChonNgayPayloadToResultDays(state.payload, 5) : []),
@@ -93,20 +114,20 @@ export default function TraCuuKetQuaRoute() {
   );
 
   useEffect(() => {
-    if (state?.payload && days.length === 0) {
-      navigate("/tra-cuu/khong-co-ngay", {
-        state: {
-          intentLabel: state.intentLabel,
-          daysInclusive: state.daysInclusive,
-          rangeStart: state.rangeStart,
-          rangeEnd: state.rangeEnd,
-        },
-        replace: true,
-      });
-    }
+    if (!state?.payload || days.length > 0) return;
+    navigate("/tra-cuu/khong-co-ngay", {
+      state: {
+        intent: state.intent,
+        intentLabel: state.intentLabel,
+        daysInclusive: state.daysInclusive,
+        rangeStart: state.rangeStart,
+        rangeEnd: state.rangeEnd,
+      },
+      replace: true,
+    });
   }, [state, days.length, navigate]);
 
-  if (!state) return null;
+  if (!hydrated || !state) return null;
 
   return (
     <div

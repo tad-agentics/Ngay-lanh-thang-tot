@@ -48,6 +48,20 @@ describe("mapChonNgayPayloadToResultDays", () => {
     expect(rows[0]?.reasons[0]).toContain("Trực Kiến");
   });
 
+  it("prefers ranked_days over recommended_dates when both present", () => {
+    const rows = mapChonNgayPayloadToResultDays({
+      recommended_dates: [
+        { date: "2026-01-01", score: 50, reason_vi: "Fallback row" },
+      ],
+      ranked_days: [
+        { date: "2026-06-06", score: 92, reason_vi: "Canonical ranked row" },
+      ],
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.isoDate).toBe("2026-06-06");
+    expect(rows[0]?.reasons[0]).toContain("Canonical");
+  });
+
   it("returns empty when payload has no recognizable array", () => {
     expect(mapChonNgayPayloadToResultDays({ foo: 1 })).toEqual([]);
   });

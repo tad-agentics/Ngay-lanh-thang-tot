@@ -2,6 +2,7 @@ import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import { scoreToLetterGrade } from "~/lib/score-grade";
 
 const ARRAY_KEYS = [
+  "ranked_days",
   "recommended_dates",
   "top_dates",
   "days",
@@ -9,7 +10,6 @@ const ARRAY_KEYS = [
   "top_days",
   "suggested_days",
   "items",
-  "ranked_days",
   "candidates",
   "recommended",
   "top",
