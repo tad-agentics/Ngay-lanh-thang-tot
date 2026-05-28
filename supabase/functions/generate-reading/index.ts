@@ -6,11 +6,13 @@
  * `chon-ngay-cards`: JSON `day_readings` theo từng ngày (thẻ kết quả).
  * Các endpoint khác → một khối văn (`hop-tuoi`: 8–10 câu, gom từ toàn bộ tiêu chí).
  * `ngay-hom-nay` và `day-detail`: cần Bearer JWT + đã mở khóa (ledger / gói / giá 0) — khớp Edge `reading-unlock`.
+ * `la-so-chi-tiet`: cần Bearer JWT + `canUseBaziReading` (gói năm hoặc `bazi_reading_unlocked_at`).
  * Luôn trả HTTP 200 — không 500.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
+  canUseBaziReading,
   inPivotCreditTransition,
   readPivotTransitionUntil,
 } from "../_shared/entitlements.ts";
@@ -90,6 +92,20 @@ async function userHasPaidAiReadingAccess(
   if (cost <= 0) return true;
 
   return false;
+}
+
+/** Khớp FE `canUseBaziReading` — gói ≥11 tháng hoặc đã mua luận Bát tự. */
+async function userHasBaziReadingAccess(
+  admin: ServiceClient,
+  userId: string,
+): Promise<boolean> {
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("subscription_expires_at, bazi_reading_unlocked_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!profile) return false;
+  return canUseBaziReading(profile);
 }
 
 import { corsHeaders } from "../_shared/cors.ts";
@@ -1054,6 +1070,29 @@ Deno.serve(async (req) => {
       scope,
       dayIso,
     );
+    if (!allowed) {
+      return ok(null, null);
+    }
+  }
+
+  if (endpoint === "la-so-chi-tiet") {
+    const gateUrl = Deno.env.get("SUPABASE_URL");
+    const gateAnon = Deno.env.get("SUPABASE_ANON_KEY");
+    const gateService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const authHeader = req.headers.get("Authorization");
+    if (!gateUrl || !gateAnon || !gateService || !authHeader?.startsWith("Bearer ")) {
+      return ok(null, null);
+    }
+    const userClient = createClient(gateUrl, gateAnon, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    const uid = userData?.user?.id;
+    if (userErr || !uid) {
+      return ok(null, null);
+    }
+    const adminGate = createClient(gateUrl, gateService);
+    const allowed = await userHasBaziReadingAccess(adminGate, uid);
     if (!allowed) {
       return ok(null, null);
     }

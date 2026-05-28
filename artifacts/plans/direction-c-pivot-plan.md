@@ -880,3 +880,4 @@ Prior "~23d" was optimistic on streaming + migration; **+30% buffer already bake
 | Landing canvas | `artifacts/design/ngaylanhthangtot-vn/Landing C.html` |
 | Retired B | `artifacts/design/ngaylanhthangtot-vn/retired-direction-b/` |
 | Tech spec (needs update) | `artifacts/docs/tech-spec.md` |
+| **tu-tru-api Direction C reqs** | `artifacts/integrations/tu-tru-api-direction-c-requirements.md` |
