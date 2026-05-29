@@ -6,7 +6,11 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import { canUseCalendar } from "~/lib/entitlements";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { parseDayDetailForView, type DayDetailViewModel } from "~/lib/day-detail-view";
-import { invokeReadingUnlock } from "~/lib/reading-unlock";
+import {
+  ensureReadingUnlocked,
+  invokeReadingUnlock,
+  isReadingUnlockGranted,
+} from "~/lib/reading-unlock";
 
 export function useDayLuanReading(iso: string) {
   const { profile, loading: profileLoading } = useProfile();
@@ -70,17 +74,12 @@ export function useDayLuanReading(iso: string) {
         return;
       }
 
-      const unlock = await invokeReadingUnlock({
-        dry_run: true,
+      const unlock = await ensureReadingUnlocked({
         scope: "day_detail",
         day_iso: iso,
       });
       if (cancelled) return;
-      const allowed =
-        unlock.ok &&
-        (unlock.unlocked === true ||
-          unlock.already_unlocked === true ||
-          unlock.subscription_free === true);
+      const allowed = unlock.ok && isReadingUnlockGranted(unlock);
       setUnlocked(allowed);
       if (allowed) {
         await loadReading(res.data);

@@ -112,7 +112,7 @@ export function CBottomNav({ active, dark = false }: CBottomNavProps) {
       className="pointer-events-none fixed bottom-6 left-0 right-0 z-40 flex justify-center px-[22px]"
     >
       <div
-        className="pointer-events-auto flex w-full max-w-[min(100%,22rem)] gap-1 rounded-full px-[5px] py-[7px] backdrop-blur-[14px]"
+        className="pointer-events-auto flex w-full max-w-[min(100%,22rem)] gap-1 rounded-full px-[5px] py-[7px]"
         style={{
           background: bg,
           border,
@@ -128,7 +128,8 @@ export function CBottomNav({ active, dark = false }: CBottomNavProps) {
             <NavLink
               key={tab.id}
               to={TAB_ROUTES[tab.id]}
-              className="flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center rounded-full px-1 py-1.5 no-underline"
+              prefetch="intent"
+              className="flex min-h-[44px] min-w-[44px] flex-1 flex-col items-center justify-center rounded-full px-1 py-1.5 no-underline active:opacity-90"
               style={{
                 background: isActive
                   ? dark

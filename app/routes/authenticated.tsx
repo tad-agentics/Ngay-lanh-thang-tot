@@ -86,7 +86,7 @@ function AuthenticatedShellWithProfile({
     await reload();
   }
 
-  if (profileLoading) {
+  if (profileLoading && profile === null) {
     return (
       <AppShellViewport>
         <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">

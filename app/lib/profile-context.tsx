@@ -35,9 +35,12 @@ function useProfileState(user: User): ProfileContextValue {
   const userId = user.id;
   const syncedNameRef = useRef(false);
 
+  const profileRef = useRef<Profile | null>(null);
+  profileRef.current = profile;
+
   const load = useCallback(async (mode: "full" | "silent") => {
     const seq = ++loadSeqRef.current;
-    if (mode === "full") setLoading(true);
+    if (mode === "full" && profileRef.current === null) setLoading(true);
     const { data, error: qe } = await supabase
       .from("profiles")
       .select("*")
@@ -101,7 +104,10 @@ function useProfileState(user: User): ProfileContextValue {
   }, [load]);
 
   const refresh = useCallback(() => load("silent"), [load]);
-  const reload = useCallback(() => load("full"), [load]);
+  const reload = useCallback(
+    () => load(profileRef.current ? "silent" : "full"),
+    [load],
+  );
 
   return useMemo(
     () => ({ profile, loading, error, refresh, reload }),

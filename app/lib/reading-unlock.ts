@@ -25,6 +25,34 @@ export type ReadingUnlockErr = {
 
 export type ReadingUnlockResult = ReadingUnlockOk | ReadingUnlockErr;
 
+/** True when user may call `generate-reading` for this scope/day. */
+export function isReadingUnlockGranted(result: ReadingUnlockOk): boolean {
+  return (
+    result.unlocked === true ||
+    result.already_unlocked === true ||
+    result.subscription_free === true
+  );
+}
+
+/**
+ * Idempotent unlock for inline/full day luận.
+ * Dry-run first; if pivot credit is required, performs the real unlock (deduct ledger).
+ */
+export async function ensureReadingUnlocked(params: {
+  scope: ReadingUnlockScope;
+  day_iso: string;
+}): Promise<ReadingUnlockResult> {
+  const dry = await invokeReadingUnlock({ ...params, dry_run: true });
+  if (!dry.ok) return dry;
+  if (isReadingUnlockGranted(dry)) return dry;
+
+  if (dry.dry_run && dry.unlocked === false) {
+    return invokeReadingUnlock(params);
+  }
+
+  return dry;
+}
+
 export async function invokeReadingUnlock(params: {
   scope: ReadingUnlockScope;
   day_iso: string;

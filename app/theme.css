@@ -384,4 +384,42 @@
     font-weight: 400;
     line-height: 1.5;
   }
+
+  /* Instant tap feedback — avoids “dead” buttons while React/router work runs. */
+  :where(
+    button,
+    a,
+    [role="button"],
+    summary,
+    label[for],
+    input[type="button"],
+    input[type="submit"],
+    input[type="reset"]
+  ) {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(
+    button:not(:disabled),
+    a[href],
+    [role="button"]:not([aria-disabled="true"])
+  ) {
+    transition:
+      transform 80ms cubic-bezier(0.2, 0, 0, 1),
+      opacity 80ms cubic-bezier(0.2, 0, 0, 1),
+      background-color 120ms ease,
+      color 120ms ease,
+      border-color 120ms ease,
+      box-shadow 120ms ease;
+  }
+
+  :where(
+    button:not(:disabled):active,
+    a[href]:active,
+    [role="button"]:not([aria-disabled="true"]):active
+  ) {
+    transform: scale(0.985);
+    opacity: 0.9;
+  }
 }

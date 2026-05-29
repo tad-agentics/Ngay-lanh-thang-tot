@@ -3,7 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "~/lib/auth";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { shortenInlineReading } from "~/lib/inline-reading-text";
-import { invokeReadingUnlock } from "~/lib/reading-unlock";
+import {
+  ensureReadingUnlocked,
+  isReadingUnlockGranted,
+} from "~/lib/reading-unlock";
 import {
   hasSeenInlineReading,
   markInlineReadingSeen,
@@ -59,20 +62,13 @@ export function useInlineDayReading({
 
     void (async () => {
       const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
-      const unlock = await invokeReadingUnlock({
-        dry_run: true,
+      const unlock = await ensureReadingUnlocked({
         scope,
         day_iso: iso,
       });
       if (cancelled) return;
 
-      const allowed =
-        unlock.ok &&
-        (unlock.unlocked === true ||
-          unlock.already_unlocked === true ||
-          unlock.subscription_free === true);
-
-      if (!allowed) {
+      if (!unlock.ok || !isReadingUnlockGranted(unlock)) {
         setText(null);
         setLoading(false);
         return;
