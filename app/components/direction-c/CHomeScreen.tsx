@@ -6,6 +6,7 @@ import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
+import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useTodayLichData } from "~/hooks/useTodayLichData";
@@ -24,6 +25,7 @@ export function CHomeScreen() {
     error,
     today,
     menh,
+    scoreMethodology,
     canBatTu,
     rawPayload,
     online,
@@ -116,6 +118,10 @@ export function CHomeScreen() {
               )
             }
           />
+        ) : null}
+
+        {today && !showRecomputeSkeleton ? (
+          <DayScoreMethodologyCollapsible methodology={scoreMethodology} />
         ) : null}
 
         {offlineMode ? (

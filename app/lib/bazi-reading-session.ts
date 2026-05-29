@@ -15,6 +15,7 @@ export function baziReadingCacheRevision(p: Profile, year?: number): string {
     );
   return [
     String(y),
+    "w10",
     p.ngay_sinh ?? "",
     p.gio_sinh ?? "",
     p.gioi_tinh ?? "",

@@ -23,12 +23,6 @@ import { UI_PACKAGES } from "~/lib/packages";
 
 const WARM_SCRIM = "rgba(24,21,14,0.45)";
 
-const PAYMENT_METHODS = [
-  { id: "payos", label: "PayOS" },
-  { id: "momo", label: "MoMo" },
-  { id: "card", label: "Thẻ" },
-] as const;
-
 type UiPackage = (typeof UI_PACKAGES)[number];
 
 function PayosQrImage({ value }: { value: string }) {
@@ -449,32 +443,7 @@ export function CPayConfirmSheet({
             ) : null}
 
             <div className="mt-4 text-[12.5px]" style={{ color: CT.muted }}>
-              Thanh toán qua
-            </div>
-            <div className="mt-2 flex gap-1.5">
-              {PAYMENT_METHODS.map((method, index) => {
-                const selected = index === 0;
-                return (
-                  <div
-                    key={method.id}
-                    className="flex-1 px-1 py-3 text-center"
-                    style={{
-                      background: selected ? "#fff" : "transparent",
-                      border: `1px solid ${selected ? CT.goldDeep : CT.hairline}`,
-                    }}
-                  >
-                    <div
-                      className="text-[13px] font-bold tracking-[-0.005em]"
-                      style={{
-                        ...DISPLAY2,
-                        color: selected ? CT.ink : CT.muted,
-                      }}
-                    >
-                      {method.label}
-                    </div>
-                  </div>
-                );
-              })}
+              Thanh toán qua PayOS · VietQR
             </div>
 
             <button

@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { mapChonNgayPayloadToResultDays } from "./chon-ngay-result";
 
 describe("mapChonNgayPayloadToResultDays", () => {
-  it("reads days[] with dd/mm/yyyy date field", () => {
+  it("reads ranked_days[] with dd/mm/yyyy date field", () => {
     const rows = mapChonNgayPayloadToResultDays({
-      days: [
+      ranked_days: [
         {
           date: "05/04/2026",
           truc: "Trực Thành",
@@ -26,10 +26,10 @@ describe("mapChonNgayPayloadToResultDays", () => {
     expect(rows[1]?.grade).toBe("B");
   });
 
-  it("reads recommended_dates[] (ISO date, lunar_date, time_slots)", () => {
+  it("reads ranked_days[] (ISO date, lunar_date, time_slots)", () => {
     const rows = mapChonNgayPayloadToResultDays({
       status: "success",
-      recommended_dates: [
+      ranked_days: [
         {
           date: "2026-03-09",
           lunar_date: "Ngày 21 tháng Giêng",
@@ -48,24 +48,13 @@ describe("mapChonNgayPayloadToResultDays", () => {
     expect(rows[0]?.reasons[0]).toContain("Trực Kiến");
   });
 
-  it("prefers ranked_days over recommended_dates when both present", () => {
+  it("ignores legacy recommended_dates[] when ranked_days is absent", () => {
     const rows = mapChonNgayPayloadToResultDays({
       recommended_dates: [
         { date: "2026-01-01", score: 50, reason_vi: "Fallback row" },
       ],
-      ranked_days: [
-        {
-          date: "2026-06-06",
-          score: 92,
-          can_chi_day: "Kỷ Tỵ",
-          reason_vi: "Canonical ranked row",
-        },
-      ],
     });
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.isoDate).toBe("2026-06-06");
-    expect(rows[0]?.canChi).toBe("Kỷ Tỵ");
-    expect(rows[0]?.reasons[0]).toContain("Canonical");
+    expect(rows).toEqual([]);
   });
 
   it("prefers reason_vi over reasons[] for ket-qua body", () => {
@@ -85,13 +74,14 @@ describe("mapChonNgayPayloadToResultDays", () => {
     expect(rows[0]?.reasons[0]).not.toContain("(+20)");
   });
 
-  it("returns empty when payload has no recognizable array", () => {
+  it("returns empty when payload has no ranked_days array", () => {
     expect(mapChonNgayPayloadToResultDays({ foo: 1 })).toEqual([]);
+    expect(mapChonNgayPayloadToResultDays({ days: [{ date: "2026-01-01" }] })).toEqual([]);
   });
 
   it("grades by API row index, not count of successfully parsed rows", () => {
     const rows = mapChonNgayPayloadToResultDays({
-      days: [
+      ranked_days: [
         { date: "not-a-date", truc: "X" },
         {
           date: "06/04/2026",

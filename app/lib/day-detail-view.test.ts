@@ -37,7 +37,7 @@ describe("parseDayDetailForView", () => {
     expect(v!.starLine).toContain("Câu Trận");
     expect(v!.score).toBe(72);
     expect(v!.grade).toBe("B");
-    expect(v!.reasonLines.some((x) => x.includes("Hắc"))).toBe(true);
+    expect(v!.reasonLines.some((x) => x.includes("50 điểm"))).toBe(true);
     expect(v!.goodFor).toContain("Khai trương");
     expect(v!.gioTot).toBe("Dần 3–5h");
     expect(v!.gioXau).toBe("Tý 23–1h");

@@ -4,7 +4,6 @@ import {
   formatGioTotChiCompactDisplayVi,
   formatHourRangeForDayDetailFigmaVi,
 } from "~/lib/format-gio-tot-display-vi";
-import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
 import { pickCanChiLabel } from "~/lib/home-bat-tu";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 
@@ -302,6 +301,72 @@ function pickTrucDescription(
   }
   if (reasonLines[0]) return reasonLines[0];
   return "";
+}
+
+/** Human-readable lines from day-detail / chon-ngay/detail JSON. */
+export function extractDetailReasonLines(data: unknown): string[] {
+  const root = asRecord(data);
+  if (!root) return [];
+
+  const breakdownCandidates = [
+    root.breakdown,
+    asRecord(root.layer3)?.breakdown,
+  ];
+  for (const br of breakdownCandidates) {
+    if (!Array.isArray(br)) continue;
+    const lines: string[] = [];
+    for (const item of br) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const rv = o.reason_vi ?? o.reasonVi;
+      if (typeof rv === "string" && rv.trim()) lines.push(rv.trim());
+    }
+    if (lines.length) return lines;
+  }
+
+  const text =
+    root.reason_vi ??
+    root.summary_vi ??
+    root.verdict_vi ??
+    root.detail ??
+    root.explanation ??
+    root.summary;
+  if (typeof text === "string" && text.trim()) {
+    return text
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  const directKeys = [
+    "reasons",
+    "ly_do",
+    "lyDo",
+    "details",
+    "explanations",
+    "messages",
+    "notes",
+    "highlights",
+  ];
+  for (const k of directKeys) {
+    const v = root[k];
+    if (Array.isArray(v)) {
+      const lines = v.filter((x) => typeof x === "string") as string[];
+      if (lines.length) return lines;
+    }
+  }
+
+  const lines: string[] = [];
+  for (const [k, v] of Object.entries(root)) {
+    if (
+      typeof v === "string" &&
+      v.length > 2 &&
+      /^(why|note|hint|luu_y)/i.test(k)
+    ) {
+      lines.push(v);
+    }
+  }
+  return lines;
 }
 
 /** Map GET /v1/day-detail JSON → màn chi tiết (ưu tiên shape tu-tru-api). */

@@ -14,6 +14,7 @@ import {
 import {
   anchorQuestionForScore,
   buildDayLuanSectionBundle,
+  resolveLuanSourceLabels,
   DAY_LUAN_SUGGESTED_CHIPS,
   formatDayIsoShort,
 } from "~/lib/day-luan-sectioned";
@@ -469,6 +470,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 totalScore={detail?.score ?? null}
                 iso={iso}
                 canChi={detail?.canChi ?? "—"}
+                sourceLabels={resolveLuanSourceLabels(detail)}
               />
             ) : null}
 

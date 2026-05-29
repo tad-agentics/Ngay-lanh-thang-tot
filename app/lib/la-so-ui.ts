@@ -3,6 +3,7 @@ import {
   BAT_TU_BIRTH_TIME_OPTIONS,
   gioSinhToBatTuBirthTime,
 } from "~/lib/bat-tu-birth";
+import { normalizeLaSoPayload } from "~/lib/la-so-normalize";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -375,13 +376,10 @@ export function laSoJsonToRevealProps(raw: unknown): {
   kyThan: string;
   daiVan: string;
 } | null {
-  const root = asRecord(raw);
+  const normalized = normalizeLaSoPayload(raw);
+  const root = asRecord(normalized);
   if (!root) return null;
-  const nested =
-    asRecord(root.data) ??
-    asRecord(root.result) ??
-    asRecord(root.tu_tru) ??
-    root;
+  const nested = root;
 
   const pillars = asRecord(nested.pillars);
   const dayPillar = pillars ? asRecord(pillars.day) : null;
@@ -568,7 +566,8 @@ export interface LaSoChiTietView {
 }
 
 export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietView {
-  const root = asRecord(j) ?? {};
+  const normalized = normalizeLaSoPayload(j);
+  const root = asRecord(normalized) ?? {};
   let thienCan = pickStrArr(root, ["thien_can", "thienCan", "can_list"]);
   let diaChi = pickStrArr(root, ["dia_chi", "diaChi", "chi_list"]);
   if (thienCan.length < 4) {
@@ -888,13 +887,10 @@ export function buildLaSoFullPillarRows(
   raw: unknown,
   profile?: { ngay_sinh?: string | null; gio_sinh?: string | null } | null,
 ): LaSoFullPillarRow[] {
-  const root = asRecord(raw);
+  const normalized = normalizeLaSoPayload(raw);
+  const root = asRecord(normalized);
   if (!root) return [];
-  const nested =
-    asRecord(root.data) ??
-    asRecord(root.result) ??
-    asRecord(root.tu_tru) ??
-    root;
+  const nested = root;
   const pillars = asRecord(nested.pillars);
   const detail = laSoJsonToChiTiet(raw as LaSoJson);
   const keys = ["year", "month", "day", "hour"] as const;

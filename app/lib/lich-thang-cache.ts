@@ -1,4 +1,5 @@
 import type { CalendarDay } from "~/lib/api-types";
+import type { ScoreMethodologyView } from "~/lib/score-methodology";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 export type LichThangBirthFingerprintInput = {
@@ -10,6 +11,7 @@ export type LichThangBirthFingerprintInput = {
 export type LichThangCacheEntry = {
   days: CalendarDay[];
   lunarMonthLabel: string | null;
+  scoreMethodology?: ScoreMethodologyView | null;
   cachedAt: string;
 };
 
@@ -56,11 +58,18 @@ function parseEntry(raw: string): LichThangCacheEntry | null {
     if (!Array.isArray(o.days) || !o.days.every(isCalendarDay)) return null;
     const lunarMonthLabel =
       typeof o.lunarMonthLabel === "string" ? o.lunarMonthLabel : null;
+    const scoreMethodology =
+      o.scoreMethodology &&
+      typeof o.scoreMethodology === "object" &&
+      !Array.isArray(o.scoreMethodology)
+        ? (o.scoreMethodology as ScoreMethodologyView)
+        : null;
     const cachedAt =
       typeof o.cachedAt === "string" ? o.cachedAt : new Date(0).toISOString();
     return {
       days: refreshCalendarTodayFlags(o.days as CalendarDay[]),
       lunarMonthLabel,
+      scoreMethodology,
       cachedAt,
     };
   } catch {

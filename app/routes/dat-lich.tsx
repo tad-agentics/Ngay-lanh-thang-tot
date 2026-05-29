@@ -423,7 +423,7 @@ export default function DatLichRoute() {
           className="mt-[22px] text-center font-serif text-[11.5px] leading-relaxed"
           style={{ color: CT.muted }}
         >
-          Thanh toán bảo mật qua PayOS · MoMo · VietQR · Thẻ ngân hàng
+          Thanh toán bảo mật qua PayOS · VietQR
           <br />
           Cam kết hoàn tiền trong 7 ngày · Không tự động gia hạn
         </p>

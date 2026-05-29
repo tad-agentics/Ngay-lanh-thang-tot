@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
@@ -201,6 +202,7 @@ export function CMonthScreen() {
   const {
     days,
     lunarMonthLabel,
+    scoreMethodology,
     loading,
     refreshing,
     error,
@@ -338,6 +340,8 @@ export function CMonthScreen() {
         ) : days.length > 0 ? (
           <MonthGrid year={year} month={month} days={days} todayIso={todayIso} />
         ) : null}
+
+        <DayScoreMethodologyCollapsible methodology={scoreMethodology} />
 
         <div
           style={{

@@ -7,6 +7,7 @@ import {
   buildDayLuanSectionRows,
   formatDaySectionSubline,
   formatLuanBaseScoreNote,
+  resolveLuanSourceLabels,
 } from "~/lib/day-luan-sectioned";
 
 const baseDetail: DayDetailViewModel = {
@@ -134,6 +135,28 @@ describe("formatDaySectionSubline", () => {
   it("combines long date and can chi", () => {
     expect(formatDaySectionSubline("2026-05-28", "Nhâm Dần")).toBe(
       "28.05.2026 · ngày Nhâm Dần",
+    );
+  });
+});
+
+describe("resolveLuanSourceLabels", () => {
+  it("uses API sourceLabels when present", () => {
+    const labels = resolveLuanSourceLabels({
+      ...baseDetail,
+      sourceLabels: [
+        "Trực — Hiệp Kỷ",
+        "Sao — Ngọc Hạp",
+        "Can chi — tứ trụ",
+        "Giờ — Lịch Vạn Niên",
+      ],
+    });
+    expect(labels[0]?.[1]).toBe("Trực — Hiệp Kỷ");
+    expect(labels[3]?.[1]).toBe("Giờ — Lịch Vạn Niên");
+  });
+
+  it("falls back to defaults when sourceLabels empty", () => {
+    expect(resolveLuanSourceLabels(baseDetail)).toEqual(
+      expect.arrayContaining([["[1]", expect.stringContaining("Hiệp Kỷ")]]),
     );
   });
 });

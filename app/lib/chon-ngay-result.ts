@@ -5,20 +5,6 @@ import {
   type ScoreMethodologyView,
 } from "~/lib/score-methodology";
 
-const ARRAY_KEYS = [
-  "ranked_days",
-  "recommended_dates",
-  "top_dates",
-  "days",
-  "results",
-  "top_days",
-  "suggested_days",
-  "items",
-  "candidates",
-  "recommended",
-  "top",
-];
-
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
     return x as Record<string, unknown>;
@@ -30,16 +16,7 @@ function extractCandidateArray(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
   const root = asRecord(data);
   if (!root) return [];
-  if (Array.isArray(root.ranked_days)) return root.ranked_days;
-  for (const k of ARRAY_KEYS) {
-    if (k === "ranked_days") continue;
-    const v = root[k];
-    if (Array.isArray(v)) return v;
-  }
-  for (const v of Object.values(root)) {
-    if (Array.isArray(v) && v.length > 0 && asRecord(v[0])) return v as unknown[];
-  }
-  return [];
+  return Array.isArray(root.ranked_days) ? root.ranked_days : [];
 }
 
 /** API prose when chon-ngay returns zero candidates (HTTP 200). */

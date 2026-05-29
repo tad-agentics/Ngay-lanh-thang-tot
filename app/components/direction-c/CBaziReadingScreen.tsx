@@ -25,6 +25,11 @@ import {
   luuNienSectionsFromGenerateReading,
   mergeLaSoWithLuuNienSections,
 } from "~/lib/luu-nien-ui";
+import { fetchPhongThuyYearFacts } from "~/lib/phong-thuy-facts";
+import {
+  mergeBaziReadingWithPhongThuy,
+  phongThuySectionsFromGenerateReading,
+} from "~/lib/phong-thuy-ui";
 
 function birthLine(profile: {
   display_name: string | null;
@@ -58,9 +63,10 @@ async function loadBaziReadingSections(
   const body = profileToBatTuPersonQuery(profile);
   if (!body.birth_date) return [];
 
-  const [lasoRes, luuNienRes] = await Promise.all([
+  const [lasoRes, luuNienRes, phongThuyRes] = await Promise.all([
     invokeBatTu<unknown>({ op: "la-so", body }),
     fetchLuuNienYearFacts(profile, year),
+    fetchPhongThuyYearFacts(profile, year),
   ]);
 
   if (!lasoRes.ok) {
@@ -68,7 +74,7 @@ async function loadBaziReadingSections(
     return [];
   }
 
-  const [lasoGen, luuNienGen] = await Promise.all([
+  const [lasoGen, luuNienGen, phongThuyGen] = await Promise.all([
     invokeGenerateReading({
       endpoint: "la-so-chi-tiet",
       data: lasoRes.data,
@@ -77,6 +83,12 @@ async function loadBaziReadingSections(
       ? invokeGenerateReading({
           endpoint: "luu-nien",
           data: luuNienRes.data,
+        })
+      : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
+    phongThuyRes.ok
+      ? invokeGenerateReading({
+          endpoint: "phong-thuy",
+          data: phongThuyRes.data,
         })
       : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
   ]);
@@ -89,8 +101,13 @@ async function loadBaziReadingSections(
     luuNienGen.sections,
     luuNienGen.reading,
   );
+  const phongThuySections = phongThuySectionsFromGenerateReading(
+    phongThuyRes.ok ? phongThuyRes.data : null,
+    phongThuyGen.reading,
+  );
 
-  return mergeLaSoWithLuuNienSections(laSoSections, luuNienSections);
+  const withLuuNien = mergeLaSoWithLuuNienSections(laSoSections, luuNienSections);
+  return mergeBaziReadingWithPhongThuy(withLuuNien, phongThuySections);
 }
 
 export function CBaziReadingScreen() {

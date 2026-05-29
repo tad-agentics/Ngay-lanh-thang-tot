@@ -14,6 +14,7 @@ type DayLuanSectionedPanelProps = {
   iso?: string;
   canChi?: string;
   id?: string;
+  sourceLabels?: readonly [string, string][];
 };
 
 function scrollToSource(ref: string) {
@@ -31,6 +32,7 @@ export function DayLuanSectionedPanel({
   iso,
   canChi = "—",
   id = "chi-tiet",
+  sourceLabels = DAY_LUAN_SOURCES,
 }: DayLuanSectionedPanelProps) {
   if (rows.length === 0 && totalScore == null) return null;
 
@@ -208,7 +210,7 @@ export function DayLuanSectionedPanel({
       <div style={{ marginTop: 18 }}>
         <Mono style={{ color: CT.muted, fontSize: 9 }}>Nguồn đối chiếu</Mono>
         <div className="mt-2 flex flex-col" style={{ gap: 6 }}>
-          {DAY_LUAN_SOURCES.map(([n, t]) => (
+          {sourceLabels.map(([n, t]) => (
             <div
               key={n}
               id={`nguon-${n.replace(/[[\]]/g, "")}`}

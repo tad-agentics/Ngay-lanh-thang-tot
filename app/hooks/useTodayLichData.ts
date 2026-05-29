@@ -123,6 +123,7 @@ export function useTodayLichData() {
     today,
     rawPayload,
     menh,
+    scoreMethodology: today?.scoreMethodology ?? null,
     hasLaso: profile ? profileHasLaso(profile.la_so) : false,
     canBatTu,
     online,

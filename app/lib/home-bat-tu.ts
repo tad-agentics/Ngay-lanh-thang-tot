@@ -6,6 +6,10 @@ import {
   formatHourRangeForDayDetailFigmaVi,
   formatHourRangeForDisplayVi,
 } from "~/lib/format-gio-tot-display-vi";
+import {
+  parseScoreMethodology,
+  type ScoreMethodologyView,
+} from "~/lib/score-methodology";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -450,6 +454,7 @@ export interface NgayHomNayHome {
   homeSummaryLine: string;
   /** Personalized score 0–100 from day-detail when merged; ngay-hom-nay may omit. */
   score: number | null;
+  scoreMethodology: ScoreMethodologyView | null;
 }
 
 function pickInlineSummaryFromDayDetail(
@@ -495,6 +500,9 @@ export function mergeDayDetailScoreIntoHome(
   if (!next.homeSummaryLine.trim()) {
     const summary = pickInlineSummaryFromDayDetail(detail);
     if (summary) next = { ...next, homeSummaryLine: summary };
+  }
+  if (!next.scoreMethodology && detail.scoreMethodology) {
+    next = { ...next, scoreMethodology: detail.scoreMethodology };
   }
   return next;
 }
@@ -662,6 +670,10 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     pickNumber(asRecord(nested.scores) ?? {}, ["total", "value", "score"]) ??
     pickNumber(root, ["score", "diem"]);
 
+  const scoreMethodology = parseScoreMethodology(
+    nested.score_methodology ?? root.score_methodology,
+  );
+
   return {
     dayType,
     solarDateVi,
@@ -680,7 +692,17 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
     gioXauChis,
     homeSummaryLine,
     score,
+    scoreMethodology,
   };
+}
+
+/** OpenAPI `LichThangResponse.score_methodology`. */
+export function parseLichThangScoreMethodology(
+  raw: unknown,
+): ScoreMethodologyView | null {
+  const root = asRecord(raw);
+  if (!root) return null;
+  return parseScoreMethodology(root.score_methodology);
 }
 
 /** Good-day count for weekly teaser; `null` if engine shape unknown. */

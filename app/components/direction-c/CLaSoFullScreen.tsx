@@ -1,14 +1,20 @@
 import { Link } from "react-router";
+import { useEffect, useState } from "react";
 
 import { BackBar, Mono } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
+import { invokeBatTu } from "~/lib/bat-tu";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
+import { normalizeLaSoPayload } from "~/lib/la-so-normalize";
 import {
   buildLaSoFullPillarRows,
   buildLaSoNlttTeaser,
+  extractLaSoChiTietEnrichment,
   extractMenhMoTa,
   laSoJsonToChiTiet,
   laSoJsonToRevealProps,
+  mergeLaSoJsonForChiTietDisplay,
   profileHasLaso,
   thanColorsHintVi,
 } from "~/lib/la-so-ui";
@@ -47,8 +53,48 @@ function birthLine(profile: {
 
 export function CLaSoFullScreen() {
   const { profile, loading } = useProfile();
-  const hasLaso = profileHasLaso(profile?.la_so);
-  const laSo = profile?.la_so;
+  const [displayLaSo, setDisplayLaSo] = useState<LaSoJson | null | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    if (loading || !profile || !profileHasLaso(profile.la_so)) {
+      setDisplayLaSo(undefined);
+      return;
+    }
+    const body = profileToBatTuPersonQuery(profile);
+    if (!body.birth_date || body.birth_time == null) {
+      setDisplayLaSo(profile.la_so as LaSoJson);
+      return;
+    }
+
+    let cancelled = false;
+    void invokeBatTu<unknown>({ op: "la-so", body }).then((res) => {
+      if (cancelled) return;
+      if (!res.ok) {
+        setDisplayLaSo(profile.la_so as LaSoJson);
+        return;
+      }
+      const liveNorm = normalizeLaSoPayload(res.data);
+      const enrichment =
+        liveNorm && typeof liveNorm === "object" && !Array.isArray(liveNorm)
+          ? (liveNorm as Record<string, unknown>)
+          : extractLaSoChiTietEnrichment(res.data);
+      const merged = mergeLaSoJsonForChiTietDisplay(
+        profile.la_so as LaSoJson,
+        enrichment,
+      );
+      setDisplayLaSo(merged ?? (profile.la_so as LaSoJson));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, loading]);
+
+  const laSo =
+    displayLaSo !== undefined ? displayLaSo : (profile?.la_so as LaSoJson | null);
+  const hasLaso = profileHasLaso(laSo);
   const reveal = laSo ? laSoJsonToRevealProps(laSo) : null;
   const detail = laSoJsonToChiTiet(laSo as LaSoJson | null | undefined);
   const menhMoTa = laSo ? extractMenhMoTa(laSo) : null;

@@ -21,6 +21,18 @@ export const DAY_LUAN_SOURCES: readonly [string, string][] = [
   ["[4]", "Lịch Vạn Niên — giờ Hoàng đạo"],
 ] as const;
 
+/** Prefer API `sources[]` labels; pad with defaults when partial. */
+export function resolveLuanSourceLabels(
+  detail: DayDetailViewModel | null,
+): readonly [string, string][] {
+  const labels = detail?.sourceLabels;
+  if (!labels?.length) return DAY_LUAN_SOURCES;
+  return DAY_LUAN_SOURCES.map(([ref, defaultTitle], i) => [
+    ref,
+    labels[i]?.trim() || defaultTitle,
+  ] as [string, string]);
+}
+
 type FactorKey = "truc" | "sao" | "can_chi" | "gio";
 
 const CANONICAL_FACTORS: readonly {
