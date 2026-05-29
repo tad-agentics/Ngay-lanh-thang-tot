@@ -1,14 +1,16 @@
 import { Link } from "react-router";
 
 import { Mono } from "~/components/brand";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "~/components/ui/sheet";
+import { PayFailureMark } from "~/components/direction-c/PayCommerceMarks";
+import { PayFailureDetails } from "~/components/direction-c/PayFailureDetails";
 import { CT } from "~/lib/c-tokens";
+import {
+  formatPayFailureTimestamp,
+  PAY_DISPLAY,
+  PAY_DISPLAY2,
+} from "~/lib/pay-commerce-ui";
+
+const WARM_SCRIM = "rgba(24,21,14,0.45)";
 
 type CPayFailureSheetProps = {
   open: boolean;
@@ -17,6 +19,9 @@ type CPayFailureSheetProps = {
   retryLabel?: string;
   backTo?: string;
   backLabel?: string;
+  changeMethodTo?: string;
+  errorCode?: string;
+  errorAt?: string;
 };
 
 /** Inline failure sheet at màn 26/35 (Direction C màn 37). */
@@ -27,50 +32,55 @@ export function CPayFailureSheet({
   retryLabel = "Tạo lệnh mới",
   backTo = "/lich",
   backLabel = "Quay lại",
+  changeMethodTo = "/dat-lich",
+  errorCode = "PAYOS_TIMEOUT",
+  errorAt,
 }: CPayFailureSheetProps) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="bottom"
-        className="rounded-t-2xl max-h-[85dvh] overflow-y-auto border-t border-border p-0 gap-0"
-        style={{ fontFamily: "var(--serif)" }}
-      >
-        <SheetHeader className="px-6 pt-5 pb-2 space-y-1 text-left">
-          <SheetTitle className="sr-only">Thanh toán không thành công</SheetTitle>
-          <SheetDescription className="sr-only">
-            Giao dịch chưa hoàn tất — thử lại hoặc quay lại
-          </SheetDescription>
-        </SheetHeader>
+  if (!open) return null;
 
-        <div className="flex flex-col items-center px-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2 text-center">
-          <svg width="72" height="72" viewBox="0 0 80 80" fill="none" aria-hidden>
-            <circle
-              cx="40"
-              cy="40"
-              r="38"
-              stroke={CT.red}
-              strokeWidth="1.5"
-              fill="rgba(163,32,31,0.05)"
-            />
-            <path
-              d="M28 28 L52 52 M52 28 L28 52"
-              stroke={CT.red}
-              strokeWidth="2.4"
-              strokeLinecap="round"
-            />
-          </svg>
+  const failureAt = errorAt ?? formatPayFailureTimestamp();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ background: WARM_SCRIM }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pay-failure-title"
+    >
+      <button
+        type="button"
+        aria-label="Đóng"
+        className="absolute inset-0 cursor-default border-none bg-transparent"
+        onClick={() => onOpenChange(false)}
+      />
+
+      <div
+        className="relative max-h-[92dvh] overflow-y-auto rounded-t-2xl px-8 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-5"
+        style={{ background: CT.paper, fontFamily: "var(--serif)" }}
+      >
+        <div className="mb-3.5 flex justify-center">
+          <span
+            className="h-1 w-9 rounded-sm"
+            style={{ background: "rgba(24,21,14,0.18)" }}
+          />
+        </div>
+
+        <div className="flex flex-col items-center pt-2 text-center">
+          <PayFailureMark size={72} />
 
           <Mono className="mt-4 text-[10px] tracking-[0.22em]" style={{ color: CT.red }}>
             Thanh toán không thành công
           </Mono>
           <h2
-            className="mt-2 max-w-[300px] font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
-            style={{ color: CT.ink }}
+            id="pay-failure-title"
+            className="mt-2 max-w-[300px] text-[22px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+            style={{ ...PAY_DISPLAY, color: CT.ink }}
           >
             Giao dịch
             <br />
             <span
-              className="font-serif text-[22px] font-bold normal-case not-italic tracking-normal"
+              className="font-serif text-[22px] font-bold italic normal-case tracking-normal"
               style={{ color: CT.red }}
             >
               chưa hoàn tất
@@ -86,27 +96,37 @@ export function CPayFailureSheet({
             </strong>
           </p>
 
+          <PayFailureDetails errorCode={errorCode} errorAt={failureAt} />
+
           <button
             type="button"
             onClick={() => {
               onOpenChange(false);
               onRetry();
             }}
-            className="mt-6 w-full max-w-[320px] cursor-pointer border-none py-3.5 font-[family-name:var(--font-display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em]"
-            style={{ background: CT.forest, color: CT.cream }}
+            className="mt-6 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13px] font-extrabold uppercase tracking-[0.08em]"
+            style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
           >
             {retryLabel}
           </button>
           <Link
+            to={changeMethodTo}
+            onClick={() => onOpenChange(false)}
+            className="mt-2.5 block w-full max-w-[320px] border py-[13px] text-center text-xs font-bold uppercase tracking-[0.08em] no-underline"
+            style={{ ...PAY_DISPLAY2, borderColor: CT.goldDeep, color: CT.ink }}
+          >
+            Đổi cách thanh toán
+          </Link>
+          <Link
             to={backTo}
             onClick={() => onOpenChange(false)}
-            className="mt-2.5 block w-full max-w-[320px] border py-3 text-center font-[family-name:var(--font-display-2)] text-xs font-bold uppercase tracking-[0.08em] no-underline"
-            style={{ borderColor: CT.goldDeep, color: CT.ink }}
+            className="mt-2.5 block w-full max-w-[320px] py-1 text-center font-serif text-[12.5px] no-underline"
+            style={{ color: CT.muted }}
           >
             {backLabel}
           </Link>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   );
 }

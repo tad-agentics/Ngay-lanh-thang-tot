@@ -8,6 +8,11 @@ import { CT } from "~/lib/c-tokens";
 import { subscriptionStatusLine } from "~/lib/entitlements";
 import { createPayosCheckout } from "~/lib/payos";
 import {
+  PAY_CONFIRM_ADDON_META,
+  PAY_CONFIRM_TIER_META,
+  priceDisplay,
+} from "~/lib/pay-confirm-ui";
+import {
   ADDON_SKUS,
   SUBSCRIPTION_SKUS,
   UI_PACKAGES,
@@ -19,46 +24,11 @@ const SUBSCRIPTION_TIERS = UI_PACKAGES.filter((p) =>
 );
 const ADDON_PACKAGES = UI_PACKAGES.filter((p) => ADDON_SKUS.includes(p.sku));
 
-const TIER_META: Partial<
-  Record<
-    PackageSku,
-    { baseline: string | null; per: string; save: string | null; sub: string }
-  >
-> = {
-  goi_1thang: {
-    baseline: null,
-    per: "/ tháng",
-    save: null,
-    sub: "Chỉ lịch · dùng thử",
-  },
-  goi_6thang: {
-    baseline: "294.000",
-    per: "6 tháng",
-    save: "tiết kiệm 15%",
-    sub: "Chỉ lịch · người mới quen",
-  },
-  goi_12thang: {
-    baseline: "947.000",
-    per: "cả năm",
-    save: "tiết kiệm 498.000đ",
-    sub: "Lịch + cả 2 luận giải",
-  },
-};
+const DISPLAY = { fontFamily: "var(--display)" } as const;
+const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
-const ADDON_META: Partial<Record<PackageSku, { per: string; sub: string }>> = {
-  luan_bat_tu: {
-    per: "một lần",
-    sub: "mệnh · tính cách · quý nhân · suốt đời",
-  },
-  luan_tieu_van: {
-    per: "1 năm",
-    sub: "vận năm · phong thuỷ năm",
-  },
-};
-
-function priceNumber(label: string): string {
-  return label.replace(/[^\d]/g, "");
-}
+const TIER_META = PAY_CONFIRM_TIER_META;
+const ADDON_META = PAY_CONFIRM_ADDON_META;
 
 export default function DatLichRoute() {
   const navigate = useNavigate();
@@ -111,7 +81,7 @@ export default function DatLichRoute() {
 
   return (
     <div
-      className="flex min-h-full flex-col"
+      className="flex min-h-[100svh] flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <div className="flex items-center gap-2.5 px-[22px] pb-1 pt-1.5">
@@ -129,15 +99,15 @@ export default function DatLichRoute() {
         </span>
       </div>
 
-      <div className="flex-1 overflow-auto px-6 pb-8 pt-3.5">
+      <div className="flex-1 overflow-auto px-6 pb-[100px] pt-3.5">
         <h1
-          className="m-0 font-[family-name:var(--font-display)] text-[34px] font-extrabold uppercase leading-[0.98] tracking-[-0.015em]"
+          className="m-0 font-[family-name:var(--display)] text-[34px] font-extrabold uppercase leading-[0.98] tracking-[-0.015em]"
           style={{ color: CT.ink }}
         >
           Lịch của bạn,
           <br />
           <span
-            className="font-serif text-[34px] font-bold normal-case not-italic tracking-normal"
+            className="font-serif text-[34px] font-bold italic normal-case tracking-normal"
             style={{ color: CT.goldDeep }}
           >
             cho cả năm.
@@ -154,18 +124,18 @@ export default function DatLichRoute() {
         ) : null}
 
         <div
-          className="mt-5 flex items-baseline gap-2.5 border-b pb-1.5"
+          className="mt-[22px] flex items-baseline gap-2.5 border-b pb-1.5"
           style={{ borderColor: CT.ink }}
         >
           <span
-            className="font-[family-name:var(--font-mono)] text-[11px] tracking-[0.18em]"
+            className="font-[family-name:var(--mono)] text-[11px] tracking-[0.18em]"
             style={{ color: CT.goldDeep }}
           >
             A
           </span>
           <span
-            className="font-[family-name:var(--font-display)] text-[17px] font-extrabold uppercase tracking-[-0.005em]"
-            style={{ color: CT.ink }}
+            className="text-[17px] font-extrabold uppercase tracking-[-0.005em]"
+            style={{ ...DISPLAY, color: CT.ink }}
           >
             Gói lịch · đăng ký
           </span>
@@ -178,7 +148,7 @@ export default function DatLichRoute() {
             const isBusy = busySku === pkg.sku;
             const isFailed = failedSku === pkg.sku;
             const isPreselected = preselectedSku === pkg.sku;
-            const price = priceNumber(pkg.priceLabel);
+            const price = priceDisplay(pkg.priceLabel);
 
             return (
               <div
@@ -200,7 +170,7 @@ export default function DatLichRoute() {
               >
                 {hero ? (
                   <div
-                    className="absolute -top-2.5 left-3.5 px-2 py-0.5 font-[family-name:var(--font-mono)] text-[9px] font-extrabold tracking-[0.18em]"
+                    className="absolute -top-2.5 left-3.5 px-2 py-0.5 font-[family-name:var(--mono)] text-[9px] font-extrabold tracking-[0.18em]"
                     style={{ background: CT.gold, color: CT.forest }}
                   >
                     ★ TỐT NHẤT
@@ -209,7 +179,8 @@ export default function DatLichRoute() {
                 <div className="flex items-start justify-between gap-2.5">
                   <div>
                     <div
-                      className="font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase tracking-[-0.01em]"
+                      className="text-[22px] font-extrabold uppercase tracking-[-0.01em]"
+                      style={DISPLAY}
                     >
                       {pkg.title}
                     </div>
@@ -232,8 +203,11 @@ export default function DatLichRoute() {
                       </div>
                     ) : null}
                     <div
-                      className="font-[family-name:var(--font-display)] text-2xl font-extrabold leading-none tabular-nums tracking-[-0.015em]"
-                      style={{ color: hero ? CT.gold : CT.goldDeep }}
+                      className="text-2xl font-extrabold leading-none tabular-nums tracking-[-0.015em]"
+                      style={{
+                        ...DISPLAY2,
+                        color: hero ? CT.gold : CT.goldDeep,
+                      }}
                     >
                       {price}
                     </div>
@@ -262,8 +236,8 @@ export default function DatLichRoute() {
                         {meta?.save}
                       </Mono>
                       <span
-                        className="font-[family-name:var(--font-display)] text-[11px] font-bold"
-                        style={{ color: CT.gold }}
+                        className="text-[11px] font-bold"
+                        style={{ ...DISPLAY2, color: CT.gold }}
                       >
                         tiết kiệm 52,6%
                       </span>
@@ -280,7 +254,7 @@ export default function DatLichRoute() {
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         299k
                       </strong>{" "}
-                      + Luận giải Tiểu Vận{" "}
+                      + Luận giải Tiểu Vận 2026{" "}
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         199k
                       </strong>
@@ -288,7 +262,7 @@ export default function DatLichRoute() {
                   </>
                 ) : meta?.save ? (
                   <div
-                    className="mt-1.5 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.08em]"
+                    className="mt-1.5 font-[family-name:var(--mono)] text-[10px] uppercase tracking-[0.08em]"
                     style={{ color: CT.goldDeep }}
                   >
                     {meta.save}
@@ -309,8 +283,8 @@ export default function DatLichRoute() {
                     <button
                       type="button"
                       onClick={() => void checkout(pkg.sku)}
-                      className="cursor-pointer border-none px-3.5 py-1.5 font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.08em]"
-                      style={{ background: CT.red, color: "#fff" }}
+                      className="cursor-pointer border-none px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em]"
+                      style={{ ...DISPLAY2, background: CT.red, color: "#fff" }}
                     >
                       Thử lại
                     </button>
@@ -321,8 +295,9 @@ export default function DatLichRoute() {
                   type="button"
                   disabled={busySku !== null}
                   onClick={() => void checkout(pkg.sku)}
-                  className="mt-3 w-full cursor-pointer py-[11px] font-[family-name:var(--font-display)] text-[11.5px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+                  className="mt-3 w-full cursor-pointer py-[11px] text-[11.5px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
                   style={{
+                    ...DISPLAY2,
                     background: hero ? CT.gold : "transparent",
                     color: hero ? CT.forest : CT.ink,
                     border: hero ? "none" : `1px solid ${CT.goldDeep}`,
@@ -331,7 +306,7 @@ export default function DatLichRoute() {
                   {isBusy
                     ? "Đang tạo đơn…"
                     : hero
-                      ? `Đặt lịch năm — ${pkg.priceLabel}`
+                      ? `Đặt lịch năm — ${priceDisplay(pkg.priceLabel)}đ`
                       : "Chọn gói này"}
                 </button>
               </div>
@@ -340,7 +315,7 @@ export default function DatLichRoute() {
         </div>
 
         <p
-          className="mt-5 font-serif text-xs leading-relaxed"
+          className="mt-[22px] font-serif text-xs leading-relaxed"
           style={{ color: CT.muted }}
         >
           Mọi gói đều có: lịch cá nhân theo lá số · trang hôm nay · tháng · tra
@@ -352,14 +327,14 @@ export default function DatLichRoute() {
           style={{ borderColor: CT.ink }}
         >
           <span
-            className="font-[family-name:var(--font-mono)] text-[11px] tracking-[0.18em]"
+            className="font-[family-name:var(--mono)] text-[11px] tracking-[0.18em]"
             style={{ color: CT.goldDeep }}
           >
             B
           </span>
           <span
-            className="font-[family-name:var(--font-display)] text-[17px] font-extrabold uppercase tracking-[-0.005em]"
-            style={{ color: CT.ink }}
+            className="text-[17px] font-extrabold uppercase tracking-[-0.005em]"
+            style={{ ...DISPLAY, color: CT.ink }}
           >
             Mua lẻ · không cần gói lịch
           </span>
@@ -369,7 +344,7 @@ export default function DatLichRoute() {
           {ADDON_PACKAGES.map((pkg) => {
             const meta = ADDON_META[pkg.sku];
             const isBusy = busySku === pkg.sku;
-            const price = priceNumber(pkg.priceLabel);
+            const price = priceDisplay(pkg.priceLabel);
 
             return (
               <div
@@ -379,10 +354,10 @@ export default function DatLichRoute() {
               >
                 <div className="flex-1">
                   <div
-                    className="font-[family-name:var(--font-display)] text-sm font-bold tracking-[-0.005em]"
-                    style={{ color: CT.ink }}
+                    className="text-sm font-bold tracking-[-0.005em]"
+                    style={{ ...DISPLAY2, color: CT.ink }}
                   >
-                    {pkg.title}
+                    {meta?.title ?? pkg.title}
                   </div>
                   <div className="mt-0.5 font-serif text-[11.5px]" style={{ color: CT.muted }}>
                     {meta?.sub ?? pkg.subtitle}
@@ -391,16 +366,16 @@ export default function DatLichRoute() {
                     type="button"
                     disabled={busySku !== null}
                     onClick={() => void checkout(pkg.sku)}
-                    className="mt-2.5 cursor-pointer border-none bg-transparent p-0 font-[family-name:var(--font-display)] text-[11px] font-bold uppercase tracking-[0.06em] disabled:opacity-60"
-                    style={{ color: CT.goldDeep }}
+                    className="mt-2.5 cursor-pointer border-none bg-transparent p-0 text-[11px] font-bold uppercase tracking-[0.06em] disabled:opacity-60"
+                    style={{ ...DISPLAY2, color: CT.goldDeep }}
                   >
                     {isBusy ? "Đang tạo đơn…" : "Mua →"}
                   </button>
                 </div>
                 <div className="text-right">
                   <div
-                    className="font-[family-name:var(--font-display)] text-[17px] font-extrabold leading-none tabular-nums tracking-[-0.015em]"
-                    style={{ color: CT.goldDeep }}
+                    className="text-[17px] font-extrabold leading-none tabular-nums tracking-[-0.015em]"
+                    style={{ ...DISPLAY2, color: CT.goldDeep }}
                   >
                     {price}
                   </div>
@@ -426,10 +401,7 @@ export default function DatLichRoute() {
             style={{ color: CT.ink }}
           >
             Mua lẻ cả 2 luận giải ={" "}
-            <strong
-              className="font-[family-name:var(--font-display)] font-bold"
-              style={{ color: CT.ink }}
-            >
+            <strong className="font-bold" style={{ ...DISPLAY2, color: CT.ink }}>
               498.000đ
             </strong>{" "}
             — nhưng <strong className="font-semibold">không có lịch</strong>.
@@ -439,10 +411,7 @@ export default function DatLichRoute() {
             style={{ color: CT.ink2 }}
           >
             Lịch năm{" "}
-            <strong
-              className="font-[family-name:var(--font-display)] font-bold"
-              style={{ color: CT.goldDeep }}
-            >
+            <strong className="font-bold" style={{ ...DISPLAY2, color: CT.goldDeep }}>
               449.000đ
             </strong>{" "}
             đã bao gồm cả 2 — rẻ hơn{" "}
@@ -454,7 +423,7 @@ export default function DatLichRoute() {
         </div>
 
         <p
-          className="mt-5 text-center font-serif text-[11.5px] leading-relaxed"
+          className="mt-[22px] text-center font-serif text-[11.5px] leading-relaxed"
           style={{ color: CT.muted }}
         >
           Thanh toán qua PayOS · MoMo · VietQR · thẻ

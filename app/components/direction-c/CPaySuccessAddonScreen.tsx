@@ -2,10 +2,21 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
+import { PaySuccessStamp } from "~/components/direction-c/PayCommerceMarks";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
+import { useAuth } from "~/lib/auth";
 import type { PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
+import {
+  formatPaymentOrderRef,
+  formatVndThousands,
+  PAY_DISPLAY,
+  PAY_DISPLAY2,
+  PAY_MONO,
+  yearlyPlanUpsellDeltaVnd,
+} from "~/lib/pay-commerce-ui";
+import { PAY_CONFIRM_ADDON_META } from "~/lib/pay-confirm-ui";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
@@ -19,8 +30,10 @@ export function CPaySuccessAddonScreen() {
     skuParam && VALID_SKUS.has(skuParam as PackageSku)
       ? (skuParam as PackageSku)
       : "luan_bat_tu";
-  const { profile, loading, reload } = useProfile();
+  const { user } = useAuth();
+  const { loading, reload } = useProfile();
   const pkg = UI_PACKAGES.find((p) => p.sku === sku);
+  const addonMeta = PAY_CONFIRM_ADDON_META[sku];
 
   usePollPaymentOrderPaid(orderId, Boolean(orderId), {
     onPaid: async () => {
@@ -29,15 +42,14 @@ export function CPaySuccessAddonScreen() {
     },
   });
 
-  const shortOrder = orderId ? orderId.slice(-8).toUpperCase() : null;
-  const baziReady = Boolean(profile?.bazi_reading_unlocked_at);
-  const tieuReady =
-    profile?.tieu_van_reading_expires_at != null &&
-    new Date(profile.tieu_van_reading_expires_at) > new Date();
+  const orderRef = orderId ? formatPaymentOrderRef(orderId) : null;
+  const receiptEmail = user?.email ?? "email của bạn";
+  const upsellDelta = yearlyPlanUpsellDeltaVnd(sku);
+  const yearlyPkg = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
 
   const ctaTo =
     sku === "luan_tieu_van" ? "/toi/luan-tieu-van" : "/toi/luan-bat-tu";
-  const ready = sku === "luan_tieu_van" ? tieuReady : baziReady;
+  const headlineTitle = addonMeta?.title ?? pkg?.title ?? "Luận giải Bát tự";
 
   return (
     <div
@@ -45,74 +57,112 @@ export function CPaySuccessAddonScreen() {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-10 text-center">
-        <svg width="88" height="88" viewBox="0 0 88 88" fill="none" aria-hidden>
-          <circle
-            cx="44"
-            cy="44"
-            r="42"
-            stroke={CT.goldDeep}
-            strokeWidth="1.5"
-            fill="rgba(154,124,34,0.06)"
-          />
-          <path
-            d="M28 46 L40 58 L60 32"
-            stroke={CT.goldDeep}
-            strokeWidth="2.5"
-            fill="none"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <PaySuccessStamp size={84} />
 
         <Mono className="mt-6 text-[10px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
-          Đã thanh toán
+          Đã mua thành công
         </Mono>
         <h2
-          className="mt-2.5 max-w-[300px] font-[family-name:var(--font-display)] text-[30px] font-extrabold uppercase leading-[1.05] tracking-[-0.015em]"
-          style={{ color: CT.ink }}
+          className="mt-2.5 max-w-[320px] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.015em]"
+          style={{ ...PAY_DISPLAY, color: CT.ink }}
         >
-          {pkg?.title ?? "Luận giải"}
+          {headlineTitle}
           <br />
           <span
-            className="font-serif text-[30px] font-bold normal-case not-italic tracking-normal"
+            className="font-serif text-[28px] font-bold italic normal-case tracking-normal"
             style={{ color: CT.goldDeep }}
           >
-            {ready ? "đã mở khóa" : "đang kích hoạt"}
+            của bạn đã mở
           </span>
         </h2>
-        <p className="mt-3.5 max-w-[280px] text-sm leading-snug" style={{ color: CT.ink2 }}>
-          {loading
-            ? "Đang xác nhận thanh toán…"
-            : "Cảm ơn bạn — có thể đọc luận giải ngay trong mục Tôi."}
+        <p className="mt-3 max-w-[300px] text-[13.5px] leading-snug" style={{ color: CT.ink2 }}>
+          {loading ? (
+            "Đang xác nhận thanh toán…"
+          ) : sku === "luan_bat_tu" ? (
+            <>
+              Đọc được vĩnh viễn · không hết hạn. Hoá đơn đã gửi vào{" "}
+              <strong className="font-semibold" style={{ color: CT.ink }}>
+                {receiptEmail}
+              </strong>
+              .
+            </>
+          ) : (
+            <>
+              Luận giải đã mở theo gói. Hoá đơn đã gửi vào{" "}
+              <strong className="font-semibold" style={{ color: CT.ink }}>
+                {receiptEmail}
+              </strong>
+              .
+            </>
+          )}
         </p>
 
-        {shortOrder ? (
+        {orderRef ? (
           <div
             className="mt-7 w-full max-w-[320px] border px-4 py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
           >
             <div className="flex justify-between text-[12.5px]" style={{ color: CT.ink2 }}>
-              <span>{pkg?.title}</span>
-              <span>{pkg?.priceLabel}</span>
+              <span>{headlineTitle}</span>
+              <span>{addonMeta?.per ?? "một lần"}</span>
             </div>
             <div
               className="mt-1.5 flex justify-between text-[12.5px]"
               style={{ color: CT.ink2 }}
             >
               <span>Mã giao dịch</span>
-              <span className="font-[family-name:var(--font-mono)] text-[11px]">
-                {shortOrder}
+              <span
+                className="text-[11px] tracking-[0.04em]"
+                style={{ ...PAY_MONO, color: CT.muted }}
+              >
+                {orderRef}
               </span>
             </div>
           </div>
         ) : null}
 
+        {upsellDelta != null && yearlyPkg ? (
+          <div
+            className="mt-[22px] w-full max-w-[320px] border-l-2 px-3.5 py-3 text-left"
+            style={{
+              background: "rgba(154,124,34,0.06)",
+              borderColor: CT.goldDeep,
+            }}
+          >
+            <Mono className="text-[9px]" style={{ color: CT.goldDeep }}>
+              Còn thiếu
+            </Mono>
+            <p className="mt-1 text-[12.5px] leading-snug" style={{ color: CT.ink2 }}>
+              Bạn chưa có{" "}
+              <strong className="font-semibold" style={{ color: CT.ink }}>
+                Lịch cá nhân
+              </strong>{" "}
+              và{" "}
+              <strong className="font-semibold" style={{ color: CT.ink }}>
+                Tiểu Vận
+              </strong>
+              . Nâng lên Lịch năm chỉ thêm{" "}
+              <strong className="font-bold" style={{ ...PAY_DISPLAY2, color: CT.goldDeep }}>
+                {formatVndThousands(upsellDelta)}
+              </strong>
+              .
+            </p>
+            <Link
+              to="/dat-lich?plan=goi_12thang"
+              className="mt-2 inline-block text-[11.5px] font-bold uppercase tracking-[0.06em] no-underline"
+              style={{ ...PAY_DISPLAY2, color: CT.goldDeep }}
+            >
+              Xem chi tiết →
+            </Link>
+          </div>
+        ) : null}
+
         <Link
           to={ctaTo}
-          className="mt-6 block w-full max-w-[320px] py-3.5 text-center font-[family-name:var(--font-display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
-          style={{ background: CT.forest, color: CT.cream }}
+          className="mt-[22px] block w-full max-w-[320px] py-3.5 text-center text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+          style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
         >
-          Đọc luận giải →
+          Đọc luận giải ngay →
         </Link>
 
         <button

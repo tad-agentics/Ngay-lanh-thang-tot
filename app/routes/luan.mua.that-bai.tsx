@@ -8,8 +8,9 @@ export default function LuanMuaThatBaiRoute() {
 
   return (
     <CPayFailureScreen
-      retryTo={`/luan/mua/xac-nhan?sku=${sku}`}
+      retryTo={`/luan/mua/xac-nhan?sku=${sku}&start=1`}
       backTo="/toi"
+      changeMethodTo="/dat-lich?plan=goi_12thang"
     />
   );
 }

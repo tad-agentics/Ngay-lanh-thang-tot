@@ -46,6 +46,7 @@ export const ONBOARDING_EXEMPT_PATHS = new Set([
   "/thanh-cong",
   "/luan/mua/xac-nhan",
   "/luan/mua/thanh-cong",
+  "/luan/mua/that-bai",
 ]);
 
 export function isOnboardingExemptPath(pathname: string): boolean {

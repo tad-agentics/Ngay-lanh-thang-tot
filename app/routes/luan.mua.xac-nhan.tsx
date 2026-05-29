@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { PayCheckoutSheet } from "~/components/PayCheckoutSheet";
-import { Mono } from "~/components/brand";
+import { CPayConfirmSheet } from "~/components/direction-c/CPayConfirmSheet";
 import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
@@ -24,7 +23,6 @@ export default function LuanMuaXacNhanRoute() {
   const pkg = sku ? UI_PACKAGES.find((p) => p.sku === sku) : null;
 
   const [busy, setBusy] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [checkoutPayload, setCheckoutPayload] =
     useState<CreatePayosCheckoutResponse | null>(null);
 
@@ -36,10 +34,10 @@ export default function LuanMuaXacNhanRoute() {
   }, [sku, navigate]);
 
   useEffect(() => {
-    if (!sku || !autoStart || autoStartedRef.current || sheetOpen) return;
+    if (!sku || !autoStart || autoStartedRef.current || checkoutPayload) return;
     autoStartedRef.current = true;
     void startCheckout();
-  }, [autoStart, sheetOpen, sku]);
+  }, [autoStart, checkoutPayload, sku]);
 
   async function startCheckout() {
     if (!sku) return;
@@ -56,98 +54,41 @@ export default function LuanMuaXacNhanRoute() {
       return;
     }
     setCheckoutPayload(result.data);
-    setSheetOpen(true);
   }
 
   if (!sku || !pkg) {
     return (
-      <div className="flex min-h-full items-center justify-center px-6 font-serif text-sm" style={{ color: CT.muted }}>
+      <div
+        className="flex min-h-full items-center justify-center px-6 font-serif text-sm"
+        style={{ color: CT.muted }}
+      >
         Đang chuyển hướng…
       </div>
     );
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex flex-col justify-end"
-      style={{ background: "rgba(24,21,14,0.45)" }}
-    >
-      <div
-        className="rounded-t-2xl px-6 pb-8 pt-3.5"
-        style={{ background: CT.paper, fontFamily: "var(--serif)" }}
-      >
-        <div className="mb-3.5 flex justify-center">
-          <span
-            className="h-1 w-9 rounded-sm"
-            style={{ background: "rgba(24,21,14,0.18)" }}
-          />
-        </div>
-
-        <Mono className="text-[10px] tracking-[0.12em]" style={{ color: CT.muted }}>
-          Mua luận giải
-        </Mono>
-        <h2
-          className="mt-1 font-[family-name:var(--font-display)] text-[28px] font-extrabold uppercase tracking-[-0.015em]"
-          style={{ color: CT.ink }}
-        >
-          {pkg.title}
-        </h2>
-        <p className="mt-1 text-[13px]" style={{ color: CT.muted }}>
-          {pkg.subtitle}
-        </p>
-
-        <div
-          className="mt-5 flex items-baseline justify-between border-y py-3.5"
-          style={{ borderColor: CT.hairline }}
-        >
-          <span className="text-[13px]" style={{ color: CT.ink }}>
-            Tổng thanh toán
-          </span>
-          <span
-            className="font-[family-name:var(--font-display-2)] text-[22px] font-extrabold tabular-nums"
-            style={{ color: CT.goldDeep }}
-          >
-            {pkg.priceLabel}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void startCheckout()}
-          className="mt-6 w-full cursor-pointer border-none py-3.5 font-[family-name:var(--font-display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
-          style={{ background: CT.forest, color: CT.cream }}
-        >
-          {busy ? "Đang tạo link…" : `Thanh toán ${pkg.priceLabel}`}
-        </button>
-
-        <Link
-          to="/toi"
-          className="mt-3 block text-center font-serif text-[12.5px] no-underline"
-          style={{ color: CT.muted }}
-        >
-          Quay lại
-        </Link>
-      </div>
-
-      <PayCheckoutSheet
-        open={sheetOpen}
-        onOpenChange={(open) => {
-          setSheetOpen(open);
-          if (!open) setCheckoutPayload(null);
-        }}
-        payload={checkoutPayload}
-        successPath={(orderId) =>
-          `/luan/mua/thanh-cong?sku=${sku}&order_id=${encodeURIComponent(orderId)}`
-        }
-        retryTo={`/luan/mua/xac-nhan?sku=${sku}&start=1`}
-        backTo="/toi"
-        onRetry={() => {
-          setCheckoutPayload(null);
-          setSheetOpen(false);
-          void startCheckout();
-        }}
-      />
-    </div>
+    <CPayConfirmSheet
+      open
+      onOpenChange={(open) => {
+        if (!open) navigate("/toi", { replace: true });
+      }}
+      variant="addon"
+      pkg={pkg}
+      payload={checkoutPayload}
+      busy={busy}
+      onStartCheckout={() => void startCheckout()}
+      successPath={(orderId) =>
+        `/luan/mua/thanh-cong?sku=${sku}&order_id=${encodeURIComponent(orderId)}`
+      }
+      retryTo={`/luan/mua/xac-nhan?sku=${sku}&start=1`}
+      backTo="/toi"
+      onRetry={() => {
+        setCheckoutPayload(null);
+        autoStartedRef.current = false;
+        void startCheckout();
+      }}
+      cancelLink={{ to: "/toi", label: "Quay lại" }}
+    />
   );
 }
