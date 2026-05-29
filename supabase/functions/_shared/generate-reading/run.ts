@@ -35,10 +35,13 @@ function todayIsoVietnam(): string {
 function dayIsoFromDayDetailData(data: unknown): string | null {
   if (!data || typeof data !== "object" || Array.isArray(data)) return null;
   const d = data as Record<string, unknown>;
-  const date = d.date;
-  if (typeof date !== "string") return null;
-  const t = date.trim();
-  return ISO_DAY_RE.test(t) ? t : null;
+  for (const key of ["date_iso", "date", "iso_date", "isoDate"]) {
+    const v = d[key];
+    if (typeof v !== "string") continue;
+    const t = v.trim();
+    if (ISO_DAY_RE.test(t)) return t;
+  }
+  return null;
 }
 
 import { corsHeadersForRequest } from "../cors.ts";

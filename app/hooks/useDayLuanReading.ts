@@ -194,6 +194,11 @@ export function useDayLuanReading(iso: string) {
     return compareWithIso(nextIso);
   }, [compareWithIso, iso]);
 
+  const retryReading = useCallback(async () => {
+    if (!luanContext || !unlocked) return;
+    await loadReading(luanContext);
+  }, [luanContext, unlocked, loadReading]);
+
   return {
     profile,
     profileLoading,
@@ -208,6 +213,7 @@ export function useDayLuanReading(iso: string) {
     unlockBusy,
     subActive,
     unlockAndLoad,
+    retryReading,
     askFollowUp,
     compareWithIso,
     compareWithTomorrow,

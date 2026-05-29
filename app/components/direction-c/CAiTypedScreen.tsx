@@ -237,6 +237,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     unlockBusy,
     subActive,
     unlockAndLoad,
+    retryReading,
     askFollowUp,
     compareWithTomorrow,
   } = useDayLuanReading(iso);
@@ -264,6 +265,13 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const showAnchorTyped = Boolean(reading && unlocked && !readingLoading);
   const anchorDone = showAnchorTyped && anchorTypingDone;
   const locked = !unlocked && !readingLoading && !detailLoading && !profileLoading;
+  const readingMissing =
+    unlocked &&
+    !reading &&
+    !readingLoading &&
+    !detailLoading &&
+    !profileLoading &&
+    !detailError;
 
   useEffect(() => {
     setAnchorTypingDone(false);
@@ -414,6 +422,23 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         {!detailLoading && !detailError ? (
           <>
             <QuestionBlock question={anchorQuestion} />
+
+            {readingMissing ? (
+              <div className="mt-6 text-center">
+                <p className="font-serif text-sm mb-4" style={{ color: CT.ink2 }}>
+                  Chưa tải được luận giải cho ngày này. Thử tải lại sau vài giây.
+                </p>
+                <button
+                  type="button"
+                  disabled={readingLoading}
+                  onClick={() => void retryReading()}
+                  className="w-full max-w-xs py-3 text-xs font-extrabold uppercase tracking-wider"
+                  style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
+                >
+                  Tải lại luận giải
+                </button>
+              </div>
+            ) : null}
 
             {locked ? (
               <div className="mt-6 text-center">
