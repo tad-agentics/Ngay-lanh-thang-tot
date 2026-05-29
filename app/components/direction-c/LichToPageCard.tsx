@@ -240,25 +240,27 @@ export function LichToPageCard({
 
       {(prevLabel || nextLabel) && (
         <div
+          className="flex items-center justify-between gap-2"
           style={{
-            padding: "10px 18px",
+            padding: "12px 14px 14px",
             borderTop: `1px solid ${CT.hairline}`,
-            display: "flex",
-            justifyContent: "space-between",
           }}
         >
           {prevLabel ? (
             <button
               type="button"
               onClick={onPrev}
+              disabled={!onPrev}
+              className="flex min-h-[44px] max-w-[48%] items-center border px-3 py-2 text-left disabled:opacity-45"
               style={{
-                fontFamily: "var(--serif)",
-                fontSize: 12,
-                color: CT.muted,
-                background: "none",
-                border: "none",
+                fontFamily: "var(--display-2)",
+                fontSize: 12.5,
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                color: onPrev ? CT.goldDeep : CT.muted,
+                background: onPrev ? "rgba(154,124,34,0.12)" : "transparent",
+                borderColor: onPrev ? "rgba(154,124,34,0.4)" : CT.hairline2,
                 cursor: onPrev ? "pointer" : "default",
-                padding: 0,
               }}
             >
               {prevLabel}
@@ -270,14 +272,17 @@ export function LichToPageCard({
             <button
               type="button"
               onClick={onNext}
+              disabled={!onNext}
+              className="flex min-h-[44px] max-w-[48%] items-center justify-end border px-3 py-2 text-right disabled:opacity-45"
               style={{
-                fontFamily: "var(--serif)",
-                fontSize: 12,
-                color: CT.muted,
-                background: "none",
-                border: "none",
+                fontFamily: "var(--display-2)",
+                fontSize: 12.5,
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+                color: onNext ? CT.goldDeep : CT.muted,
+                background: onNext ? "rgba(154,124,34,0.12)" : "transparent",
+                borderColor: onNext ? "rgba(154,124,34,0.4)" : CT.hairline2,
                 cursor: onNext ? "pointer" : "default",
-                padding: 0,
               }}
             >
               {nextLabel}
