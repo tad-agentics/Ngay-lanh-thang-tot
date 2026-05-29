@@ -5,11 +5,8 @@ import { toast } from "sonner";
 import { BackBar, Mono } from "~/components/brand";
 import { CPayConfirmSheet } from "~/components/direction-c/CPayConfirmSheet";
 import type { CreatePayosCheckoutResponse } from "~/lib/api-types";
-import {
-  BAZI_READING_SECTION_ORDER,
-  BAZI_READING_SECTION_TITLES,
-  loadBaziLaSoChiTietSections,
-} from "~/lib/bazi-reading-load";
+import { baziPaywallLockedSections } from "~/lib/bazi-paywall-mock";
+import { loadBaziLaSoChiTietSections } from "~/lib/bazi-reading-load";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT, DISPLAY } from "~/lib/c-tokens";
 import { createPayosCheckout } from "~/lib/payos";
@@ -30,17 +27,81 @@ function birthLine(profile: {
   return parts.join(" · ");
 }
 
+function SectionHeading({
+  index,
+  title,
+}: {
+  index: number;
+  title: string;
+}) {
+  return (
+    <div
+      className="flex items-baseline gap-2.5 border-b pb-1.5"
+      style={{ borderColor: CT.ink }}
+    >
+      <span
+        className="font-mono text-[11.5px]"
+        style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
+      >
+        {String(index).padStart(2, "0")}
+      </span>
+      <span className="text-lg font-extrabold uppercase tracking-tight" style={DISPLAY}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
+function LockedSectionBody({ mockText }: { mockText: string }) {
+  return (
+    <div className="relative mt-3">
+      <p
+        className="m-0 text-[14px] leading-relaxed select-none"
+        style={{
+          color: CT.ink2,
+          filter: "blur(5px)",
+          WebkitFilter: "blur(5px)",
+        }}
+        aria-hidden
+      >
+        {mockText}
+      </p>
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `linear-gradient(180deg, rgba(240,236,226,0.15) 0%, rgba(240,236,226,0.72) 55%, ${CT.paper} 100%)`,
+          backdropFilter: "blur(1px)",
+          WebkitBackdropFilter: "blur(1px)",
+        }}
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-2"
+        aria-hidden
+      >
+        <span className="text-[11px]" style={{ color: CT.goldDeep }}>
+          ◆
+        </span>
+        <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.goldDeep }}>
+          Đã phân tích · mở khóa để đọc
+        </Mono>
+      </div>
+    </div>
+  );
+}
+
 type CBaziReadingPaywallViewProps = {
   profile: Profile;
 };
 
-/** Paywall: xem trước chương 01, phần còn lại khóa; CTA mở sheet thanh toán. */
+/** Paywall: chương 01 thật; 4 chương mock + blur; CTA mở sheet thanh toán. */
 export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProps) {
   const navigate = useNavigate();
   const year = currentYearVn();
   const reveal = profile.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
   const addonPkg = UI_PACKAGES.find((p) => p.sku === "luan_bat_tu");
   const yearlyUpsell = addonSubscriptionUpsell("luan_bat_tu");
+  const lockedSections = baziPaywallLockedSections();
 
   const [previewSection, setPreviewSection] = useState<{
     title: string;
@@ -53,13 +114,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     useState<CreatePayosCheckoutResponse | null>(null);
   const genRef = useRef(0);
 
-  const lockedCount = Math.max(
-    0,
-    BAZI_READING_SECTION_ORDER.length - (previewSection ? 1 : 0),
-  );
-  const lockedTitles = BAZI_READING_SECTION_ORDER.slice(1)
-    .map((id) => BAZI_READING_SECTION_TITLES[id] ?? id)
-    .join(" · ");
+  const lockedTitles = lockedSections.map((s) => s.title).join(" · ");
 
   useEffect(() => {
     let cancelled = false;
@@ -70,9 +125,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
       if (cancelled || gen !== genRef.current) return;
       const first = sections[0];
       setPreviewSection(
-        first
-          ? { title: first.title, text: first.text }
-          : null,
+        first ? { title: first.title, text: first.text } : null,
       );
       setPreviewLoading(false);
     })();
@@ -102,6 +155,8 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     setPayOpen(true);
   }
 
+  const previewTitle = previewSection?.title ?? "Tính cách";
+
   return (
     <main
       className="relative flex min-h-[100svh] flex-col"
@@ -109,8 +164,8 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     >
       <BackBar title={`Luận giải Bát Tự · ${year}`} />
 
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        <div className="h-full overflow-hidden px-6 pb-[280px] pt-1">
+      <div className="relative min-h-0 flex-1">
+        <div className="h-full overflow-y-auto px-6 pb-[300px] pt-1">
           {profile ? (
             <p className="font-serif text-[12.5px] leading-snug" style={{ color: CT.muted }}>
               {birthLine(profile)}
@@ -138,47 +193,38 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
             </h2>
           ) : null}
 
-          {previewLoading ? (
-            <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
-              Đang tạo đoạn xem trước…
-            </p>
-          ) : previewSection ? (
-            <section className="mt-6">
-              <div
-                className="flex items-baseline gap-2.5 border-b pb-1.5"
-                style={{ borderColor: CT.ink }}
-              >
-                <span
-                  className="font-mono text-[11.5px]"
-                  style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
-                >
-                  01
-                </span>
-                <span
-                  className="text-lg font-extrabold uppercase tracking-tight"
-                  style={DISPLAY}
-                >
-                  {previewSection.title}
-                </span>
-              </div>
+          <section className="mt-6">
+            <SectionHeading index={1} title={previewTitle} />
+            {previewLoading ? (
+              <p className="mt-3 font-serif text-sm" style={{ color: CT.muted }}>
+                Đang luận giải chương Tính cách…
+              </p>
+            ) : previewSection ? (
               <p
                 className="mt-3 text-[14px] leading-relaxed whitespace-pre-wrap"
                 style={{ color: CT.ink2 }}
               >
                 {previewSection.text}
               </p>
+            ) : (
+              <p className="mt-3 font-serif text-sm" style={{ color: CT.muted }}>
+                Chưa tải được đoạn mở đầu. Bốn chương dưới đã sẵn sàng sau khi mở khóa.
+              </p>
+            )}
+          </section>
+
+          {lockedSections.map((sec) => (
+            <section key={sec.id} className="mt-8">
+              <SectionHeading index={sec.index} title={sec.title} />
+              <LockedSectionBody mockText={sec.mockText} />
             </section>
-          ) : (
-            <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
-              Chưa tạo được đoạn xem trước. Bạn vẫn có thể mở khóa bên dưới.
-            </p>
-          )}
+          ))}
         </div>
 
         <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-[min(360px,55%)]"
+          className="pointer-events-none absolute inset-x-0 bottom-[min(280px,38%)] h-24"
           style={{
-            background: `linear-gradient(to bottom, rgba(240,236,226,0) 0%, rgba(240,236,226,0.95) 32%, ${CT.paper} 100%)`,
+            background: `linear-gradient(to bottom, rgba(240,236,226,0) 0%, ${CT.paper} 100%)`,
           }}
           aria-hidden
         />
@@ -197,29 +243,25 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
               ★
             </span>
             <Mono className="text-[10px] tracking-[0.18em]" style={{ color: CT.goldDeep }}>
-              {lockedCount > 0
-                ? `Còn ${lockedCount} chương nữa`
-                : "Mở khóa đầy đủ"}
+              Còn {lockedSections.length} chương nữa
             </Mono>
           </div>
           <h3
             className="mt-1.5 font-[family-name:var(--display)] text-[20px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
             style={{ color: CT.ink }}
           >
-            {lockedTitles || "Luận giải Bát tự năm"}
+            {lockedTitles}
           </h3>
           <p className="mt-2 font-serif text-[12.5px] leading-snug" style={{ color: CT.ink2 }}>
-            Mở khóa đầy đủ — đọc cả luận giải Bát tự
-            {yearlyUpsell ? " và tiết kiệm hơn với Lịch năm." : "."}
+            Bài luận giải đầy đủ đã được tạo theo lá số của bạn — mở khóa để đọc hết
+            {yearlyUpsell ? " hoặc tiết kiệm với Lịch năm." : "."}
           </p>
 
           <div className="mt-3.5 flex flex-col gap-2">
             {yearlyUpsell ? (
               <button
                 type="button"
-                onClick={() =>
-                  navigate(`/dat-lich?plan=${yearlyUpsell.planSku}`)
-                }
+                onClick={() => navigate(`/dat-lich?plan=${yearlyUpsell.planSku}`)}
                 className="flex cursor-pointer items-baseline justify-between gap-2 border-none px-3.5 py-2.5 text-left font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-[0.06em]"
                 style={{ background: CT.forest, color: CT.cream }}
               >
