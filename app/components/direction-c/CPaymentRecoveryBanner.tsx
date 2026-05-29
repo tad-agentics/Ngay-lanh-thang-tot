@@ -10,7 +10,10 @@ type CPaymentRecoveryBannerProps = {
   onDismiss: () => void;
 };
 
-/** Shown after app resume when a pending PayOS order may still be unpaid. */
+const linkBtnClass =
+  "cursor-pointer border-none bg-transparent p-0 font-serif text-[12px] font-semibold underline decoration-solid underline-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+
+/** Compact strip — same pattern as CSubscriptionExpiryBanner (gold border, one line + actions). */
 export function CPaymentRecoveryBanner({
   offer,
   checking,
@@ -22,44 +25,38 @@ export function CPaymentRecoveryBanner({
 
   return (
     <div
-      className="mx-[22px] mb-2 mt-1 border-l-[3px] px-3 py-2.5"
+      className="mx-[22px] mb-1.5 mt-1 border-l-[3px] px-2.5 py-2"
       style={{
-        borderColor: CT.forest,
-        background: "rgba(29,49,41,0.08)",
+        borderColor: CT.goldDeep,
+        background: "rgba(154,124,34,0.1)",
       }}
       role="status"
     >
-      <Mono className="text-[9.5px] tracking-[0.14em]" style={{ color: CT.forest }}>
-        THANH TOÁN ĐANG CHỜ
+      <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.goldDeep }}>
+        Thanh toán đang chờ
       </Mono>
-      <p className="m-0 mt-1 font-serif text-[13px] leading-snug" style={{ color: CT.ink2 }}>
-        Bạn có đơn <strong style={{ color: CT.ink }}>{label}</strong> chưa hoàn tất.
-        Nếu đã chuyển khoản, hãy kiểm tra trạng thái.
-      </p>
-      <div className="mt-2.5 flex flex-wrap gap-2">
+      <p className="m-0 mt-0.5 font-serif text-[12px] leading-snug" style={{ color: CT.ink2 }}>
+        Đơn <span style={{ color: CT.ink }}>{label}</span> chưa xác nhận ·{" "}
         <button
           type="button"
           disabled={checking}
           onClick={onCheck}
-          className="cursor-pointer border-none px-3 py-2 text-[11.5px] font-bold uppercase tracking-[0.06em] disabled:opacity-60"
-          style={{
-            background: CT.forest,
-            color: CT.cream,
-            fontFamily: "var(--display-2)",
-          }}
+          className={linkBtnClass}
+          style={{ color: CT.goldDeep }}
         >
-          {checking ? "Đang kiểm tra…" : "Kiểm tra trạng thái thanh toán"}
+          {checking ? "Đang kiểm tra…" : "Kiểm tra"}
         </button>
+        <span style={{ color: CT.muted }}> · </span>
         <button
           type="button"
           disabled={checking}
           onClick={onDismiss}
-          className="cursor-pointer border bg-transparent px-3 py-2 font-serif text-[12.5px] disabled:opacity-60"
-          style={{ borderColor: CT.hairline, color: CT.muted }}
+          className={linkBtnClass}
+          style={{ color: CT.muted, textDecoration: "none" }}
         >
           Để sau
         </button>
-      </div>
+      </p>
     </div>
   );
 }

@@ -450,6 +450,10 @@ verify_jwt = false
 [functions.cron-payos-expire-orphans]
 verify_jwt = false
 
+# Purge expired reading_cache rows (daily cron).
+[functions.cron-reading-cache-purge]
+verify_jwt = false
+
 # Ops — verify PayOS Edge secrets are configured (no values exposed).
 [functions.payos-config-health]
 verify_jwt = false

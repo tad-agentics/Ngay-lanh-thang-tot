@@ -17,6 +17,8 @@ import {
 import type { PackageSku } from "~/lib/api-types";
 import {
   clearPendingPayment,
+  dismissPendingPaymentBanner,
+  isPendingPaymentBannerDismissed,
   readPendingPayment,
   stashPendingPayment,
   type PendingPaymentSession,
@@ -111,6 +113,10 @@ export function usePaymentRecovery() {
     }
 
     const next = offerFromRow(row);
+    if (isPendingPaymentBannerDismissed(next.orderId)) {
+      setOffer(null);
+      return;
+    }
     setOffer(next);
 
     const checkout = checkoutResponseFromOrder(row);
@@ -144,8 +150,9 @@ export function usePaymentRecovery() {
   }, [scan]);
 
   const dismiss = useCallback(() => {
+    if (offer) dismissPendingPaymentBanner(offer.orderId);
     setOffer(null);
-  }, []);
+  }, [offer]);
 
   const checkPaymentStatus = useCallback(async () => {
     if (!user?.id || !offer || checking) return;

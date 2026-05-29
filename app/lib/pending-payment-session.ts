@@ -2,6 +2,7 @@ import type { PackageSku } from "~/lib/api-types";
 import { ADDON_SKUS } from "~/lib/packages";
 
 const STORAGE_KEY = "ngaytot:pending-payment:v1";
+const DISMISS_KEY = "ngaytot:pending-payment-dismiss:v1";
 
 export type PendingPaymentFlow = "subscription" | "addon";
 
@@ -20,9 +21,41 @@ export function paymentFlowForSku(sku: PackageSku): PendingPaymentFlow {
 export function stashPendingPayment(session: PendingPaymentSession): void {
   if (typeof sessionStorage === "undefined") return;
   try {
+    const prev = readPendingPayment();
+    if (prev?.orderId !== session.orderId) {
+      clearPendingPaymentBannerDismiss();
+    }
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session));
   } catch {
     /* quota / private mode */
+  }
+}
+
+/** Hide recovery banner for this order until paid, terminal, or a new checkout. */
+export function dismissPendingPaymentBanner(orderId: string): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(DISMISS_KEY, orderId);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isPendingPaymentBannerDismissed(orderId: string): boolean {
+  if (typeof sessionStorage === "undefined") return false;
+  try {
+    return sessionStorage.getItem(DISMISS_KEY) === orderId;
+  } catch {
+    return false;
+  }
+}
+
+export function clearPendingPaymentBannerDismiss(): void {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.removeItem(DISMISS_KEY);
+  } catch {
+    /* ignore */
   }
 }
 
@@ -51,6 +84,7 @@ export function clearPendingPayment(): void {
   if (typeof sessionStorage === "undefined") return;
   try {
     sessionStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(DISMISS_KEY);
   } catch {
     /* ignore */
   }
