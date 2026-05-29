@@ -38,6 +38,13 @@ export type LuuNienQuyNhanFacts = {
   note: string | null;
 };
 
+/** `LuuNienResponse.dai_van_next` — §05 block Đại vận năm tới. */
+export type DaiVanNextView = {
+  display: string;
+  themeVi: string | null;
+  yearsLabel: string | null;
+};
+
 export type LuuNienFactsView = {
   yearCanChi: string | null;
   yearRating: string | null;
@@ -46,6 +53,7 @@ export type LuuNienFactsView = {
   warnings: LuuNienWarning[];
   monthScores: number[];
   quyNhan: LuuNienQuyNhanFacts | null;
+  daiVanNext: DaiVanNextView | null;
 };
 
 function stringList(raw: unknown): string[] {
@@ -71,7 +79,13 @@ function parseLifeAreas(raw: unknown): LuuNienLifeArea[] {
     const o = asRecord(item);
     if (!o) continue;
     const label = pickStr(o, ["label_vi", "label", "title", "name"]);
-    const verdict = pickStr(o, ["verdict_vi", "verdict", "rating", "value"]);
+    const verdict = pickStr(o, [
+      "verdict_vi",
+      "outlook_vi",
+      "verdict",
+      "rating",
+      "value",
+    ]);
     const detail = pickStr(o, ["detail_vi", "detail", "description", "text"]);
     if (!label && !detail) continue;
     out.push({
@@ -124,6 +138,35 @@ function parseMonthScores(raw: unknown): number[] {
     }
   }
   return [];
+}
+
+function formatYearsRange(raw: unknown): string | null {
+  if (Array.isArray(raw) && raw.length >= 2) {
+    const a = raw[0];
+    const b = raw[1];
+    if (typeof a === "number" && typeof b === "number") {
+      return `${a}–${b}`;
+    }
+    if (typeof a === "string" && typeof b === "string") {
+      return `${a.trim()}–${b.trim()}`;
+    }
+  }
+  return null;
+}
+
+function parseDaiVanNext(raw: unknown): DaiVanNextView | null {
+  const o = asRecord(raw);
+  if (!o) return null;
+  const display = pickStr(o, ["display", "label", "can_chi", "canChi"]);
+  const themeVi =
+    pickStr(o, ["theme_vi", "themeVi", "summary_vi", "summary"]) || null;
+  const yearsLabel =
+    formatYearsRange(o.age_range ?? o.ageRange) ||
+    formatYearsRange(o.start_year ?? o.startYear) ||
+    pickStr(o, ["years", "year_range", "age_range_label"]) ||
+    null;
+  if (!display && !themeVi) return null;
+  return { display, themeVi, yearsLabel };
 }
 
 function parseQuyNhan(root: Record<string, unknown>): LuuNienQuyNhanFacts | null {
@@ -190,6 +233,7 @@ export function parseLuuNienFactsView(data: unknown): LuuNienFactsView | null {
       root.van_12_thang,
   );
   const quyNhan = parseQuyNhan(root);
+  const daiVanNext = parseDaiVanNext(root.dai_van_next ?? root.daiVanNext);
 
   if (
     !yearCanChi &&
@@ -198,7 +242,8 @@ export function parseLuuNienFactsView(data: unknown): LuuNienFactsView | null {
     lifeAreas.length === 0 &&
     warnings.length === 0 &&
     monthScores.length === 0 &&
-    !quyNhan
+    !quyNhan &&
+    !daiVanNext
   ) {
     return null;
   }
@@ -211,5 +256,6 @@ export function parseLuuNienFactsView(data: unknown): LuuNienFactsView | null {
     warnings,
     monthScores,
     quyNhan,
+    daiVanNext,
   };
 }

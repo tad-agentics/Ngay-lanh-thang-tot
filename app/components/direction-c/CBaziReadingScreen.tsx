@@ -145,13 +145,21 @@ export function CBaziReadingScreen() {
     () =>
       chapters?.some((ch) => {
         if (ch.kind === "menh") {
-          return (
+          const hasLaSo =
             ch.laSo != null &&
             typeof ch.laSo === "object" &&
-            Object.keys(ch.laSo).length > 0
+            Object.keys(ch.laSo).length > 0;
+          return hasLaSo || Boolean(ch.prose.trim());
+        }
+        if (ch.kind === "tinh_cach") {
+          return (
+            ch.traits.length > 0 ||
+            Boolean(ch.introProse.trim() || ch.prose.trim())
           );
         }
-        if (ch.kind === "prose") return Boolean(ch.prose);
+        if (ch.kind === "quy_nhan") {
+          return Boolean(ch.prose || ch.quyNhan || ch.daiVanNext);
+        }
         return Boolean(ch.prose || ch.facts);
       }) ?? false,
     [chapters],

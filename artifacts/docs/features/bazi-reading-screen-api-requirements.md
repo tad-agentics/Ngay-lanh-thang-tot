@@ -2,10 +2,21 @@
 
 **Route:** `/toi/luan-bat-tu`  
 **Design (Direction C):** màn **18** · Luận giải Bát tự năm — spec `artifacts/design/ngaylanhthangtot-vn/FE-HANDOFF.md` §1 (artboard 18), prototype `c-screens-g.jsx` (`CBaziReadingFull`)  
-**FE:** `CBaziReadingScreen`, `CBaziReadingPaywallView`, `CBaziReadingChapter`, `CBaziMenhTongQuanBlock`, `CBaziVanNamSection`, `CBaziPhongThuySection`, `CBaziQuyNhanSection`, `bazi-reading-load.ts`, `bazi-reading-outline.ts`, `bazi-reading-session.ts`  
-**Tham chiếu tổng:** `artifacts/integrations/tu-tru-api-direction-c-requirements.md` (REQ-P2-01 … P2-05)
+**FE:** `CBaziReadingScreen`, `CBaziReadingPaywallView`, `CBaziReadingChapter`, `CBaziMenhTongQuanBlock`, `CBaziTinhCachSection`, `CBaziVanNamSection`, `CBaziPhongThuySection`, `CBaziQuyNhanSection`, `bazi-reading-load.ts`, `bazi-reading-outline.ts`, `bazi-reading-session.ts`, `personality-traits-ui.ts`, `luu-nien-facts-ui.ts`  
+**Tham chiếu tổng:** `artifacts/integrations/tu-tru-api-direction-c-requirements.md` (REQ-P2-01 … P2-05)  
+**OpenAPI upstream:** [tu-tru-api Swagger](https://tu-tru-api.fly.dev/docs#/) · **`0.1.3`** (`openapi.json`)
 
 > **Thuật ngữ:** **Direction C** là design system / spec sản phẩm. File `c-screens-g.jsx` chỉ là **prototype JSX trong repo** để port — không phải một “design Make” riêng. Khi doc nói “khớp spec” = khớp **Direction C màn 18**, không phải công cụ Figma Make.
+
+### OpenAPI 0.1.3 — đã khóa cho màn 18
+
+| Schema | Field chính (Direction C) | FE parser / UI |
+|--------|---------------------------|----------------|
+| `LuuNienResponse` | `year_can_chi`, `year_rating`, `life_areas[]`, `warnings[]`, `month_scores` / `month_score_values`, `quy_nhan`, `dai_van_next`, `teaser` | `parseLuuNienFactsView` → §03/§05 · ✅ `dai_van_next` trong `CBaziQuyNhanSection` |
+| `PhongThuyResponse` | `huong_tot_nam_nay`, `huong_xau_nam_nay`, `mau_may_man`, `phi_tinh[]` (`PhiTinhDirection`), `phi_tinh_note_vi` | `parsePhongThuyFactsView` → §04 |
+| `LaSoResponse` | `personality_traits[]` (`id`, `title`, `text`) | ✅ `parsePersonalityTraitsFromLaSo` → `CBaziTinhCachSection` (+ Gemini intro khi có traits) |
+
+Runtime vẫn cần staging trả đủ field; contract OpenAPI đã sẵn để rich UI hiện khi có data.
 
 ---
 
@@ -47,7 +58,8 @@ sequenceDiagram
 | `profiles.la_so` | ✅ | Fallback nếu `la-so` lỗi |
 | `generate-reading` `la-so-chi-tiet` + `preview: true` | ✅ | §02 Tính cách (1 section) |
 | `bat-tu` → `la-so-luu-nien` | 🟡 | Chỉ khi đã entitlement — paywall thường 403; tiêu đề fallback “Vận năm” |
-| §03–§05 | ⚠️ Mock FE | `bazi-paywall-mock.ts` — blur, không Gemini |
+| §01 paywall | ✅ Gemini preview | `loadBaziPaywallBundle` (1× `la-so` + prompt preview chỉ `menh_tong_quan`) |
+| §02–§05 paywall | ✅ Mock FE | `bazi-paywall-mock.ts` — rich UI blur (Tính cách → Quý nhân) |
 
 **Session cache (đã mở khóa):** `sessionStorage` v2 (`w11` revision) lưu `sections`, `yearCanChi`, `laSoDisplay`, `luuNienFactsRaw`, `phongThuyFactsRaw`. Cache hit → **không** gọi lại 3× Gemini cho đến khi user bấm **Tải lại** hoặc revision đổi.
 
@@ -125,33 +137,41 @@ Luôn render **5 heading**; `emptyReason` khi thiếu data (REQ-FE-01 ✅).
 
 ### REQ-BR-03 · §02 — Structured “Tính cách” (optional)
 
-Vẫn một `tinh_cach.text` từ Gemini — cần API hoặc subsections (4 sub-block như prototype màn 18).
+**OpenAPI 0.1.3:** `LaSoResponse.personality_traits[]` (`PersonalityTrait`: `id`, `title`, `text`) — đủ cho 4 sub-block Direction C.
+
+**FE:** ✅ `CBaziTinhCachSection` — traits từ `la-so`; Gemini `tinh_cach` làm đoạn mở khi có traits, hoặc prose đầy đủ khi API chưa trả traits.
 
 ---
 
 ### REQ-BR-04 · §03 — Facts lưu niên rich
 
-**FE:** `CBaziVanNamSection` + `parseLuuNienFactsView` — chờ API populate `life_areas`, `warnings`, `month_scores`.
+**OpenAPI 0.1.3:** ✅ `LuuNienResponse` — `life_areas`, `warnings`, `month_scores` / `month_score_values`, `year_rating`, `year_theme_vi`.
+
+**FE:** ✅ `CBaziVanNamSection` + `parseLuuNienFactsView` — rich UI khi response runtime có field.
 
 ---
 
 ### REQ-BR-05 · §04 — Facts phong thủy rich
 
-**FE:** `CBaziPhongThuySection` + `parsePhongThuyFactsView` — chờ API đầy đủ OpenAPI fields.
+**OpenAPI 0.1.3:** ✅ `PhongThuyResponse` — `huong_tot` / `huong_tot_nam_nay`, `mau_may_man`, `phi_tinh[]`, `phi_tinh_note_vi`.
+
+**FE:** ✅ `CBaziPhongThuySection` + `parsePhongThuyFactsView`.
 
 ---
 
 ### REQ-BR-06 · §05 — Quý nhân
 
-**Trạng thái mapping:** ✅ Không còn gom 4 aspect `la-so-chi-tiet`. Prose = `luu_nien_ung_xu`; cards = `quy_nhan` facts.
+**Trạng thái mapping:** ✅ Prose = `luu_nien_ung_xu`; cards = `quy_nhan` (`QuyNhanBlock`).
 
-**API:** Cần guarantee `quy_nhan`, `dai_van_next` trên lưu niên / lá số.
+**OpenAPI 0.1.3:** ✅ `quy_nhan` trên `LuuNienResponse`; ✅ `dai_van_next` (`DaiVanNextBrief`: `display`, `theme_vi`, …).
+
+**FE:** ✅ Block **Đại vận năm tới** từ `dai_van_next` trong `CBaziQuyNhanSection` (cùng cards tuổi hợp/xung + `luu_nien_ung_xu`).
 
 ---
 
-### REQ-BR-07 · Paywall §03–05 — Teaser facts (optional P2)
+### REQ-BR-07 · Paywall §02–05 — Structured mock
 
-Mock + blur; có thể thêm teaser deterministic sau.
+**FE:** ✅ `baziPaywallLockedChapters` — §02 Tính cách (4 traits mock) + §03–05 facts giả — render section components thật + blur; `yearCanChi` từ `la-so-luu-nien` khi có.
 
 ---
 
@@ -181,7 +201,7 @@ Mock + blur; có thể thêm teaser deterministic sau.
 | 2 | `la-so-luu-nien` 200 | §03 prose/facts; tiêu đề “Vận năm {Can Chi}” |
 | 3 | `phong-thuy` full 200 | §04 |
 | 4 | Thiếu `luu-nien` | §03 empty state (heading vẫn có) |
-| 5 | Paywall | §01 live lá số; §02 preview; §03–05 blur mock |
+| 5 | Paywall | §01 lá số + Gemini `menh_tong_quan`; §02–05 structured mock blur |
 | 6 | `preview: true` | 1 section; không full aspect |
 | 7 | Vào lại màn trong cùng session | Cache v2 — không gọi lại Gemini |
 | 8 | Bấm **Tải lại** | Full load + cập nhật cache |
@@ -195,9 +215,9 @@ Mock + blur; có thể thêm teaser deterministic sau.
 |---------|---------|
 | Đã gọi đúng API chưa? | **Có** — facts qua `bat-tu`; Gemini qua 2 Edge functions; gate entitlement đồng bộ. |
 | Đã khớp Direction C màn 18 chưa? | **Một phần** — 5 § + block §01/§03–05; rich cards phụ thuộc API team. |
-| Blocker chính? | Structured facts REQ-P2-02 / P2-05; optional §02 subsections. |
-| Paywall? | §01–02 thật; §03–05 mock. |
+| Blocker chính? | Xác nhận **staging** trả đủ `personality_traits` + `dai_van_next` (OpenAPI 0.1.3); rich UI chỉ hiện khi runtime có data. |
+| Paywall? | §01 thật (facts + Gemini tổng quan); §02–05 mock blur. |
 
 ---
 
-*Cập nhật: 2026-05-29 — thuật ngữ Direction C; audit fixes (prose §03/§05, cache v2, REQ-BE-01).*
+*Cập nhật: 2026-05-29 — OpenAPI [0.1.3](https://tu-tru-api.fly.dev/docs#/); thuật ngữ Direction C; audit FE (prose §03/§05, cache v2, REQ-BE-01).*

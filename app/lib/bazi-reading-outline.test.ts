@@ -17,6 +17,7 @@ describe("flowYearCanChiFromFacts", () => {
 
 describe("buildBaziDisplayChapters", () => {
   const sections: LaSoChiTietSection[] = [
+    { id: "menh_tong_quan", title: "Mệnh tổng quan", text: "MQ" },
     { id: "tinh_cach", title: "Tính cách", text: "TC" },
     { id: "luu_nien_van", title: "Vận năm", text: "VN" },
     { id: "phong_thuy_van", title: "Phong thủy năm", text: "PT" },
@@ -38,10 +39,21 @@ describe("buildBaziDisplayChapters", () => {
       "phong_thuy",
       "quy_nhan",
     ]);
+    const menh = chapters.find((c) => c.key === "menh_tong_quan");
+    expect(menh?.kind).toBe("menh");
+    if (menh?.kind === "menh") {
+      expect(menh.prose).toBe("MQ");
+    }
     const van = chapters.find((c) => c.key === "van_nam");
     expect(van?.kind).toBe("van_nam");
     if (van?.kind === "van_nam") {
       expect(van.prose).toContain("VN");
+    }
+    const tinh = chapters.find((c) => c.key === "tinh_cach");
+    expect(tinh?.kind).toBe("tinh_cach");
+    if (tinh?.kind === "tinh_cach") {
+      expect(tinh.prose).toBe("TC");
+      expect(tinh.traits).toEqual([]);
     }
     const quy = chapters.find((c) => c.key === "quy_nhan");
     expect(quy?.kind).toBe("quy_nhan");
@@ -50,6 +62,48 @@ describe("buildBaziDisplayChapters", () => {
       expect(quy.prose).not.toContain("VN");
     }
     expect(baziOutlineSections("Bính Ngọ")[2]?.title).toBe("Vận năm Bính Ngọ");
+  });
+
+  it("maps personality_traits on la-so to §02 sub-blocks", () => {
+    const chapters = buildBaziDisplayChapters({
+      sections: [{ id: "tinh_cach", title: "Tính cách", text: "Intro Gemini" }],
+      laSo: {
+        personality_traits: [
+          { id: "strength", title: "Điểm mạnh", text: "Kiên trì." },
+        ],
+      },
+      luuNienFactsRaw: null,
+      phongThuyFactsRaw: null,
+      yearCanChi: "",
+    });
+    const tinh = chapters.find((c) => c.key === "tinh_cach");
+    if (tinh?.kind === "tinh_cach") {
+      expect(tinh.traits).toHaveLength(1);
+      expect(tinh.introProse).toBe("Intro Gemini");
+      expect(tinh.prose).toBe("");
+    }
+  });
+
+  it("maps dai_van_next to §05 quy_nhan chapter", () => {
+    const chapters = buildBaziDisplayChapters({
+      sections: [],
+      laSo: null,
+      luuNienFactsRaw: {
+        dai_van_next: {
+          display: "Đinh Mùi 2027",
+          theme_vi: "Kim sinh Thủy — thời cơ lớn.",
+          age_range: [41, 50],
+        },
+      },
+      phongThuyFactsRaw: null,
+      yearCanChi: "",
+    });
+    const quy = chapters.find((c) => c.key === "quy_nhan");
+    if (quy?.kind === "quy_nhan") {
+      expect(quy.daiVanNext?.display).toBe("Đinh Mùi 2027");
+      expect(quy.daiVanNext?.yearsLabel).toBe("41–50");
+      expect(quy.emptyReason).toBeNull();
+    }
   });
 
   it("does not duplicate luu-nien prose across van_nam and quy_nhan", () => {

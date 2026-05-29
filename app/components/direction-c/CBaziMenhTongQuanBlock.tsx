@@ -1,4 +1,8 @@
 import { Mono } from "~/components/brand";
+import {
+  BaziChapterEmpty,
+  BaziChapterProse,
+} from "~/components/direction-c/BaziSectionHeading";
 import type { LaSoJson } from "~/lib/api-types";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import {
@@ -28,12 +32,17 @@ const NGU_HANH_LABEL: Record<string, string> = {
 type CBaziMenhTongQuanBlockProps = {
   profile: Profile;
   laSo?: LaSoJson | null;
+  /** Gemini `menh_tong_quan` — tổng quan lá số (§01). */
+  prose?: string | null;
+  emptyReason?: string | null;
 };
 
 /** §01 Mệnh tổng quan — facts lá số (Direction C màn 18). */
 export function CBaziMenhTongQuanBlock({
   profile,
   laSo: laSoProp,
+  prose,
+  emptyReason,
 }: CBaziMenhTongQuanBlockProps) {
   const laSo = laSoProp ?? (profile.la_so as LaSoJson | null);
   const reveal = laSo ? laSoJsonToRevealProps(laSo) : null;
@@ -49,7 +58,9 @@ export function CBaziMenhTongQuanBlock({
   }));
 
   if (!reveal) {
-    return (
+    return emptyReason ? (
+      <BaziChapterEmpty message={emptyReason} />
+    ) : (
       <p className="mt-3 font-serif text-sm" style={{ color: CT.muted }}>
         Chưa có lá số trên hồ sơ.
       </p>
@@ -77,7 +88,9 @@ export function CBaziMenhTongQuanBlock({
         ) : null}
       </h2>
 
-      {tagline ? (
+      {prose?.trim() ? (
+        <BaziChapterProse text={prose.trim()} />
+      ) : tagline ? (
         <p
           className="mt-2 font-serif text-[13.5px] italic leading-relaxed"
           style={{ color: CT.ink2 }}
@@ -227,6 +240,10 @@ export function CBaziMenhTongQuanBlock({
             ))}
           </div>
         </div>
+      ) : null}
+
+      {emptyReason && !prose?.trim() ? (
+        <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </>
   );

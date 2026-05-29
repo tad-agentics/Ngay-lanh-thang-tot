@@ -61,28 +61,80 @@ function resolveYearCanChi(
   return fromFacts || fallbackFlowYearCanChiLabel(year) || "";
 }
 
-/** Lá số hiển thị §01 paywall — `la-so` không gate; gộp enrichment khi có. */
+export type BaziPaywallBundle = {
+  laSoDisplay: LaSoJson | null;
+  menhOverview: string;
+};
+
+/** Rút đoạn `menh_tong_quan` từ sections generate-reading. */
+export function menhOverviewFromLaSoSections(
+  sections: LaSoChiTietSection[],
+): string {
+  const menh = sections.find((s) => s.id === "menh_tong_quan");
+  if (menh?.text?.trim()) return menh.text.trim();
+  const fallback = sections.find((s) => s.id === "tong_hop") ?? sections[0];
+  return fallback?.text?.trim() ?? "";
+}
+
+/**
+ * Paywall §01 — một lần `la-so` + Gemini preview (`menh_tong_quan` only).
+ */
+export async function loadBaziPaywallBundle(
+  profile: Profile,
+): Promise<BaziPaywallBundle> {
+  const cachedLaSo = (profile.la_so as LaSoJson) ?? null;
+  const body = profileToBatTuPersonQuery(profile);
+  if (!body.birth_date) {
+    return { laSoDisplay: cachedLaSo, menhOverview: "" };
+  }
+
+  const lasoRes = await invokeBatTu<unknown>({ op: "la-so", body });
+  if (!lasoRes.ok) {
+    return { laSoDisplay: cachedLaSo, menhOverview: "" };
+  }
+
+  const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
+  const laSoDisplay =
+    mergeLaSoJsonForChiTietDisplay(cachedLaSo, enrichment) ?? cachedLaSo;
+
+  const gen = await invokeGenerateReading({
+    endpoint: "la-so-chi-tiet",
+    data: lasoRes.data,
+    preview: true,
+  });
+  const sections = laSoSectionsFromGenerateReading(gen.sections, gen.reading);
+
+  return {
+    laSoDisplay,
+    menhOverview: menhOverviewFromLaSoSections(sections),
+  };
+}
+
+/** @deprecated Dùng `loadBaziPaywallBundle`. */
 export async function loadBaziPaywallLaSoDisplay(
   profile: Profile,
 ): Promise<LaSoJson | null> {
-  const cached = (profile.la_so as LaSoJson) ?? null;
-  const body = profileToBatTuPersonQuery(profile);
-  if (!body.birth_date) return cached;
-
-  const lasoRes = await invokeBatTu<unknown>({ op: "la-so", body });
-  if (!lasoRes.ok) return cached;
-
-  const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
-  return (
-    mergeLaSoJsonForChiTietDisplay(cached, enrichment) ?? cached
-  );
+  const bundle = await loadBaziPaywallBundle(profile);
+  return bundle.laSoDisplay;
 }
 
-/** Chỉ lá số + Gemini `la-so-chi-tiet` (paywall preview §02). */
+/** Gemini `la-so-chi-tiet` — `preview: true` chỉ trả `menh_tong_quan` (paywall §01). */
 export async function loadBaziLaSoChiTietSections(
   profile: Profile,
   options?: { preview?: boolean },
 ): Promise<LaSoChiTietSection[]> {
+  if (options?.preview) {
+    const bundle = await loadBaziPaywallBundle(profile);
+    if (!bundle.menhOverview) return [];
+    return [
+      {
+        id: "menh_tong_quan",
+        title: "Mệnh tổng quan",
+        text: bundle.menhOverview,
+      },
+    ];
+  }
+
   const body = profileToBatTuPersonQuery(profile);
   if (!body.birth_date) return [];
 
@@ -95,10 +147,17 @@ export async function loadBaziLaSoChiTietSections(
   const gen = await invokeGenerateReading({
     endpoint: "la-so-chi-tiet",
     data: lasoRes.data,
-    ...(options?.preview ? { preview: true } : {}),
   });
 
   return laSoSectionsFromGenerateReading(gen.sections, gen.reading);
+}
+
+/** @deprecated Dùng `loadBaziPaywallBundle`. */
+export async function loadBaziPaywallMenhOverview(
+  profile: Profile,
+): Promise<string> {
+  const bundle = await loadBaziPaywallBundle(profile);
+  return bundle.menhOverview;
 }
 
 /** Full load: facts + Gemini cho màn 18 đã mở khóa. */

@@ -1,8 +1,8 @@
 import { CBaziMenhTongQuanBlock } from "~/components/direction-c/CBaziMenhTongQuanBlock";
 import { CBaziPhongThuySection } from "~/components/direction-c/CBaziPhongThuySection";
 import { CBaziQuyNhanSection } from "~/components/direction-c/CBaziQuyNhanSection";
+import { CBaziTinhCachSection } from "~/components/direction-c/CBaziTinhCachSection";
 import { BaziSectionHeading } from "~/components/direction-c/BaziSectionHeading";
-import { BaziChapterProse } from "~/components/direction-c/BaziSectionHeading";
 import { CBaziVanNamSection } from "~/components/direction-c/CBaziVanNamSection";
 import type { BaziDisplayChapter } from "~/lib/bazi-reading-outline";
 import type { Profile } from "~/lib/profile-context";
@@ -17,14 +17,20 @@ export function CBaziReadingChapter({ chapter, profile }: CBaziReadingChapterPro
     <section className="mt-8 first:mt-6">
       <BaziSectionHeading index={chapter.index} title={chapter.title} />
       {chapter.kind === "menh" ? (
-        <CBaziMenhTongQuanBlock profile={profile} laSo={chapter.laSo} />
+        <CBaziMenhTongQuanBlock
+          profile={profile}
+          laSo={chapter.laSo}
+          prose={chapter.prose}
+          emptyReason={chapter.emptyReason}
+        />
       ) : null}
-      {chapter.kind === "prose" ? (
-        chapter.prose ? (
-          <BaziChapterProse text={chapter.prose} />
-        ) : chapter.emptyReason ? (
-          <p className="mt-3 font-serif text-sm text-[var(--muted)]">{chapter.emptyReason}</p>
-        ) : null
+      {chapter.kind === "tinh_cach" ? (
+        <CBaziTinhCachSection
+          traits={chapter.traits}
+          introProse={chapter.introProse}
+          prose={chapter.prose}
+          emptyReason={chapter.emptyReason}
+        />
       ) : null}
       {chapter.kind === "van_nam" ? (
         <CBaziVanNamSection
@@ -42,7 +48,8 @@ export function CBaziReadingChapter({ chapter, profile }: CBaziReadingChapterPro
       ) : null}
       {chapter.kind === "quy_nhan" ? (
         <CBaziQuyNhanSection
-          facts={chapter.facts}
+          quyNhan={chapter.quyNhan}
+          daiVanNext={chapter.daiVanNext}
           prose={chapter.prose}
           emptyReason={chapter.emptyReason}
         />

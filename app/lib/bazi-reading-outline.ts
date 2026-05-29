@@ -3,8 +3,14 @@ import { currentYearVn } from "~/lib/bazi-reading-session";
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
 import {
   parseLuuNienFactsView,
+  type DaiVanNextView,
   type LuuNienFactsView,
+  type LuuNienQuyNhanFacts,
 } from "~/lib/luu-nien-facts-ui";
+import {
+  parsePersonalityTraitsFromLaSo,
+  type PersonalityTraitView,
+} from "~/lib/personality-traits-ui";
 import {
   parsePhongThuyFactsView,
   type PhongThuyFactsView,
@@ -80,13 +86,16 @@ export type BaziDisplayChapter =
       title: string;
       kind: "menh";
       laSo: LaSoJson | null;
+      prose: string;
       emptyReason: string | null;
     }
   | {
       key: "tinh_cach";
       index: number;
       title: string;
-      kind: "prose";
+      kind: "tinh_cach";
+      traits: PersonalityTraitView[];
+      introProse: string;
       prose: string;
       emptyReason: string | null;
     }
@@ -113,7 +122,8 @@ export type BaziDisplayChapter =
       index: number;
       title: string;
       kind: "quy_nhan";
-      facts: LuuNienFactsView["quyNhan"];
+      quyNhan: LuuNienQuyNhanFacts | null;
+      daiVanNext: DaiVanNextView | null;
       prose: string;
       emptyReason: string | null;
     };
@@ -168,7 +178,9 @@ export function buildBaziDisplayChapters(input: {
     ? parsePhongThuyFactsView(input.phongThuyFactsRaw)
     : null;
 
-  const tinhCach = sectionText(input.sections, "tinh_cach");
+  const menhProse = sectionText(input.sections, "menh_tong_quan");
+  const traits = parsePersonalityTraitsFromLaSo(input.laSo);
+  const tinhCachGemini = sectionText(input.sections, "tinh_cach");
   const vanProse = luuNienVanNamProse(input.sections);
   const ptProse = joinSectionTexts(input.sections, (s) =>
     s.id.startsWith("phong_thuy_"),
@@ -189,18 +201,26 @@ export function buildBaziDisplayChapters(input: {
           title: meta.title,
           kind: "menh",
           laSo: input.laSo,
-          emptyReason: hasLaSo ? null : "Chưa có lá số trên hồ sơ.",
+          prose: menhProse,
+          emptyReason: hasLaSo
+            ? menhProse
+              ? null
+              : "Chưa tạo được luận tổng quan lá số. Thử tải lại sau."
+            : "Chưa có lá số trên hồ sơ.",
         };
       case "tinh_cach":
         return {
           key: meta.key,
           index: meta.index,
           title: meta.title,
-          kind: "prose",
-          prose: tinhCach,
-          emptyReason: tinhCach
-            ? null
-            : "Chưa tạo được luận giải tính cách. Thử tải lại sau.",
+          kind: "tinh_cach",
+          traits,
+          introProse: traits.length > 0 ? tinhCachGemini : "",
+          prose: traits.length === 0 ? tinhCachGemini : "",
+          emptyReason:
+            tinhCachGemini || traits.length > 0
+              ? null
+              : "Chưa tạo được luận giải tính cách. Thử tải lại sau.",
         };
       case "van_nam":
         return {
@@ -234,12 +254,13 @@ export function buildBaziDisplayChapters(input: {
           index: meta.index,
           title: meta.title,
           kind: "quy_nhan",
-          facts: luuParsed?.quyNhan ?? null,
+          quyNhan: luuParsed?.quyNhan ?? null,
+          daiVanNext: luuParsed?.daiVanNext ?? null,
           prose: quyProse,
           emptyReason:
-            luuParsed?.quyNhan || quyProse
+            luuParsed?.quyNhan || luuParsed?.daiVanNext || quyProse
               ? null
-              : "Chưa có dữ liệu quý nhân. API team sẽ bổ sung `quy_nhan` trên lưu niên.",
+              : "Chưa có dữ liệu quý nhân. Thử tải lại sau.",
         };
     }
   });

@@ -149,7 +149,9 @@ function parsePhiTinh(raw: unknown): PhongThuyPhiTinhCell[] {
     const o = asRecord(item);
     if (!o) continue;
     const direction = pickStr(o, ["direction", "huong", "dir", "label"]);
-    const star = pickStr(o, ["star", "sao", "label_vi", "name"]);
+    const star =
+      pickStr(o, ["star_name", "starName", "label_vi"]) ||
+      (typeof o.star === "number" ? String(o.star) : pickStr(o, ["star", "sao"]));
     if (!direction || !star) continue;
     out.push({ direction, star, tone: phiTone(star) });
   }
