@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router";
 
 import { Mono } from "~/components/brand";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
+import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
+import { currentYearVn } from "~/lib/bazi-reading-session";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
@@ -53,7 +55,11 @@ export default function ToiRoute() {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { expiryFormatted, isActive, expiresAt } = useSubscription();
-  const { canUseBaziReading: baziUnlocked } = useEntitlements();
+  const {
+    canUseBaziReading: baziUnlocked,
+    canUseTieuVanReading: tieuVanUnlocked,
+  } = useEntitlements();
+  const tieuVanYear = currentYearVn();
   const { picks, loading: picksLoading, error: picksError } = useSavedPicks();
 
   const expiryUrgent = subscriptionExpiryUrgent(expiresAt);
@@ -239,6 +245,52 @@ export default function ToiRoute() {
             </div>
             <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
               Gói năm hoặc mua lẻ tại Đặt lịch
+            </div>
+          </Link>
+        )}
+
+        {tieuVanUnlocked ? (
+          <Link
+            to={`/toi/luan-tieu-van?year=${tieuVanYear}`}
+            className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
+            style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
+          >
+            <div className="flex items-baseline gap-2">
+              <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
+              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
+              </Mono>
+            </div>
+            <div
+              className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+              style={{ color: CT.ink }}
+            >
+              Luận giải Tiểu vận {tieuVanYear}
+            </div>
+            <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
+              vận hạn cát hung · phong thủy cát tường · luận giải tháng
+            </div>
+            <div
+              className="mt-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"
+              style={{ color: CT.goldDeep }}
+            >
+              Đọc ngay →
+            </div>
+          </Link>
+        ) : isActive ? (
+          <CMeLockedTieuVanCard />
+        ) : (
+          <Link
+            to="/dat-lich"
+            className="mt-[22px] block border px-4 py-3.5 no-underline"
+            style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
+          >
+            <Mono style={{ color: CT.muted, fontSize: 9 }}>Luận giải Tiểu vận</Mono>
+            <div className="mt-1.5 font-[family-name:var(--display)] text-base font-extrabold uppercase tracking-[-0.005em]">
+              Mở khóa luận giải
+            </div>
+            <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
+              Gói 6 tháng/năm hoặc mua lẻ tại Đặt lịch
             </div>
           </Link>
         )}

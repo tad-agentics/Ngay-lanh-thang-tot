@@ -7,6 +7,7 @@ import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import type { PackageSku } from "~/lib/api-types";
+import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
 import {
   formatPaymentOrderRef,
@@ -48,7 +49,9 @@ export function CPaySuccessAddonScreen() {
   const yearlyPkg = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
 
   const ctaTo =
-    sku === "luan_tieu_van" ? "/toi/luan-tieu-van" : "/toi/luan-bat-tu";
+    sku === "luan_tieu_van"
+      ? `/toi/luan-tieu-van?year=${currentYearVn()}`
+      : "/toi/luan-bat-tu";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? "Luận giải Bát tự";
 
   return (
