@@ -4,7 +4,6 @@ import { Link } from "react-router";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, LogoMark, Mono } from "~/components/brand";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
-import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import {
@@ -473,10 +472,6 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 canChi={detail?.canChi ?? "—"}
                 sourceLabels={resolveLuanSourceLabels(detail)}
               />
-            ) : null}
-
-            {anchorDone ? (
-              <DayScoreMethodologyCollapsible methodology={detail?.scoreMethodology} />
             ) : null}
 
             {followUps.map((turn) => (

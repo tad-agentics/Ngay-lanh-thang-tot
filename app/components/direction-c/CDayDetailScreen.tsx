@@ -7,7 +7,6 @@ import { CSubExpired } from "~/components/CSubExpired";
 import { BackBar } from "~/components/brand";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
-import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useOptionalProfile } from "~/hooks/useOptionalProfile";
@@ -247,8 +246,6 @@ export function CDayDetailScreen() {
               onPrev={() => void navigate(`/ngay/${prevIso}`)}
               onNext={() => void navigate(`/ngay/${nextIso}`)}
             />
-
-            <DayScoreMethodologyCollapsible methodology={detail?.scoreMethodology} />
 
             {user && personalized ? (
               <button
