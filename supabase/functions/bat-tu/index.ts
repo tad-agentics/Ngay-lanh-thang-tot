@@ -1005,6 +1005,22 @@ async function readBatTuCache(
   }
 }
 
+type DeductCreditsResult = {
+  ok: boolean;
+  error_code?: string;
+  credits_balance?: number;
+};
+
+async function batTuDeductIdempotencyKey(
+  userId: string,
+  featureKey: string,
+  op: string,
+  body: Record<string, unknown>,
+): Promise<string> {
+  const bodyHash = await sha256Hex(JSON.stringify(body));
+  return `bat_tu:${userId}:${featureKey}:${op}:${bodyHash}`;
+}
+
 async function refundCredits(
   admin: SupabaseAdmin,
   userId: string,
@@ -1287,7 +1303,7 @@ Deno.serve(async (req) => {
       const cost = costRow.credit_cost as number;
       const { data: profile, error: pErr } = await admin
         .from("profiles")
-        .select("credits_balance, subscription_expires_at")
+        .select("subscription_expires_at")
         .eq("id", userId)
         .maybeSingle();
 
@@ -1325,47 +1341,67 @@ Deno.serve(async (req) => {
             }, 402, req);
         }
 
-        const bal = profile.credits_balance as number;
-        if (bal < cost) {
+        const idempotencyKey = await batTuDeductIdempotencyKey(
+          userId,
+          featureKeyForBilling,
+          op,
+          body,
+        );
+
+        const { data: deductResult, error: deductErr } = await admin.rpc(
+          "deduct_credits_atomic",
+          {
+            p_user_id: userId,
+            p_cost: cost,
+            p_reason: "bat_tu",
+            p_feature_key: featureKeyForBilling,
+            p_idempotency_key: idempotencyKey,
+            p_metadata: { op },
+          },
+        );
+
+        if (deductErr) {
+          console.error("bat-tu deduct_credits_atomic", deductErr);
           return json(
-            {
-              error: {
-                code: "SUB_EXPIRED",
-                message:
-                  "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
+            500,
+            req,
+          );
+        }
+
+        const result = deductResult as DeductCreditsResult;
+
+        if (!result.ok) {
+          if (result.error_code === "INSUFFICIENT_CREDITS") {
+            return json(
+              {
+                error: {
+                  code: "SUB_EXPIRED",
+                  message:
+                    "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
+                },
               },
-            }, 402, req);
-        }
-
-        const newBal = bal - cost;
-        const { error: uErr } = await admin
-          .from("profiles")
-          .update({ credits_balance: newBal })
-          .eq("id", userId);
-
-        if (uErr) {
-          console.error("bat-tu deduct", uErr);
+              402,
+              req,
+            );
+          }
+          if (result.error_code === "PROFILE_MISSING") {
+            return json(
+              {
+                error: {
+                  code: "PROFILE_MISSING",
+                  message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
+                },
+              },
+              400,
+              req,
+            );
+          }
           return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } }, 500, req);
-        }
-
-        const { error: lErr } = await admin.from("credit_ledger").insert({
-          user_id: userId,
-          delta: -cost,
-          balance_after: newBal,
-          reason: "bat_tu",
-          feature_key: featureKeyForBilling,
-          metadata: { op },
-        });
-
-        if (lErr) {
-          console.error("bat-tu ledger", lErr);
-          await admin
-            .from("profiles")
-            .update({ credits_balance: bal })
-            .eq("id", userId);
-          return json(
-            { error: { code: "DB_ERROR", message: "Ghi sổ lượng thất bại." } }, 500, req);
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
+            500,
+            req,
+          );
         }
 
         chargedAmount = cost;

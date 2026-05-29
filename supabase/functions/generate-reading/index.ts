@@ -5,29 +5,23 @@
  * `chon-ngay`: luận giải tổng (`CHON_NGAY_SYSTEM`) + cache version.
  * `chon-ngay-cards`: JSON `day_readings` theo từng ngày (thẻ kết quả).
  * Các endpoint khác → một khối văn (`hop-tuoi`: 8–10 câu, gom từ toàn bộ tiêu chí).
- * `ngay-hom-nay` và `day-detail`: cần Bearer JWT + đã mở khóa (ledger / gói / giá 0) — khớp Edge `reading-unlock`.
+ * `ngay-hom-nay` và `day-detail`: Bearer JWT + preflight (ledger / gói / đủ lượng) trước Gemini; 1 req/10s/user (Upstash).
  * `la-so-chi-tiet`: cần Bearer JWT + `canUseBaziReading` (gói năm hoặc `bazi_reading_unlocked_at`).
  * Luôn trả HTTP 200 — không 500.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import {
-  canUseBaziReading,
-  inPivotCreditTransition,
-  readPivotTransitionUntil,
-} from "../_shared/entitlements.ts";
+import { canUseBaziReading } from "../_shared/entitlements.ts";
 import { buildDayLuanPromptContext } from "../_shared/day-luan-prompt-context.ts";
+import {
+  acquireGenerateReadingRateLimit,
+  preflightAiReadingAccess,
+} from "../_shared/generate-reading-guards.ts";
 import { isLuanContextPayload } from "../_shared/luan-context.ts";
 
 type ServiceClient = ReturnType<typeof createClient>;
 
-const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
 const ISO_DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-function subscriptionActiveForReading(expires: string | null): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
-}
 
 function todayIsoVietnam(): string {
   return new Intl.DateTimeFormat("en-CA", {
@@ -45,55 +39,6 @@ function dayIsoFromDayDetailData(data: unknown): string | null {
   if (typeof date !== "string") return null;
   const t = date.trim();
   return ISO_DAY_RE.test(t) ? t : null;
-}
-
-/** Khớp quy tắc `reading-unlock` (ledger idempotency / subscription / cost 0). */
-async function userHasPaidAiReadingAccess(
-  admin: ServiceClient,
-  userId: string,
-  scope: "home" | "day_detail",
-  dayIso: string,
-): Promise<boolean> {
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("subscription_expires_at")
-    .eq("id", userId)
-    .maybeSingle();
-  if (
-    profile &&
-    subscriptionActiveForReading(
-      profile.subscription_expires_at as string | null,
-    )
-  ) {
-    return true;
-  }
-
-  const pivotUntil = await readPivotTransitionUntil(admin);
-  if (!inPivotCreditTransition(pivotUntil)) {
-    return false;
-  }
-
-  const idempotencyKey = `ai_reading_unlock:${userId}:${scope}:${dayIso}`;
-  const { data: existing } = await admin
-    .from("credit_ledger")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("idempotency_key", idempotencyKey)
-    .maybeSingle();
-  if (existing) return true;
-
-  const { data: costRow } = await admin
-    .from("feature_credit_costs")
-    .select("credit_cost, is_free")
-    .eq("feature_key", AI_READING_UNLOCK_FEATURE_KEY)
-    .maybeSingle();
-  const cost =
-    costRow && !costRow.is_free && (costRow.credit_cost as number) > 0
-      ? (costRow.credit_cost as number)
-      : 0;
-  if (cost <= 0) return true;
-
-  return false;
 }
 
 /** Khớp FE `canUseBaziReading` — gói ≥11 tháng hoặc đã mua luận Bát tự. */
@@ -1080,6 +1025,8 @@ Deno.serve(async (req) => {
     return ok(null, null, req);
   }
 
+  let rateLimitUserId: string | null = null;
+
   if (endpoint === "ngay-hom-nay" || endpoint === "day-detail") {
     const gateUrl = Deno.env.get("SUPABASE_URL");
     const gateAnon = Deno.env.get("SUPABASE_ANON_KEY");
@@ -1105,15 +1052,22 @@ Deno.serve(async (req) => {
     }
     const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
     const adminGate = createClient(gateUrl, gateService);
-    const allowed = await userHasPaidAiReadingAccess(
+    const preflight = await preflightAiReadingAccess(
       adminGate,
       uid,
       scope,
       dayIso,
     );
-    if (!allowed) {
+    if (!preflight.allowed) {
+      console.warn(
+        "generate-reading preflight denied",
+        endpoint,
+        preflight.reason,
+        uid,
+      );
       return ok(null, null, req);
     }
+    rateLimitUserId = uid;
   }
 
   if (endpoint === "la-so-chi-tiet") {
@@ -1137,6 +1091,7 @@ Deno.serve(async (req) => {
     if (!allowed) {
       return ok(null, null, req);
     }
+    rateLimitUserId = uid;
   }
 
   const promptBody: Record<string, unknown> =
@@ -1237,6 +1192,14 @@ Deno.serve(async (req) => {
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         }
       }
+    }
+  }
+
+  if (rateLimitUserId) {
+    const slot = await acquireGenerateReadingRateLimit(rateLimitUserId);
+    if (!slot) {
+      console.warn("generate-reading rate limited", rateLimitUserId);
+      return ok(null, null, req);
     }
   }
 

@@ -428,7 +428,7 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
-# Anthropic + DB cache. `ngay-hom-nay` / `day-detail` require Bearer + unlock check in handler; other endpoints unchanged.
+# Gemini + DB cache. Gated endpoints: Bearer + credit preflight; Upstash 1 req/10s per user (UPSTASH_REDIS_*).
 [functions.generate-reading]
 verify_jwt = false
 

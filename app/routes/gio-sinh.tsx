@@ -102,7 +102,7 @@ export default function GioSinhRoute() {
     <CForestShell>
       <BackBar
         dark
-        onBack={() => navigate("/dang-nhap", { replace: true })}
+        onBack={() => navigate("/dang-ky", { replace: true })}
         endAdornment={
           <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9.5 }}>
             2 / 2
