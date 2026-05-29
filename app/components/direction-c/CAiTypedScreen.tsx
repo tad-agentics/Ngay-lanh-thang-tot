@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -17,6 +17,7 @@ import {
   DAY_LUAN_SUGGESTED_CHIPS,
   formatDayIsoShort,
 } from "~/lib/day-luan-sectioned";
+import { paragraphSpansInText } from "~/lib/prose-paragraphs";
 
 const TYPED_MS = 18;
 
@@ -35,15 +36,21 @@ function TypedBody({
   onComplete,
   fontSize = 14,
   marginTop = 6,
+  sentencesPerParagraph = 2,
 }: {
   text: string;
   active: boolean;
   onComplete?: () => void;
   fontSize?: number;
   marginTop?: number;
+  sentencesPerParagraph?: number;
 }) {
   const [len, setLen] = useState(0);
   const completedRef = useRef(false);
+  const paragraphs = useMemo(
+    () => paragraphSpansInText(text, sentencesPerParagraph),
+    [text, sentencesPerParagraph],
+  );
 
   useEffect(() => {
     completedRef.current = false;
@@ -71,38 +78,53 @@ function TypedBody({
     return () => window.clearInterval(id);
   }, [text, active, onComplete]);
 
-  const shown = text.slice(0, len);
   const typing = active && len < text.length;
+  const lineHeight = fontSize >= 14 ? 1.65 : 1.6;
+  const paragraphGap = fontSize >= 14 ? 12 : 10;
 
   return (
-    <p
-      aria-live={active ? "polite" : undefined}
-      style={{
-        marginTop,
-        marginBottom: 0,
-        fontFamily: "var(--serif)",
-        fontSize,
-        color: CT.ink,
-        lineHeight: fontSize >= 14 ? 1.65 : 1.6,
-      }}
-    >
-      {shown}
-      {typing ? (
-        <span
-          aria-hidden
-          style={{
-            display: "inline-block",
-            width: 7,
-            height: 14,
-            background: CT.ink,
-            marginLeft: 2,
-            verticalAlign: "middle",
-            animation: "b-cursor-blink 1s steps(2) infinite",
-          }}
-        />
-      ) : null}
+    <>
+      {paragraphs.map((span, index) => {
+        const sliceEnd = Math.min(span.end, len);
+        if (sliceEnd <= span.start) return null;
+        const visible = text.slice(span.start, sliceEnd);
+        const isLastVisible =
+          index === paragraphs.length - 1 ||
+          paragraphs.slice(index + 1).every((next) => len <= next.start);
+
+        return (
+          <p
+            key={`${span.start}-${span.end}`}
+            aria-live={active && index === 0 ? "polite" : undefined}
+            style={{
+              marginTop: index === 0 ? marginTop : paragraphGap,
+              marginBottom: 0,
+              fontFamily: "var(--serif)",
+              fontSize,
+              color: CT.ink,
+              lineHeight,
+            }}
+          >
+            {visible}
+            {typing && isLastVisible ? (
+              <span
+                aria-hidden
+                style={{
+                  display: "inline-block",
+                  width: 7,
+                  height: 14,
+                  background: CT.ink,
+                  marginLeft: 2,
+                  verticalAlign: "middle",
+                  animation: "b-cursor-blink 1s steps(2) infinite",
+                }}
+              />
+            ) : null}
+          </p>
+        );
+      })}
       <style>{`@keyframes b-cursor-blink { 50% { opacity: 0; } }`}</style>
-    </p>
+    </>
   );
 }
 
