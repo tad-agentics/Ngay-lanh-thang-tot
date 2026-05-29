@@ -5,6 +5,7 @@ import {
   formatPaymentOrderRef,
   subscriptionDurationLabel,
   yearCanChiFromLaSo,
+  subscriptionUpsellDeltaVnd,
   yearlyPlanUpsellDeltaVnd,
 } from "~/lib/pay-commerce-ui";
 
@@ -38,5 +39,9 @@ describe("pay-commerce-ui", () => {
 
   it("computes yearly upsell delta from addon price", () => {
     expect(yearlyPlanUpsellDeltaVnd("luan_bat_tu")).toBe(500_000);
+  });
+
+  it("computes 6-month upsell delta for Tiểu vận addon", () => {
+    expect(subscriptionUpsellDeltaVnd("luan_tieu_van", "goi_6thang")).toBe(300_000);
   });
 });

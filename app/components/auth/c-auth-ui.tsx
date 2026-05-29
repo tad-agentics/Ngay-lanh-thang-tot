@@ -48,10 +48,27 @@ export const btnPrimaryGold: CSSProperties = {
   border: "none",
   fontFamily: "var(--display-2)",
   fontWeight: 800,
-  fontSize: 13,
+  fontSize: 14,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
   cursor: "pointer",
+};
+
+/** Secondary email auth links on forest login chooser. */
+export const authEmailSecondary: CSSProperties = {
+  marginTop: 16,
+  textAlign: "center",
+  fontFamily: "var(--serif)",
+  fontSize: 13,
+  fontStyle: "italic",
+  color: "rgba(237,231,211,0.55)",
+  lineHeight: 1.65,
+};
+
+export const authEmailSecondaryLink: CSSProperties = {
+  color: "rgba(237,231,211,0.75)",
+  textDecoration: "underline",
+  textUnderlineOffset: 2,
 };
 
 export const btnOutlineCream: CSSProperties = {

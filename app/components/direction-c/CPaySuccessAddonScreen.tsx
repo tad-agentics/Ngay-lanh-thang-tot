@@ -15,9 +15,12 @@ import {
   PAY_DISPLAY,
   PAY_DISPLAY2,
   PAY_MONO,
-  yearlyPlanUpsellDeltaVnd,
+  subscriptionUpsellDeltaVnd,
 } from "~/lib/pay-commerce-ui";
-import { PAY_CONFIRM_ADDON_META } from "~/lib/pay-confirm-ui";
+import {
+  addonSubscriptionUpsell,
+  PAY_CONFIRM_ADDON_META,
+} from "~/lib/pay-confirm-ui";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
@@ -45,8 +48,10 @@ export function CPaySuccessAddonScreen() {
 
   const orderRef = orderId ? formatPaymentOrderRef(orderId) : null;
   const receiptEmail = user?.email ?? "email của bạn";
-  const upsellDelta = yearlyPlanUpsellDeltaVnd(sku);
-  const yearlyPkg = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
+  const subscriptionUpsell = addonSubscriptionUpsell(sku);
+  const upsellDelta = subscriptionUpsell
+    ? subscriptionUpsellDeltaVnd(sku, subscriptionUpsell.planSku)
+    : null;
 
   const ctaTo =
     sku === "luan_tieu_van"
@@ -124,7 +129,7 @@ export function CPaySuccessAddonScreen() {
           </div>
         ) : null}
 
-        {upsellDelta != null && yearlyPkg ? (
+        {upsellDelta != null && subscriptionUpsell ? (
           <div
             className="mt-[22px] w-full max-w-[320px] border-l-2 px-3.5 py-3 text-left"
             style={{
@@ -136,22 +141,27 @@ export function CPaySuccessAddonScreen() {
               Còn thiếu
             </Mono>
             <p className="mt-1 text-[12.5px] leading-snug" style={{ color: CT.ink2 }}>
-              Bạn chưa có{" "}
-              <strong className="font-semibold" style={{ color: CT.ink }}>
-                Lịch cá nhân
-              </strong>{" "}
-              và{" "}
-              <strong className="font-semibold" style={{ color: CT.ink }}>
-                Tiểu Vận
-              </strong>
-              . Nâng lên Lịch năm chỉ thêm{" "}
+              {sku === "luan_tieu_van" ? (
+                <>
+                  Bạn chưa có{" "}
+                  <strong className="font-semibold" style={{ color: CT.ink }}>
+                    Lịch cá nhân
+                  </strong>
+                  . Gói 6 tháng gồm lịch + luận Tiểu vận — chỉ thêm{" "}
+                </>
+              ) : (
+                <>
+                  Nâng lên {subscriptionUpsell.planLabel} để{" "}
+                  {subscriptionUpsell.benefit} — chỉ thêm{" "}
+                </>
+              )}
               <strong className="font-bold" style={{ ...PAY_DISPLAY2, color: CT.goldDeep }}>
                 {formatVndThousands(upsellDelta)}
               </strong>
               .
             </p>
             <Link
-              to="/dat-lich?plan=goi_12thang"
+              to={`/dat-lich?plan=${subscriptionUpsell.planSku}`}
               className="mt-2 inline-block text-[11.5px] font-bold uppercase tracking-[0.06em] no-underline"
               style={{ ...PAY_DISPLAY2, color: CT.goldDeep }}
             >

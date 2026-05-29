@@ -1,4 +1,5 @@
 import type { PackageSku } from "~/lib/api-types";
+import { UI_PACKAGES } from "~/lib/packages";
 
 export const PAY_CONFIRM_TIER_META: Partial<
   Record<
@@ -63,4 +64,33 @@ export function previewSubscriptionExpiry(sku: PackageSku): string | null {
 
 export function priceDisplay(label: string): string {
   return label.replace(/₫/g, "").trim();
+}
+
+/** Addon checkout upsell — 6 tháng = lịch + Tiểu vận; 1 năm = toàn bộ tính năng. */
+export function addonSubscriptionUpsell(addonSku: PackageSku): {
+  planSku: PackageSku;
+  planLabel: string;
+  priceLabel: string;
+  benefit: string;
+} | null {
+  const sixMonth = UI_PACKAGES.find((p) => p.sku === "goi_6thang");
+  const yearly = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
+
+  if (addonSku === "luan_tieu_van" && sixMonth) {
+    return {
+      planSku: "goi_6thang",
+      planLabel: "Lịch 6 tháng",
+      priceLabel: sixMonth.priceLabel,
+      benefit: "thêm lịch cá nhân + luận Tiểu vận trong gói",
+    };
+  }
+  if (addonSku === "luan_bat_tu" && yearly) {
+    return {
+      planSku: "goi_12thang",
+      planLabel: "Lịch năm",
+      priceLabel: yearly.priceLabel,
+      benefit: "mở toàn bộ tính năng — lịch + luận Bát tự + Tiểu vận",
+    };
+  }
+  return null;
 }

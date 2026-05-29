@@ -1,11 +1,14 @@
 /**
  * Direction C marketing landing — port of c-landing.jsx
  */
-import { useState } from "react";
+import { useCallback, useState, type CSSProperties } from "react";
 import { Link } from "react-router";
+import { toast } from "sonner";
 
+import { GoogleIcon } from "~/components/auth/c-auth-ui";
 import { LogoMark, Mono } from "~/components/brand";
 import { scoreColorFromPoints } from "~/components/landing/landing-c-utils";
+import { supabase } from "~/lib/supabase";
 
 import "~/styles/landing-direction-c.css";
 
@@ -60,6 +63,52 @@ const FAQS = [
   ],
 ] as const;
 
+const landingGoogleBtnClass =
+  "inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-display font-bold uppercase no-underline";
+
+function useLandingGoogleSignIn() {
+  const [busy, setBusy] = useState(false);
+  const signInGoogle = useCallback(async () => {
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    setBusy(false);
+    if (error) toast.error(error.message);
+  }, []);
+  return { busy, signInGoogle };
+}
+
+function LandingGoogleSignInButton({
+  className,
+  style,
+  onAfterClick,
+}: {
+  className: string;
+  style?: CSSProperties;
+  onAfterClick?: () => void;
+}) {
+  const { busy, signInGoogle } = useLandingGoogleSignIn();
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={() => {
+        void signInGoogle();
+        onAfterClick?.();
+      }}
+      className={className}
+      style={style}
+    >
+      <GoogleIcon />
+      {busy ? "Đang chuyển…" : "Đăng nhập bằng Google"}
+    </button>
+  );
+}
+
 function LHeader({ onMenu }: { onMenu: () => void }) {
   return (
     <header
@@ -106,13 +155,10 @@ function LHeader({ onMenu }: { onMenu: () => void }) {
         >
           Mở lịch
         </Link>
-        <Link
-          to="/gio-sinh"
-          className="px-5 py-2.5 font-display font-bold text-xs uppercase no-underline"
+        <LandingGoogleSignInButton
+          className={`${landingGoogleBtnClass} px-5 py-2.5 text-xs`}
           style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em" }}
-        >
-          Lập lịch — 30 giây
-        </Link>
+        />
       </nav>
       <button
         type="button"
@@ -161,9 +207,11 @@ function LMobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }
           <Link to="/dang-nhap" onClick={onClose} className="text-center py-3 font-display font-semibold text-[13px] uppercase no-underline" style={{ color: T.goldDeep }}>
             Mở lịch của tôi
           </Link>
-          <Link to="/gio-sinh" onClick={onClose} className="py-3.5 text-center font-display font-bold text-[13px] uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
-            Lập lịch — 30 giây
-          </Link>
+          <LandingGoogleSignInButton
+            className={`${landingGoogleBtnClass} w-full py-3.5 text-[13px]`}
+            style={{ background: T.forest, color: T.cream, letterSpacing: "0.08em" }}
+            onAfterClick={onClose}
+          />
         </div>
       </div>
     </div>

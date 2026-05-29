@@ -3,7 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import {
-  btnOutlineCream,
+  authEmailSecondary,
+  authEmailSecondaryLink,
   btnPrimaryGold,
   C,
   CForestShell,
@@ -142,64 +143,32 @@ export default function DangNhap() {
             marginTop: "auto",
             display: "flex",
             flexDirection: "column",
-            gap: 10,
           }}
         >
-          <Link
-            to={signUpHref}
-            style={{
-              ...btnPrimaryGold,
-              textAlign: "center",
-              textDecoration: "none",
-              display: "block",
-              boxSizing: "border-box",
-            }}
-          >
-            Lập lá số — 30 giây
-          </Link>
           <button
             type="button"
             disabled={busy}
             onClick={() => void signInGoogle()}
-            style={btnOutlineCream}
+            style={{
+              ...btnPrimaryGold,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+            }}
           >
             <GoogleIcon />
             Tiếp tục với Google
           </button>
-          <div
-            style={{
-              marginTop: 14,
-              padding: "12px 0",
-              borderTop: "1px solid rgba(237,231,211,0.15)",
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-            }}
-          >
-            <span
-              style={{
-                fontFamily: "var(--serif)",
-                fontSize: 13,
-                color: "rgba(237,231,211,0.7)",
-              }}
-            >
-              Đã có lá số?
-            </span>
-            <Link
-              to={emailHref}
-              style={{
-                fontFamily: "var(--display-2)",
-                fontWeight: 700,
-                fontSize: 13,
-                color: C.gold,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                textDecoration: "none",
-              }}
-            >
-              Đăng nhập →
+          <p style={authEmailSecondary}>
+            <Link to={emailHref} style={authEmailSecondaryLink}>
+              Đăng nhập bằng email
             </Link>
-          </div>
+            {" · "}
+            <Link to={signUpHref} style={authEmailSecondaryLink}>
+              Đăng ký bằng email
+            </Link>
+          </p>
         </div>
 
         <div

@@ -13,6 +13,7 @@ import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import {
   PAY_CONFIRM_ADDON_META,
   PAY_CONFIRM_TIER_META,
+  addonSubscriptionUpsell,
   previewSubscriptionExpiry,
   priceDisplay,
 } from "~/lib/pay-confirm-ui";
@@ -114,7 +115,8 @@ export function CPayConfirmSheet({
   const tierMeta = PAY_CONFIRM_TIER_META[pkg.sku];
   const addonMeta = PAY_CONFIRM_ADDON_META[pkg.sku];
   const expiryHint = previewSubscriptionExpiry(pkg.sku);
-  const yearlyPkg = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
+  const addonUpsell =
+    variant === "addon" ? addonSubscriptionUpsell(pkg.sku) : null;
   const sheetTitle =
     variant === "subscription"
       ? brandedSubscriptionPlanName(pkg.sku, profile?.la_so)
@@ -288,7 +290,7 @@ export function CPayConfirmSheet({
               </div>
             </div>
 
-            {variant === "addon" && yearlyPkg ? (
+            {addonUpsell ? (
               <div
                 className="mt-3 border-l-2 px-3 py-2.5 text-[12px] leading-snug"
                 style={{
@@ -299,11 +301,11 @@ export function CPayConfirmSheet({
               >
                 Đổi sang{" "}
                 <strong className="font-semibold" style={{ color: CT.ink }}>
-                  Lịch năm {priceDisplay(yearlyPkg.priceLabel)}đ
+                  {addonUpsell.planLabel} {priceDisplay(addonUpsell.priceLabel)}đ
                 </strong>{" "}
-                để thêm lịch cá nhân + Tiểu Vận.{" "}
+                để {addonUpsell.benefit}.{" "}
                 <Link
-                  to="/dat-lich?plan=goi_12thang"
+                  to={`/dat-lich?plan=${addonUpsell.planSku}`}
                   className="font-semibold no-underline"
                   style={{ color: CT.goldDeep }}
                 >
@@ -492,7 +494,9 @@ export function CPayConfirmSheet({
         onRetry={handleRetry}
         backTo={backTo}
         changeMethodTo={
-          variant === "addon" ? "/dat-lich?plan=goi_12thang" : "/dat-lich"
+          variant === "addon" && addonUpsell
+            ? `/dat-lich?plan=${addonUpsell.planSku}`
+            : "/dat-lich"
         }
       />
     </>

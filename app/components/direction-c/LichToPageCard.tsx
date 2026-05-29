@@ -60,7 +60,7 @@ export function LichToPageCard({
         <span
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 12,
+            fontSize: 13,
             color: "var(--muted)",
           }}
         >

@@ -4,7 +4,7 @@ import { CSegmented } from "~/components/brand/CSegmented";
 
 const OPTIONS = [
   { label: "Hôm nay", to: "/lich" },
-  { label: "Tháng", to: "/lich/thang" },
+  { label: "Lịch tháng", to: "/lich/thang" },
 ] as const;
 
 type CLichSegmentedNavProps = {

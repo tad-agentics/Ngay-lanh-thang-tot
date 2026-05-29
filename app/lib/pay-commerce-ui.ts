@@ -104,14 +104,27 @@ export function formatPayFailureTimestamp(at = new Date()): string {
   return `${get("day")}.${get("month")}.${get("year")} · ${get("hour")}:${get("minute")}`;
 }
 
-export function yearlyPlanUpsellDeltaVnd(addonSku: PackageSku): number | null {
-  const yearly = UI_PACKAGES.find((p) => p.sku === YEARLY_SKU);
+function parsePriceVnd(label: string): number | null {
+  const n = Number.parseInt(label.replace(/\D/g, ""), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function subscriptionUpsellDeltaVnd(
+  addonSku: PackageSku,
+  targetSku: PackageSku,
+): number | null {
+  const target = UI_PACKAGES.find((p) => p.sku === targetSku);
   const addon = UI_PACKAGES.find((p) => p.sku === addonSku);
-  if (!yearly || !addon) return null;
-  const yearlyPrice = parseInt(yearly.priceLabel.replace(/\D/g, ""), 10);
-  const addonPrice = parseInt(addon.priceLabel.replace(/\D/g, ""), 10);
-  if (!Number.isFinite(yearlyPrice) || !Number.isFinite(addonPrice)) return null;
-  return Math.max(0, yearlyPrice - addonPrice);
+  if (!target || !addon) return null;
+  const targetPrice = parsePriceVnd(target.priceLabel);
+  const addonPrice = parsePriceVnd(addon.priceLabel);
+  if (targetPrice == null || addonPrice == null) return null;
+  return Math.max(0, targetPrice - addonPrice);
+}
+
+/** @deprecated Use subscriptionUpsellDeltaVnd with target from addonSubscriptionUpsell. */
+export function yearlyPlanUpsellDeltaVnd(addonSku: PackageSku): number | null {
+  return subscriptionUpsellDeltaVnd(addonSku, YEARLY_SKU);
 }
 
 export function formatVndThousands(amount: number): string {
