@@ -4,15 +4,17 @@ import { BackBar, Mono } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
 import { CT } from "~/lib/c-tokens";
 import {
+  buildLaSoFullPillarRows,
+  buildLaSoNlttTeaser,
+  extractMenhMoTa,
   laSoJsonToChiTiet,
   laSoJsonToRevealProps,
   profileHasLaso,
+  thanColorsHintVi,
 } from "~/lib/la-so-ui";
 import type { LaSoJson } from "~/lib/api-types";
-import { canUseBaziReading } from "~/lib/entitlements";
 
-const PILLAR_LABELS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
-const PILLAR_IDX = [3, 2, 1, 0] as const;
+const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
 const NGU_HANH_BAR: Record<string, string> = {
   kim: "#c8c5a0",
@@ -48,9 +50,15 @@ function birthLine(profile: {
 export function CLaSoFullScreen() {
   const { profile, loading } = useProfile();
   const hasLaso = profileHasLaso(profile?.la_so);
-  const reveal = profile?.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
-  const detail = laSoJsonToChiTiet(profile?.la_so as LaSoJson | null | undefined);
-  const baziUnlocked = canUseBaziReading(profile);
+  const laSo = profile?.la_so;
+  const reveal = laSo ? laSoJsonToRevealProps(laSo) : null;
+  const detail = laSoJsonToChiTiet(laSo as LaSoJson | null | undefined);
+  const menhMoTa = laSo ? extractMenhMoTa(laSo) : null;
+  const pillars = laSo ? buildLaSoFullPillarRows(laSo, profile) : [];
+  const nlttTeaser =
+    laSo && reveal ? buildLaSoNlttTeaser(laSo, reveal, detail) : "";
+  const dungColors = reveal ? thanColorsHintVi(reveal.dungThan) : null;
+  const kyColors = reveal ? thanColorsHintVi(reveal.kyThan) : null;
 
   if (loading) {
     return (
@@ -73,8 +81,8 @@ export function CLaSoFullScreen() {
           </p>
           <Link
             to="/gio-sinh"
-            className="mt-4 inline-block py-3 px-6 font-display text-xs font-extrabold uppercase tracking-wider"
-            style={{ background: CT.forest, color: CT.cream }}
+            className="mt-4 inline-block py-3 px-6 font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-wider no-underline"
+            style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
           >
             Lập lịch →
           </Link>
@@ -82,18 +90,6 @@ export function CLaSoFullScreen() {
       </main>
     );
   }
-
-  const pillars = PILLAR_IDX.map((idx, i) => {
-    const can = detail.thienCan[idx] ?? "—";
-    const chi = detail.diaChi[idx] ?? "—";
-    const vn = can !== "—" && chi !== "—" ? `${can} ${chi}` : can;
-    return {
-      l: PILLAR_LABELS[i]!,
-      vn,
-      ng: reveal.hanh || "—",
-      hide: i === 2,
-    };
-  });
 
   const nguEntries = (["moc", "hoa", "tho", "kim", "thuy"] as const).map((k) => ({
     key: k,
@@ -117,10 +113,11 @@ export function CLaSoFullScreen() {
         <div className="mt-3.5">
           <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Mệnh</Mono>
           <h1
-            className="mt-1.5 font-display text-[32px] font-extrabold uppercase leading-none"
+            className="mt-1.5 font-[family-name:var(--display)] text-[32px] font-extrabold uppercase leading-none"
             style={{ letterSpacing: "-0.015em" }}
           >
-            {reveal.nhatChu} ·{" "}
+            {reveal.nhatChu}
+            {reveal.hanh !== "—" ? ` ${reveal.hanh}` : ""} ·{" "}
             <span
               className="font-serif italic font-bold normal-case"
               style={{ color: CT.goldDeep }}
@@ -128,9 +125,12 @@ export function CLaSoFullScreen() {
               {reveal.menh}
             </span>
           </h1>
-          {reveal.daiVan !== "—" ? (
-            <p className="mt-2 font-serif text-[13px] leading-relaxed" style={{ color: CT.ink2 }}>
-              Đại vận hiện tại: <strong style={{ color: CT.ink }}>{reveal.daiVan}</strong>
+          {menhMoTa ? (
+            <p
+              className="mt-2 font-serif text-[13px] italic leading-relaxed"
+              style={{ color: CT.ink2 }}
+            >
+              &ldquo;{menhMoTa}&rdquo;
             </p>
           ) : null}
         </div>
@@ -140,20 +140,49 @@ export function CLaSoFullScreen() {
           <div className="grid grid-cols-4 gap-1">
             {pillars.map((p) => (
               <div
-                key={p.l}
+                key={p.label}
                 className="text-center py-2.5 px-1"
                 style={{
-                  background: p.hide ? "rgba(154,124,34,0.1)" : "transparent",
-                  border: `1px solid ${p.hide ? CT.goldDeep : CT.hairline2}`,
+                  background: p.isDayMaster
+                    ? "rgba(154,124,34,0.1)"
+                    : "transparent",
+                  border: `1px solid ${p.isDayMaster ? CT.goldDeep : CT.hairline2}`,
                 }}
               >
-                <Mono style={{ color: CT.muted, fontSize: 8 }}>{p.l}</Mono>
+                <Mono style={{ color: CT.muted, fontSize: 10 }}>{p.label}</Mono>
                 <div
-                  className="mt-1.5 font-display text-[13px] font-extrabold uppercase"
-                  style={{ color: p.hide ? CT.goldDeep : CT.ink, letterSpacing: "-0.005em" }}
+                  className="mt-1.5 font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase"
+                  style={{
+                    color: p.isDayMaster ? CT.goldDeep : CT.ink,
+                    letterSpacing: "-0.005em",
+                    ...DISPLAY2,
+                  }}
                 >
-                  {p.vn}
+                  {p.canChi}
                 </div>
+                {p.hanh !== "—" ? (
+                  <Mono
+                    style={{
+                      color: CT.muted,
+                      fontSize: 10,
+                      marginTop: 6,
+                      display: "block",
+                    }}
+                  >
+                    {p.hanh}
+                  </Mono>
+                ) : null}
+                <Mono
+                  style={{
+                    color: CT.muted,
+                    fontSize: 9,
+                    marginTop: 4,
+                    display: "block",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {p.subline}
+                </Mono>
               </div>
             ))}
           </div>
@@ -169,7 +198,10 @@ export function CLaSoFullScreen() {
                 key={row.key}
                 className="flex-1 flex flex-col items-center h-full justify-end"
               >
-                <div className="font-mono text-[10px] font-semibold mb-0.5" style={{ color: CT.ink }}>
+                <div
+                  className="font-mono text-[10px] font-semibold mb-0.5"
+                  style={{ color: CT.ink }}
+                >
                   {row.v}%
                 </div>
                 <div
@@ -180,7 +212,9 @@ export function CLaSoFullScreen() {
                     opacity: 0.85,
                   }}
                 />
-                <Mono style={{ color: CT.ink2, marginTop: 4, fontSize: 9 }}>{row.label}</Mono>
+                <Mono style={{ color: CT.ink2, marginTop: 4, fontSize: 9 }}>
+                  {row.label}
+                </Mono>
               </div>
             ))}
           </div>
@@ -195,7 +229,20 @@ export function CLaSoFullScreen() {
             }}
           >
             <Mono style={{ color: "#5e7d5e", fontSize: 9 }}>Dụng thần</Mono>
-            <div className="mt-1 font-display text-base font-bold">{reveal.dungThan}</div>
+            <div
+              className="mt-1 font-[family-name:var(--display-2)] text-base font-bold"
+              style={DISPLAY2}
+            >
+              {reveal.dungThan}
+            </div>
+            {dungColors ? (
+              <div
+                className="mt-0.5 font-serif text-[11.5px] leading-snug"
+                style={{ color: CT.ink2 }}
+              >
+                {dungColors}
+              </div>
+            ) : null}
           </div>
           <div
             className="p-3"
@@ -205,9 +252,66 @@ export function CLaSoFullScreen() {
             }}
           >
             <Mono style={{ color: CT.red, fontSize: 9 }}>Kỵ thần</Mono>
-            <div className="mt-1 font-display text-base font-bold">{reveal.kyThan}</div>
+            <div
+              className="mt-1 font-[family-name:var(--display-2)] text-base font-bold"
+              style={DISPLAY2}
+            >
+              {reveal.kyThan}
+            </div>
+            {kyColors ? (
+              <div
+                className="mt-0.5 font-serif text-[11.5px] leading-snug"
+                style={{ color: CT.ink2 }}
+              >
+                {kyColors}
+              </div>
+            ) : null}
           </div>
         </div>
+
+        {detail.daiVanList.length > 0 ? (
+          <div className="mt-5">
+            <Mono style={{ color: CT.muted, fontSize: 9, marginBottom: 8 }}>
+              Đại vận
+            </Mono>
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {detail.daiVanList.map((row) => (
+                <div
+                  key={`${row.label}-${row.years}`}
+                  className="min-w-[72px] shrink-0 px-2 py-2 text-center"
+                  style={{
+                    background: row.isActive
+                      ? "rgba(154,124,34,0.1)"
+                      : "transparent",
+                    border: `1px solid ${row.isActive ? CT.goldDeep : CT.hairline2}`,
+                  }}
+                >
+                  <div
+                    className="font-[family-name:var(--display-2)] text-[11px] font-bold uppercase tracking-[-0.005em]"
+                    style={{
+                      color: row.isActive ? CT.goldDeep : CT.ink,
+                      ...DISPLAY2,
+                    }}
+                  >
+                    {row.label}
+                  </div>
+                  {row.years !== "—" ? (
+                    <Mono
+                      style={{
+                        color: CT.muted,
+                        fontSize: 9,
+                        marginTop: 4,
+                        display: "block",
+                      }}
+                    >
+                      {row.years}
+                    </Mono>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div
           className="mt-6 p-3.5"
@@ -221,26 +325,15 @@ export function CLaSoFullScreen() {
             className="mt-1.5 font-serif italic text-[13px] leading-relaxed"
             style={{ color: CT.ink }}
           >
-            Lá số của bạn đã sẵn sàng — đọc luận giải Bát tự đầy đủ để hiểu tính cách, vận năm
-            và gợi ý thực tế.
+            &ldquo;{nlttTeaser}&rdquo;
           </p>
-          {baziUnlocked ? (
-            <Link
-              to="/toi/luan-bat-tu"
-              className="mt-3.5 inline-block w-full py-2.5 text-center font-display text-xs font-extrabold uppercase tracking-wider no-underline"
-              style={{ background: CT.forest, color: CT.cream }}
-            >
-              Đọc luận giải Bát tự đầy đủ →
-            </Link>
-          ) : (
-            <Link
-              to="/dat-lich"
-              className="mt-3.5 inline-block w-full py-2.5 text-center font-display text-xs font-extrabold uppercase tracking-wider no-underline"
-              style={{ background: CT.forest, color: CT.cream }}
-            >
-              Mở luận giải · xem gói →
-            </Link>
-          )}
+          <Link
+            to="/toi/luan-bat-tu"
+            className="mt-3.5 inline-block w-full py-2.5 text-center font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-wider no-underline"
+            style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
+          >
+            Đọc luận giải Bát tự đầy đủ →
+          </Link>
         </div>
       </div>
     </main>

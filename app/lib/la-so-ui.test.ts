@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import type { LaSoJson } from "./api-types";
 import {
+  buildLaSoFullPillarRows,
+  buildLaSoNlttTeaser,
   extractHourPillarPreview,
   extractLaSoChiTietEnrichment,
+  extractMenhMoTa,
   laSoJsonToChiTiet,
   laSoJsonToRevealProps,
   mergeLaSoJsonForChiTietDisplay,
   profileHasLaso,
+  thanColorsHintVi,
 } from "./la-so-ui";
 
 describe("profileHasLaso", () => {
@@ -326,5 +330,79 @@ describe("extractHourPillarPreview", () => {
 
   it("returns null when hour pillar missing", () => {
     expect(extractHourPillarPreview({ pillars: {} })).toBeNull();
+  });
+});
+
+describe("extractMenhMoTa", () => {
+  it("returns nap_am mo_ta only", () => {
+    expect(
+      extractMenhMoTa({
+        pillars: {
+          year: {
+            nap_am: {
+              mo_ta: "Nước sông dài — hợp người làm việc bền bỉ.",
+            },
+          },
+        },
+      }),
+    ).toBe("Nước sông dài — hợp người làm việc bền bỉ.");
+  });
+});
+
+describe("buildLaSoFullPillarRows", () => {
+  it("builds four pillars with day master highlight metadata", () => {
+    const rows = buildLaSoFullPillarRows(
+      {
+        pillars: {
+          year: { can: { name: "Canh", hanh: "Kim" }, chi: { name: "Ngọ" } },
+          month: { can: { name: "Quý", hanh: "Thủy" }, chi: { name: "Mùi" } },
+          day: { can: { name: "Quý", hanh: "Thủy" }, chi: { name: "Tỵ" } },
+          hour: { can: { name: "Ất", hanh: "Mộc" }, chi: { name: "Mão" } },
+        },
+      },
+      { ngay_sinh: "1990-05-20", gio_sinh: "05:00:00" },
+    );
+    expect(rows).toHaveLength(4);
+    expect(rows[0]?.label).toBe("Niên");
+    expect(rows[0]?.hanh).toBe("Kim");
+    expect(rows[2]?.isDayMaster).toBe(true);
+    expect(rows[2]?.subline).toBe("NHẬT CHỦ");
+    expect(rows[3]?.subline).toMatch(/h/);
+  });
+});
+
+describe("thanColorsHintVi", () => {
+  it("combines palette for Kim · Thủy", () => {
+    expect(thanColorsHintVi("Kim · Thủy")).toBe("Mầu trắng, xám, đen, xanh navy");
+  });
+
+  it("combines palette for Thổ · Hỏa", () => {
+    expect(thanColorsHintVi("Thổ · Hỏa")).toBe("Mầu vàng, nâu, đỏ, hồng");
+  });
+});
+
+describe("buildLaSoNlttTeaser", () => {
+  it("builds deterministic teaser from chart facts", () => {
+    const raw = {
+      nhat_chu: "Quý",
+      hanh: "Thủy",
+      menh: "Trường Lưu Thủy",
+      dung_than: "Kim · Thủy",
+      ky_than: "Thổ · Hỏa",
+      thap_than: { dominant: { name: "Thương Quan" } },
+      dai_van: {
+        current: { display: "Bính Tuất", age_range: "32-41" },
+        cycles: [{ display: "Bính Tuất", start_age: 32, end_age: 41 }],
+      },
+    };
+    const reveal = laSoJsonToRevealProps(raw);
+    const detail = laSoJsonToChiTiet({
+      ngu_hanh: { Kim: 22, Moc: 25, Thuy: 25, Hoa: 10, Tho: 18 },
+    });
+    expect(reveal).not.toBeNull();
+    const text = buildLaSoNlttTeaser(raw, reveal!, detail);
+    expect(text).toContain("Nhật chủ Quý Thủy");
+    expect(text).toContain("Dụng Kim · Thủy");
+    expect(text).toContain("Thương Quan");
   });
 });
