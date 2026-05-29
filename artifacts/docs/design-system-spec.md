@@ -55,7 +55,7 @@ Port from `artifacts/design/ngaylanhthangtot-vn/b-shared.jsx` + `c-screens-a.jsx
 |---|---|---|
 | `Logo`, `LogoMark` | `b-shared.jsx` | Mark in app chrome; full lockup splash/landing only |
 | `BackBar` | `b-shared.jsx` | Mandatory on every detail route |
-| `Mono`, `Stamp`, `Kanji` | `b-shared.jsx` | Kickers, score disc, watermarks |
+| `Mono`, `Kanji` | `b-shared.jsx` | Kickers, watermarks |
 | `Ticket` | `b-shared.jsx` | **Share/print only** — not default result surface |
 | `CBottomNav` | `c-screens-a.jsx` | **3 tabs:** Lịch · Tra cứu · Tôi |
 | `CSegmented` | `c-screens-a.jsx` | Tab 1: Hôm nay \| Tháng; Tab 2: Ngày tốt \| Hợp tuổi |
@@ -76,7 +76,18 @@ No theme toggle. No gradients. No rounded cards with left-border accents — the
 
 ## shadcn/ui (`app/components/ui/`)
 
-Keep existing Radix primitives for forms, dialogs, sheets. Direction C screens compose brand primitives + minimal shadcn — do not replace lịch-tờ patterns with generic Card components.
+Minimal Radix subset only — do not add new shadcn components without a live import site:
+
+| File | Use |
+|---|---|
+| `button.tsx` | Auth layout fallback CTA |
+| `select.tsx` | Hợp tuổi + profile edit pickers |
+| `collapsible.tsx` | Methodology accordions |
+| `skeleton.tsx` | Lịch recompute loading |
+| `sonner.tsx` | Global toast host (`root.tsx`) |
+| `utils.ts` | `cn()` helper for above |
+
+Direction C screens compose brand primitives + this list — do not replace lịch-tờ patterns with generic Card/Dialog components.
 
 ---
 

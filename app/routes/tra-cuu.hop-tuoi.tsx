@@ -24,7 +24,7 @@ import {
   profileToBatTuPersonQuery,
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { hopTuoiPayloadToPanel } from "~/lib/hop-tuoi-result";
 import { persistHopTuoiKetQua } from "~/lib/hop-tuoi-session";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
@@ -32,8 +32,6 @@ import { BAT_TU_SOURCE_TRA_CUU } from "~/lib/tra-cuu-pick";
 import { useProfile } from "~/hooks/useProfile";
 
 const HOP_OTHER_BIRTH_TIME_DEFAULT = "__default__";
-
-const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
 /** Maket CHopTuoi: label + value row aligned across 2-col grid. */
 const FIELD_VALUE_ROW =

@@ -28,7 +28,7 @@ import {
   birthEditLimitReached,
   birthEditsRemaining,
 } from "~/lib/birth-edit-limit";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import {
   EDIT_PROFILE_UNSET_BIRTH_TIME,
   formatConvertDateLunarHint,
@@ -43,8 +43,6 @@ const UNSET = EDIT_PROFILE_UNSET_BIRTH_TIME;
 
 const DELETE_ACCOUNT_EMAIL =
   "mailto:privacy@ngaylanhthangtot.vn?subject=Y%C3%AAu%20c%E1%BA%A7u%20xo%C3%A1%20t%C3%A0i%20kho%E1%BA%A3n";
-
-const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
 function birthDataChanged(
   profile: Profile,

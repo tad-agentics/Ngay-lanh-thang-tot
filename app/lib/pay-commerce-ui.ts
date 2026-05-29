@@ -1,9 +1,10 @@
 import type { PackageSku } from "~/lib/api-types";
+import { DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { PAY_CONFIRM_TIER_META } from "~/lib/pay-confirm-ui";
 import { UI_PACKAGES } from "~/lib/packages";
 
-export const PAY_DISPLAY = { fontFamily: "var(--display)" } as const;
-export const PAY_DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
+export const PAY_DISPLAY = DISPLAY;
+export const PAY_DISPLAY2 = DISPLAY2;
 export const PAY_MONO = { fontFamily: "var(--mono)" } as const;
 
 const YEARLY_SKU: PackageSku = "goi_12thang";

@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 import { BackBar, Mono } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import {
   buildLaSoFullPillarRows,
   buildLaSoNlttTeaser,
@@ -13,8 +13,6 @@ import {
   thanColorsHintVi,
 } from "~/lib/la-so-ui";
 import type { LaSoJson } from "~/lib/api-types";
-
-const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
 const NGU_HANH_BAR: Record<string, string> = {
   kim: "#c8c5a0",

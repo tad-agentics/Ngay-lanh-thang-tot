@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Mono } from "~/components/brand";
 import { CPayFailureSheet } from "~/components/direction-c/CPayFailureSheet";
 import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { useProfile } from "~/hooks/useProfile";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import {
@@ -21,8 +21,6 @@ import { brandedSubscriptionPlanName } from "~/lib/pay-commerce-ui";
 import { formatVnd, payosBankLabel } from "~/lib/payos-display";
 import { UI_PACKAGES } from "~/lib/packages";
 
-const DISPLAY = { fontFamily: "var(--display)" } as const;
-const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 const WARM_SCRIM = "rgba(24,21,14,0.45)";
 
 const PAYMENT_METHODS = [

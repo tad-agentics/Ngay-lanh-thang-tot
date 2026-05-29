@@ -14,10 +14,7 @@ import {
   buildHopTuoiNextStepCopy,
   stashTraCuuIntentPreset,
 } from "~/lib/hop-tuoi-ui";
-import { CT } from "~/lib/c-tokens";
-
-const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
-const DISPLAY = { fontFamily: "var(--display)" } as const;
+import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 
 function gradHeadline(label: string): string {
   return label.toUpperCase();

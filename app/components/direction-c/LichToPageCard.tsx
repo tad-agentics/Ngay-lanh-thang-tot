@@ -25,8 +25,6 @@ export type LichToPageCardProps = {
   onPrev?: () => void;
   onNext?: () => void;
   onVerdictClick?: () => void;
-  /** @deprecated Use `reasoning` — kept for callers not yet migrated. */
-  afterRows?: ReactNode;
 };
 
 export function LichToPageCard({
@@ -44,9 +42,8 @@ export function LichToPageCard({
   onPrev,
   onNext,
   onVerdictClick,
-  afterRows,
 }: LichToPageCardProps) {
-  const inlineReasoning = reasoning ?? afterRows;
+  const inlineReasoning = reasoning;
   return (
     <div
       style={{

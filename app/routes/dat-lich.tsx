@@ -4,7 +4,7 @@ import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import type { PackageSku } from "~/lib/api-types";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { subscriptionStatusLine } from "~/lib/entitlements";
 import { createPayosCheckout } from "~/lib/payos";
 import {
@@ -23,9 +23,6 @@ const SUBSCRIPTION_TIERS = UI_PACKAGES.filter((p) =>
   SUBSCRIPTION_SKUS.includes(p.sku),
 );
 const ADDON_PACKAGES = UI_PACKAGES.filter((p) => ADDON_SKUS.includes(p.sku));
-
-const DISPLAY = { fontFamily: "var(--display)" } as const;
-const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;
 
 const TIER_META = PAY_CONFIRM_TIER_META;
 const ADDON_META = PAY_CONFIRM_ADDON_META;
