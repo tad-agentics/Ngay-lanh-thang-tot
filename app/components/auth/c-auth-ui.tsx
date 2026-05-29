@@ -48,7 +48,7 @@ export const btnPrimaryGold: CSSProperties = {
   border: "none",
   fontFamily: "var(--display-2)",
   fontWeight: 800,
-  fontSize: 14,
+  fontSize: 14.5,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
   cursor: "pointer",
@@ -59,7 +59,7 @@ export const authEmailSecondary: CSSProperties = {
   marginTop: 16,
   textAlign: "center",
   fontFamily: "var(--serif)",
-  fontSize: 13,
+  fontSize: 13.5,
   fontStyle: "italic",
   color: "rgba(237,231,211,0.55)",
   lineHeight: 1.65,
@@ -79,7 +79,7 @@ export const btnOutlineCream: CSSProperties = {
   border: "1px solid rgba(237,231,211,0.25)",
   fontFamily: "var(--display-2)",
   fontWeight: 700,
-  fontSize: 13,
+  fontSize: 13.5,
   letterSpacing: "0.08em",
   textTransform: "uppercase",
   cursor: "pointer",
@@ -91,7 +91,7 @@ export const btnOutlineCream: CSSProperties = {
 
 export const inputLabel: CSSProperties = {
   fontFamily: "var(--serif)",
-  fontSize: 11.5,
+  fontSize: 12,
   color: "rgba(237,231,211,0.55)",
 };
 
@@ -112,7 +112,7 @@ export function inputUnderline(active = false, error = false): CSSProperties {
     color: C.cream,
     fontFamily: "var(--display-2)",
     fontWeight: 600,
-    fontSize: 17,
+    fontSize: 17.5,
     letterSpacing: "-0.005em",
     borderRadius: 0,
     boxSizing: "border-box",

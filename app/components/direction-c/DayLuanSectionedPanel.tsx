@@ -54,11 +54,11 @@ export function DayLuanSectionedPanel({
 
       {iso ? (
         <div className="flex items-baseline justify-between gap-2 mb-1">
-          <Mono style={{ color: CT.goldDeep, fontSize: 10 }}>
+          <Mono style={{ color: CT.goldDeep, fontSize: 10.5 }}>
             Phân tích chi tiết · 4 yếu tố
           </Mono>
           <span
-            className="font-serif text-[11.5px] shrink-0"
+            className="font-serif text-[12px] shrink-0"
             style={{ color: CT.muted }}
           >
             {formatDaySectionSubline(iso, canChi)}
@@ -76,13 +76,13 @@ export function DayLuanSectionedPanel({
           }}
         >
           <div className="flex items-baseline justify-between gap-2">
-            <Mono style={{ color: CT.muted, fontSize: 9 }}>{s.title}</Mono>
+            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>{s.title}</Mono>
             {s.score ? (
               <span
                 style={{
                   fontFamily: "var(--display-2)",
                   fontWeight: 700,
-                  fontSize: 13,
+                  fontSize: 13.5,
                   color: CT.goldDeep,
                   fontVariantNumeric: "tabular-nums",
                 }}
@@ -96,7 +96,7 @@ export function DayLuanSectionedPanel({
               marginTop: 4,
               fontFamily: "var(--display-2)",
               fontWeight: 700,
-              fontSize: 16,
+              fontSize: 16.5,
               color: CT.ink,
               letterSpacing: "-0.005em",
             }}
@@ -104,7 +104,7 @@ export function DayLuanSectionedPanel({
             {s.verdict}
           </div>
           <p
-            className="font-serif text-[13px]"
+            className="font-serif text-[13.5px]"
             style={{
               marginTop: 6,
               color: CT.ink2,
@@ -120,7 +120,7 @@ export function DayLuanSectionedPanel({
               style={{
                 color: CT.goldDeep,
                 fontFamily: "var(--mono)",
-                fontSize: 10,
+                fontSize: 10.5,
                 background: "none",
                 border: "none",
               }}
@@ -139,9 +139,9 @@ export function DayLuanSectionedPanel({
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <Mono style={{ color: CT.muted, fontSize: 9 }}>Điểm nền</Mono>
+              <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Điểm nền</Mono>
               <p
-                className="mt-1 font-serif text-[12px] leading-snug"
+                className="mt-1 font-serif text-[12.5px] leading-snug"
                 style={{ color: CT.muted }}
               >
                 {formatLuanBaseScoreNote(baseScore)}
@@ -152,7 +152,7 @@ export function DayLuanSectionedPanel({
               style={{
                 fontFamily: "var(--display-2)",
                 fontWeight: 700,
-                fontSize: 13,
+                fontSize: 13.5,
                 color: CT.goldDeep,
                 fontVariantNumeric: "tabular-nums",
               }}
@@ -176,7 +176,7 @@ export function DayLuanSectionedPanel({
             style={{
               fontFamily: "var(--display)",
               fontWeight: 800,
-              fontSize: 16,
+              fontSize: 16.5,
               color: CT.ink,
               textTransform: "uppercase",
               letterSpacing: "-0.005em",
@@ -189,7 +189,7 @@ export function DayLuanSectionedPanel({
               style={{
                 fontFamily: "var(--display-2)",
                 fontWeight: 800,
-                fontSize: 32,
+                fontSize: 32.5,
                 color: CT.goldDeep,
                 lineHeight: 1,
                 letterSpacing: "-0.015em",
@@ -198,7 +198,7 @@ export function DayLuanSectionedPanel({
               {totalScore}
             </span>
             <span
-              className="font-serif text-[13px]"
+              className="font-serif text-[13.5px]"
               style={{ color: CT.muted }}
             >
               /100
@@ -208,7 +208,7 @@ export function DayLuanSectionedPanel({
       ) : null}
 
       <div style={{ marginTop: 18 }}>
-        <Mono style={{ color: CT.muted, fontSize: 9 }}>Nguồn đối chiếu</Mono>
+        <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Nguồn đối chiếu</Mono>
         <div className="mt-2 flex flex-col" style={{ gap: 6 }}>
           {sourceLabels.map(([n, t]) => (
             <div
@@ -217,7 +217,7 @@ export function DayLuanSectionedPanel({
               className="flex gap-2 scroll-mt-24"
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 12,
+                fontSize: 12.5,
                 color: CT.ink2,
                 lineHeight: 1.45,
               }}
@@ -226,7 +226,7 @@ export function DayLuanSectionedPanel({
                 style={{
                   color: CT.goldDeep,
                   fontFamily: "var(--mono)",
-                  fontSize: 10,
+                  fontSize: 10.5,
                   minWidth: 24,
                 }}
               >

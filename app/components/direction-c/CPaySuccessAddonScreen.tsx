@@ -67,23 +67,23 @@ export function CPaySuccessAddonScreen() {
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-10 text-center">
         <PaySuccessStamp size={84} />
 
-        <Mono className="mt-6 text-[10px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
+        <Mono className="mt-6 text-[10.5px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
           Đã mua thành công
         </Mono>
         <h2
-          className="mt-2.5 max-w-[320px] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.015em]"
+          className="mt-2.5 max-w-[320px] text-[28.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.015em]"
           style={{ ...PAY_DISPLAY, color: CT.ink }}
         >
           {headlineTitle}
           <br />
           <span
-            className="font-serif text-[28px] font-bold italic normal-case tracking-normal"
+            className="font-serif text-[28.5px] font-bold italic normal-case tracking-normal"
             style={{ color: CT.goldDeep }}
           >
             của bạn đã mở
           </span>
         </h2>
-        <p className="mt-3 max-w-[300px] text-[13.5px] leading-snug" style={{ color: CT.ink2 }}>
+        <p className="mt-3 max-w-[300px] text-[14px] leading-snug" style={{ color: CT.ink2 }}>
           {loading ? (
             "Đang xác nhận thanh toán…"
           ) : sku === "luan_bat_tu" ? (
@@ -110,17 +110,17 @@ export function CPaySuccessAddonScreen() {
             className="mt-7 w-full max-w-[320px] border px-4 py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
           >
-            <div className="flex justify-between text-[12.5px]" style={{ color: CT.ink2 }}>
+            <div className="flex justify-between text-[13px]" style={{ color: CT.ink2 }}>
               <span>{headlineTitle}</span>
               <span>{addonMeta?.per ?? "một lần"}</span>
             </div>
             <div
-              className="mt-1.5 flex justify-between text-[12.5px]"
+              className="mt-1.5 flex justify-between text-[13px]"
               style={{ color: CT.ink2 }}
             >
               <span>Mã giao dịch</span>
               <span
-                className="text-[11px] tracking-[0.04em]"
+                className="text-[11.5px] tracking-[0.04em]"
                 style={{ ...PAY_MONO, color: CT.muted }}
               >
                 {orderRef}
@@ -137,10 +137,10 @@ export function CPaySuccessAddonScreen() {
               borderColor: CT.goldDeep,
             }}
           >
-            <Mono className="text-[9px]" style={{ color: CT.goldDeep }}>
+            <Mono className="text-[9.5px]" style={{ color: CT.goldDeep }}>
               Còn thiếu
             </Mono>
-            <p className="mt-1 text-[12.5px] leading-snug" style={{ color: CT.ink2 }}>
+            <p className="mt-1 text-[13px] leading-snug" style={{ color: CT.ink2 }}>
               {sku === "luan_tieu_van" ? (
                 <>
                   Bạn chưa có{" "}
@@ -162,7 +162,7 @@ export function CPaySuccessAddonScreen() {
             </p>
             <Link
               to={`/dat-lich?plan=${subscriptionUpsell.planSku}`}
-              className="mt-2 inline-block text-[11.5px] font-bold uppercase tracking-[0.06em] no-underline"
+              className="mt-2 inline-block text-[12px] font-bold uppercase tracking-[0.06em] no-underline"
               style={{ ...PAY_DISPLAY2, color: CT.goldDeep }}
             >
               Xem chi tiết →
@@ -172,7 +172,7 @@ export function CPaySuccessAddonScreen() {
 
         <Link
           to={ctaTo}
-          className="mt-[22px] block w-full max-w-[320px] py-3.5 text-center text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+          className="mt-[22px] block w-full max-w-[320px] py-3.5 text-center text-[13.5px] font-extrabold uppercase tracking-[0.08em] no-underline"
           style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
         >
           Đọc luận giải ngay →

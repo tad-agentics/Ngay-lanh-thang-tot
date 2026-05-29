@@ -38,14 +38,14 @@ function AuthCallbackErrorView({
       >
         <LogoMark dark size={48} />
         <div>
-          <Mono style={{ color: C.red, fontSize: 10, letterSpacing: "0.22em" }}>
+          <Mono style={{ color: C.red, fontSize: 10.5, letterSpacing: "0.22em" }}>
             Không đăng nhập được
           </Mono>
           <p
             style={{
               marginTop: 12,
               fontFamily: "var(--serif)",
-              fontSize: 14,
+              fontSize: 14.5,
               color: "rgba(237,231,211,0.75)",
               lineHeight: 1.55,
             }}
@@ -194,14 +194,14 @@ export default function AuthCallback() {
       >
         <LogoMark dark size={48} />
         <div>
-          <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+          <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
             Đang xác minh Google
           </Mono>
           <p
             style={{
               marginTop: 12,
               fontFamily: "var(--serif)",
-              fontSize: 14,
+              fontSize: 14.5,
               color: "rgba(237,231,211,0.7)",
               lineHeight: 1.55,
               maxWidth: 280,

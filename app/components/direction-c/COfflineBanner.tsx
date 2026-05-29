@@ -20,7 +20,7 @@ export function COfflineBanner() {
         />
         <path d="M3 3 L21 21" stroke="#e8d9a3" strokeWidth="1.6" />
       </svg>
-      <p className="m-0 flex-1 font-serif text-[11.5px] leading-snug">
+      <p className="m-0 flex-1 font-serif text-[12px] leading-snug">
         <strong className="font-semibold">Đang offline.</strong> Trang lịch đã tải vẫn xem được — luận
         giải cần kết nối lại.
       </p>

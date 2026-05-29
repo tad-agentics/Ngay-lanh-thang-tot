@@ -54,7 +54,7 @@ export default function PublicShareCardPage() {
       {err ? (
         <p
           style={{
-            fontSize: 16,
+            fontSize: 16.5,
             color: "rgba(237,231,211,0.75)",
             lineHeight: 1.55,
             margin: 0,
@@ -65,7 +65,7 @@ export default function PublicShareCardPage() {
       ) : !payload ? (
         <p
           style={{
-            fontSize: 16,
+            fontSize: 16.5,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.55,
             margin: 0,
@@ -102,7 +102,7 @@ export default function PublicShareCardPage() {
                 style={{
                   fontFamily: "var(--display-2)",
                   fontWeight: 800,
-                  fontSize: 20,
+                  fontSize: 20.5,
                   letterSpacing: "-0.02em",
                   lineHeight: 1.2,
                   margin: "0 0 10px",
@@ -115,7 +115,7 @@ export default function PublicShareCardPage() {
                 <p
                   style={{
                     fontFamily: "var(--mono)",
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: "var(--muted, #6a5f3f)",
                     margin: "0 0 8px",
                     letterSpacing: "0.1em",
@@ -129,7 +129,7 @@ export default function PublicShareCardPage() {
                 style={{
                   fontFamily: "var(--serif)",
                   fontWeight: 600,
-                  fontSize: 22,
+                  fontSize: 22.5,
                   color: "var(--gold-deep, #7d6219)",
                   margin: "0 0 6px",
                   lineHeight: 1.25,
@@ -141,7 +141,7 @@ export default function PublicShareCardPage() {
                 <p
                   style={{
                     fontFamily: "var(--mono)",
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: "var(--muted, #6a5f3f)",
                     margin: "0 0 14px",
                     letterSpacing: "0.08em",
@@ -154,7 +154,7 @@ export default function PublicShareCardPage() {
               <p
                 style={{
                   fontFamily: "var(--serif)",
-                  fontSize: 16,
+                  fontSize: 16.5,
                   lineHeight: 1.55,
                   color: "var(--ink-2, #3a3a3a)",
                   margin: "0 0 14px",
@@ -165,7 +165,7 @@ export default function PublicShareCardPage() {
               <p
                 style={{
                   fontFamily: "var(--mono)",
-                  fontSize: 12,
+                  fontSize: 12.5,
                   color: "var(--muted, #6a5f3f)",
                   margin: 0,
                 }}
@@ -182,7 +182,7 @@ export default function PublicShareCardPage() {
           to="/"
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 16,
+            fontSize: 16.5,
             color: "var(--gold, #c5a55a)",
             textDecoration: "underline",
             textUnderlineOffset: 4,

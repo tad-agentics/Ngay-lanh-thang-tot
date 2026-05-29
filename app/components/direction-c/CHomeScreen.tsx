@@ -143,13 +143,13 @@ export function CHomeScreen() {
               style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
             >
               <div className="flex items-baseline gap-2">
-                <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
-                <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                <span style={{ color: CT.goldDeep, fontSize: 14.5 }}>★</span>
+                <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
                   {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
                 </Mono>
               </div>
               <div
-                className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+                className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
                 style={{ color: CT.ink }}
               >
                 Luận giải Bát tự năm
@@ -177,13 +177,13 @@ export function CHomeScreen() {
               style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
             >
               <div className="flex items-baseline gap-2">
-                <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
-                <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                <span style={{ color: CT.goldDeep, fontSize: 14.5 }}>★</span>
+                <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
                   {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
                 </Mono>
               </div>
               <div
-                className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+                className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
                 style={{ color: CT.ink }}
               >
                 Luận giải Tiểu vận {tieuVanYear}

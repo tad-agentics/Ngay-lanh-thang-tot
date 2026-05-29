@@ -58,14 +58,14 @@ export function TraCuuMethodologyCollapsible({
         className="flex w-full items-center justify-between gap-2 px-3.5 py-3 text-left [&[data-state=open]>svg]:rotate-180"
         style={{ background: "transparent", border: "none", cursor: "pointer" }}
       >
-        <Mono style={{ color: CT.goldDeep, fontSize: 10, letterSpacing: "0.12em" }}>
+        <Mono style={{ color: CT.goldDeep, fontSize: 10.5, letterSpacing: "0.12em" }}>
           Cách chọn ngày
         </Mono>
         <ChevronDown className="size-4 shrink-0" style={{ color: CT.muted }} />
       </CollapsibleTrigger>
       <CollapsibleContent className="px-3.5 pb-3.5">
         <p
-          className="m-0 font-serif text-[13px] leading-relaxed"
+          className="m-0 font-serif text-[13.5px] leading-relaxed"
           style={{ color: CT.ink2 }}
         >
           {summary}
@@ -75,11 +75,11 @@ export function TraCuuMethodologyCollapsible({
             {weights.map((w) => (
               <li
                 key={w.factor}
-                className="flex items-baseline justify-between gap-3 font-serif text-[12.5px]"
+                className="flex items-baseline justify-between gap-3 font-serif text-[13px]"
                 style={{ color: CT.ink }}
               >
                 <span>{w.labelVi}</span>
-                <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
                   {w.maxPoints > 0 ? `${w.maxPoints} đ` : "—"}
                 </Mono>
               </li>
@@ -90,12 +90,12 @@ export function TraCuuMethodologyCollapsible({
           {DEFAULT_STEPS.map(([n, title, body]) => (
             <div key={n} className="flex gap-2.5">
               <span
-                className="shrink-0 font-mono text-[10px] font-bold tabular-nums"
+                className="shrink-0 font-mono text-[10.5px] font-bold tabular-nums"
                 style={{ color: CT.goldDeep, marginTop: 2 }}
               >
                 {n}
               </span>
-              <p className="m-0 font-serif text-[12.5px] leading-snug" style={{ color: CT.ink }}>
+              <p className="m-0 font-serif text-[13px] leading-snug" style={{ color: CT.ink }}>
                 <strong>{title}</strong>
                 {" — "}
                 <span style={{ color: CT.ink2 }}>{body}</span>
@@ -105,7 +105,7 @@ export function TraCuuMethodologyCollapsible({
         </div>
         )}
         <p
-          className="mt-3 pt-2 font-serif text-[11px] italic leading-snug"
+          className="mt-3 pt-2 font-serif text-[11.5px] italic leading-snug"
           style={{ color: CT.muted, borderTop: `1px solid ${CT.hairline2}` }}
         >
           Nguồn: Hiệp Kỷ Biện Phương · Ngọc Hạp Thông Thư · Trạch Cát truyền thống.

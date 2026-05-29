@@ -49,14 +49,14 @@ export default function QuenMatKhau() {
           flexDirection: "column",
         }}
       >
-        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
           Quên mật khẩu
         </Mono>
         <h1
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 32,
+            fontSize: 32.5,
             color: C.cream,
             lineHeight: 1.05,
             textTransform: "uppercase",
@@ -71,7 +71,7 @@ export default function QuenMatKhau() {
         <p
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 13.5,
+            fontSize: 14,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.55,
           }}
@@ -104,7 +104,7 @@ export default function QuenMatKhau() {
             marginTop: 14,
             textAlign: "center",
             fontFamily: "var(--serif)",
-            fontSize: 12.5,
+            fontSize: 13,
             color: "rgba(237,231,211,0.55)",
           }}
         >

@@ -35,7 +35,7 @@ const HOP_OTHER_BIRTH_TIME_DEFAULT = "__default__";
 
 /** Maket CHopTuoi: label + value row aligned across 2-col grid. */
 const FIELD_VALUE_ROW =
-  "mt-[3px] flex h-5 w-full min-w-0 items-center text-[13px] font-semibold tracking-[-0.005em]";
+  "mt-[3px] flex h-5 w-full min-w-0 items-center text-[13.5px] font-semibold tracking-[-0.005em]";
 
 const PURPOSE_OPTIONS = [
   { label: "cưới hỏi", value: "PHU_THE" },
@@ -201,7 +201,7 @@ export default function TraCuuHopTuoiRoute() {
       <CTraCuuSegmentedNav />
 
       <div className="flex-1 overflow-auto px-6 pb-24 pt-[22px]">
-        <div className="font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="font-serif text-[13.5px]" style={{ color: CT.muted }}>
           Bạn
         </div>
         <div
@@ -209,7 +209,7 @@ export default function TraCuuHopTuoiRoute() {
           style={{ background: CT.forest, color: CT.cream }}
         >
           <div
-            className="text-[15px] font-bold tracking-[-0.005em]"
+            className="text-[15.5px] font-bold tracking-[-0.005em]"
             style={{ ...DISPLAY2, color: CT.cream }}
           >
             {profile.display_name ?? "Bạn"}
@@ -224,7 +224,7 @@ export default function TraCuuHopTuoiRoute() {
           </div>
         </div>
 
-        <div className="mt-[22px] font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="mt-[22px] font-serif text-[13.5px]" style={{ color: CT.muted }}>
           Đối phương
         </div>
         <div
@@ -236,12 +236,12 @@ export default function TraCuuHopTuoiRoute() {
             placeholder="Họ tên (tuỳ chọn)"
             value={form.otherName}
             onChange={(e) => setForm((f) => ({ ...f, otherName: e.target.value }))}
-            className="w-full border-none bg-transparent p-0 text-[15px] font-bold tracking-[-0.005em] outline-none"
+            className="w-full border-none bg-transparent p-0 text-[15.5px] font-bold tracking-[-0.005em] outline-none"
             style={{ ...DISPLAY2, color: CT.ink }}
           />
           <div className="mt-2.5 grid grid-cols-2 gap-3.5">
             <div className="min-w-0">
-              <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
+              <div className="font-serif text-[10.5px]" style={{ color: CT.muted }}>
                 Ngày sinh
               </div>
               <div className={FIELD_VALUE_ROW}>
@@ -258,13 +258,13 @@ export default function TraCuuHopTuoiRoute() {
                       ngaySinh: formatDdMmYyyyWithAutoSlash(e.target.value),
                     }))
                   }
-                  className="h-full w-full min-w-0 border-none bg-transparent p-0 outline-none tabular-nums placeholder:font-normal placeholder:text-[13px]"
+                  className="h-full w-full min-w-0 border-none bg-transparent p-0 outline-none tabular-nums placeholder:font-normal placeholder:text-[13.5px]"
                   style={{ ...DISPLAY2, color: CT.ink }}
                 />
               </div>
             </div>
             <div className="min-w-0">
-              <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
+              <div className="font-serif text-[10.5px]" style={{ color: CT.muted }}>
                 Giờ sinh
               </div>
               <Select
@@ -313,7 +313,7 @@ export default function TraCuuHopTuoiRoute() {
                   key={g}
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, gioiTinh: g }))}
-                  className="flex-1 cursor-pointer border-none py-2 text-center text-[11px] font-bold uppercase tracking-[0.06em]"
+                  className="flex-1 cursor-pointer border-none py-2 text-center text-[11.5px] font-bold uppercase tracking-[0.06em]"
                   style={{
                     ...DISPLAY2,
                     background: sel ? CT.forest : "transparent",
@@ -328,17 +328,17 @@ export default function TraCuuHopTuoiRoute() {
           </div>
         </div>
 
-        <div className="mt-[22px] font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="mt-[22px] font-serif text-[13.5px]" style={{ color: CT.muted }}>
           Xem tương hợp cho việc:
         </div>
-        <div className="mt-2 font-serif text-[13px] leading-relaxed" style={{ color: CT.ink }}>
+        <div className="mt-2 font-serif text-[13.5px] leading-relaxed" style={{ color: CT.ink }}>
           {PURPOSE_OPTIONS.map((p, i) => {
             const sel = form.purposeLabel === p.label;
             return (
               <span key={`${p.label}-${i}`}>
                 <button
                   type="button"
-                  className="cursor-pointer border-none bg-transparent p-0 font-serif text-[13px]"
+                  className="cursor-pointer border-none bg-transparent p-0 font-serif text-[13.5px]"
                   style={{
                     color: CT.ink,
                     fontWeight: sel ? 600 : 400,
@@ -361,7 +361,7 @@ export default function TraCuuHopTuoiRoute() {
         </div>
 
         {hopOtherNgayInvalid ? (
-          <p className="mt-2 font-serif text-[11px]" style={{ color: CT.red }}>
+          <p className="mt-2 font-serif text-[11.5px]" style={{ color: CT.red }}>
             Vui lòng nhập đúng định dạng ngày sinh DD/MM/YYYY.
           </p>
         ) : null}
@@ -375,7 +375,7 @@ export default function TraCuuHopTuoiRoute() {
             ddMmYyyyInputToBatTuBirthDate(form.ngaySinh.trim()) == null
           }
           onClick={() => void handleSubmit()}
-          className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+          className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13.5px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
           style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
         >
           {busy ? "Đang phân tích…" : "Luận giải độ hòa hợp"}

@@ -259,7 +259,7 @@ export function CDayDetailScreen() {
                 color: savedPick ? CT.muted : CT.cream,
                 fontFamily: "var(--display-2)",
                 fontWeight: 800,
-                fontSize: 12,
+                fontSize: 12.5,
                 letterSpacing: "0.08em",
               }}
             >

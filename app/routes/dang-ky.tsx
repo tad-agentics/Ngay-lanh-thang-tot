@@ -134,7 +134,7 @@ export default function DangKy() {
         dark
         onBack={() => navigate(referralFromUrl ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}` : "/dang-nhap")}
         endAdornment={
-          <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9 }}>
+          <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9.5 }}>
             1 / 2
           </Mono>
         }
@@ -150,14 +150,14 @@ export default function DangKy() {
           flexDirection: "column",
         }}
       >
-        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
           Lập lá số · bước 1
         </Mono>
         <h1
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 36,
+            fontSize: 36.5,
             color: C.cream,
             lineHeight: 1,
             textTransform: "uppercase",
@@ -170,7 +170,7 @@ export default function DangKy() {
         <p
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 13.5,
+            fontSize: 14,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.55,
             maxWidth: 280,
@@ -221,7 +221,7 @@ export default function DangKy() {
               <span
                 style={{
                   fontFamily: "var(--serif)",
-                  fontSize: 12,
+                  fontSize: 12.5,
                   color: "rgba(237,231,211,0.5)",
                 }}
               >
@@ -259,7 +259,7 @@ export default function DangKy() {
                 style={{
                   marginTop: 6,
                   fontFamily: "var(--serif)",
-                  fontSize: 11,
+                  fontSize: 11.5,
                   color: "rgba(237,231,211,0.55)",
                   lineHeight: 1.45,
                 }}
@@ -283,7 +283,7 @@ export default function DangKy() {
               style={{
                 marginTop: 4,
                 fontFamily: "var(--serif)",
-                fontSize: 11,
+                fontSize: 11.5,
                 color: "rgba(237,231,211,0.45)",
               }}
             >
@@ -304,7 +304,7 @@ export default function DangKy() {
             marginTop: 12,
             textAlign: "center",
             fontFamily: "var(--serif)",
-            fontSize: 11,
+            fontSize: 11.5,
             color: "rgba(237,231,211,0.45)",
           }}
         >

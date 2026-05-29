@@ -150,14 +150,14 @@ export function CLaSoFullScreen() {
       <BackBar title="Lá số tứ trụ" />
 
       <div className="flex-1 overflow-auto px-6 pb-8 pt-1">
-        <p className="font-serif text-[12.5px] mt-1.5" style={{ color: CT.muted }}>
+        <p className="font-serif text-[13px] mt-1.5" style={{ color: CT.muted }}>
           {profile ? birthLine(profile) : ""}
         </p>
 
         <div className="mt-3.5">
-          <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Mệnh</Mono>
+          <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>Mệnh</Mono>
           <h1
-            className="mt-1.5 font-[family-name:var(--display)] text-[32px] font-extrabold uppercase leading-none"
+            className="mt-1.5 font-[family-name:var(--display)] text-[32.5px] font-extrabold uppercase leading-none"
             style={{ letterSpacing: "-0.015em" }}
           >
             {reveal.nhatChu}
@@ -171,7 +171,7 @@ export function CLaSoFullScreen() {
           </h1>
           {menhMoTa ? (
             <p
-              className="mt-2 font-serif text-[13px] italic leading-relaxed"
+              className="mt-2 font-serif text-[13.5px] italic leading-relaxed"
               style={{ color: CT.ink2 }}
             >
               &ldquo;{menhMoTa}&rdquo;
@@ -180,7 +180,7 @@ export function CLaSoFullScreen() {
         </div>
 
         <div className="mt-6">
-          <Mono style={{ color: CT.muted, fontSize: 9, marginBottom: 8 }}>Bốn trụ</Mono>
+          <Mono style={{ color: CT.muted, fontSize: 9.5, marginBottom: 8 }}>Bốn trụ</Mono>
           <div className="grid grid-cols-4 gap-1">
             {pillars.map((p) => (
               <div
@@ -193,9 +193,9 @@ export function CLaSoFullScreen() {
                   border: `1px solid ${p.isDayMaster ? CT.goldDeep : CT.hairline2}`,
                 }}
               >
-                <Mono style={{ color: CT.muted, fontSize: 10 }}>{p.label}</Mono>
+                <Mono style={{ color: CT.muted, fontSize: 10.5 }}>{p.label}</Mono>
                 <div
-                  className="mt-1.5 font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase"
+                  className="mt-1.5 font-[family-name:var(--display-2)] text-[13.5px] font-extrabold uppercase"
                   style={{
                     color: p.isDayMaster ? CT.goldDeep : CT.ink,
                     letterSpacing: "-0.005em",
@@ -208,7 +208,7 @@ export function CLaSoFullScreen() {
                   <Mono
                     style={{
                       color: CT.muted,
-                      fontSize: 10,
+                      fontSize: 10.5,
                       marginTop: 6,
                       display: "block",
                     }}
@@ -219,7 +219,7 @@ export function CLaSoFullScreen() {
                 <Mono
                   style={{
                     color: CT.muted,
-                    fontSize: 9,
+                    fontSize: 9.5,
                     marginTop: 4,
                     display: "block",
                     lineHeight: 1.3,
@@ -233,7 +233,7 @@ export function CLaSoFullScreen() {
         </div>
 
         <div className="mt-5">
-          <Mono style={{ color: CT.muted, fontSize: 9, marginBottom: 10 }}>
+          <Mono style={{ color: CT.muted, fontSize: 9.5, marginBottom: 10 }}>
             Ngũ hành · sức mạnh trong lá số
           </Mono>
           <div className="flex items-end gap-2 h-[70px]">
@@ -243,7 +243,7 @@ export function CLaSoFullScreen() {
                 className="flex-1 flex flex-col items-center h-full justify-end"
               >
                 <div
-                  className="font-mono text-[10px] font-semibold mb-0.5"
+                  className="font-mono text-[10.5px] font-semibold mb-0.5"
                   style={{ color: CT.ink }}
                 >
                   {row.v}%
@@ -256,7 +256,7 @@ export function CLaSoFullScreen() {
                     opacity: 0.85,
                   }}
                 />
-                <Mono style={{ color: CT.ink2, marginTop: 4, fontSize: 9 }}>
+                <Mono style={{ color: CT.ink2, marginTop: 4, fontSize: 9.5 }}>
                   {row.label}
                 </Mono>
               </div>
@@ -272,7 +272,7 @@ export function CLaSoFullScreen() {
               border: "1px solid rgba(122,154,128,0.3)",
             }}
           >
-            <Mono style={{ color: "#5e7d5e", fontSize: 9 }}>Dụng thần</Mono>
+            <Mono style={{ color: "#5e7d5e", fontSize: 9.5 }}>Dụng thần</Mono>
             <div
               className="mt-1 font-[family-name:var(--display-2)] text-base font-bold"
               style={DISPLAY2}
@@ -281,7 +281,7 @@ export function CLaSoFullScreen() {
             </div>
             {dungColors ? (
               <div
-                className="mt-0.5 font-serif text-[11.5px] leading-snug"
+                className="mt-0.5 font-serif text-[12px] leading-snug"
                 style={{ color: CT.ink2 }}
               >
                 {dungColors}
@@ -295,7 +295,7 @@ export function CLaSoFullScreen() {
               border: "1px solid rgba(163,32,31,0.25)",
             }}
           >
-            <Mono style={{ color: CT.red, fontSize: 9 }}>Kỵ thần</Mono>
+            <Mono style={{ color: CT.red, fontSize: 9.5 }}>Kỵ thần</Mono>
             <div
               className="mt-1 font-[family-name:var(--display-2)] text-base font-bold"
               style={DISPLAY2}
@@ -304,7 +304,7 @@ export function CLaSoFullScreen() {
             </div>
             {kyColors ? (
               <div
-                className="mt-0.5 font-serif text-[11.5px] leading-snug"
+                className="mt-0.5 font-serif text-[12px] leading-snug"
                 style={{ color: CT.ink2 }}
               >
                 {kyColors}
@@ -315,7 +315,7 @@ export function CLaSoFullScreen() {
 
         {detail.daiVanList.length > 0 ? (
           <div className="mt-5">
-            <Mono style={{ color: CT.muted, fontSize: 9, marginBottom: 8 }}>
+            <Mono style={{ color: CT.muted, fontSize: 9.5, marginBottom: 8 }}>
               Đại vận
             </Mono>
             <div className="flex gap-1.5 overflow-x-auto pb-1">
@@ -331,7 +331,7 @@ export function CLaSoFullScreen() {
                   }}
                 >
                   <div
-                    className="font-[family-name:var(--display-2)] text-[11px] font-bold uppercase tracking-[-0.005em]"
+                    className="font-[family-name:var(--display-2)] text-[11.5px] font-bold uppercase tracking-[-0.005em]"
                     style={{
                       color: row.isActive ? CT.goldDeep : CT.ink,
                       ...DISPLAY2,
@@ -343,7 +343,7 @@ export function CLaSoFullScreen() {
                     <Mono
                       style={{
                         color: CT.muted,
-                        fontSize: 9,
+                        fontSize: 9.5,
                         marginTop: 4,
                         display: "block",
                       }}
@@ -364,9 +364,9 @@ export function CLaSoFullScreen() {
             borderLeft: `2px solid ${CT.goldDeep}`,
           }}
         >
-          <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Tóm tắt bản mệnh</Mono>
+          <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>Tóm tắt bản mệnh</Mono>
           <p
-            className="mt-1.5 font-serif italic text-[13px] leading-relaxed"
+            className="mt-1.5 font-serif italic text-[13.5px] leading-relaxed"
             style={{ color: CT.ink }}
           >
             &ldquo;{nlttTeaser}&rdquo;

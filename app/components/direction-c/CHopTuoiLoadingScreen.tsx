@@ -49,12 +49,12 @@ export function CHopTuoiLoadingScreen({
             className="absolute left-0 top-0 flex h-[100px] w-[88px] flex-col bg-white"
             style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}
           >
-            <div className="pt-1 text-center font-serif text-[9px]" style={{ color: CT.muted }}>
+            <div className="pt-1 text-center font-serif text-[9.5px]" style={{ color: CT.muted }}>
               Đang phân tích
             </div>
             <div className="flex flex-1 items-center justify-center">
               <span
-                className="animate-pulse text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
+                className="animate-pulse text-[56.5px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
                 style={{ fontFamily: "var(--display-2)", color: CT.goldDeep }}
               >
                 {String(phase + 1).padStart(2, "0")}
@@ -64,17 +64,17 @@ export function CHopTuoiLoadingScreen({
         </div>
 
         <div>
-          <Mono style={{ color: CT.goldDeep, fontSize: 10, letterSpacing: "0.22em" }}>
+          <Mono style={{ color: CT.goldDeep, fontSize: 10.5, letterSpacing: "0.22em" }}>
             Độ hợp · {accent}
           </Mono>
           <p
-            className="mt-2.5 text-[22px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
+            className="mt-2.5 text-[22.5px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
             style={{ fontFamily: "var(--display)", color: CT.ink }}
           >
             Hợp tuổi
           </p>
           <p
-            className="mx-auto mt-2 max-w-[280px] text-[13.5px] leading-snug"
+            className="mx-auto mt-2 max-w-[280px] text-[14px] leading-snug"
             style={{ color: CT.muted }}
           >
             {PHASES[phase]}
@@ -91,7 +91,7 @@ export function CHopTuoiLoadingScreen({
           />
         </div>
 
-        <Mono style={{ color: CT.muted, fontSize: 9, letterSpacing: "0.14em" }}>
+        <Mono style={{ color: CT.muted, fontSize: 9.5, letterSpacing: "0.14em" }}>
           Bước {phase + 1}/{PHASES.length}
         </Mono>
       </div>

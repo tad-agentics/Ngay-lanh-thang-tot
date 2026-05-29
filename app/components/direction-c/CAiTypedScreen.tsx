@@ -144,7 +144,7 @@ function QuestionBlock({
         borderLeft: `2px solid ${CT.goldDeep}`,
       }}
     >
-      <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Bạn hỏi</Mono>
+      <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>Bạn hỏi</Mono>
       <div
         style={{
           marginTop: compact ? 3 : 4,
@@ -206,7 +206,7 @@ function AiAnswerRow({
         <LogoMark size={logo} dark />
       </div>
       <div className="flex-1 min-w-0">
-        <Mono style={{ color: CT.muted, fontSize: 9 }}>{kicker}</Mono>
+        <Mono style={{ color: CT.muted, fontSize: 9.5 }}>{kicker}</Mono>
         {children}
       </div>
     </div>
@@ -533,7 +533,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 className="mt-[22px] pt-4"
                 style={{ borderTop: `1px solid ${CT.hairline}` }}
               >
-                <Mono style={{ color: CT.muted, fontSize: 9 }}>Hỏi tiếp gợi ý</Mono>
+                <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Hỏi tiếp gợi ý</Mono>
                 <div className="mt-2 flex flex-col gap-1.5">
                   {remainingChips.map((chip) => (
                     <button
@@ -541,7 +541,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                       type="button"
                       disabled={submitBusy}
                       onClick={() => void submitFollowUp(chip)}
-                      className="text-left py-2.5 px-3.5 font-serif text-[13px] leading-snug"
+                      className="text-left py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
                       style={{
                         background: "#fff",
                         border: `1px solid ${CT.hairline}`,
@@ -584,7 +584,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") void submitFollowUp(input);
               }}
-              className="flex-1 min-w-0 border-0 outline-none bg-transparent font-serif text-[13px]"
+              className="flex-1 min-w-0 border-0 outline-none bg-transparent font-serif text-[13.5px]"
               style={{ color: quotaExhausted ? CT.muted : CT.ink }}
             />
             {!quotaExhausted ? (
@@ -608,7 +608,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
           <div className="mt-[7px] px-1 flex items-baseline justify-between gap-2">
             {quotaExhausted ? (
               <span
-                className="w-full text-center font-serif italic text-[10.5px]"
+                className="w-full text-center font-serif italic text-[11px]"
                 style={{ color: CT.muted }}
               >
                 Hết câu hôm nay · quay lại sáng mai
@@ -616,7 +616,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
             ) : (
               <>
                 <span
-                  className="font-serif italic text-[10.5px]"
+                  className="font-serif italic text-[11px]"
                   style={{ color: CT.muted }}
                 >
                   Chỉ trả lời về ngày này và lá số của bạn
@@ -624,7 +624,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 <Mono
                   style={{
                     color: CT.muted,
-                    fontSize: 9,
+                    fontSize: 9.5,
                     letterSpacing: "0.08em",
                     textTransform: "uppercase",
                     fontVariantNumeric: "tabular-nums",

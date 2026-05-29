@@ -18,10 +18,10 @@ export function CMeLockedTieuVanCard() {
         <span className="text-sm" style={{ color: CT.muted }}>
           ○
         </span>
-        <Mono style={{ color: CT.muted, fontSize: 9 }}>Chưa mở khoá</Mono>
+        <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
       </div>
       <div
-        className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+        className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
         style={{ color: CT.ink }}
       >
         Luận giải Tiểu vận
@@ -36,7 +36,7 @@ export function CMeLockedTieuVanCard() {
         >
           {pkg?.priceLabel ?? "199.000₫"}
         </span>
-        <span className="font-serif text-[11px]" style={{ color: CT.muted }}>
+        <span className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
           · hoặc kèm gói 6 tháng / năm
         </span>
       </div>

@@ -4,7 +4,7 @@ const GOLD_LIGHT = "#c9a84c";
 
 export function Logo({
   dark = false,
-  size = 36,
+  size = 36.5,
   showUrl = false,
   className,
 }: {

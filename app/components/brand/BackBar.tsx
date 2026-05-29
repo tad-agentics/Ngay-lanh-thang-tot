@@ -66,7 +66,7 @@ export function BackBar({
           cursor: "pointer",
           flexShrink: 0,
           fontFamily: "var(--serif)",
-          fontSize: 20,
+          fontSize: 20.5,
           lineHeight: 1,
         }}
       >
@@ -78,7 +78,7 @@ export function BackBar({
           <div
             style={{
               fontFamily: "var(--serif)",
-              fontSize: 11,
+              fontSize: 11.5,
               color: muteFg,
               marginBottom: 2,
             }}
@@ -90,7 +90,7 @@ export function BackBar({
           <div
             style={{
               fontFamily: "var(--serif)",
-              fontSize: 13,
+              fontSize: 13.5,
               color: fg,
               whiteSpace: "nowrap",
               overflow: "hidden",
@@ -125,7 +125,7 @@ export function BackBar({
             flexShrink: 0,
             padding: 0,
             fontFamily: "var(--serif)",
-            fontSize: 22,
+            fontSize: 22.5,
             lineHeight: 1,
           }}
         >

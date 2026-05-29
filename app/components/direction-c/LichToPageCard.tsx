@@ -60,7 +60,7 @@ export function LichToPageCard({
         <span
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 13,
+            fontSize: 13.5,
             color: "var(--muted)",
           }}
         >
@@ -80,7 +80,7 @@ export function LichToPageCard({
           style={{
             fontFamily: "var(--display-2)",
             fontWeight: 800,
-            fontSize: 124,
+            fontSize: 124.5,
             color: CT.red,
             lineHeight: 0.84,
             letterSpacing: "-0.045em",
@@ -94,7 +94,7 @@ export function LichToPageCard({
             style={{
               fontFamily: "var(--display)",
               fontWeight: 900,
-              fontSize: 30,
+              fontSize: 30.5,
               color: CT.red,
               textTransform: "uppercase",
               letterSpacing: "-0.01em",
@@ -110,7 +110,7 @@ export function LichToPageCard({
         style={{
           padding: "0 18px 16px",
           fontFamily: "var(--serif)",
-          fontSize: 13,
+          fontSize: 13.5,
           color: CT.ink2,
           lineHeight: 1.55,
         }}
@@ -144,7 +144,7 @@ export function LichToPageCard({
             style={{
               fontFamily: "var(--display-2)",
               fontWeight: 700,
-              fontSize: 17,
+              fontSize: 17.5,
               color: CT.goldDeep,
               textTransform: "uppercase",
               letterSpacing: "-0.005em",
@@ -156,7 +156,7 @@ export function LichToPageCard({
             <div
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 12,
+                fontSize: 12.5,
                 color: "var(--muted)",
                 marginTop: 2,
               }}
@@ -171,7 +171,7 @@ export function LichToPageCard({
               style={{
                 fontFamily: "var(--display-2)",
                 fontWeight: 800,
-                fontSize: 38,
+                fontSize: 38.5,
                 color: CT.goldDeep,
                 lineHeight: 1,
                 fontVariantNumeric: "tabular-nums",
@@ -183,7 +183,7 @@ export function LichToPageCard({
             <span
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 12,
+                fontSize: 12.5,
                 color: "var(--muted)",
               }}
             >
@@ -216,7 +216,7 @@ export function LichToPageCard({
             <Mono
               style={{
                 color: row.color,
-                fontSize: 9,
+                fontSize: 9.5,
                 width: 48,
                 letterSpacing: "0.14em",
               }}
@@ -227,7 +227,7 @@ export function LichToPageCard({
               style={{
                 flex: 1,
                 fontFamily: "var(--serif)",
-                fontSize: 12.5,
+                fontSize: 13,
                 color: CT.ink,
                 lineHeight: 1.45,
               }}
@@ -253,7 +253,7 @@ export function LichToPageCard({
               onClick={onPrev}
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 11.5,
+                fontSize: 12,
                 color: CT.muted,
                 background: "none",
                 border: "none",
@@ -272,7 +272,7 @@ export function LichToPageCard({
               onClick={onNext}
               style={{
                 fontFamily: "var(--serif)",
-                fontSize: 11.5,
+                fontSize: 12,
                 color: CT.muted,
                 background: "none",
                 border: "none",

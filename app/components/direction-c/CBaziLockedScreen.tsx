@@ -34,10 +34,10 @@ export function CBaziLockedScreen({
             <span className="text-sm" style={{ color: CT.muted }}>
               ○
             </span>
-            <Mono style={{ color: CT.muted, fontSize: 9 }}>Chưa mở khoá</Mono>
+            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
           </div>
           <h2
-            className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+            className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
             style={{ color: CT.ink }}
           >
             {title}
@@ -52,7 +52,7 @@ export function CBaziLockedScreen({
             >
               {pkg?.priceLabel ?? "299.000₫"}
             </span>
-            <span className="font-serif text-[11px]" style={{ color: CT.muted }}>
+            <span className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
               · hoặc miễn phí với Lịch năm
             </span>
           </div>
@@ -60,7 +60,7 @@ export function CBaziLockedScreen({
 
         <Link
           to={`/luan/mua/xac-nhan?sku=${sku}`}
-          className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+          className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--display-2)] text-[13.5px] font-extrabold uppercase tracking-[0.08em] no-underline"
           style={{ background: CT.forest, color: CT.cream }}
         >
           Mở khóa {pkg?.title ?? "luận giải Bát Tự"}

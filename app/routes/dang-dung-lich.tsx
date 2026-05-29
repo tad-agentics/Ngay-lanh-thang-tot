@@ -110,7 +110,7 @@ export default function DangDungLichRoute() {
           textAlign: "center",
         }}
       >
-        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.24em" }}>
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.24em" }}>
           Đang dựng lịch của bạn
         </Mono>
 
@@ -131,7 +131,7 @@ export default function DangDungLichRoute() {
                 <Mono
                   style={{
                     color: done ? C.gold : "rgba(237,231,211,0.4)",
-                    fontSize: 9,
+                    fontSize: 9.5,
                   }}
                 >
                   {p}
@@ -141,7 +141,7 @@ export default function DangDungLichRoute() {
                     marginTop: 6,
                     fontFamily: "var(--display-2)",
                     fontWeight: 700,
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: done ? C.cream : "rgba(237,231,211,0.3)",
                     textTransform: "uppercase",
                     letterSpacing: "-0.005em",
@@ -181,7 +181,7 @@ export default function DangDungLichRoute() {
           style={{
             fontFamily: "var(--serif)",
             fontStyle: "italic",
-            fontSize: 14,
+            fontSize: 14.5,
             color: "rgba(237,231,211,0.6)",
             lineHeight: 1.55,
             maxWidth: 280,

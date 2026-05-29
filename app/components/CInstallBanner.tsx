@@ -33,7 +33,7 @@ function IosInstallSteps() {
           style={{
             fontFamily: "var(--font-mono)",
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 11.5,
             color: CT.goldDeep,
             minWidth: 16,
           }}
@@ -41,7 +41,7 @@ function IosInstallSteps() {
           1.
         </span>
         <div
-          className="flex-1 font-serif text-[13px]"
+          className="flex-1 font-serif text-[13.5px]"
           style={{ color: CT.ink, lineHeight: 1.5 }}
         >
           Bấm{" "}
@@ -64,7 +64,7 @@ function IosInstallSteps() {
           style={{
             fontFamily: "var(--font-mono)",
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 11.5,
             color: CT.goldDeep,
             minWidth: 16,
           }}
@@ -72,7 +72,7 @@ function IosInstallSteps() {
           2.
         </span>
         <div
-          className="flex-1 font-serif text-[13px]"
+          className="flex-1 font-serif text-[13.5px]"
           style={{ color: CT.ink, lineHeight: 1.5 }}
         >
           Chọn <strong className="font-semibold">"Thêm vào màn hình chính"</strong>
@@ -85,7 +85,7 @@ function IosInstallSteps() {
           style={{
             fontFamily: "var(--font-mono)",
             fontWeight: 700,
-            fontSize: 11,
+            fontSize: 11.5,
             color: CT.goldDeep,
             minWidth: 16,
           }}
@@ -93,7 +93,7 @@ function IosInstallSteps() {
           3.
         </span>
         <div
-          className="flex-1 font-serif text-[13px]"
+          className="flex-1 font-serif text-[13.5px]"
           style={{ color: CT.ink, lineHeight: 1.5 }}
         >
           Tên app là <strong className="font-semibold">Ngày Lành</strong>, giữ nguyên
@@ -117,7 +117,7 @@ const primaryBtnStyle = {
   color: CT.cream,
   fontFamily: "var(--display-2)",
   fontWeight: 800,
-  fontSize: 13,
+  fontSize: 13.5,
   letterSpacing: "0.08em",
 } as const;
 
@@ -156,13 +156,13 @@ export function CInstallBanner({ onDismiss }: CInstallBannerProps) {
         <div className="flex items-center gap-[14px]">
           <LogoMark size={48} />
           <div style={{ lineHeight: 1.25 }}>
-            <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Cài lên màn hình</Mono>
+            <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>Cài lên màn hình</Mono>
             <div
               style={{
                 marginTop: 2,
                 fontFamily: "var(--display)",
                 fontWeight: 800,
-                fontSize: 22,
+                fontSize: 22.5,
                 color: CT.ink,
                 textTransform: "uppercase",
                 letterSpacing: "-0.01em",
@@ -175,7 +175,7 @@ export function CInstallBanner({ onDismiss }: CInstallBannerProps) {
 
         <p
           className="mt-[18px] font-serif"
-          style={{ color: CT.ink2, fontSize: 14, lineHeight: 1.55 }}
+          style={{ color: CT.ink2, fontSize: 14.5, lineHeight: 1.55 }}
         >
           Thêm Ngày Lành vào màn hình chính — mở 1 chạm, không cần qua App Store.
           {showIosInstructions ? " Vẫn xem được lịch khi không có mạng." : null}
@@ -205,7 +205,7 @@ export function CInstallBanner({ onDismiss }: CInstallBannerProps) {
 
         <button
           type="button"
-          className="mt-[10px] w-full border-none bg-transparent text-center font-serif text-[12px]"
+          className="mt-[10px] w-full border-none bg-transparent text-center font-serif text-[12.5px]"
           style={{ color: CT.muted, cursor: "pointer" }}
           onClick={onDismiss}
         >

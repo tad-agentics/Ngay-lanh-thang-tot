@@ -1,4 +1,4 @@
-/** Mono — uppercase IBM Plex Mono kicker. Used for tags, dates, labels. Min 12 px. */
+/** Mono — uppercase IBM Plex Mono kicker. Used for tags, dates, labels. Min 12.5 px. */
 
 import { type CSSProperties, type ReactNode } from "react";
 
@@ -6,7 +6,7 @@ export function Mono({
   children,
   style,
   className,
-  size = 12,
+  size = 12.5,
 }: {
   children: ReactNode;
   style?: CSSProperties;

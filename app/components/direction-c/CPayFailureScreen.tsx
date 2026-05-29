@@ -36,23 +36,23 @@ export function CPayFailureScreen({
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-6 text-center">
         <PayFailureMark />
 
-        <Mono className="mt-[22px] text-[10px] tracking-[0.22em]" style={{ color: CT.red }}>
+        <Mono className="mt-[22px] text-[10.5px] tracking-[0.22em]" style={{ color: CT.red }}>
           Thanh toán không thành công
         </Mono>
         <h2
-          className="mt-2.5 max-w-[300px] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+          className="mt-2.5 max-w-[300px] text-[26.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
           style={{ ...PAY_DISPLAY, color: CT.ink }}
         >
           Giao dịch
           <br />
           <span
-            className="font-serif text-[26px] font-bold italic normal-case tracking-normal"
+            className="font-serif text-[26.5px] font-bold italic normal-case tracking-normal"
             style={{ color: CT.red }}
           >
             chưa hoàn tất
           </span>
         </h2>
-        <p className="mt-3 max-w-[300px] text-[13.5px] leading-snug" style={{ color: CT.ink2 }}>
+        <p className="mt-3 max-w-[300px] text-[14px] leading-snug" style={{ color: CT.ink2 }}>
           Có thể số dư không đủ, bạn đã huỷ, hoặc lệnh đã hết hạn.{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
             Lịch của bạn chưa bị trừ tiền.
@@ -64,7 +64,7 @@ export function CPayFailureScreen({
         <button
           type="button"
           onClick={() => navigate(retryTo)}
-          className="mt-7 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13px] font-extrabold uppercase tracking-[0.08em]"
+          className="mt-7 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13.5px] font-extrabold uppercase tracking-[0.08em]"
           style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
         >
           Thử lại
@@ -78,7 +78,7 @@ export function CPayFailureScreen({
         </Link>
         <Link
           to={backTo}
-          className="mt-2.5 block w-full max-w-[320px] py-1 text-center font-serif text-[12.5px] no-underline"
+          className="mt-2.5 block w-full max-w-[320px] py-1 text-center font-serif text-[13px] no-underline"
           style={{ color: CT.muted }}
         >
           Quay lại

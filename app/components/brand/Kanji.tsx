@@ -7,7 +7,7 @@ import { type CSSProperties } from "react";
 
 export function Kanji({
   ch = "吉",
-  size = 120,
+  size = 120.5,
   opacity,
   color,
   style,

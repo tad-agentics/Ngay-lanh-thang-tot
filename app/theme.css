@@ -152,7 +152,8 @@
 }
 
 :root {
-  --font-size: 16px;
+  --font-size: 16.5px;
+  --type-scale-bump: 0.5px;
 
   /* ─── NLTT Core Palette ─── */
   --background: #f0ece2;
@@ -333,6 +334,21 @@
   /* Aliases used by Tailwind `font-display` / legacy component refs */
   --font-display: var(--display);
   --font-display-2: var(--display-2);
+
+  /* Direction C — +0.5px vs Tailwind defaults (12→12.5, 14→14.5, …) */
+  --text-xs: 12.5px;
+  --text-sm: 14.5px;
+  --text-base: 16.5px;
+  --text-lg: 18.5px;
+  --text-xl: 20.5px;
+  --text-2xl: 24.5px;
+  --text-3xl: 30.5px;
+  --text-4xl: 36.5px;
+  --text-5xl: 48.5px;
+  --text-6xl: 60.5px;
+  --text-7xl: 72.5px;
+  --text-8xl: 96.5px;
+  --text-9xl: 128.5px;
 }
 
 @layer base {

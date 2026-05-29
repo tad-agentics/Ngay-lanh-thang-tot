@@ -140,7 +140,7 @@ export function CBottomNav({ active, dark = false }: CBottomNavProps) {
             >
               <Icon active={isActive} dark={dark} />
               <span
-                className="mt-[3px] font-[family-name:var(--display-2)] text-[10px] uppercase tracking-[0.04em]"
+                className="mt-[3px] font-[family-name:var(--display-2)] text-[10.5px] uppercase tracking-[0.04em]"
                 style={{
                   fontWeight: isActive ? 700 : 600,
                   color: isActive

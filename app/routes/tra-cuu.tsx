@@ -126,14 +126,14 @@ export default function TraCuuRoute() {
       <div className="flex-1 overflow-auto px-6 pb-24 pt-0">
         {!profileLoading && profile && !profile.ngay_sinh ? (
           <p
-            className="mb-4 font-serif text-[13px] leading-relaxed"
+            className="mb-4 font-serif text-[13.5px] leading-relaxed"
             style={{ color: CT.muted }}
           >
             Thêm ngày sinh trong hồ sơ để tra cứu ngày lành theo Bát Tự.
           </p>
         ) : null}
 
-        <div className="font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="font-serif text-[13.5px]" style={{ color: CT.muted }}>
           Tôi sắp làm
         </div>
 
@@ -146,7 +146,7 @@ export default function TraCuuRoute() {
         >
           <div>
             <div
-              className="text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+              className="text-[26.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
               style={{ fontFamily: "var(--display)", color: CT.ink }}
             >
               {intentParts.main}
@@ -159,7 +159,7 @@ export default function TraCuuRoute() {
                 </>
               ) : null}
             </div>
-            <div className="mt-2 font-serif text-[11.5px]" style={{ color: CT.muted }}>
+            <div className="mt-2 font-serif text-[12px]" style={{ color: CT.muted }}>
               {CHON_NGAY_INTENT_OPTIONS.length} việc · chọn lại
             </div>
           </div>
@@ -177,7 +177,7 @@ export default function TraCuuRoute() {
               <button
                 key={opt.value}
                 type="button"
-                className="block w-full border-none bg-transparent px-3.5 py-2.5 text-left font-serif text-[13px] cursor-pointer"
+                className="block w-full border-none bg-transparent px-3.5 py-2.5 text-left font-serif text-[13.5px] cursor-pointer"
                 style={{
                   color: intent === opt.value ? CT.goldDeep : CT.ink,
                   fontWeight: intent === opt.value ? 600 : 400,
@@ -215,7 +215,7 @@ export default function TraCuuRoute() {
           ))}
         </div>
 
-        <div className="mt-7 font-serif text-[13px]" style={{ color: CT.muted }}>
+        <div className="mt-7 font-serif text-[13.5px]" style={{ color: CT.muted }}>
           Trong khoảng
         </div>
         <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2.5">
@@ -223,7 +223,7 @@ export default function TraCuuRoute() {
             className="border bg-white px-3 py-2.5"
             style={{ borderColor: CT.hairline }}
           >
-            <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
+            <div className="font-serif text-[10.5px]" style={{ color: CT.muted }}>
               Từ ngày
             </div>
             <div
@@ -240,7 +240,7 @@ export default function TraCuuRoute() {
             className="border bg-white px-3 py-2.5"
             style={{ borderColor: CT.hairline }}
           >
-            <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
+            <div className="font-serif text-[10.5px]" style={{ color: CT.muted }}>
               Đến ngày
             </div>
             <div
@@ -261,7 +261,7 @@ export default function TraCuuRoute() {
                 type="button"
                 disabled={disabledForm}
                 onClick={() => setRangeDays(preset.days)}
-                className="flex-1 cursor-pointer border-none py-1.5 text-center font-[family-name:var(--font-mono)] text-[9.5px] uppercase tracking-[0.06em] disabled:opacity-60"
+                className="flex-1 cursor-pointer border-none py-1.5 text-center font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-[0.06em] disabled:opacity-60"
                 style={{
                   background: sel ? CT.forest : "transparent",
                   color: sel ? CT.cream : CT.muted,
@@ -278,7 +278,7 @@ export default function TraCuuRoute() {
           type="button"
           disabled={busy || disabledForm || !profile?.ngay_sinh}
           onClick={() => void runLookup()}
-          className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+          className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13.5px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
           style={{
             fontFamily: "var(--display-2)",
             background: CT.forest,

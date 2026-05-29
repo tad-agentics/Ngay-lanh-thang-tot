@@ -139,7 +139,7 @@ export function Ticket({
               style={{
                 fontFamily: "var(--mono)",
                 fontWeight: 600,
-                fontSize: 12,
+                fontSize: 12.5,
                 color: "#9a7c22",
                 letterSpacing: "0.18em",
               }}

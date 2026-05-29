@@ -27,10 +27,10 @@ export function CSubscriptionExpiryBanner() {
         background: "rgba(154,124,34,0.12)",
       }}
     >
-      <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.goldDeep }}>
+      <Mono className="text-[9.5px] tracking-[0.14em]" style={{ color: CT.goldDeep }}>
         {copy}
       </Mono>
-      <p className="m-0 mt-1 font-serif text-[12.5px]" style={{ color: CT.ink2 }}>
+      <p className="m-0 mt-1 font-serif text-[13px]" style={{ color: CT.ink2 }}>
         Dùng đến {expiryFormatted} ·{" "}
         <span style={{ color: CT.goldDeep }}>Đặt lịch →</span>
       </p>

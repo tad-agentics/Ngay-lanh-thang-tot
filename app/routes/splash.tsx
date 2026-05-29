@@ -62,7 +62,7 @@ export default function SplashRoute() {
       <div className="relative flex flex-1 flex-col items-center justify-center gap-8 px-6">
         <Logo dark size={52} showUrl />
         <div className="max-w-[280px] text-center">
-          <Mono style={{ color: CT.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+          <Mono style={{ color: CT.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
             Đang mở lịch của bạn
           </Mono>
           <p

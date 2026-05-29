@@ -54,12 +54,12 @@ export function CPickLoadingScreen({
             className="absolute left-0 top-0 flex h-[100px] w-[88px] flex-col bg-white"
             style={{ boxShadow: "0 8px 20px rgba(0,0,0,0.12)" }}
           >
-            <div className="pt-1 text-center font-serif text-[9px]" style={{ color: CT.muted }}>
+            <div className="pt-1 text-center font-serif text-[9.5px]" style={{ color: CT.muted }}>
               Đang quét
             </div>
             <div className="flex flex-1 items-center justify-center">
               <span
-                className="animate-pulse font-[family-name:var(--display-2)] text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
+                className="animate-pulse font-[family-name:var(--display-2)] text-[56.5px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
                 style={{ color: CT.red }}
               >
                 {String(phase + 1).padStart(2, "0")}
@@ -69,17 +69,17 @@ export function CPickLoadingScreen({
         </div>
 
         <div>
-          <Mono className="text-[10px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
+          <Mono className="text-[10.5px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
             Đang tìm ngày tốt
           </Mono>
           <p
-            className="mt-2.5 font-[family-name:var(--display)] text-[22px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
+            className="mt-2.5 font-[family-name:var(--display)] text-[22.5px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
             style={{ color: CT.ink }}
           >
             {accent}
           </p>
           <p
-            className="mx-auto mt-2 max-w-[280px] text-[13.5px] leading-snug"
+            className="mx-auto mt-2 max-w-[280px] text-[14px] leading-snug"
             style={{ color: CT.muted }}
           >
             {PHASES[phase]}
@@ -96,20 +96,20 @@ export function CPickLoadingScreen({
           />
         </div>
 
-        <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.muted }}>
+        <Mono className="text-[9.5px] tracking-[0.14em]" style={{ color: CT.muted }}>
           Bước {phase + 1}/{PHASES.length}
         </Mono>
 
         {slow ? (
           <div className="mt-2 flex flex-col items-center gap-3">
-            <p className="font-serif text-[13px]" style={{ color: CT.muted }}>
+            <p className="font-serif text-[13.5px]" style={{ color: CT.muted }}>
               Vẫn đang tìm…
             </p>
             {onCancel ? (
               <button
                 type="button"
                 onClick={onCancel}
-                className="cursor-pointer border bg-white px-4 py-2 font-serif text-[13px]"
+                className="cursor-pointer border bg-white px-4 py-2 font-serif text-[13.5px]"
                 style={{ borderColor: CT.hairline, color: CT.ink2 }}
               >
                 Huỷ · quay lại form

@@ -144,7 +144,7 @@ export default function LichDaMoRoute() {
         <Mono
           style={{
             color: C.gold,
-            fontSize: 10,
+            fontSize: 10.5,
             letterSpacing: "0.22em",
             alignSelf: "flex-start",
           }}
@@ -155,7 +155,7 @@ export default function LichDaMoRoute() {
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 38,
+            fontSize: 38.5,
             color: C.cream,
             lineHeight: 1,
             textTransform: "uppercase",
@@ -195,7 +195,7 @@ export default function LichDaMoRoute() {
             style={{
               padding: "10px 16px 4px",
               fontFamily: "var(--serif)",
-              fontSize: 11,
+              fontSize: 11.5,
               color: C.muted,
             }}
           >
@@ -213,7 +213,7 @@ export default function LichDaMoRoute() {
               style={{
                 fontFamily: "var(--display-2)",
                 fontWeight: 800,
-                fontSize: 84,
+                fontSize: 84.5,
                 color: C.red,
                 lineHeight: 0.85,
                 letterSpacing: "-0.045em",
@@ -226,7 +226,7 @@ export default function LichDaMoRoute() {
                 paddingBottom: 8,
                 fontFamily: "var(--display)",
                 fontWeight: 900,
-                fontSize: 22,
+                fontSize: 22.5,
                 color: C.red,
                 textTransform: "uppercase",
                 letterSpacing: "-0.01em",
@@ -239,7 +239,7 @@ export default function LichDaMoRoute() {
             style={{
               padding: "0 16px 10px",
               fontFamily: "var(--serif)",
-              fontSize: 11,
+              fontSize: 11.5,
               color: C.ink2,
             }}
           >
@@ -264,7 +264,7 @@ export default function LichDaMoRoute() {
           >
             <div>
               {menh && menh !== "—" ? (
-                <Mono style={{ color: C.goldDeep, fontSize: 8 }}>
+                <Mono style={{ color: C.goldDeep, fontSize: 8.5 }}>
                   Cho mệnh {menh}
                 </Mono>
               ) : null}
@@ -272,7 +272,7 @@ export default function LichDaMoRoute() {
                 style={{
                   fontFamily: "var(--display-2)",
                   fontWeight: 700,
-                  fontSize: 12,
+                  fontSize: 12.5,
                   color: C.goldDeep,
                   textTransform: "uppercase",
                 }}
@@ -284,7 +284,7 @@ export default function LichDaMoRoute() {
               style={{
                 fontFamily: "var(--display-2)",
                 fontWeight: 800,
-                fontSize: 26,
+                fontSize: 26.5,
                 color: C.goldDeep,
                 fontVariantNumeric: "tabular-nums",
                 letterSpacing: "-0.015em",
@@ -300,7 +300,7 @@ export default function LichDaMoRoute() {
             marginTop: 32,
             fontFamily: "var(--serif)",
             fontStyle: "italic",
-            fontSize: 14,
+            fontSize: 14.5,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.5,
             textAlign: "center",

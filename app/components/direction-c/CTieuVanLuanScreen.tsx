@@ -147,7 +147,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
     >
       <BackBar
         title={`Luận giải Tiểu vận · ${year}`}
-        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>Học thuật cổ thư</Mono>}
+        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9.5 }}>Học thuật cổ thư</Mono>}
       />
 
       <div className="flex-1 overflow-auto px-6 pb-12 pt-1">
@@ -164,7 +164,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
         </div>
 
         {profile ? (
-          <p className="mt-4 font-serif text-[12.5px]" style={{ color: CT.muted }}>
+          <p className="mt-4 font-serif text-[13px]" style={{ color: CT.muted }}>
             {birthLine(profile)}
           </p>
         ) : null}
@@ -172,7 +172,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
         {reveal ? (
           <div className="mt-3">
             <h2
-              className="text-[26px] font-extrabold uppercase leading-none"
+              className="text-[26.5px] font-extrabold uppercase leading-none"
               style={{ ...DISPLAY, letterSpacing: "-0.015em" }}
             >
               {reveal.nhatChu}
@@ -209,7 +209,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
                 style={{ borderBottom: `1px solid ${CT.ink}` }}
               >
                 <span
-                  className="font-mono text-[11px]"
+                  className="font-mono text-[11.5px]"
                   style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -222,7 +222,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
                 </span>
               </div>
               <p
-                className="mt-3 text-[13.5px] leading-relaxed whitespace-pre-wrap"
+                className="mt-3 text-[14px] leading-relaxed whitespace-pre-wrap"
                 style={{ color: CT.ink2 }}
               >
                 {s.text}

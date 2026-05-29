@@ -104,7 +104,7 @@ export default function GioSinhRoute() {
         dark
         onBack={() => navigate("/dang-nhap", { replace: true })}
         endAdornment={
-          <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9 }}>
+          <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9.5 }}>
             2 / 2
           </Mono>
         }
@@ -119,14 +119,14 @@ export default function GioSinhRoute() {
           overflow: "hidden",
         }}
       >
-        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
           Lập lá số · bước 2
         </Mono>
         <h1
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 36,
+            fontSize: 36.5,
             color: C.cream,
             lineHeight: 1,
             textTransform: "uppercase",
@@ -139,7 +139,7 @@ export default function GioSinhRoute() {
         <p
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 13.5,
+            fontSize: 14,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.55,
             maxWidth: 280,
@@ -175,7 +175,7 @@ export default function GioSinhRoute() {
                   style={{
                     fontFamily: "var(--display-2)",
                     fontWeight: 800,
-                    fontSize: 14,
+                    fontSize: 14.5,
                     color: isSel ? C.forest : C.cream,
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
@@ -186,7 +186,7 @@ export default function GioSinhRoute() {
                 <div
                   style={{
                     fontFamily: "var(--serif)",
-                    fontSize: 10,
+                    fontSize: 10.5,
                     color: isSel ? C.forest : "rgba(237,231,211,0.55)",
                     marginTop: 2,
                   }}
@@ -207,14 +207,14 @@ export default function GioSinhRoute() {
               background: "rgba(197,165,90,0.06)",
             }}
           >
-            <Mono style={{ color: C.gold, fontSize: 9, letterSpacing: "0.12em" }}>
+            <Mono style={{ color: C.gold, fontSize: 9.5, letterSpacing: "0.12em" }}>
               ĐÃ CHỌN · {selectedCanh.name.toUpperCase()}
             </Mono>
             <div
               style={{
                 marginTop: 4,
                 fontFamily: "var(--serif)",
-                fontSize: 13,
+                fontSize: 13.5,
                 color: C.cream,
                 lineHeight: 1.5,
               }}

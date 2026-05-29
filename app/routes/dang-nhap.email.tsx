@@ -111,7 +111,7 @@ export default function DangNhapEmail() {
             to={signUpHref}
             style={{
               fontFamily: "var(--serif)",
-              fontSize: 12,
+              fontSize: 12.5,
               color: C.gold,
               textDecoration: "none",
             }}
@@ -130,14 +130,14 @@ export default function DangNhapEmail() {
           flexDirection: "column",
         }}
       >
-        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
           Mở lịch cát tường của bạn
         </Mono>
         <h1
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 36,
+            fontSize: 36.5,
             color: C.cream,
             lineHeight: 1,
             textTransform: "uppercase",
@@ -150,7 +150,7 @@ export default function DangNhapEmail() {
         <p
           style={{
             fontFamily: "var(--serif)",
-            fontSize: 13.5,
+            fontSize: 14,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.55,
           }}
@@ -190,7 +190,7 @@ export default function DangNhapEmail() {
                 to="/quen-mat-khau"
                 style={{
                   fontFamily: "var(--serif)",
-                  fontSize: 11.5,
+                  fontSize: 12,
                   color: C.gold,
                   textDecoration: "none",
                 }}
@@ -214,7 +214,7 @@ export default function DangNhapEmail() {
                 <Mono
                   style={{
                     color: C.red,
-                    fontSize: 10,
+                    fontSize: 10.5,
                     letterSpacing: "0.14em",
                   }}
                 >
@@ -224,7 +224,7 @@ export default function DangNhapEmail() {
                   style={{
                     marginTop: 4,
                     fontFamily: "var(--serif)",
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: "rgba(237,231,211,0.65)",
                     lineHeight: 1.45,
                   }}
@@ -258,7 +258,7 @@ export default function DangNhapEmail() {
           <span
             style={{
               fontFamily: "var(--mono)",
-              fontSize: 10,
+              fontSize: 10.5,
               color: "rgba(237,231,211,0.4)",
               letterSpacing: "0.18em",
             }}

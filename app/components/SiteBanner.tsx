@@ -50,7 +50,7 @@ export function SiteBanner() {
   };
 
   const inner = (
-    <span className="min-w-0 flex-1 text-center text-[13px] leading-snug text-forest-foreground sm:text-sm">
+    <span className="min-w-0 flex-1 text-center text-[13.5px] leading-snug text-forest-foreground sm:text-sm">
       {banner.message}
     </span>
   );

@@ -60,14 +60,14 @@ export default function DatLaiMatKhauRoute() {
           flexDirection: "column",
         }}
       >
-        <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
           Đặt lại mật khẩu
         </Mono>
         <h1
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 32,
+            fontSize: 32.5,
             color: C.cream,
             lineHeight: 1.05,
             textTransform: "uppercase",

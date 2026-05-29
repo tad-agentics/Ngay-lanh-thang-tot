@@ -34,7 +34,7 @@ export function CLegalDocumentScreen({
         <BackBar title={title} />
       </div>
       <div className="mx-auto flex max-w-lg flex-col gap-5 px-6">
-        <Mono style={{ color: CT.muted, fontSize: 9 }}>{updatedLabel}</Mono>
+        <Mono style={{ color: CT.muted, fontSize: 9.5 }}>{updatedLabel}</Mono>
         {sections.map((s, i) => (
           <section key={s.title}>
             <div
@@ -42,7 +42,7 @@ export function CLegalDocumentScreen({
               style={{ borderBottom: `1px solid ${CT.hairline2}` }}
             >
               <span
-                className="font-mono text-[11px]"
+                className="font-mono text-[11.5px]"
                 style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
               >
                 {String(i + 1).padStart(2, "0")}
@@ -67,7 +67,7 @@ export function CLegalDocumentScreen({
             <Link
               to="/"
               className="no-underline"
-              style={{ ...DISPLAY2, color: CT.goldDeep, fontSize: 12 }}
+              style={{ ...DISPLAY2, color: CT.goldDeep, fontSize: 12.5 }}
             >
               {homeLinkLabel} →
             </Link>

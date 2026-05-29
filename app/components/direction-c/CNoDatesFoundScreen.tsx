@@ -40,7 +40,7 @@ export function CNoDatesFoundScreen({
       />
 
       <div className="flex-1 overflow-auto px-6 pb-6 pt-3">
-        <div className="text-[12.5px] leading-snug" style={{ color: CT.muted }}>
+        <div className="text-[13px] leading-snug" style={{ color: CT.muted }}>
           Cho việc{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
             {intent.toLowerCase()}
@@ -78,13 +78,13 @@ export function CNoDatesFoundScreen({
           </svg>
 
           <h2
-            className="mt-5 text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            className="mt-5 text-[22.5px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ fontFamily: "var(--display)", color: CT.ink }}
           >
             Không có ngày cát lành
           </h2>
           <p
-            className="mt-2 max-w-[300px] text-[13.5px] leading-snug"
+            className="mt-2 max-w-[300px] text-[14px] leading-snug"
             style={{ color: CT.ink2 }}
           >
             {emptyReasonVi ? (
@@ -115,7 +115,7 @@ export function CNoDatesFoundScreen({
             >
               <div className="flex-1">
                 <div
-                  className="font-[family-name:var(--display-2)] text-[13.5px] font-bold tracking-[-0.005em]"
+                  className="font-[family-name:var(--display-2)] text-[14px] font-bold tracking-[-0.005em]"
                   style={{ color: CT.ink }}
                 >
                   {title}

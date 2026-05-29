@@ -81,7 +81,7 @@ export function CTodayReasoning({
           <LogoMark dark size={18} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <Mono style={{ color: CT.muted, fontSize: 9 }}>
+          <Mono style={{ color: CT.muted, fontSize: 9.5 }}>
             {loading ? "NLTT đang luận…" : done ? "NLTT luận" : "NLTT đang luận…"}
           </Mono>
           <p
@@ -90,7 +90,7 @@ export function CTodayReasoning({
               marginBottom: 0,
               fontFamily: "var(--serif)",
               fontStyle: "italic",
-              fontSize: 13.5,
+              fontSize: 14,
               lineHeight: 1.6,
               color: CT.ink2,
             }}
@@ -117,7 +117,7 @@ export function CTodayReasoning({
               style={{
                 marginTop: 10,
                 fontFamily: "var(--serif)",
-                fontSize: 11.5,
+                fontSize: 12,
                 color: CT.muted,
                 lineHeight: 1.5,
               }}
@@ -150,7 +150,7 @@ export function CTodayReasoning({
                 style={{
                   fontFamily: "var(--display-2)",
                   fontWeight: 700,
-                  fontSize: 11.5,
+                  fontSize: 12,
                   color: CT.goldDeep,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
@@ -161,7 +161,7 @@ export function CTodayReasoning({
               <span
                 style={{
                   fontFamily: "var(--serif)",
-                  fontSize: 14,
+                  fontSize: 14.5,
                   color: CT.goldDeep,
                   lineHeight: 1,
                 }}

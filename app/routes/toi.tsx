@@ -100,12 +100,12 @@ export default function ToiRoute() {
       <div className="flex-1 overflow-auto px-6 pb-[100px] pt-5">
         <div>
           <div
-            className="font-[family-name:var(--display)] text-[26px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+            className="font-[family-name:var(--display)] text-[26.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
             style={{ color: CT.ink }}
           >
             {displayName}
           </div>
-          <div className="mt-1 font-serif text-[12.5px]" style={{ color: CT.muted }}>
+          <div className="mt-1 font-serif text-[13px]" style={{ color: CT.muted }}>
             {[ageLabel, laso?.menh ? `mệnh ${laso.menh}` : null]
               .filter(Boolean)
               .join(" · ")}
@@ -114,7 +114,7 @@ export default function ToiRoute() {
 
         {recomputePending ? (
           <div
-            className="mt-4 border-l-[3px] px-3 py-2.5 font-serif text-[12.5px] leading-snug"
+            className="mt-4 border-l-[3px] px-3 py-2.5 font-serif text-[13px] leading-snug"
             style={{
               borderColor: CT.goldDeep,
               background: "rgba(154,124,34,0.08)",
@@ -137,7 +137,7 @@ export default function ToiRoute() {
             <Mono
               style={{
                 color: expiryUrgent ? CT.goldDeep : CT.gold,
-                fontSize: 9,
+                fontSize: 9.5,
                 letterSpacing: "0.18em",
               }}
             >
@@ -145,7 +145,7 @@ export default function ToiRoute() {
             </Mono>
             {daysLeft != null ? (
               <span
-                className="font-serif text-[11px]"
+                className="font-serif text-[11.5px]"
                 style={{
                   color: expiryUrgent
                     ? CT.goldDeep
@@ -157,7 +157,7 @@ export default function ToiRoute() {
             ) : null}
           </div>
           <div
-            className="mt-2 font-[family-name:var(--display)] text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            className="mt-2 font-[family-name:var(--display)] text-[22.5px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ color: expiryUrgent ? CT.ink : undefined }}
           >
             {isActive && expiryFormatted
@@ -210,13 +210,13 @@ export default function ToiRoute() {
             style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
           >
             <div className="flex items-baseline gap-2">
-              <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
-              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+              <span style={{ color: CT.goldDeep, fontSize: 14.5 }}>★</span>
+              <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
                 {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
               </Mono>
             </div>
             <div
-              className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+              className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
               style={{ color: CT.ink }}
             >
               Luận giải Bát tự năm
@@ -239,7 +239,7 @@ export default function ToiRoute() {
             className="mt-[22px] block border px-4 py-3.5 no-underline"
             style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
           >
-            <Mono style={{ color: CT.muted, fontSize: 9 }}>Luận giải Bát tự</Mono>
+            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Luận giải Bát tự</Mono>
             <div className="mt-1.5 font-[family-name:var(--display)] text-base font-extrabold uppercase tracking-[-0.005em]">
               Mở khóa luận giải
             </div>
@@ -256,13 +256,13 @@ export default function ToiRoute() {
             style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
           >
             <div className="flex items-baseline gap-2">
-              <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
-              <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+              <span style={{ color: CT.goldDeep, fontSize: 14.5 }}>★</span>
+              <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
                 {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
               </Mono>
             </div>
             <div
-              className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+              className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
               style={{ color: CT.ink }}
             >
               Luận giải Tiểu vận {tieuVanYear}
@@ -285,7 +285,7 @@ export default function ToiRoute() {
             className="mt-[22px] block border px-4 py-3.5 no-underline"
             style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
           >
-            <Mono style={{ color: CT.muted, fontSize: 9 }}>Luận giải Tiểu vận</Mono>
+            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Luận giải Tiểu vận</Mono>
             <div className="mt-1.5 font-[family-name:var(--display)] text-base font-extrabold uppercase tracking-[-0.005em]">
               Mở khóa luận giải
             </div>
@@ -299,7 +299,7 @@ export default function ToiRoute() {
           className="mt-9 border-t pt-[22px]"
           style={{ borderColor: CT.hairline }}
         >
-          <Mono style={{ color: CT.muted, fontSize: 9, display: "block", marginBottom: 6 }}>
+          <Mono style={{ color: CT.muted, fontSize: 9.5, display: "block", marginBottom: 6 }}>
             Ngày sắp tới · đã đánh dấu
           </Mono>
           {picksLoading ? (
@@ -324,16 +324,16 @@ export default function ToiRoute() {
               >
                 <div className="min-w-[50px]">
                   <div
-                    className="font-[family-name:var(--display-2)] text-[17px] font-extrabold tabular-nums tracking-[-0.015em]"
+                    className="font-[family-name:var(--display-2)] text-[17.5px] font-extrabold tabular-nums tracking-[-0.015em]"
                     style={{ color: CT.ink }}
                   >
                     {r.d}
                   </div>
-                  <Mono style={{ color: CT.muted, fontSize: 8.5, marginTop: 3 }}>
+                  <Mono style={{ color: CT.muted, fontSize: 9, marginTop: 3 }}>
                     {r.in}
                   </Mono>
                 </div>
-                <div className="flex-1 font-serif text-[13.5px]" style={{ color: CT.ink }}>
+                <div className="flex-1 font-serif text-[14px]" style={{ color: CT.ink }}>
                   {r.v}
                 </div>
                 <div
@@ -357,7 +357,7 @@ export default function ToiRoute() {
           style={{ borderColor: CT.hairline }}
         >
           <div className="flex items-baseline justify-between">
-            <Mono style={{ color: CT.muted, fontSize: 9 }}>Lá số tứ trụ</Mono>
+            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Lá số tứ trụ</Mono>
             <Link
               to="/toi/la-so"
               className="font-serif text-xs no-underline"
@@ -376,7 +376,7 @@ export default function ToiRoute() {
                   border: `1px solid ${p.hi ? CT.goldDeep : CT.hairline2}`,
                 }}
               >
-                <div className="font-serif text-[10px]" style={{ color: CT.muted }}>
+                <div className="font-serif text-[10.5px]" style={{ color: CT.muted }}>
                   {p.label}
                 </div>
                 <div
@@ -395,7 +395,7 @@ export default function ToiRoute() {
           style={{ borderColor: CT.hairline }}
         >
           <Mono
-            style={{ color: CT.muted, fontSize: 9, display: "block", marginBottom: 4 }}
+            style={{ color: CT.muted, fontSize: 9.5, display: "block", marginBottom: 4 }}
           >
             Tiện ích · cài đặt
           </Mono>
@@ -428,7 +428,7 @@ export default function ToiRoute() {
                 >
                   {row.t}
                 </div>
-                <div className="mt-0.5 font-serif text-[11.5px]" style={{ color: CT.muted }}>
+                <div className="mt-0.5 font-serif text-[12px]" style={{ color: CT.muted }}>
                   {row.sub}
                 </div>
               </div>
@@ -440,7 +440,7 @@ export default function ToiRoute() {
         </div>
 
         <div
-          className="mt-7 text-center font-[family-name:var(--mono)] text-[9px] tracking-[0.06em]"
+          className="mt-7 text-center font-[family-name:var(--mono)] text-[9.5px] tracking-[0.06em]"
           style={{ color: CT.muted }}
         >
           v1.0.4 · ngaylanhthangtot.vn

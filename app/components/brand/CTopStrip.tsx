@@ -26,7 +26,7 @@ export function CTopStrip({ dark = false, right }: CTopStripProps) {
       <div className="flex items-center gap-2.5">
         <LogoMark dark={dark} size={20} />
         <div
-          className="font-serif text-[12.5px] leading-[1.3]"
+          className="font-serif text-[13px] leading-[1.3]"
           style={{ color: fg }}
         >
           Lịch của <strong className="font-semibold">{name}</strong>

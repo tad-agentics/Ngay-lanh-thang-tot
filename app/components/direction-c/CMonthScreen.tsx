@@ -78,7 +78,7 @@ function MonthGrid({
             style={{
               textAlign: "center",
               fontFamily: "var(--mono)",
-              fontSize: 9,
+              fontSize: 9.5,
               color: i === 6 ? CT.red : "var(--muted)",
               letterSpacing: "0.08em",
               padding: "4px 0",
@@ -128,7 +128,7 @@ function MonthGrid({
                   style={{
                     fontFamily: "var(--display-2)",
                     fontWeight: isToday ? 800 : 600,
-                    fontSize: 14,
+                    fontSize: 14.5,
                     color: isToday
                       ? CT.cream
                       : c.otherMonth
@@ -147,7 +147,7 @@ function MonthGrid({
                   height: 11,
                   lineHeight: 1,
                   fontFamily: "var(--serif)",
-                  fontSize: 9,
+                  fontSize: 9.5,
                   color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
                 }}
               >
@@ -256,7 +256,7 @@ export function CMonthScreen() {
             style={{
               fontFamily: "var(--display)",
               fontWeight: 800,
-              fontSize: 28,
+              fontSize: 28.5,
               color: CT.ink,
               lineHeight: 1,
               textTransform: "uppercase",
@@ -273,7 +273,7 @@ export function CMonthScreen() {
               style={{
                 color: CT.goldDeep,
                 fontFamily: "var(--serif)",
-                fontSize: 20,
+                fontSize: 20.5,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -289,7 +289,7 @@ export function CMonthScreen() {
               style={{
                 color: CT.goldDeep,
                 fontFamily: "var(--serif)",
-                fontSize: 20,
+                fontSize: 20.5,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
@@ -305,7 +305,7 @@ export function CMonthScreen() {
           style={{
             marginTop: 6,
             fontFamily: "var(--serif)",
-            fontSize: 12.5,
+            fontSize: 13,
             color: "var(--muted)",
             lineHeight: 1.5,
           }}
@@ -347,7 +347,7 @@ export function CMonthScreen() {
             alignItems: "center",
             gap: 14,
             fontFamily: "var(--serif)",
-            fontSize: 11,
+            fontSize: 11.5,
             color: CT.muted,
           }}
         >

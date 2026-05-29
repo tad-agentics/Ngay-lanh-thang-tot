@@ -69,25 +69,25 @@ export function CPayFailureSheet({
         <div className="flex flex-col items-center pt-2 text-center">
           <PayFailureMark size={72} />
 
-          <Mono className="mt-4 text-[10px] tracking-[0.22em]" style={{ color: CT.red }}>
+          <Mono className="mt-4 text-[10.5px] tracking-[0.22em]" style={{ color: CT.red }}>
             Thanh toán không thành công
           </Mono>
           <h2
             id="pay-failure-title"
-            className="mt-2 max-w-[300px] text-[22px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+            className="mt-2 max-w-[300px] text-[22.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
             style={{ ...PAY_DISPLAY, color: CT.ink }}
           >
             Giao dịch
             <br />
             <span
-              className="font-serif text-[22px] font-bold italic normal-case tracking-normal"
+              className="font-serif text-[22.5px] font-bold italic normal-case tracking-normal"
               style={{ color: CT.red }}
             >
               chưa hoàn tất
             </span>
           </h2>
           <p
-            className="mt-2.5 max-w-[300px] text-[13px] leading-snug"
+            className="mt-2.5 max-w-[300px] text-[13.5px] leading-snug"
             style={{ color: CT.ink2 }}
           >
             Có thể số dư không đủ, bạn đã huỷ, hoặc lệnh đã hết hạn.{" "}
@@ -104,7 +104,7 @@ export function CPayFailureSheet({
               onOpenChange(false);
               onRetry();
             }}
-            className="mt-6 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13px] font-extrabold uppercase tracking-[0.08em]"
+            className="mt-6 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13.5px] font-extrabold uppercase tracking-[0.08em]"
             style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
           >
             {retryLabel}
@@ -120,7 +120,7 @@ export function CPayFailureSheet({
           <Link
             to={backTo}
             onClick={() => onOpenChange(false)}
-            className="mt-2.5 block w-full max-w-[320px] py-1 text-center font-serif text-[12.5px] no-underline"
+            className="mt-2.5 block w-full max-w-[320px] py-1 text-center font-serif text-[13px] no-underline"
             style={{ color: CT.muted }}
           >
             {backLabel}

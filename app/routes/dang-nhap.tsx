@@ -101,7 +101,7 @@ export default function DangNhap() {
             style={{
               fontFamily: "var(--display)",
               fontWeight: 800,
-              fontSize: 44,
+              fontSize: 44.5,
               color: C.cream,
               lineHeight: 0.96,
               textTransform: "uppercase",
@@ -128,7 +128,7 @@ export default function DangNhap() {
             style={{
               marginTop: 16,
               fontFamily: "var(--serif)",
-              fontSize: 14,
+              fontSize: 14.5,
               color: "rgba(237,231,211,0.7)",
               lineHeight: 1.55,
               maxWidth: 280,
@@ -175,7 +175,7 @@ export default function DangNhap() {
           style={{
             marginTop: 18,
             fontFamily: "var(--serif)",
-            fontSize: 11,
+            fontSize: 11.5,
             color: "rgba(237,231,211,0.4)",
             textAlign: "center",
             lineHeight: 1.5,

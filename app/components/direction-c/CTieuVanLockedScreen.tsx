@@ -21,9 +21,9 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
           className="border px-4 py-3.5"
           style={{ background: "#fff", borderColor: CT.hairline }}
         >
-          <Mono style={{ color: CT.muted, fontSize: 9 }}>Chưa mở khoá</Mono>
+          <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
           <h2
-            className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+            className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
           >
             Luận giải Tiểu vận
           </h2>
@@ -35,7 +35,7 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
             style={{ color: CT.goldDeep }}
           >
             {pkg?.priceLabel ?? "199.000₫"}
-            <span className="ml-2 font-serif text-[11px] font-normal" style={{ color: CT.muted }}>
+            <span className="ml-2 font-serif text-[11.5px] font-normal" style={{ color: CT.muted }}>
               · hoặc kèm gói năm
             </span>
           </p>
@@ -43,7 +43,7 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
 
         <Link
           to="/luan/mua/xac-nhan?sku=luan_tieu_van"
-          className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+          className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--display-2)] text-[13.5px] font-extrabold uppercase tracking-[0.08em] no-underline"
           style={{ background: CT.forest, color: CT.cream }}
         >
           Mở khóa {pkg?.title ?? "luận giải Tiểu vận"}

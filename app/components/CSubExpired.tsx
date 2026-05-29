@@ -63,27 +63,27 @@ export function CSubExpired() {
         </svg>
 
         <Mono
-          className="mt-5 text-[10px] tracking-[0.22em]"
+          className="mt-5 text-[10.5px] tracking-[0.22em]"
           style={{ color: CT.goldDeep }}
         >
           Lịch cát tường hết hạn
         </Mono>
         <h2
           id="sub-expired-title"
-          className="mt-2.5 max-w-[320px] font-[family-name:var(--display)] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+          className="mt-2.5 max-w-[320px] font-[family-name:var(--display)] text-[28.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
           style={{ color: CT.ink }}
         >
           Lịch cát tường
           <br />
           <span
-            className="font-serif text-[28px] font-bold normal-case not-italic tracking-normal"
+            className="font-serif text-[28.5px] font-bold normal-case not-italic tracking-normal"
             style={{ color: CT.goldDeep }}
           >
             {expiryFormatted ? `tạm dừng từ ngày ${expiryFormatted}` : "đã hết hạn"}
           </span>
         </h2>
         <p
-          className="mt-3.5 max-w-[320px] text-[13.5px] leading-snug"
+          className="mt-3.5 max-w-[320px] text-[14px] leading-snug"
           style={{ color: CT.ink2 }}
         >
           Gia hạn để tiếp tục xem trang ngày cát lành, tra cứu vạn sự và khai mở{" "}
@@ -98,14 +98,14 @@ export function CSubExpired() {
             className="relative mt-5 w-full max-w-[320px] px-4 py-3.5 text-left"
             style={{ background: CT.forest, color: CT.cream }}
           >
-            <Mono className="text-[9px]" style={{ color: CT.gold }}>
+            <Mono className="text-[9.5px]" style={{ color: CT.gold }}>
               {renewSku === "goi_12thang" ? "Gói cát tường khuyên dùng" : "Gói đăng ký trước đây"}
             </Mono>
             <div className="mt-1 font-[family-name:var(--display)] text-lg font-extrabold uppercase tracking-[-0.005em]">
               {renewPkg.title}
             </div>
             <div
-              className="mt-1.5 font-[family-name:var(--display-2)] text-[22px] font-extrabold tabular-nums"
+              className="mt-1.5 font-[family-name:var(--display-2)] text-[22.5px] font-extrabold tabular-nums"
               style={{ color: CT.gold }}
             >
               {renewPkg.priceLabel}
@@ -122,7 +122,7 @@ export function CSubExpired() {
 
         <Link
           to="/dat-lich"
-          className="mt-3 text-[12.5px] no-underline"
+          className="mt-3 text-[13px] no-underline"
           style={{ color: CT.muted }}
         >
           Xem các gói lịch khác →
@@ -130,7 +130,7 @@ export function CSubExpired() {
 
         <Link
           to="/toi/cai-dat"
-          className="mt-5 block text-[12.5px] no-underline"
+          className="mt-5 block text-[13px] no-underline"
           style={{ color: CT.goldDeep }}
         >
           Cài đặt tài khoản →

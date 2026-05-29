@@ -43,7 +43,7 @@ function SettingsRow({
       </div>
       <div className="flex shrink-0 items-baseline gap-2.5">
         {value ? (
-          <span className="font-serif text-[12.5px]" style={{ color: CT.muted }}>
+          <span className="font-serif text-[13px]" style={{ color: CT.muted }}>
             {value}
           </span>
         ) : null}
@@ -88,7 +88,7 @@ function SettingsSection({
 }) {
   return (
     <section className="mt-[26px] first:mt-2">
-      <Mono className="mb-1 text-[9px]" style={{ color: CT.muted }}>
+      <Mono className="mb-1 text-[9.5px]" style={{ color: CT.muted }}>
         {title}
       </Mono>
       <div>{children}</div>
@@ -119,7 +119,7 @@ function LegalPickerDialog({
         style={{ background: CT.paper, fontFamily: "var(--serif)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <Mono style={{ color: CT.muted, fontSize: 9 }}>Pháp lý</Mono>
+        <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Pháp lý</Mono>
         <h3
           id="legal-picker-title"
           className="mt-1.5 font-[family-name:var(--display-2)] text-base font-semibold tracking-[-0.005em]"
@@ -148,7 +148,7 @@ function LegalPickerDialog({
         <button
           type="button"
           onClick={onClose}
-          className="mt-3 w-full cursor-pointer border-none bg-transparent py-2 text-center font-serif text-[12.5px]"
+          className="mt-3 w-full cursor-pointer border-none bg-transparent py-2 text-center font-serif text-[13px]"
           style={{ color: CT.muted }}
         >
           Huỷ
@@ -237,7 +237,7 @@ export function CSettingsScreen() {
         </div>
 
         <p
-          className="mt-6 text-center font-[family-name:var(--mono)] text-[9.5px] tracking-[0.06em]"
+          className="mt-6 text-center font-[family-name:var(--mono)] text-[10px] tracking-[0.06em]"
           style={{ color: CT.muted }}
         >
           v{APP_VERSION} · ngaylanhthangtot.vn

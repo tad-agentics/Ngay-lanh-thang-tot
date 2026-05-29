@@ -130,7 +130,7 @@ function LHeader({ onMenu }: { onMenu: () => void }) {
             Ngày Lành
           </div>
           <div
-            className="font-display font-semibold text-[9px] uppercase"
+            className="font-display font-semibold text-[9.5px] uppercase"
             style={{ color: T.goldDeep, letterSpacing: "0.32em" }}
           >
             Tháng Tốt
@@ -142,7 +142,7 @@ function LHeader({ onMenu }: { onMenu: () => void }) {
           <a
             key={t}
             href={h}
-            className="font-display font-semibold text-[13px] uppercase no-underline"
+            className="font-display font-semibold text-[13.5px] uppercase no-underline"
             style={{ color: T.ink2, letterSpacing: "0.06em" }}
           >
             {t}
@@ -150,7 +150,7 @@ function LHeader({ onMenu }: { onMenu: () => void }) {
         ))}
         <Link
           to="/dang-nhap"
-          className="font-display font-semibold text-[13px] uppercase no-underline"
+          className="font-display font-semibold text-[13.5px] uppercase no-underline"
           style={{ color: T.goldDeep, letterSpacing: "0.06em" }}
         >
           Mở lịch
@@ -204,11 +204,11 @@ function LMobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-2.5">
-          <Link to="/dang-nhap" onClick={onClose} className="text-center py-3 font-display font-semibold text-[13px] uppercase no-underline" style={{ color: T.goldDeep }}>
+          <Link to="/dang-nhap" onClick={onClose} className="text-center py-3 font-display font-semibold text-[13.5px] uppercase no-underline" style={{ color: T.goldDeep }}>
             Mở lịch của tôi
           </Link>
           <LandingGoogleSignInButton
-            className={`${landingGoogleBtnClass} w-full py-3.5 text-[13px]`}
+            className={`${landingGoogleBtnClass} w-full py-3.5 text-[13.5px]`}
             style={{ background: T.forest, color: T.cream, letterSpacing: "0.08em" }}
             onAfterClick={onClose}
           />
@@ -245,11 +245,11 @@ function LHeroStack() {
             zIndex: 1,
           }}
         >
-          <div className="font-serif text-[10px]" style={{ color: T.muted }}>
+          <div className="font-serif text-[10.5px]" style={{ color: T.muted }}>
             Tháng {p.m} · 2026
           </div>
           <div className="mt-1.5 flex items-end gap-2">
-            <div className="font-display font-extrabold text-[76px] leading-[0.85] tabular-nums" style={{ color: T.red, letterSpacing: "-0.045em" }}>
+            <div className="font-display font-extrabold text-[76.5px] leading-[0.85] tabular-nums" style={{ color: T.red, letterSpacing: "-0.045em" }}>
               {p.d}
             </div>
             <div className="pb-2 font-display font-extrabold text-base uppercase leading-none" style={{ color: T.red }}>
@@ -257,8 +257,8 @@ function LHeroStack() {
             </div>
           </div>
           <div className="mt-3 pt-2 flex justify-between items-baseline" style={{ borderTop: `1px solid ${T.hairline2}` }}>
-            <Mono style={{ color: T.muted, fontSize: 9, letterSpacing: "0.06em" }}>{p.chi}</Mono>
-            <span className="font-display font-extrabold text-[22px] leading-none" style={{ color: scoreColorFromPoints(p.score) }}>
+            <Mono style={{ color: T.muted, fontSize: 9.5, letterSpacing: "0.06em" }}>{p.chi}</Mono>
+            <span className="font-display font-extrabold text-[22.5px] leading-none" style={{ color: scoreColorFromPoints(p.score) }}>
               {p.score}
             </span>
           </div>
@@ -279,19 +279,19 @@ function LHeroStack() {
         }}
       >
         <div className="px-[22px] pt-3.5 pb-1.5" style={{ borderBottom: `1px solid ${T.hairline2}` }}>
-          <span className="font-serif text-[12.5px]" style={{ color: T.muted }}>
+          <span className="font-serif text-[13px]" style={{ color: T.muted }}>
             Tháng 5 · 2026 · Bính Ngọ
           </span>
         </div>
         <div className="px-[22px] py-3 flex items-end gap-3.5">
-          <div className="font-display font-extrabold text-[130px] leading-[0.84] tabular-nums" style={{ color: T.red, letterSpacing: "-0.045em" }}>
+          <div className="font-display font-extrabold text-[130.5px] leading-[0.84] tabular-nums" style={{ color: T.red, letterSpacing: "-0.045em" }}>
             26
           </div>
-          <div className="pb-4 font-display font-black text-[28px] uppercase leading-[0.95]" style={{ color: T.red }}>
+          <div className="pb-4 font-display font-black text-[28.5px] uppercase leading-[0.95]" style={{ color: T.red }}>
             Thứ Ba
           </div>
         </div>
-        <p className="px-[22px] pb-3.5 font-serif text-[12.5px] leading-snug" style={{ color: T.ink2 }}>
+        <p className="px-[22px] pb-3.5 font-serif text-[13px] leading-snug" style={{ color: T.ink2 }}>
           Mùng 10 tháng Tư · ngày <strong style={{ color: T.ink, fontWeight: 600 }}>Mậu Tuất</strong> · tiết Tiểu Mãn
         </p>
         <div className="px-[22px] py-3.5 flex justify-between items-baseline" style={{ borderTop: `1px solid ${T.hairline}`, background: "rgba(154,124,34,0.04)" }}>
@@ -299,12 +299,12 @@ function LHeroStack() {
             <div className="font-display font-extrabold text-base uppercase" style={{ color: T.goldDeep }}>
               Ngày khá
             </div>
-            <div className="font-serif text-[11px] mt-0.5" style={{ color: T.muted }}>
+            <div className="font-serif text-[11.5px] mt-0.5" style={{ color: T.muted }}>
               cho mệnh Quý Thủy
             </div>
           </div>
           <div className="flex items-baseline gap-0.5">
-            <span className="font-display font-extrabold text-[40px] leading-none tabular-nums" style={{ color: T.goldDeep }}>
+            <span className="font-display font-extrabold text-[40.5px] leading-none tabular-nums" style={{ color: T.goldDeep }}>
               76
             </span>
             <span className="font-serif text-xs" style={{ color: T.muted }}>
@@ -312,12 +312,12 @@ function LHeroStack() {
             </span>
           </div>
         </div>
-        <p className="px-[22px] py-3 font-serif italic text-[12.5px] leading-snug" style={{ color: T.ink2 }}>
+        <p className="px-[22px] py-3 font-serif italic text-[13px] leading-snug" style={{ color: T.ink2 }}>
           &ldquo;Mộc khí vượng đến trưa, hợp ký kết và mở việc.&rdquo;
         </p>
       </div>
       <div
-        className="absolute top-2.5 right-2.5 z-[11] px-3 py-1.5 font-mono text-[9px] font-extrabold uppercase"
+        className="absolute top-2.5 right-2.5 z-[11] px-3 py-1.5 font-mono text-[9.5px] font-extrabold uppercase"
         style={{ background: T.ink, color: T.gold, letterSpacing: "0.22em" }}
       >
         365 trang · cả năm
@@ -329,7 +329,7 @@ function LHeroStack() {
 function SectionKicker({ children, dark }: { children: string; dark?: boolean }) {
   return (
     <div className="flex items-baseline gap-3.5 mb-8">
-      <Mono style={{ color: dark ? T.gold : T.goldDeep, fontSize: 11, letterSpacing: "0.22em" }}>
+      <Mono style={{ color: dark ? T.gold : T.goldDeep, fontSize: 11.5, letterSpacing: "0.22em" }}>
         {children}
       </Mono>
       <span className="flex-1 h-px" style={{ background: dark ? "rgba(197,165,90,0.25)" : T.hairline }} />
@@ -350,10 +350,10 @@ export function LandingDirectionC() {
       <section className="relative overflow-hidden" style={{ background: T.paper, padding: "64px 6vw 80px" }}>
         <div className="ldc-hero-grid max-w-[1200px] mx-auto grid items-center gap-14" style={{ gridTemplateColumns: "1.05fr 1fr" }}>
           <div>
-            <Mono style={{ color: T.goldDeep, fontSize: 11, letterSpacing: "0.22em" }}>
+            <Mono style={{ color: T.goldDeep, fontSize: 11.5, letterSpacing: "0.22em" }}>
               LỊCH ĐIỆN TỬ CÁ NHÂN · 2026
             </Mono>
-            <h1 className="ldc-hero-h1 font-display font-extrabold uppercase leading-[0.9] my-5" style={{ fontSize: 96, letterSpacing: "-0.03em", color: T.ink }}>
+            <h1 className="ldc-hero-h1 font-display font-extrabold uppercase leading-[0.9] my-5" style={{ fontSize: 96.5, letterSpacing: "-0.03em", color: T.ink }}>
               Đây là
               <br />
               lịch
@@ -363,13 +363,13 @@ export function LandingDirectionC() {
               </span>
               .
             </h1>
-            <p className="font-serif text-[19px] leading-relaxed m-0 max-w-[460px]" style={{ color: T.ink2 }}>
+            <p className="font-serif text-[19.5px] leading-relaxed m-0 max-w-[460px]" style={{ color: T.ink2 }}>
               Không để dùng khi cần mới tra. Không phải công cụ.
               <br />
               <strong style={{ color: T.ink, fontWeight: 600 }}>365 trang lịch tờ điện tử</strong> — mỗi trang chấm sẵn theo lá số tứ trụ của bạn.
             </p>
             <div className="mt-7 px-[18px] py-4" style={{ background: "rgba(154,124,34,0.06)", borderLeft: `3px solid ${T.goldDeep}` }}>
-              <Mono style={{ color: T.goldDeep, fontSize: 10, letterSpacing: "0.18em" }}>MỖI SÁNG</Mono>
+              <Mono style={{ color: T.goldDeep, fontSize: 10.5, letterSpacing: "0.18em" }}>MỖI SÁNG</Mono>
               <p className="font-serif italic text-sm mt-1 mb-0 leading-snug" style={{ color: T.ink }}>
                 &ldquo;Lật trang hôm nay. Xem hôm nay mệnh mình thế nào.&rdquo;
               </p>
@@ -377,12 +377,12 @@ export function LandingDirectionC() {
             <div className="mt-7 flex flex-wrap gap-3.5 items-center">
               <Link
                 to="/gio-sinh"
-                className="px-8 py-[18px] font-display font-bold text-[15px] uppercase no-underline"
+                className="px-8 py-[18px] font-display font-bold text-[15.5px] uppercase no-underline"
                 style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em", boxShadow: "0 12px 24px rgba(29,49,41,0.18)" }}
               >
                 Lập lịch của tôi
               </Link>
-              <div className="font-serif text-[13px] leading-snug" style={{ color: T.muted }}>
+              <div className="font-serif text-[13.5px] leading-snug" style={{ color: T.muted }}>
                 30 giây · không cần thẻ
               </div>
             </div>
@@ -395,7 +395,7 @@ export function LandingDirectionC() {
       <section id="lich" style={{ background: T.forest, color: T.cream, padding: "88px 6vw", borderTop: "1px solid rgba(197,165,90,0.15)" }}>
         <div className="max-w-[1200px] mx-auto">
           <SectionKicker dark>Mỗi sáng một trang</SectionKicker>
-          <h2 className="ldc-ritual-h2 font-display font-extrabold uppercase leading-none max-w-[800px]" style={{ fontSize: 64, letterSpacing: "-0.02em" }}>
+          <h2 className="ldc-ritual-h2 font-display font-extrabold uppercase leading-none max-w-[800px]" style={{ fontSize: 64.5, letterSpacing: "-0.02em" }}>
             Như lật{" "}
             <span className="font-serif italic font-bold normal-case" style={{ color: T.gold }}>
               trang lịch tờ
@@ -407,7 +407,7 @@ export function LandingDirectionC() {
             </em>
             .
           </h2>
-          <p className="font-serif text-[17px] leading-relaxed mt-5 max-w-[640px]" style={{ color: "rgba(237,231,211,0.72)" }}>
+          <p className="font-serif text-[17.5px] leading-relaxed mt-5 max-w-[640px]" style={{ color: "rgba(237,231,211,0.72)" }}>
             Sáng mở ra thấy trang hôm nay đã chấm sẵn theo mệnh bạn.{" "}
             <strong style={{ color: T.cream, fontWeight: 600 }}>Không phải tra cứu — là thói quen hằng ngày</strong>.
           </p>
@@ -427,28 +427,28 @@ export function LandingDirectionC() {
                 }}
               >
                 {p.current ? (
-                  <div className="absolute -top-2.5 left-3.5 px-2.5 py-0.5 font-mono text-[9px] font-extrabold" style={{ background: T.gold, color: T.forest, letterSpacing: "0.18em" }}>
+                  <div className="absolute -top-2.5 left-3.5 px-2.5 py-0.5 font-mono text-[9.5px] font-extrabold" style={{ background: T.gold, color: T.forest, letterSpacing: "0.18em" }}>
                     HÔM NAY
                   </div>
                 ) : null}
                 <div className="px-[18px] pt-3.5 pb-1.5" style={{ borderBottom: `1px solid ${T.hairline2}` }}>
-                  <span className="font-serif text-[11px]" style={{ color: T.muted }}>
+                  <span className="font-serif text-[11.5px]" style={{ color: T.muted }}>
                     Tháng 5 · 2026
                   </span>
                 </div>
                 <div className="px-[18px] py-3.5 flex items-end gap-3">
-                  <div className="font-display font-extrabold text-[96px] leading-[0.85] tabular-nums" style={{ color: p.current ? T.red : "rgba(163,32,31,0.45)" }}>
+                  <div className="font-display font-extrabold text-[96.5px] leading-[0.85] tabular-nums" style={{ color: p.current ? T.red : "rgba(163,32,31,0.45)" }}>
                     {p.d}
                   </div>
-                  <div className="pb-3 font-display font-extrabold text-[22px] uppercase leading-[0.95]" style={{ color: p.current ? T.red : "rgba(163,32,31,0.5)" }}>
+                  <div className="pb-3 font-display font-extrabold text-[22.5px] uppercase leading-[0.95]" style={{ color: p.current ? T.red : "rgba(163,32,31,0.5)" }}>
                     {p.wd}
                   </div>
                 </div>
                 <div className="px-[18px] py-3.5 flex justify-between items-baseline" style={{ borderTop: `1px solid ${T.hairline2}`, background: p.current ? "rgba(154,124,34,0.05)" : undefined }}>
-                  <div className="font-display font-bold text-[13px] uppercase" style={{ color: p.current ? T.goldDeep : T.muted }}>
+                  <div className="font-display font-bold text-[13.5px] uppercase" style={{ color: p.current ? T.goldDeep : T.muted }}>
                     {p.verdict}
                   </div>
-                  <span className="font-display font-extrabold text-[22px]" style={{ color: scoreColorFromPoints(p.score) }}>
+                  <span className="font-display font-extrabold text-[22.5px]" style={{ color: scoreColorFromPoints(p.score) }}>
                     {p.score}
                   </span>
                 </div>
@@ -462,7 +462,7 @@ export function LandingDirectionC() {
       <section id="ca-nhan-hoa" style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[1200px] mx-auto">
           <SectionKicker>Cá nhân hoá</SectionKicker>
-          <h2 className="ldc-personal-h2 font-display font-extrabold uppercase leading-none max-w-[920px]" style={{ fontSize: 64, letterSpacing: "-0.02em" }}>
+          <h2 className="ldc-personal-h2 font-display font-extrabold uppercase leading-none max-w-[920px]" style={{ fontSize: 64.5, letterSpacing: "-0.02em" }}>
             Cùng <span style={{ color: T.red }}>ngày 26.05</span> —<br />
             khác mệnh,{" "}
             <em className="font-serif font-bold not-italic" style={{ color: T.goldDeep }}>
@@ -477,29 +477,29 @@ export function LandingDirectionC() {
             ].map((p, i) => (
               <div key={p.menh} className="bg-white" style={{ border: `1px solid ${T.hairline}` }}>
                 <div className="px-[22px] py-3.5" style={{ background: i === 0 ? "rgba(154,124,34,0.06)" : "rgba(163,32,31,0.04)", borderBottom: `1px solid ${T.hairline2}` }}>
-                  <Mono style={{ color: T.muted, fontSize: 10, letterSpacing: "0.18em" }}>{p.kind}</Mono>
-                  <div className="mt-1 font-display font-extrabold text-[22px] uppercase">Mệnh {p.menh}</div>
+                  <Mono style={{ color: T.muted, fontSize: 10.5, letterSpacing: "0.18em" }}>{p.kind}</Mono>
+                  <div className="mt-1 font-display font-extrabold text-[22.5px] uppercase">Mệnh {p.menh}</div>
                 </div>
                 <div className="px-[22px] pt-6 pb-2 flex items-end gap-3.5">
-                  <div className="font-display font-extrabold text-[112px] leading-[0.84] tabular-nums" style={{ color: T.red }}>
+                  <div className="font-display font-extrabold text-[112.5px] leading-[0.84] tabular-nums" style={{ color: T.red }}>
                     26
                   </div>
-                  <div className="pb-3.5 font-display font-black text-[26px] uppercase leading-[0.95]" style={{ color: T.red }}>
+                  <div className="pb-3.5 font-display font-black text-[26.5px] uppercase leading-[0.95]" style={{ color: T.red }}>
                     Thứ Ba
                   </div>
                 </div>
-                <div className="px-[22px] pb-4 font-serif text-[12.5px]" style={{ color: T.muted }}>
+                <div className="px-[22px] pb-4 font-serif text-[13px]" style={{ color: T.muted }}>
                   Mùng 10 tháng Tư · ngày Mậu Tuất
                 </div>
                 <div className="px-[22px] py-3.5 flex justify-between items-baseline" style={{ borderTop: `1px solid ${T.hairline}` }}>
-                  <div className="font-display font-extrabold text-[17px] uppercase" style={{ color: p.accent }}>
+                  <div className="font-display font-extrabold text-[17.5px] uppercase" style={{ color: p.accent }}>
                     {p.verdict}
                   </div>
-                  <span className="font-display font-extrabold text-[40px] tabular-nums" style={{ color: p.accent }}>
+                  <span className="font-display font-extrabold text-[40.5px] tabular-nums" style={{ color: p.accent }}>
                     {p.score}
                   </span>
                 </div>
-                <p className="px-[22px] py-3 font-serif italic text-[13px] leading-snug" style={{ color: T.ink2 }}>
+                <p className="px-[22px] py-3 font-serif italic text-[13.5px] leading-snug" style={{ color: T.ink2 }}>
                   &ldquo;{p.why}&rdquo;
                 </p>
               </div>
@@ -512,7 +512,7 @@ export function LandingDirectionC() {
       <section style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[1200px] mx-auto">
           <SectionKicker>Cả năm trong tay</SectionKicker>
-          <h2 className="ldc-year-h2 font-display font-extrabold uppercase leading-[1.02] max-w-[880px]" style={{ fontSize: 56, letterSpacing: "-0.02em" }}>
+          <h2 className="ldc-year-h2 font-display font-extrabold uppercase leading-[1.02] max-w-[880px]" style={{ fontSize: 56.5, letterSpacing: "-0.02em" }}>
             365 ngày ·{" "}
             <span className="font-serif italic font-bold normal-case" style={{ color: T.goldDeep }}>
               đã chấm sẵn
@@ -539,7 +539,7 @@ export function LandingDirectionC() {
                     border: current ? `1.5px solid ${T.goldDeep}` : `1px solid ${T.hairline2}`,
                   }}
                 >
-                  <Mono style={{ color: current ? T.goldDeep : T.muted, fontSize: 9 }}>Tháng {m}</Mono>
+                  <Mono style={{ color: current ? T.goldDeep : T.muted, fontSize: 9.5 }}>Tháng {m}</Mono>
                   <div className="mt-1 font-display font-extrabold text-sm uppercase" style={{ color: current ? T.ink : T.ink2 }}>
                     {name}
                   </div>
@@ -569,13 +569,13 @@ export function LandingDirectionC() {
               boxShadow: "0 24px 48px rgba(29,49,41,0.25)",
             }}
           >
-            <div className="absolute -top-3 left-8 px-3.5 py-1 font-mono text-[10px] font-extrabold" style={{ background: T.gold, color: T.forest, letterSpacing: "0.22em" }}>
+            <div className="absolute -top-3 left-8 px-3.5 py-1 font-mono text-[10.5px] font-extrabold" style={{ background: T.gold, color: T.forest, letterSpacing: "0.22em" }}>
               ★ KHUYẾN NGHỊ
             </div>
             <div className="ldc-pricing-tier-grid grid items-center gap-12" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
               <div>
-                <Mono style={{ color: T.gold, fontSize: 11, letterSpacing: "0.22em" }}>LỊCH ĐINH MÙI 2027 · 1 NĂM</Mono>
-                <h3 className="ldc-pricing-h3 font-display font-extrabold uppercase leading-[0.96] mt-2.5" style={{ fontSize: 56, letterSpacing: "-0.02em" }}>
+                <Mono style={{ color: T.gold, fontSize: 11.5, letterSpacing: "0.22em" }}>LỊCH ĐINH MÙI 2027 · 1 NĂM</Mono>
+                <h3 className="ldc-pricing-h3 font-display font-extrabold uppercase leading-[0.96] mt-2.5" style={{ fontSize: 56.5, letterSpacing: "-0.02em" }}>
                   Lịch của bạn
                   <br />
                   <span className="font-serif italic font-bold normal-case" style={{ color: T.gold }}>
@@ -591,17 +591,17 @@ export function LandingDirectionC() {
                 </Link>
               </div>
               <div>
-                <Mono style={{ color: T.gold, fontSize: 10, letterSpacing: "0.18em" }}>BẠN TRẢ</Mono>
+                <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.18em" }}>BẠN TRẢ</Mono>
                 <div className="flex items-baseline gap-1.5 mt-2">
-                  <span className="ldc-hero-price font-display font-extrabold leading-[0.9] tabular-nums" style={{ fontSize: 104, color: T.gold, letterSpacing: "-0.03em" }}>
+                  <span className="ldc-hero-price font-display font-extrabold leading-[0.9] tabular-nums" style={{ fontSize: 104.5, color: T.gold, letterSpacing: "-0.03em" }}>
                     799
                   </span>
-                  <span className="font-display font-bold text-[32px]" style={{ color: T.gold }}>
+                  <span className="font-display font-bold text-[32.5px]" style={{ color: T.gold }}>
                     k
                   </span>
                 </div>
                 <div className="mt-2">
-                  <Mono style={{ color: T.gold, fontSize: 10, letterSpacing: "0.14em" }}>
+                  <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.14em" }}>
                     TIẾT KIỆM 298.000Đ · ≈ 27% RẺ HƠN
                   </Mono>
                 </div>
@@ -620,17 +620,17 @@ export function LandingDirectionC() {
                 style={{ border: `1px solid ${T.hairline}`, color: T.ink }}
               >
                 <div>
-                  <div className="font-display font-extrabold text-[22px] uppercase">{t.name}</div>
+                  <div className="font-display font-extrabold text-[22.5px] uppercase">{t.name}</div>
                   <div className="font-serif text-xs mt-1" style={{ color: T.muted }}>
                     {t.sub}
                     {"save" in t && t.save ? ` · ${t.save}` : ""}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-display font-extrabold text-[26px] tabular-nums" style={{ color: T.goldDeep }}>
+                  <div className="font-display font-extrabold text-[26.5px] tabular-nums" style={{ color: T.goldDeep }}>
                     {t.price}
                   </div>
-                  <div className="font-serif text-[11px]" style={{ color: T.muted }}>
+                  <div className="font-serif text-[11.5px]" style={{ color: T.muted }}>
                     đ · {t.per}
                   </div>
                 </div>
@@ -644,7 +644,7 @@ export function LandingDirectionC() {
       <section id="hoi-dap" style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[800px] mx-auto">
           <SectionKicker>Hỏi đáp</SectionKicker>
-          <h2 className="font-display font-extrabold uppercase leading-tight mb-8" style={{ fontSize: 48, letterSpacing: "-0.015em" }}>
+          <h2 className="font-display font-extrabold uppercase leading-tight mb-8" style={{ fontSize: 48.5, letterSpacing: "-0.015em" }}>
             6 câu{" "}
             <span className="font-serif italic font-bold normal-case" style={{ color: T.goldDeep }}>
               hay gặp nhất
@@ -663,14 +663,14 @@ export function LandingDirectionC() {
               style={{ borderTop: `1px solid ${T.hairline}` }}
             >
               <div className="flex items-center gap-4">
-                <Mono style={{ color: T.muted, fontSize: 11, minWidth: 32 }}>{String(i + 1).padStart(2, "0")}</Mono>
-                <span className="flex-1 font-display font-bold text-[19px] uppercase">{q}</span>
+                <Mono style={{ color: T.muted, fontSize: 11.5, minWidth: 32 }}>{String(i + 1).padStart(2, "0")}</Mono>
+                <span className="flex-1 font-display font-bold text-[19.5px] uppercase">{q}</span>
                 <span className="font-serif text-lg transition-transform duration-200" style={{ color: T.goldDeep, transform: faqOpen === i ? "rotate(45deg)" : undefined }}>
                   +
                 </span>
               </div>
               {faqOpen === i ? (
-                <p className="font-serif text-[14.5px] leading-relaxed mt-3.5 pl-12 mb-0" style={{ color: T.ink2 }}>
+                <p className="font-serif text-[15px] leading-relaxed mt-3.5 pl-12 mb-0" style={{ color: T.ink2 }}>
                   {a}
                 </p>
               ) : null}
@@ -683,8 +683,8 @@ export function LandingDirectionC() {
       {/* CTA */}
       <section className="text-center relative overflow-hidden" style={{ background: T.forest, color: T.cream, padding: "96px 6vw" }}>
         <div className="relative max-w-[800px] mx-auto">
-          <Mono style={{ color: T.gold, fontSize: 11, letterSpacing: "0.24em" }}>BẮT ĐẦU</Mono>
-          <h2 className="ldc-cta-h2 font-display font-extrabold uppercase leading-[0.94] mt-4" style={{ fontSize: 88, letterSpacing: "-0.02em" }}>
+          <Mono style={{ color: T.gold, fontSize: 11.5, letterSpacing: "0.24em" }}>BẮT ĐẦU</Mono>
+          <h2 className="ldc-cta-h2 font-display font-extrabold uppercase leading-[0.94] mt-4" style={{ fontSize: 88.5, letterSpacing: "-0.02em" }}>
             Trang đầu tiên
             <br />
             <span className="font-serif italic font-bold normal-case" style={{ color: T.gold }}>
@@ -712,17 +712,17 @@ export function LandingDirectionC() {
                 <div className="font-display font-extrabold text-base uppercase" style={{ color: T.cream }}>
                   Ngày Lành
                 </div>
-                <div className="font-display font-semibold text-[9px] uppercase" style={{ color: T.gold, letterSpacing: "0.32em" }}>
+                <div className="font-display font-semibold text-[9.5px] uppercase" style={{ color: T.gold, letterSpacing: "0.32em" }}>
                   Tháng Tốt
                 </div>
               </div>
             </div>
-            <p className="font-serif mt-5 text-[13.5px] leading-relaxed max-w-xs" style={{ color: "rgba(237,231,211,0.55)" }}>
+            <p className="font-serif mt-5 text-[14px] leading-relaxed max-w-xs" style={{ color: "rgba(237,231,211,0.55)" }}>
               Lịch tờ điện tử cá nhân — chấm điểm theo lá số tứ trụ riêng của bạn.
             </p>
           </div>
         </div>
-        <div className="max-w-[1200px] mx-auto mt-12 pt-7 flex justify-between flex-wrap gap-3 font-mono text-[10.5px]" style={{ borderTop: "1px solid rgba(197,165,90,0.12)", color: "rgba(237,231,211,0.5)" }}>
+        <div className="max-w-[1200px] mx-auto mt-12 pt-7 flex justify-between flex-wrap gap-3 font-mono text-[11px]" style={{ borderTop: "1px solid rgba(197,165,90,0.12)", color: "rgba(237,231,211,0.5)" }}>
           <span>© 2026 Ngày Lành Tháng Tốt · ngaylanhthangtot.vn</span>
         </div>
       </footer>
@@ -732,8 +732,8 @@ export function LandingDirectionC() {
         style={{ display: "none", background: "rgba(240,236,226,0.96)", borderTop: `1px solid ${T.hairline}`, padding: "12px 18px" }}
       >
         <div className="flex-1 min-w-0">
-          <Mono style={{ color: T.muted, fontSize: 9 }}>30 giây · không cần thẻ</Mono>
-          <div className="font-display font-bold text-[13px] uppercase">Lập lịch của tôi</div>
+          <Mono style={{ color: T.muted, fontSize: 9.5 }}>30 giây · không cần thẻ</Mono>
+          <div className="font-display font-bold text-[13.5px] uppercase">Lập lịch của tôi</div>
         </div>
         <Link to="/gio-sinh" className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
           Bắt đầu →

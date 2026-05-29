@@ -94,23 +94,23 @@ export function CPaySuccessScreen() {
       <div className="flex flex-1 flex-col items-center justify-center px-8 py-10 text-center">
         <PaySuccessStamp />
 
-        <Mono className="mt-[26px] text-[10px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
+        <Mono className="mt-[26px] text-[10.5px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
           Lịch đã mở
         </Mono>
         <h2
-          className="mt-2.5 max-w-[300px] text-[30px] font-extrabold uppercase leading-[1.05] tracking-[-0.015em]"
+          className="mt-2.5 max-w-[300px] text-[30.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.015em]"
           style={{ ...PAY_DISPLAY, color: CT.ink }}
         >
           Lịch của bạn
           <br />
           <span
-            className="font-serif text-[30px] font-bold italic normal-case tracking-normal"
+            className="font-serif text-[30.5px] font-bold italic normal-case tracking-normal"
             style={{ color: CT.goldDeep }}
           >
             {exp ? `đến ${exp}` : "đã kích hoạt"}
           </span>
         </h2>
-        <p className="mt-3.5 max-w-[280px] text-[14px] leading-snug" style={{ color: CT.ink2 }}>
+        <p className="mt-3.5 max-w-[280px] text-[14.5px] leading-snug" style={{ color: CT.ink2 }}>
           {loading ? (
             "Đang xác nhận thanh toán…"
           ) : paid ? (
@@ -126,7 +126,7 @@ export function CPaySuccessScreen() {
           )}
         </p>
         {paid ? (
-          <p className="mt-1.5 text-[12px]" style={{ color: CT.muted }}>
+          <p className="mt-1.5 text-[12.5px]" style={{ color: CT.muted }}>
             Tự chuyển về lịch sau 3 giây.
           </p>
         ) : null}
@@ -136,17 +136,17 @@ export function CPaySuccessScreen() {
             className="mt-7 w-full max-w-[320px] border px-[18px] py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
           >
-            <div className="flex justify-between text-[12.5px]" style={{ color: CT.ink2 }}>
+            <div className="flex justify-between text-[13px]" style={{ color: CT.ink2 }}>
               <span>{planName}</span>
               <span>{durationLabel}</span>
             </div>
             <div
-              className="mt-1.5 flex justify-between text-[12.5px]"
+              className="mt-1.5 flex justify-between text-[13px]"
               style={{ color: CT.ink2 }}
             >
               <span>Mã giao dịch</span>
               <span
-                className="text-[11px] tracking-[0.04em]"
+                className="text-[11.5px] tracking-[0.04em]"
                 style={{ ...PAY_MONO, color: CT.muted }}
               >
                 {orderRef}
@@ -163,11 +163,11 @@ export function CPaySuccessScreen() {
               background: "rgba(154,124,34,0.08)",
             }}
           >
-            <Mono className="text-[9px]" style={{ color: CT.goldDeep }}>
+            <Mono className="text-[9.5px]" style={{ color: CT.goldDeep }}>
               ★ Tặng kèm · gói năm
             </Mono>
             <div
-              className="mt-1 text-[15px] font-bold uppercase tracking-[-0.005em]"
+              className="mt-1 text-[15.5px] font-bold uppercase tracking-[-0.005em]"
               style={{ ...PAY_DISPLAY2, color: CT.ink }}
             >
               Luận giải Bát tự năm
@@ -177,7 +177,7 @@ export function CPaySuccessScreen() {
             </p>
             <Link
               to="/toi/luan-bat-tu"
-              className="mt-2.5 inline-block px-3.5 py-2 text-[11px] font-bold uppercase tracking-[0.06em] no-underline"
+              className="mt-2.5 inline-block px-3.5 py-2 text-[11.5px] font-bold uppercase tracking-[0.06em] no-underline"
               style={{ ...PAY_DISPLAY2, background: CT.goldDeep, color: CT.paper }}
             >
               Đọc ngay →
@@ -189,7 +189,7 @@ export function CPaySuccessScreen() {
           <button
             type="button"
             onClick={() => showInvoiceToast("view")}
-            className="flex-1 cursor-pointer border bg-transparent px-2 py-[11px] text-[11px] font-bold uppercase tracking-[0.06em]"
+            className="flex-1 cursor-pointer border bg-transparent px-2 py-[11px] text-[11.5px] font-bold uppercase tracking-[0.06em]"
             style={{ ...PAY_DISPLAY2, borderColor: CT.goldDeep, color: CT.ink }}
           >
             Xem hoá đơn
@@ -197,7 +197,7 @@ export function CPaySuccessScreen() {
           <button
             type="button"
             onClick={() => showInvoiceToast("vat")}
-            className="flex-1 cursor-pointer border bg-transparent px-2 py-[11px] text-[11px] font-bold uppercase tracking-[0.06em]"
+            className="flex-1 cursor-pointer border bg-transparent px-2 py-[11px] text-[11.5px] font-bold uppercase tracking-[0.06em]"
             style={{ ...PAY_DISPLAY2, borderColor: CT.goldDeep, color: CT.ink }}
           >
             Hoá đơn VAT
@@ -207,7 +207,7 @@ export function CPaySuccessScreen() {
         <button
           type="button"
           onClick={() => navigate("/lich", { replace: true })}
-          className="mt-4 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13px] font-extrabold uppercase tracking-[0.08em]"
+          className="mt-4 w-full max-w-[320px] cursor-pointer border-none py-3.5 text-[13.5px] font-extrabold uppercase tracking-[0.08em]"
           style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
         >
           Vào lịch hôm nay →

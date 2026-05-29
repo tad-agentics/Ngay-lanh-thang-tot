@@ -236,7 +236,7 @@ export function CEditProfileScreen() {
       >
         <BackBar title="Sửa hồ sơ" />
         <div className="flex-1 px-7 pb-[100px] pt-3">
-          <p className="m-0 text-[13px]" style={{ color: CT.muted }}>
+          <p className="m-0 text-[13.5px]" style={{ color: CT.muted }}>
             Đang tải…
           </p>
         </div>
@@ -256,7 +256,7 @@ export function CEditProfileScreen() {
             type="button"
             disabled={saving || recomputePending}
             onClick={() => void handleSave()}
-            className="cursor-pointer border-none bg-transparent p-0 font-serif text-[12.5px] disabled:opacity-50"
+            className="cursor-pointer border-none bg-transparent p-0 font-serif text-[13px] disabled:opacity-50"
             style={{ color: CT.goldDeep }}
           >
             {saving ? "Đang lưu…" : "Lưu"}
@@ -265,30 +265,30 @@ export function CEditProfileScreen() {
       />
 
       <div className="flex-1 overflow-auto px-7 pb-[100px] pt-3">
-        <p className="m-0 text-[13px] leading-snug" style={{ color: CT.muted }}>
+        <p className="m-0 text-[13.5px] leading-snug" style={{ color: CT.muted }}>
           Sửa lá số sẽ chấm lại tất cả ngày trong lịch của bạn. Cẩn thận với giờ sinh — sai
           một canh, sai cả luận đoán.
         </p>
-        <p className="mt-2 text-[12px]" style={{ color: CT.ink2 }}>
+        <p className="mt-2 text-[12.5px]" style={{ color: CT.ink2 }}>
           Còn {editsLeft} lần sửa ngày/giờ sinh trong 30 ngày.
         </p>
 
         <div className="mt-[22px] flex flex-col gap-[18px]">
           <label className="block">
-            <span className="text-[11.5px]" style={{ color: CT.muted }}>
+            <span className="text-[12px]" style={{ color: CT.muted }}>
               Họ và tên
             </span>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="mt-1 w-full border-0 border-b bg-transparent pb-1.5 pt-1 font-[family-name:var(--display-2)] text-[17px] font-semibold tracking-[-0.005em] outline-none"
+              className="mt-1 w-full border-0 border-b bg-transparent pb-1.5 pt-1 font-[family-name:var(--display-2)] text-[17.5px] font-semibold tracking-[-0.005em] outline-none"
               style={{ borderColor: CT.hairline, color: CT.ink }}
             />
           </label>
 
           <div>
-            <span className="text-[11.5px]" style={{ color: CT.muted }}>
+            <span className="text-[12px]" style={{ color: CT.muted }}>
               Giới tính
             </span>
             <div className="mt-2 font-serif text-sm" style={{ color: CT.ink }}>
@@ -318,24 +318,24 @@ export function CEditProfileScreen() {
           </div>
 
           <div>
-            <span className="text-[11.5px]" style={{ color: CT.muted }}>
+            <span className="text-[12px]" style={{ color: CT.muted }}>
               Email
             </span>
             <div
               className="mt-2 flex items-baseline gap-1.5 border-b pb-1.5"
               style={{ borderColor: CT.hairline }}
             >
-              <span className="font-[family-name:var(--display-2)] text-[17px] font-semibold text-ink-2">
+              <span className="font-[family-name:var(--display-2)] text-[17.5px] font-semibold text-ink-2">
                 {profile.email ?? "—"}
               </span>
-              <Mono className="ml-auto text-[9px]" style={{ color: CT.muted }}>
+              <Mono className="ml-auto text-[9.5px]" style={{ color: CT.muted }}>
                 khoá
               </Mono>
             </div>
           </div>
 
           <div>
-            <span className="text-[11.5px]" style={{ color: CT.muted }}>
+            <span className="text-[12px]" style={{ color: CT.muted }}>
               Ngày sinh dương lịch
             </span>
             <div
@@ -351,7 +351,7 @@ export function CEditProfileScreen() {
                   setNgaySinh(formatDdMmYyyyWithAutoSlash(e.target.value))
                 }
                 disabled={atBirthLimit}
-                className="min-w-0 flex-1 border-0 bg-transparent pb-0 pt-1 font-[family-name:var(--display-2)] text-[17px] font-semibold tracking-[-0.005em] outline-none disabled:opacity-60"
+                className="min-w-0 flex-1 border-0 bg-transparent pb-0 pt-1 font-[family-name:var(--display-2)] text-[17.5px] font-semibold tracking-[-0.005em] outline-none disabled:opacity-60"
                 style={{ color: CT.ink }}
               />
               {lunarHint ? (
@@ -366,7 +366,7 @@ export function CEditProfileScreen() {
           </div>
 
           <div>
-            <span className="text-[11.5px]" style={{ color: CT.muted }}>
+            <span className="text-[12px]" style={{ color: CT.muted }}>
               Giờ sinh — 12 canh
             </span>
             <Select
@@ -381,7 +381,7 @@ export function CEditProfileScreen() {
               >
                 <SelectValue asChild>
                   <span className="flex w-full min-w-0 items-baseline">
-                    <span className="truncate text-[17px] font-semibold tracking-[-0.005em]">
+                    <span className="truncate text-[17.5px] font-semibold tracking-[-0.005em]">
                       {birthTimeLabel}
                     </span>
                     <span
@@ -430,7 +430,7 @@ export function CEditProfileScreen() {
           className="mt-9 border-t pt-[18px]"
           style={{ borderColor: CT.hairline }}
         >
-          <Mono className="text-[9px]" style={{ color: CT.red }}>
+          <Mono className="text-[9.5px]" style={{ color: CT.red }}>
             Vùng nhạy cảm
           </Mono>
           <div className="mt-3 flex flex-col gap-3">
@@ -442,12 +442,12 @@ export function CEditProfileScreen() {
             >
               <div>
                 <div
-                  className="font-[family-name:var(--display-2)] text-[13.5px] font-semibold tracking-[-0.005em]"
+                  className="font-[family-name:var(--display-2)] text-[14px] font-semibold tracking-[-0.005em]"
                   style={{ color: CT.ink }}
                 >
                   Tải xuống dữ liệu
                 </div>
-                <div className="mt-0.5 text-[11.5px]" style={{ color: CT.muted }}>
+                <div className="mt-0.5 text-[12px]" style={{ color: CT.muted }}>
                   Lá số + sổ ngày — file JSON
                 </div>
               </div>
@@ -463,12 +463,12 @@ export function CEditProfileScreen() {
             >
               <div>
                 <div
-                  className="font-[family-name:var(--display-2)] text-[13.5px] font-semibold tracking-[-0.005em]"
+                  className="font-[family-name:var(--display-2)] text-[14px] font-semibold tracking-[-0.005em]"
                   style={{ color: CT.red }}
                 >
                   Xoá tài khoản
                 </div>
-                <div className="mt-0.5 text-[11.5px]" style={{ color: CT.muted }}>
+                <div className="mt-0.5 text-[12px]" style={{ color: CT.muted }}>
                   Không khôi phục được
                 </div>
               </div>

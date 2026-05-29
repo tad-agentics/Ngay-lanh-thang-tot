@@ -2,7 +2,7 @@
 
 export function LogoMark({
   dark = false,
-  size = 28,
+  size = 28.5,
   className,
 }: {
   dark?: boolean;

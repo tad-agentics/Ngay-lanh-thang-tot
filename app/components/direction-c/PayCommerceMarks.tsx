@@ -1,6 +1,6 @@
 import { CT } from "~/lib/c-tokens";
 
-export function PaySuccessStamp({ size = 88 }: { size?: number }) {
+export function PaySuccessStamp({ size = 88.5 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 88 88" fill="none" aria-hidden>
       <circle
@@ -32,7 +32,7 @@ export function PaySuccessStamp({ size = 88 }: { size?: number }) {
   );
 }
 
-export function PayFailureMark({ size = 80 }: { size?: number }) {
+export function PayFailureMark({ size = 80.5 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 80 80" fill="none" aria-hidden>
       <circle

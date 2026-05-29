@@ -162,7 +162,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             >
               {selfName}
             </div>
-            <div className="mt-0.5 font-serif text-[11px]" style={{ color: CT.muted }}>
+            <div className="mt-0.5 font-serif text-[11.5px]" style={{ color: CT.muted }}>
               {panel.personCards.p1?.menh
                 ? `${panel.naphAm1} · bản mệnh ${panel.personCards.p1.menh}`
                 : panel.naphAm1}
@@ -184,7 +184,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             >
               {otherName}
             </div>
-            <div className="mt-0.5 font-serif text-[11px]" style={{ color: CT.muted }}>
+            <div className="mt-0.5 font-serif text-[11.5px]" style={{ color: CT.muted }}>
               {panel.personCards.p2?.menh
                 ? `${panel.naphAm2} · bản mệnh ${panel.personCards.p2.menh}`
                 : panel.naphAm2}
@@ -193,13 +193,13 @@ export default function TraCuuHopTuoiKetQuaRoute() {
         </div>
 
         <div className="mt-6 text-center">
-          <Mono style={{ color: CT.goldDeep, fontSize: 10, letterSpacing: "0.22em" }}>
+          <Mono style={{ color: CT.goldDeep, fontSize: 10.5, letterSpacing: "0.22em" }}>
             Độ hòa hợp · {contextLabel}
           </Mono>
           {showScore ? (
             <div className="mt-2.5 flex items-baseline justify-center gap-1.5">
               <span
-                className="text-[96px] font-extrabold leading-[0.85] tabular-nums tracking-[-0.04em]"
+                className="text-[96.5px] font-extrabold leading-[0.85] tabular-nums tracking-[-0.04em]"
                 style={{ ...DISPLAY2, color: CT.goldDeep }}
               >
                 {panel.score}
@@ -210,14 +210,14 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             </div>
           ) : null}
           <div
-            className="mt-2 text-[22px] font-extrabold uppercase tracking-[-0.005em]"
+            className="mt-2 text-[22.5px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ ...DISPLAY, color: CT.ink }}
           >
             {gradHeadline(panel.gradLabel)}
           </div>
           {quote ? (
             <p
-              className="mx-auto mt-2 max-w-[320px] font-serif text-[13.5px] italic"
+              className="mx-auto mt-2 max-w-[320px] font-serif text-[14px] italic"
               style={{ color: CT.ink2, lineHeight: 1.55 }}
             >
               &ldquo;{quote}&rdquo;
@@ -238,7 +238,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
               >
                 <div className="flex-1">
                   <div
-                    className="text-[13.5px] font-bold uppercase tracking-[-0.005em]"
+                    className="text-[14px] font-bold uppercase tracking-[-0.005em]"
                     style={{ ...DISPLAY2, color: CT.ink }}
                   >
                     {row.t}
@@ -269,11 +269,11 @@ export default function TraCuuHopTuoiKetQuaRoute() {
               borderColor: CT.goldDeep,
             }}
           >
-            <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+            <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
               {nextStep.kicker}
             </Mono>
             <div
-              className="mt-1.5 font-serif text-[13.5px]"
+              className="mt-1.5 font-serif text-[14px]"
               style={{ color: CT.ink, lineHeight: 1.55 }}
             >
               {nextStep.body}
@@ -281,7 +281,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             <Link
               to="/tra-cuu"
               onClick={handleTraCuuClick}
-              className="mt-3 inline-block px-3.5 py-2 no-underline text-[11px] font-bold uppercase tracking-[0.08em]"
+              className="mt-3 inline-block px-3.5 py-2 no-underline text-[11.5px] font-bold uppercase tracking-[0.08em]"
               style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
             >
               {nextStep.cta}

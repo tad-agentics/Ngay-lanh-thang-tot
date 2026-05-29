@@ -146,7 +146,7 @@ export default function TraCuuKetQuaRoute() {
 
       <div className="flex-1 overflow-auto px-6 pb-6 pt-3">
         <div
-          className="font-serif text-[12.5px]"
+          className="font-serif text-[13px]"
           style={{ color: CT.muted, lineHeight: 1.5 }}
         >
           Cho việc{" "}
@@ -237,7 +237,7 @@ function ResultRow({
     >
       {isTop ? (
         <span
-          className="absolute right-3.5 top-2 text-[9px] font-extrabold uppercase tracking-[0.2em]"
+          className="absolute right-3.5 top-2 text-[9.5px] font-extrabold uppercase tracking-[0.2em]"
           style={{
             fontFamily: "var(--mono)",
             color: CT.goldDeep,
@@ -258,19 +258,19 @@ function ResultRow({
         >
           {formatIsoDotShort(day.isoDate).split(".")[0]}
         </div>
-        <div className="mt-[3px] font-serif text-[11px]" style={{ color: CT.muted }}>
+        <div className="mt-[3px] font-serif text-[11.5px]" style={{ color: CT.muted }}>
           Th {formatIsoDotShort(day.isoDate).split(".")[1]} · {weekdayShort(day.isoDate)}
         </div>
       </div>
       <div className="min-w-0 flex-1">
         <div
-          className="mb-[3px] font-serif text-[11.5px]"
+          className="mb-[3px] font-serif text-[12px]"
           style={{ color: CT.muted }}
         >
           {metaChi} · {day.lunarLabel}
         </div>
         <div
-          className="font-serif text-[13px] italic"
+          className="font-serif text-[13.5px] italic"
           style={{ color: CT.ink2, lineHeight: 1.45 }}
         >
           {why}
@@ -278,7 +278,7 @@ function ResultRow({
       </div>
       <div className="min-w-[38px] text-right">
         <span
-          className="text-[22px] font-extrabold tabular-nums tracking-[-0.02em]"
+          className="text-[22.5px] font-extrabold tabular-nums tracking-[-0.02em]"
           style={{
             fontFamily: "var(--display-2)",
             color: scoreDotColor(score),

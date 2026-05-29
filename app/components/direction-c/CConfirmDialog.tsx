@@ -36,14 +36,14 @@ export function CConfirmDialog({
         className="w-full max-w-[320px] px-[22px] py-5"
         style={{ background: CT.paper, fontFamily: "var(--serif)" }}
       >
-        <Mono style={{ color: CT.muted, fontSize: 9 }}>Xác nhận</Mono>
+        <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Xác nhận</Mono>
         <h3
-          className="mt-1.5 font-[family-name:var(--display)] text-[22px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
+          className="mt-1.5 font-[family-name:var(--display)] text-[22.5px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
           style={{ color: CT.ink }}
         >
           {title}
         </h3>
-        <p className="mt-2.5 text-[13.5px] leading-snug" style={{ color: CT.ink2 }}>
+        <p className="mt-2.5 text-[14px] leading-snug" style={{ color: CT.ink2 }}>
           {description}
         </p>
         <div className="mt-5 flex gap-2">

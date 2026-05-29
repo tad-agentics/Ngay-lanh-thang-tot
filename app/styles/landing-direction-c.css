@@ -24,16 +24,16 @@
     gap: 12px !important;
   }
   .ldc-hero-h1 {
-    font-size: 60px !important;
+    font-size: 60.5px !important;
   }
   .ldc-ritual-h2,
   .ldc-personal-h2 {
-    font-size: 38px !important;
+    font-size: 38.5px !important;
   }
   .ldc-year-h2,
   .ldc-pricing-h3,
   .ldc-cta-h2 {
-    font-size: 40px !important;
+    font-size: 40.5px !important;
   }
   .ldc-hero-stack {
     height: 380px !important;
@@ -44,7 +44,7 @@
     left: 10% !important;
   }
   .ldc-hero-price {
-    font-size: 80px !important;
+    font-size: 80.5px !important;
   }
   .ldc-sticky-mobile-cta {
     display: flex !important;
@@ -59,7 +59,7 @@
     grid-template-columns: repeat(2, 1fr) !important;
   }
   .ldc-hero-h1 {
-    font-size: 48px !important;
+    font-size: 48.5px !important;
   }
   .ldc-hero-front {
     width: 200px !important;

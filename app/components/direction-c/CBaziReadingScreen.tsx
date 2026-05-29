@@ -199,7 +199,7 @@ export function CBaziReadingScreen() {
     >
       <BackBar
         title={`Luận giải Bát Tự · ${year}`}
-        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>Học thuật cổ thư</Mono>}
+        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9.5 }}>Học thuật cổ thư</Mono>}
       />
 
       <div className="flex-1 overflow-auto px-6 pb-10 pt-1">
@@ -216,7 +216,7 @@ export function CBaziReadingScreen() {
         </div>
 
         {profile ? (
-          <p className="mt-4 font-serif text-[12.5px]" style={{ color: CT.muted }}>
+          <p className="mt-4 font-serif text-[13px]" style={{ color: CT.muted }}>
             {birthLine(profile)}
           </p>
         ) : null}
@@ -224,7 +224,7 @@ export function CBaziReadingScreen() {
         {reveal ? (
           <div className="mt-3">
             <h2
-              className="text-[28px] font-extrabold uppercase leading-none"
+              className="text-[28.5px] font-extrabold uppercase leading-none"
               style={{ ...DISPLAY, letterSpacing: "-0.015em" }}
             >
               {reveal.nhatChu}
@@ -265,7 +265,7 @@ export function CBaziReadingScreen() {
                 style={{ borderBottom: `1px solid ${CT.ink}` }}
               >
                 <span
-                  className="font-mono text-[11px]"
+                  className="font-mono text-[11.5px]"
                   style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -278,7 +278,7 @@ export function CBaziReadingScreen() {
                 </span>
               </div>
               <p
-                className="mt-3 text-[13.5px] leading-relaxed whitespace-pre-wrap"
+                className="mt-3 text-[14px] leading-relaxed whitespace-pre-wrap"
                 style={{ color: CT.ink2 }}
               >
                 {s.text}

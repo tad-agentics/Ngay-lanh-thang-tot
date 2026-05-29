@@ -33,7 +33,7 @@ export default function OfflineRoute() {
         />
       </svg>
 
-      <Mono className="mt-5 text-[10px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
+      <Mono className="mt-5 text-[10.5px] tracking-[0.22em]" style={{ color: CT.goldDeep }}>
         Ngoại tuyến
       </Mono>
       <h2
@@ -49,7 +49,7 @@ export default function OfflineRoute() {
 
       <Link
         to="/lich"
-        className="mt-8 inline-block px-6 py-3.5 font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+        className="mt-8 inline-block px-6 py-3.5 font-[family-name:var(--display-2)] text-[13.5px] font-extrabold uppercase tracking-[0.08em] no-underline"
         style={{ background: CT.forest, color: CT.cream }}
       >
         Thử lại
