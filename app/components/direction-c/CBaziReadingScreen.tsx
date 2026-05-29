@@ -1,23 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BackBar, Mono } from "~/components/brand";
+import { CBaziReadingChapter } from "~/components/direction-c/CBaziReadingChapter";
 import { CBaziReadingPaywallView } from "~/components/direction-c/CBaziReadingPaywallView";
+import type { LaSoJson } from "~/lib/api-types";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { loadBaziReadingSections } from "~/lib/bazi-reading-load";
+import { loadBaziReadingFull } from "~/lib/bazi-reading-load";
+import {
+  buildBaziDisplayChapters,
+  type BaziDisplayChapter,
+} from "~/lib/bazi-reading-outline";
 import {
   baziReadingCacheRevision,
   currentYearVn,
   persistBaziReadingSession,
   readBaziReadingSession,
 } from "~/lib/bazi-reading-session";
-import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
+import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { canUseBaziReading } from "~/lib/entitlements";
-import {
-  normalizeLaSoSectionsInput,
-  type LaSoChiTietSection,
-} from "~/lib/generate-reading";
-import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { profileHasLaso } from "~/lib/la-so-ui";
 
 function birthLine(profile: {
   display_name: string | null;
@@ -31,13 +33,25 @@ function birthLine(profile: {
   return parts.join(" · ");
 }
 
+function chaptersFromSession(
+  cached: NonNullable<ReturnType<typeof readBaziReadingSession>>,
+  profileLaSo: LaSoJson | null,
+): BaziDisplayChapter[] {
+  return buildBaziDisplayChapters({
+    sections: cached.sections,
+    laSo: cached.laSoDisplay ?? profileLaSo,
+    luuNienFactsRaw: cached.luuNienFactsRaw,
+    phongThuyFactsRaw: cached.phongThuyFactsRaw,
+    yearCanChi: cached.yearCanChi,
+  });
+}
+
 export function CBaziReadingScreen() {
   const { profile, loading: profileLoading } = useProfile();
-  const [sections, setSections] = useState<LaSoChiTietSection[]>([]);
+  const [chapters, setChapters] = useState<BaziDisplayChapter[] | null>(null);
   const [loading, setLoading] = useState(true);
   const genRef = useRef(0);
   const unlocked = canUseBaziReading(profile);
-  const reveal = profile?.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
   const year = currentYearVn();
 
   useEffect(() => {
@@ -55,8 +69,10 @@ export function CBaziReadingScreen() {
 
     const revision = baziReadingCacheRevision(profile, year);
     const cached = readBaziReadingSession(profile.id, revision);
-    if (cached && cached.length > 0) {
-      setSections(normalizeLaSoSectionsInput(cached));
+    if (cached) {
+      setChapters(
+        chaptersFromSession(cached, (profile.la_so as LaSoJson) ?? null),
+      );
       setLoading(false);
       return;
     }
@@ -65,11 +81,24 @@ export function CBaziReadingScreen() {
     const gen = ++genRef.current;
     setLoading(true);
     void (async () => {
-      const merged = await loadBaziReadingSections(profile, year);
+      const full = await loadBaziReadingFull(profile, year);
       if (cancelled || gen !== genRef.current) return;
-      setSections(merged);
-      if (merged.length > 0) {
-        persistBaziReadingSession(profile.id, revision, merged);
+      const built = buildBaziDisplayChapters({
+        sections: full.sections,
+        laSo: full.laSoDisplay,
+        luuNienFactsRaw: full.luuNienFactsRaw,
+        phongThuyFactsRaw: full.phongThuyFactsRaw,
+        yearCanChi: full.yearCanChi,
+      });
+      setChapters(built);
+      if (full.sections.length > 0) {
+        persistBaziReadingSession(profile.id, revision, {
+          sections: full.sections,
+          yearCanChi: full.yearCanChi,
+          laSoDisplay: full.laSoDisplay,
+          luuNienFactsRaw: full.luuNienFactsRaw,
+          phongThuyFactsRaw: full.phongThuyFactsRaw,
+        });
       }
       setLoading(false);
     })();
@@ -84,19 +113,49 @@ export function CBaziReadingScreen() {
     const gen = ++genRef.current;
     setLoading(true);
     void (async () => {
-      const merged = await loadBaziReadingSections(profile, year);
+      const full = await loadBaziReadingFull(profile, year);
       if (gen !== genRef.current) return;
-      setSections(merged);
-      if (merged.length > 0) {
+      setChapters(
+        buildBaziDisplayChapters({
+          sections: full.sections,
+          laSo: full.laSoDisplay,
+          luuNienFactsRaw: full.luuNienFactsRaw,
+          phongThuyFactsRaw: full.phongThuyFactsRaw,
+          yearCanChi: full.yearCanChi,
+        }),
+      );
+      if (full.sections.length > 0) {
         persistBaziReadingSession(
           profile.id,
           baziReadingCacheRevision(profile, year),
-          merged,
+          {
+            sections: full.sections,
+            yearCanChi: full.yearCanChi,
+            laSoDisplay: full.laSoDisplay,
+            luuNienFactsRaw: full.luuNienFactsRaw,
+            phongThuyFactsRaw: full.phongThuyFactsRaw,
+          },
         );
       }
       setLoading(false);
     })();
   };
+
+  const hasContent = useMemo(
+    () =>
+      chapters?.some((ch) => {
+        if (ch.kind === "menh") {
+          return (
+            ch.laSo != null &&
+            typeof ch.laSo === "object" &&
+            Object.keys(ch.laSo).length > 0
+          );
+        }
+        if (ch.kind === "prose") return Boolean(ch.prose);
+        return Boolean(ch.prose || ch.facts);
+      }) ?? false,
+    [chapters],
+  );
 
   if (profileLoading) {
     return (
@@ -115,7 +174,7 @@ export function CBaziReadingScreen() {
 
   return (
     <main
-      className="min-h-[100svh] flex flex-col"
+      className="flex min-h-[100svh] flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
@@ -125,7 +184,7 @@ export function CBaziReadingScreen() {
 
       <div className="flex-1 overflow-auto px-6 pb-10 pt-1">
         <div
-          className="mt-2 py-2.5 px-3.5"
+          className="mt-2 px-3.5 py-2.5"
           style={{
             background: "rgba(122,154,128,0.12)",
             borderLeft: `2px solid ${CT.greenMute}`,
@@ -142,29 +201,11 @@ export function CBaziReadingScreen() {
           </p>
         ) : null}
 
-        {reveal ? (
-          <div className="mt-3">
-            <h2
-              className="text-[28.5px] font-extrabold uppercase leading-none"
-              style={{ ...DISPLAY, letterSpacing: "-0.015em" }}
-            >
-              {reveal.nhatChu}
-              {reveal.hanh !== "—" ? ` ${reveal.hanh}` : ""} ·{" "}
-              <span
-                className="font-serif italic font-bold normal-case"
-                style={{ color: CT.goldDeep }}
-              >
-                {reveal.menh}
-              </span>
-            </h2>
-          </div>
-        ) : null}
-
-        {loading ? (
+        {loading && !chapters ? (
           <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
             Đang luận giải chi tiết bản mệnh…
           </p>
-        ) : sections.length === 0 ? (
+        ) : !hasContent && !loading ? (
           <div className="mt-8 text-center">
             <p className="font-serif text-sm" style={{ color: CT.muted }}>
               Chưa có nội dung. Thử tải lại sau.
@@ -172,40 +213,18 @@ export function CBaziReadingScreen() {
             <button
               type="button"
               onClick={retryLoad}
-              className="mt-4 py-2.5 px-5 text-xs font-extrabold uppercase tracking-wider"
+              className="mt-4 px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider"
               style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
             >
               Tải lại
             </button>
           </div>
         ) : (
-          sections.map((s, i) => (
-            <section key={s.id} className="mt-6">
-              <div
-                className="flex items-baseline gap-2.5 pb-1.5"
-                style={{ borderBottom: `1px solid ${CT.ink}` }}
-              >
-                <span
-                  className="font-mono text-[11.5px]"
-                  style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
-                >
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span
-                  className="text-lg font-extrabold uppercase tracking-tight"
-                  style={DISPLAY}
-                >
-                  {s.title}
-                </span>
-              </div>
-              <p
-                className="mt-3 text-[14px] leading-relaxed whitespace-pre-wrap"
-                style={{ color: CT.ink2 }}
-              >
-                {s.text}
-              </p>
-            </section>
-          ))
+          chapters?.map((ch) =>
+            profile ? (
+              <CBaziReadingChapter key={ch.key} chapter={ch} profile={profile} />
+            ) : null,
+          )
         )}
       </div>
     </main>

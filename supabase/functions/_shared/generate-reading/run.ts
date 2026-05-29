@@ -11,7 +11,7 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { canUseBaziReading } from "../entitlements.ts";
+import { requireBaziReadingAuth } from "../bazi-reading-gate.ts";
 import { buildDayLuanPromptContext } from "../day-luan-prompt-context.ts";
 import {
   acquireGenerateReadingRateLimit,
@@ -39,20 +39,6 @@ function dayIsoFromDayDetailData(data: unknown): string | null {
   if (typeof date !== "string") return null;
   const t = date.trim();
   return ISO_DAY_RE.test(t) ? t : null;
-}
-
-/** Khớp FE `canUseBaziReading` — gói ≥11 tháng hoặc đã mua luận Bát tự. */
-async function userHasBaziReadingAccess(
-  admin: ServiceClient,
-  userId: string,
-): Promise<boolean> {
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("subscription_expires_at, bazi_reading_unlocked_at")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile) return false;
-  return canUseBaziReading(profile);
 }
 
 import { corsHeadersForRequest } from "../cors.ts";
@@ -1079,30 +1065,16 @@ export function createGenerateReadingHandler(
     rateLimitUserId = uid;
   }
 
-  if (endpoint === "la-so-chi-tiet") {
-    const gateUrl = Deno.env.get("SUPABASE_URL");
-    const gateAnon = Deno.env.get("SUPABASE_ANON_KEY");
-    const gateService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const authHeader = req.headers.get("Authorization");
-    if (!gateUrl || !gateAnon || !gateService || !authHeader?.startsWith("Bearer ")) {
-      return ok(null, null, req);
-    }
-    const userClient = createClient(gateUrl, gateAnon, {
-      global: { headers: { Authorization: authHeader } },
+  if (
+    endpoint === "la-so-chi-tiet" ||
+    endpoint === "luu-nien" ||
+    endpoint === "phong-thuy"
+  ) {
+    const auth = await requireBaziReadingAuth(req, {
+      allowWithoutEntitlement: endpoint === "la-so-chi-tiet" && preview,
     });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    const uid = userData?.user?.id;
-    if (userErr || !uid) {
-      return ok(null, null, req);
-    }
-    const adminGate = createClient(gateUrl, gateService);
-    if (!preview) {
-      const allowed = await userHasBaziReadingAccess(adminGate, uid);
-      if (!allowed) {
-        return ok(null, null, req);
-      }
-    }
-    rateLimitUserId = uid;
+    if (!auth) return ok(null, null, req);
+    rateLimitUserId = auth.uid;
   }
 
   const promptBody: Record<string, unknown> =

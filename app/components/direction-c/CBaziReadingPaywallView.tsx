@@ -3,16 +3,27 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
+import { CBaziMenhTongQuanBlock } from "~/components/direction-c/CBaziMenhTongQuanBlock";
 import { CPayConfirmSheet } from "~/components/direction-c/CPayConfirmSheet";
+import { BaziChapterProse, BaziSectionHeading } from "~/components/direction-c/BaziSectionHeading";
+import type { LaSoJson } from "~/lib/api-types";
 import type { CreatePayosCheckoutResponse } from "~/lib/api-types";
-import { baziPaywallLockedSections } from "~/lib/bazi-paywall-mock";
-import { loadBaziLaSoChiTietSections } from "~/lib/bazi-reading-load";
+import { baziPaywallLockedChapters } from "~/lib/bazi-paywall-mock";
+import {
+  loadBaziLaSoChiTietSections,
+  loadBaziPaywallLaSoDisplay,
+} from "~/lib/bazi-reading-load";
+import {
+  baziOutlineSections,
+  fallbackFlowYearCanChiLabel,
+  flowYearCanChiFromFacts,
+} from "~/lib/bazi-reading-outline";
 import { currentYearVn } from "~/lib/bazi-reading-session";
-import { CT, DISPLAY } from "~/lib/c-tokens";
+import { CT } from "~/lib/c-tokens";
+import { fetchLuuNienYearFacts } from "~/lib/luu-nien-facts";
 import { createPayosCheckout } from "~/lib/payos";
 import { addonSubscriptionUpsell, priceDisplay } from "~/lib/pay-confirm-ui";
 import type { Profile } from "~/lib/profile-context";
-import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { UI_PACKAGES } from "~/lib/packages";
 
 function birthLine(profile: {
@@ -27,34 +38,9 @@ function birthLine(profile: {
   return parts.join(" · ");
 }
 
-function SectionHeading({
-  index,
-  title,
-}: {
-  index: number;
-  title: string;
-}) {
-  return (
-    <div
-      className="flex items-baseline gap-2.5 border-b pb-1.5"
-      style={{ borderColor: CT.ink }}
-    >
-      <span
-        className="font-mono text-[11.5px]"
-        style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
-      >
-        {String(index).padStart(2, "0")}
-      </span>
-      <span className="text-lg font-extrabold uppercase tracking-tight" style={DISPLAY}>
-        {title}
-      </span>
-    </div>
-  );
-}
-
 function LockedSectionBody({ mockText }: { mockText: string }) {
   return (
-    <div className="relative mt-3">
+    <div className="relative mt-3 min-h-[88px]">
       <p
         className="m-0 text-[14px] leading-relaxed select-none"
         style={{
@@ -94,19 +80,18 @@ type CBaziReadingPaywallViewProps = {
   profile: Profile;
 };
 
-/** Paywall: chương 01 thật; 4 chương mock + blur; CTA mở sheet thanh toán. */
+/** Paywall Direction C màn 18 §01–05: Mệnh (lá số live) + Tính cách preview; §03–05 mock blur. */
 export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProps) {
   const navigate = useNavigate();
   const year = currentYearVn();
-  const reveal = profile.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
   const addonPkg = UI_PACKAGES.find((p) => p.sku === "luan_bat_tu");
   const yearlyUpsell = addonSubscriptionUpsell("luan_bat_tu");
-  const lockedSections = baziPaywallLockedSections();
 
-  const [previewSection, setPreviewSection] = useState<{
-    title: string;
-    text: string;
-  } | null>(null);
+  const [yearCanChi, setYearCanChi] = useState(() => fallbackFlowYearCanChiLabel(year));
+  const [laSoDisplay, setLaSoDisplay] = useState<LaSoJson | null>(
+    () => (profile.la_so as LaSoJson) ?? null,
+  );
+  const [previewText, setPreviewText] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(true);
   const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -114,25 +99,39 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     useState<CreatePayosCheckoutResponse | null>(null);
   const genRef = useRef(0);
 
-  const lockedTitles = lockedSections.map((s) => s.title).join(" · ");
+  const outline = baziOutlineSections(yearCanChi);
+  const lockedChapters = baziPaywallLockedChapters(yearCanChi);
+  const lockedTitles = lockedChapters.map((s) => s.title).join(" · ");
+
+  const menhTitle = outline.find((o) => o.key === "menh_tong_quan")?.title ?? "Mệnh tổng quan";
+  const tinhCachTitle =
+    outline.find((o) => o.key === "tinh_cach")?.title ?? "Tính cách · cá tính";
 
   useEffect(() => {
     let cancelled = false;
     const gen = ++genRef.current;
     setPreviewLoading(true);
     void (async () => {
-      const sections = await loadBaziLaSoChiTietSections(profile, { preview: true });
+      const [luuRes, laSoMerged, sections] = await Promise.all([
+        fetchLuuNienYearFacts(profile, year),
+        loadBaziPaywallLaSoDisplay(profile),
+        loadBaziLaSoChiTietSections(profile, { preview: true }),
+      ]);
       if (cancelled || gen !== genRef.current) return;
-      const first = sections[0];
-      setPreviewSection(
-        first ? { title: first.title, text: first.text } : null,
-      );
+      if (luuRes.ok) {
+        const label =
+          flowYearCanChiFromFacts(luuRes.data) || fallbackFlowYearCanChiLabel(year);
+        if (label) setYearCanChi(label);
+      }
+      if (laSoMerged) setLaSoDisplay(laSoMerged);
+      const tinhCach = sections.find((s) => s.id === "tinh_cach");
+      setPreviewText(tinhCach?.text?.trim() ?? sections[0]?.text?.trim() ?? null);
       setPreviewLoading(false);
     })();
     return () => {
       cancelled = true;
     };
-  }, [profile]);
+  }, [profile, year]);
 
   async function startAddonCheckout() {
     setBusy(true);
@@ -155,8 +154,6 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     setPayOpen(true);
   }
 
-  const previewTitle = previewSection?.title ?? "Tính cách";
-
   return (
     <main
       className="relative flex min-h-[100svh] flex-col"
@@ -172,50 +169,29 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
             </p>
           ) : null}
 
-          {reveal ? (
-            <h2
-              className="mt-3 text-[26.5px] font-extrabold uppercase leading-none tracking-[-0.015em]"
-              style={{ ...DISPLAY, color: CT.ink }}
-            >
-              {reveal.nhatChu}
-              {reveal.hanh !== "—" ? ` ${reveal.hanh}` : ""}
-              {reveal.menh !== "—" ? (
-                <>
-                  {" "}
-                  <span
-                    className="font-serif text-[26.5px] font-bold italic normal-case tracking-normal"
-                    style={{ color: CT.goldDeep }}
-                  >
-                    {reveal.menh}
-                  </span>
-                </>
-              ) : null}
-            </h2>
-          ) : null}
-
           <section className="mt-6">
-            <SectionHeading index={1} title={previewTitle} />
+            <BaziSectionHeading index={1} title={menhTitle} />
+            <CBaziMenhTongQuanBlock profile={profile} laSo={laSoDisplay} />
+          </section>
+
+          <section className="mt-8">
+            <BaziSectionHeading index={2} title={tinhCachTitle} />
             {previewLoading ? (
               <p className="mt-3 font-serif text-sm" style={{ color: CT.muted }}>
                 Đang luận giải chương Tính cách…
               </p>
-            ) : previewSection ? (
-              <p
-                className="mt-3 text-[14px] leading-relaxed whitespace-pre-wrap"
-                style={{ color: CT.ink2 }}
-              >
-                {previewSection.text}
-              </p>
+            ) : previewText ? (
+              <BaziChapterProse text={previewText} />
             ) : (
               <p className="mt-3 font-serif text-sm" style={{ color: CT.muted }}>
-                Chưa tải được đoạn mở đầu. Bốn chương dưới đã sẵn sàng sau khi mở khóa.
+                Chưa tải được đoạn mở đầu. Ba chương dưới đã sẵn sàng sau khi mở khóa.
               </p>
             )}
           </section>
 
-          {lockedSections.map((sec) => (
-            <section key={sec.id} className="mt-8">
-              <SectionHeading index={sec.index} title={sec.title} />
+          {lockedChapters.map((sec) => (
+            <section key={sec.key} className="mt-8">
+              <BaziSectionHeading index={sec.index} title={sec.title} />
               <LockedSectionBody mockText={sec.mockText} />
             </section>
           ))}
@@ -243,7 +219,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
               ★
             </span>
             <Mono className="text-[10px] tracking-[0.18em]" style={{ color: CT.goldDeep }}>
-              Còn {lockedSections.length} chương nữa
+              Còn {lockedChapters.length} chương nữa
             </Mono>
           </div>
           <h3

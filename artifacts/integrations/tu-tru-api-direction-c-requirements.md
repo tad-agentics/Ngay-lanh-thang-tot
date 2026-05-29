@@ -624,26 +624,26 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 | Tên | Layer | Chu kỳ | Endpoint / Edge | Màn Direction C |
 |-----|-------|--------|-----------------|-----------------|
-| **Lưu niên** | API + Bát Tự | **Năm** (Can Chi năm × lá số) | `GET /v1/la-so/luu-nien?year=` · Gemini `luu-nien` | Màn 18 §03 **Vận năm** (`CBaziReadingFull`) |
+| **Lưu niên** | API + Bát Tự | **Năm** (Can Chi năm × lá số) | `GET /v1/la-so/luu-nien?year=` · Gemini `luu-nien` | Direction C màn 18 §03 **Vận năm** |
 | **Tiểu vận** | API | **Tháng** (trụ tháng × lá số) | `GET /v1/tieu-van?month=` · Gemini `tieu-van` | `/toi/luan-tieu-van` |
 | **Luận giải Tiểu Vận** | Product / SKU | **Năm** (copy gói) | *Không* map 1:1 tới `tieu-van` | Gói `luan_tieu_van` — nội dung ≈ **lưu niên**, không phải vận tháng |
 | **Phong thủy năm** | API | Theo **`year=`** trên lá số | `GET /v1/phong-thuy?year=` | Màn 18 §04 — **endpoint riêng**, không nằm trong `luu-nien` |
 
 > **NLTT Edge:** prompt `generate-reading` tách rõ — `tieu-van` luận **tháng**; `luu-nien` luận **năm** (`supabase/functions/generate-reading/index.ts`).
 
-> **⚠️ Product gap (entitlement):** Gói/SKU **「Luận giải Tiểu Vận năm」** (`luan_tieu_van`, `tieu_van_reading_expires_at`) mở route `/toi/luan-tieu-van?year=` — nhưng code hiện tại gọi **`GET /v1/tieu-van`** cho **một tháng** (`month = {year}-{tháng hiện tại}`), **không** phải lưu niên 12 tháng. Để khớp copy gói + Make, cần wire **`luu-nien`** (REQ-P2-02) hoặc đổi positioning SKU.
+> **⚠️ Product gap (entitlement):** Gói/SKU **「Luận giải Tiểu Vận năm」** (`luan_tieu_van`, `tieu_van_reading_expires_at`) mở route `/toi/luan-tieu-van?year=` — nhưng code hiện tại gọi **`GET /v1/tieu-van`** cho **một tháng** (`month = {year}-{tháng hiện tại}`), **không** phải lưu niên 12 tháng. Để khớp copy gói + spec Direction C, cần wire **`luu-nien`** (REQ-P2-02) hoặc đổi positioning SKU.
 
-**Màn 18 (`/toi/luan-bat-tu`) — Make target vs FE interim:**
+**Màn 18 (`/toi/luan-bat-tu`) — spec Direction C vs FE (cập nhật 2026-05-29):**
 
-| § Make (target) | Nguồn engine | Gemini | FE hiện tại (2026-05-28) |
-|-----------------|--------------|--------|---------------------------|
-| 01 Mệnh tổng quan | `GET /v1/la-so` facts | ❌ *(không có section `la-so-chi-tiet`)* | 🟡 header `laSoJsonToRevealProps(profile.la_so)` only |
-| 02 Tính cách | `GET /v1/la-so` | `la-so-chi-tiet` → `tinh_cach` | 🟡 nằm trong 5 aspect (không tách block Make) |
-| 03 Vận năm | `GET /v1/la-so/luu-nien?year=` | `luu-nien` | ✅ NLTT W9 (`CBaziReadingScreen`) |
-| 04 Phong thủy | `GET /v1/phong-thuy?year=` | *(optional prose)* | 🔴 chưa wire (schema ✅ 0.1.2) |
-| 05 Quý nhân · lưu ý | lá số + lưu niên | `luu-nien` hoặc facts | 🟡 một phần qua luu-nien sections |
+| § (Direction C) | Nguồn engine | Gemini | FE hiện tại |
+|-----------------|--------------|--------|-------------|
+| 01 Mệnh tổng quan | `GET /v1/la-so` facts | ❌ | ✅ `CBaziMenhTongQuanBlock` (tứ trụ, ngũ hành %, đại vận, dụng/kỵ) |
+| 02 Tính cách | `GET /v1/la-so` | `la-so-chi-tiet` → `tinh_cach` | ✅ prose §02 · 🟡 thiếu 4 sub-block |
+| 03 Vận năm | `GET /v1/la-so/luu-nien?year=` | `luu-nien` (3 phần) | ✅ wire · 🟡 UI rich khi có facts API |
+| 04 Phong thủy | `GET /v1/phong-thuy?year=` | `phong-thuy` | ✅ wire · 🟡 UI rich khi có facts API |
+| 05 Quý nhân · lưu ý | lưu niên facts | `luu_nien_ung_xu` | ✅ mapping · 🟡 `quy_nhan` / `dai_van_next` từ API |
 
-**Interim MVP màn 18:** toàn bộ body luận = **5 section** `la-so-chi-tiet` (`tinh_cach`, `su_nghiep`, `tai_van`, `suc_khoe`, `tinh_duyen`) — đánh số 01–05 động trong `CBaziReadingScreen`; title có năm (`Luận giải Bát tự · 2026`) nhưng nội dung **chưa** theo vận năm.
+**Chi tiết wire + yêu cầu API còn thiếu:** `artifacts/docs/features/bazi-reading-screen-api-requirements.md`
 
 ---
 
@@ -660,7 +660,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `nhat_chu`, `menh` | ✅ | ✅ headline Mệnh |
 | `dung_than`, `ky_than` | ✅ | ✅ card Dụng/Kỵ |
 | `dai_van.current` | ✅ | ✅ một dòng đại vận hiện tại |
-| `pillars.year.nap_am.mo_ta` | ✅ (`extractMenhTagline`) | 🔴 tagline Make **chưa render** |
+| `pillars.year.nap_am.mo_ta` | ✅ (`extractMenhTagline`) | 🔴 tagline màn 17 **chưa render** |
 | `dai_van.cycles[]` / `dai_van_list[]` | ✅ | 🔴 timeline đại vận **chưa render** |
 | `thap_than.dominant` | ✅ | 🔴 **chưa render** |
 | `cuong_nhuoc` | ✅ (P2-01b) | 🔴 **chưa render** (chỉ dùng Gemini) |
@@ -673,7 +673,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `_raw.element_counts` | `{ Kim, Moc, Thuy, Hoa, Tho }` — NLTT tính **%** (tổng = 100) |
 | `ngu_hanh` / `element_counts` | Fallback nếu thiếu `_raw` |
 | `nhat_chu` | Object `{ can_name, hanh }` hoặc string |
-| `menh` | `{ nap_am_name, hanh }` hoặc string; `pillars.year.nap_am.mo_ta` cho tagline *(Make)* |
+| `menh` | `{ nap_am_name, hanh }` hoặc string; `pillars.year.nap_am.mo_ta` cho tagline *(Direction C)* |
 | `dung_than`, `ky_than` | `{ element, name }` |
 | `dai_van.current` | `{ display, age_range, age_range_lunar?, start_age?, end_age? }` |
 | `dai_van.cycles[]` hoặc `dai_van_list[]` | Timeline; `current` khớp hàng `isActive` |
@@ -716,7 +716,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `year_rating` / `year_theme_vi` | Ví dụ "Năm tốt — củng cố" |
 | `life_areas[]` | `{ id, label_vi, verdict_vi, detail_vi }` — tài lộc, sự nghiệp, tình duyên, sức khỏe |
 | `warnings[]` | Tam tai, tuế phá, … |
-| `month_scores[12]` | Điểm/band 12 tháng âm — biểu đồ Make §03 |
+| `month_scores[12]` | Điểm/band 12 tháng âm — biểu đồ Direction C màn 18 §03 |
 | `quy_nhan` / `tuoi_hop` / `tuoi_xung` | Block §05 |
 
 **NLTT hiện tại:** Edge prompt `luu-nien` (3 phần); **FE màn 18 ✅ W9** — `fetchLuuNienYearFacts` + `generate-reading` `luu-nien`, chèn sau `su_nghiep`.
@@ -741,7 +741,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 
 #### REQ-P2-05 · `GET /v1/phong-thuy?year=` — màn 18 §04 Phong thủy
 
-**Consumer:** Block **Phong thuỷ Bính Ngọ** trong `CBaziReadingFull` — hướng tốt/xấu, màu, sao bay 3×3.
+**Consumer:** §04 Phong thủy năm — Direction C màn 18 (`/toi/luan-bat-tu`) — hướng tốt/xấu, màu, sao bay 3×3.
 
 **API phải làm:** Document + guarantee (đã có runtime; OpenAPI `{}`):
 
@@ -753,7 +753,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | `huong_tot_nam_nay[]`, `huong_xau_nam_nay[]` | Overlay lưu niên năm |
 | `hoa_giai[]` | Gợi ý hóa giải sao xấu |
 
-**NLTT hiện tại:** Op `phong-thuy` có trong Edge (`year` trong queryKeys); **chưa wire** vào `CBaziReadingScreen`. Route `tien-ich/phong-thuy` chỉ redirect `/lich` (bookmark). Không gộp vào `luu-nien`.
+**NLTT hiện tại:** Op `phong-thuy` + Gemini `phong-thuy` **đã wire** `loadBaziReadingSections` → §04 prose. Route `tien-ich/phong-thuy` vẫn redirect `/lich`. UI lưới hướng/màu/sao bay: REQ-BR-05.
 
 ---
 
@@ -869,7 +869,7 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | NLTT bat-tu proxy | `supabase/functions/bat-tu/index.ts` |
 | NLTT mapper lá số | `app/lib/la-so-ui.ts` · `app/lib/la-so-ui.test.ts` |
 | NLTT màn 18 | `app/components/direction-c/CBaziReadingScreen.tsx` |
-| Make màn 17–18 | `artifacts/design/ngaylanhthangtot-vn/c-screens-g.jsx` |
+| Prototype Direction C màn 17–18 | `artifacts/design/ngaylanhthangtot-vn/c-screens-g.jsx` |
 | NLTT tra cứu pick | `app/lib/tra-cuu-pick.ts` |
 | Pivot plan | `artifacts/plans/direction-c-pivot-plan.md` |
 

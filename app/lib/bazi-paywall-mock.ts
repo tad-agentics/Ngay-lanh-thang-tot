@@ -1,33 +1,42 @@
 import {
-  BAZI_READING_SECTION_ORDER,
-  BAZI_READING_SECTION_TITLES,
-} from "~/lib/bazi-reading-load";
+  baziOutlineSections,
+  type BaziOutlineKey,
+} from "~/lib/bazi-reading-outline";
 
-/** Đoạn mẫu cố định — chỉ dùng trên paywall, không gọi LLM. */
-const MOCK_PARAGRAPHS: Record<(typeof BAZI_READING_SECTION_ORDER)[number], string> = {
-  su_nghiep:
-    "Trụ ngày cho thấy xu hướng phát triển theo từng giai đoạn: giai đoạn đầu nên ưu tiên tích lũy kinh nghiệm và uy tín trong môi trường làm việc ổn định. Khoảng giữa vận có cửa thăng tiến hoặc chuyển hướng nghề nếu biết chọn thời điểm và đối tác phù hợp. Nên tránh đổi việc liên tục khi chưa có nền tảng; thay vào đó, tập trung vào một lĩnh vực có thể khai thác lâu dài. Quý nhân trong công việc thường đến từ người trầm tính, có thực lực hơn là người ồn ào.",
-  tai_van:
-    "Dòng tài theo lá số không thiên về đột biến mà thiên về tích tiểu thành đại: thu nhập ổn định từ nghề chính, có thêm nguồn phụ khi vận hỗ trợ. Cần cẩn trọng với các khoản đầu tư ngắn hạn hoặc lời mời hợp tác chưa rõ nguồn gốc. Thời điểm tích lũy tài sản an toàn thường trùng với các năm hành Thổ và Kim trong đại vận. Chi tiêu nên có kế hoạch; tránh vay mượn để duy trì mặt mạng. Khi tài tinh được kích hoạt, nên ưu tiên thanh lý nợ và dự phòng trước khi mở rộng.",
-  suc_khoe:
-    "Thể chất tổng quát thiên về nội hàm: cần chú ý hệ tiêu hóa, giấc ngủ và nhịp sinh hoạt đều đặn. Các giai đoạn vận căng thẳng dễ biểu hiện qua mệt mỏi kéo dài hoặc đau đầu, nên chủ động nghỉ ngơi thay vì cố gắng quá mức. Thể dục vừa phải, đi bộ hoặc khí công nhẹ phù hợp hơn luyện tập cường độ cao. Mùa chuyển giao và tháng xung khắc với nhật chủ nên hạn chế thức khuya và đồ uống lạnh. Dưỡng sinh theo mệnh: giữ ấm bụng, ăn uống điều độ, tránh tích tụ lo âu lâu ngày.",
-  tinh_duyen:
-    "Đường tình duyên thường chậm mà chắc: dễ gặp người phù hợp qua môi trường quen biết hoặc giới thiệu đáng tin, ít khi là tình cờ thoáng qua. Trong hôn nhân cần giữ không gian riêng và giao tiếp thẳng thắn; tránh suy diễn im lặng. Các năm hợp hôn nhân thường trùng khi đại vận và lưu niên hỗ trợ Tài và Quan. Nếu độc thân, nên ưu tiên người có tính cách bổ sung hơn giống hệt mình. Gia đình hai bên đóng vai trò quan trọng — hòa hợp với nhà người thân giúp vận tình ổn định lâu dài.",
+/** Đoạn mẫu cố định — chỉ dùng trên paywall (chương 03–05). */
+const MOCK_BY_KEY: Record<
+  Exclude<BaziOutlineKey, "menh_tong_quan" | "tinh_cach">,
+  string
+> = {
+  van_nam:
+    "Đánh giá năm: Năm tốt · củng cố. Bính Ngọ — Hỏa vượng so với mệnh Thủy: giai đoạn này nên nuôi dưỡng, củng cố nền tảng — chưa phải lúc mở rộng mạnh. Tài lộc trung bình, tránh đầu tư mạo hiểm; quý 3 âm lịch thuận cho ký kết. Sự nghiệp có cơ hội tiến triển cuối năm; quý nhân thường đến từ phương Bắc. Tình duyên ổn định; sức khỏe cần chú ý tâm–thận, giảm stress và thực phẩm cay nóng.",
+  phong_thuy:
+    "Hướng tốt cho bạn: Đông Nam (Sinh Khí — tài lộc), Bắc (Diên Niên — sức khỏe), Đông (Thiên Y — quý nhân), Nam (Phục Vị — bình ổn). Tránh Tây Bắc (Tuyệt Mệnh) và Tây Nam (Hoạ Hại). Màu hợp: trắng, xám, xanh đậm, xanh rêu — tránh vàng đậm, nâu, đỏ chói vì Thổ Hỏa khắc mệnh. Sao bay năm: trung cung sao 5 Tử đáo — hạn chế đào xới, sửa chữa giữa nhà trong năm này.",
+  quy_nhan:
+    "Tuổi hợp: Thân · Tý · Thìn (tam hợp). Tuổi xung: Tỵ · Hợi — nên cẩn trọng khi hợp tác hoặc kết hôn. Đại vận sắp tới có Kim sinh Thủy — đây là thời cơ phát triển sự nghiệp quan trọng nếu biết tận dụng quý nhân và giữ nhịp sinh hoạt ổn định. Tránh cam kết lớn vào tháng xung khắc với nhật chủ.",
 };
 
-export type BaziPaywallLockedSection = {
-  id: (typeof BAZI_READING_SECTION_ORDER)[number];
+export type BaziPaywallLockedChapter = {
+  key: Exclude<BaziOutlineKey, "menh_tong_quan" | "tinh_cach">;
   index: number;
   title: string;
   mockText: string;
 };
 
-/** Bốn chương sau Tính cách — mock + blur trên paywall. */
-export function baziPaywallLockedSections(): BaziPaywallLockedSection[] {
-  return BAZI_READING_SECTION_ORDER.slice(1).map((id, i) => ({
-    id,
-    index: i + 2,
-    title: BAZI_READING_SECTION_TITLES[id] ?? id,
-    mockText: MOCK_PARAGRAPHS[id],
-  }));
+export function baziPaywallLockedChapters(yearCanChi: string): BaziPaywallLockedChapter[] {
+  const outline = baziOutlineSections(yearCanChi);
+  const keys: BaziPaywallLockedChapter["key"][] = [
+    "van_nam",
+    "phong_thuy",
+    "quy_nhan",
+  ];
+  return keys.map((key) => {
+    const meta = outline.find((o) => o.key === key)!;
+    return {
+      key,
+      index: meta.index,
+      title: meta.title,
+      mockText: MOCK_BY_KEY[key],
+    };
+  });
 }

@@ -1,7 +1,16 @@
+import type { LaSoJson } from "~/lib/api-types";
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
 import type { Profile } from "~/hooks/useProfile";
 
 const BAZI_READING_SESSION = "bazi-reading-ai:";
+
+export type BaziReadingSessionData = {
+  sections: LaSoChiTietSection[];
+  yearCanChi: string;
+  laSoDisplay: LaSoJson | null;
+  luuNienFactsRaw: unknown | null;
+  phongThuyFactsRaw: unknown | null;
+};
 
 export function baziReadingCacheRevision(p: Profile, year?: number): string {
   const y =
@@ -15,7 +24,7 @@ export function baziReadingCacheRevision(p: Profile, year?: number): string {
     );
   return [
     String(y),
-    "w10",
+    "w11",
     p.ngay_sinh ?? "",
     p.gio_sinh ?? "",
     p.gioi_tinh ?? "",
@@ -30,7 +39,7 @@ function sessionKey(profileId: string): string {
 export function readBaziReadingSession(
   profileId: string,
   revision: string,
-): LaSoChiTietSection[] | null {
+): BaziReadingSessionData | null {
   try {
     const raw = sessionStorage.getItem(sessionKey(profileId));
     if (!raw) return null;
@@ -38,10 +47,36 @@ export function readBaziReadingSession(
       v?: number;
       revision?: string;
       sections?: LaSoChiTietSection[];
+      yearCanChi?: string;
+      laSoDisplay?: LaSoJson | null;
+      luuNienFactsRaw?: unknown;
+      phongThuyFactsRaw?: unknown;
     };
-    if (o.v !== 1 || o.revision !== revision) return null;
+    if (o.revision !== revision) return null;
     if (!Array.isArray(o.sections) || o.sections.length === 0) return null;
-    return o.sections;
+
+    if (o.v === 2) {
+      return {
+        sections: o.sections,
+        yearCanChi: typeof o.yearCanChi === "string" ? o.yearCanChi : "",
+        laSoDisplay: o.laSoDisplay ?? null,
+        luuNienFactsRaw: o.luuNienFactsRaw ?? null,
+        phongThuyFactsRaw: o.phongThuyFactsRaw ?? null,
+      };
+    }
+
+    // v1 — chỉ sections (revision w11 invalidates stale v1 blobs)
+    if (o.v === 1) {
+      return {
+        sections: o.sections,
+        yearCanChi: "",
+        laSoDisplay: null,
+        luuNienFactsRaw: null,
+        phongThuyFactsRaw: null,
+      };
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -50,13 +85,21 @@ export function readBaziReadingSession(
 export function persistBaziReadingSession(
   profileId: string,
   revision: string,
-  sections: LaSoChiTietSection[],
+  data: BaziReadingSessionData,
 ): void {
-  if (sections.length === 0) return;
+  if (data.sections.length === 0) return;
   try {
     sessionStorage.setItem(
       sessionKey(profileId),
-      JSON.stringify({ v: 1, revision, sections }),
+      JSON.stringify({
+        v: 2,
+        revision,
+        sections: data.sections,
+        yearCanChi: data.yearCanChi,
+        laSoDisplay: data.laSoDisplay,
+        luuNienFactsRaw: data.luuNienFactsRaw,
+        phongThuyFactsRaw: data.phongThuyFactsRaw,
+      }),
     );
   } catch {
     /* quota / private mode */

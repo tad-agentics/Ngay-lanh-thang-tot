@@ -12,6 +12,7 @@ import {
 } from "./redis-cache.ts";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
+  canUseBaziReading,
   canUseCalendar,
   isTraCuuPickChonNgay,
 } from "../_shared/entitlements.ts";
@@ -1246,6 +1247,37 @@ Deno.serve(async (req) => {
             message: "Bạn đã có lá số. Mở Lá số tứ trụ để xem.",
           },
         }, 409, req);
+    }
+  }
+
+  const phongThuyFull =
+    op === "phong-thuy" &&
+    String(body.detail ?? "").toLowerCase() === "full";
+  if (userId && (op === "la-so-luu-nien" || phongThuyFull)) {
+    const { data: baziProfile, error: baziProfErr } = await admin
+      .from("profiles")
+      .select("subscription_expires_at, bazi_reading_unlocked_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (baziProfErr || !baziProfile) {
+      return json(
+        { error: { code: "PROFILE_MISSING", message: "Chưa có hồ sơ." } },
+        400,
+        req,
+      );
+    }
+    if (!canUseBaziReading(baziProfile)) {
+      return json(
+        {
+          error: {
+            code: "BAZI_READING_LOCKED",
+            message:
+              "Cần mở khóa Luận giải Bát tự năm hoặc gói Lịch năm để xem nội dung này.",
+          },
+        },
+        403,
+        req,
+      );
     }
   }
 
