@@ -10,6 +10,7 @@ import { CT, DISPLAY } from "~/lib/c-tokens";
 import { canUseTieuVanReading } from "~/lib/entitlements";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 import {
   mapTieuVanPayload,
   tieuVanTongQuanDisplayOrNull,
@@ -25,18 +26,6 @@ type ReadingSection = {
   title: string;
   text: string;
 };
-
-function birthLine(profile: {
-  display_name: string | null;
-  ngay_sinh: string | null;
-  gio_sinh: string | null;
-}): string {
-  const parts: string[] = [];
-  if (profile.display_name) parts.push(profile.display_name);
-  if (profile.ngay_sinh) parts.push(`sinh ${profile.ngay_sinh}`);
-  if (profile.gio_sinh) parts.push(`giờ ${profile.gio_sinh}`);
-  return parts.join(" · ");
-}
 
 function buildTieuVanSections(ui: TieuVanUi, reading: string | null): ReadingSection[] {
   const sections: ReadingSection[] = [];
@@ -165,7 +154,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
 
         {profile ? (
           <p className="mt-4 font-serif text-[13px]" style={{ color: CT.muted }}>
-            {birthLine(profile)}
+            {formatProfileBirthSubline(profile)}
           </p>
         ) : null}
 

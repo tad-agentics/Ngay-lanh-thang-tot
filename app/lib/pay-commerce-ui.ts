@@ -22,7 +22,12 @@ export function yearCanChiFromLaSo(laSo: unknown): string | null {
   if (!laSo || typeof laSo !== "object") return null;
   const root = laSo as Record<string, unknown>;
   const direct =
-    pickStr(root, ["can_chi_year", "yearCanChi", "can_chi_nam"]) ??
+    pickStr(root, [
+      "can_chi_year",
+      "yearCanChi",
+      "can_chi_nam",
+      "birth_year_can_chi",
+    ]) ??
     pickStr(root, ["can_chi", "canChi"]);
   if (direct) return direct;
 

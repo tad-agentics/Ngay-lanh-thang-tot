@@ -19,6 +19,7 @@ import {
   thanColorsHintVi,
 } from "~/lib/la-so-ui";
 import type { LaSoJson } from "~/lib/api-types";
+import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 
 const NGU_HANH_BAR: Record<string, string> = {
   kim: "#c8c5a0",
@@ -35,21 +36,6 @@ const NGU_HANH_LABEL: Record<string, string> = {
   hoa: "Hỏa",
   tho: "Thổ",
 };
-
-function birthLine(profile: {
-  display_name: string | null;
-  gioi_tinh: string | null;
-  ngay_sinh: string | null;
-  gio_sinh: string | null;
-}): string {
-  const parts: string[] = [];
-  if (profile.display_name) parts.push(profile.display_name);
-  if (profile.gioi_tinh === "nam") parts.push("Nam");
-  if (profile.gioi_tinh === "nu") parts.push("Nữ");
-  if (profile.ngay_sinh) parts.push(`sinh ${profile.ngay_sinh}`);
-  if (profile.gio_sinh) parts.push(`giờ ${profile.gio_sinh}`);
-  return parts.join(" · ");
-}
 
 export function CLaSoFullScreen() {
   const { profile, loading } = useProfile();
@@ -151,7 +137,9 @@ export function CLaSoFullScreen() {
 
       <div className="flex-1 overflow-auto px-6 pb-8 pt-1">
         <p className="font-serif text-[13px] mt-1.5" style={{ color: CT.muted }}>
-          {profile ? birthLine(profile) : ""}
+          {profile
+            ? formatProfileBirthSubline(profile, { includeGender: true })
+            : ""}
         </p>
 
         <div className="mt-3.5">

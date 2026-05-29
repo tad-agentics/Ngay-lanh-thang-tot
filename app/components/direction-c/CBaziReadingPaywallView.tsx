@@ -28,19 +28,8 @@ import { fetchLuuNienYearFacts } from "~/lib/luu-nien-facts";
 import { createPayosCheckout } from "~/lib/payos";
 import { addonSubscriptionUpsell, priceDisplay } from "~/lib/pay-confirm-ui";
 import type { Profile } from "~/lib/profile-context";
+import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 import { UI_PACKAGES } from "~/lib/packages";
-
-function birthLine(profile: {
-  display_name: string | null;
-  ngay_sinh: string | null;
-  gio_sinh: string | null;
-}): string {
-  const parts: string[] = [];
-  if (profile.display_name) parts.push(profile.display_name);
-  if (profile.ngay_sinh) parts.push(`sinh ${profile.ngay_sinh}`);
-  if (profile.gio_sinh) parts.push(`giờ ${profile.gio_sinh}`);
-  return parts.join(" · ");
-}
 
 function PaywallLockedChapterBody({ chapter }: { chapter: BaziPaywallLockedChapter }) {
   switch (chapter.key) {
@@ -207,7 +196,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
         <div className="h-full overflow-y-auto px-6 pb-[300px] pt-1">
           {profile ? (
             <p className="font-serif text-[12.5px] leading-snug" style={{ color: CT.muted }}>
-              {birthLine(profile)}
+              {formatProfileBirthSubline(profile)}
             </p>
           ) : null}
 

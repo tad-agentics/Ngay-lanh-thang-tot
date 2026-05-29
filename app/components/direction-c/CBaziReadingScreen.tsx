@@ -20,18 +20,7 @@ import {
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { canUseBaziReading } from "~/lib/entitlements";
 import { profileHasLaso } from "~/lib/la-so-ui";
-
-function birthLine(profile: {
-  display_name: string | null;
-  ngay_sinh: string | null;
-  gio_sinh: string | null;
-}): string {
-  const parts: string[] = [];
-  if (profile.display_name) parts.push(profile.display_name);
-  if (profile.ngay_sinh) parts.push(`sinh ${profile.ngay_sinh}`);
-  if (profile.gio_sinh) parts.push(`giờ ${profile.gio_sinh}`);
-  return parts.join(" · ");
-}
+import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 
 function chaptersFromSession(
   cached: NonNullable<ReturnType<typeof readBaziReadingSession>>,
@@ -205,7 +194,7 @@ export function CBaziReadingScreen() {
 
         {profile ? (
           <p className="mt-4 font-serif text-[13px]" style={{ color: CT.muted }}>
-            {birthLine(profile)}
+            {formatProfileBirthSubline(profile)}
           </p>
         ) : null}
 
