@@ -8,7 +8,6 @@ import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
-import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useProfile } from "~/hooks/useProfile";
@@ -34,7 +33,6 @@ export function CHomeScreen() {
     error,
     today,
     menh,
-    scoreMethodology,
     canBatTu,
     rawPayload,
     online,
@@ -164,10 +162,6 @@ export function CHomeScreen() {
           ) : (
             <CMeLockedBaziCard />
           )
-        ) : null}
-
-        {today && !showRecomputeSkeleton ? (
-          <DayScoreMethodologyCollapsible methodology={scoreMethodology} />
         ) : null}
 
         {offlineMode ? (
