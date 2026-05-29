@@ -135,21 +135,36 @@ export function CTodayReasoning({
             <button
               type="button"
               onClick={onCtaClick}
-              className="mt-3.5 flex min-h-[48px] w-full cursor-pointer items-center justify-center gap-2 border-none px-4 py-3 uppercase tracking-[0.08em]"
               style={{
-                background: CT.forest,
-                color: CT.cream,
-                fontFamily: "var(--display-2)",
-                fontWeight: 800,
-                fontSize: 12.5,
-                boxShadow: "0 2px 10px rgba(14, 28, 20, 0.22)",
+                marginTop: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                cursor: "pointer",
+                background: "none",
+                border: "none",
+                padding: 0,
               }}
             >
-              <span>{ctaLabel}</span>
               <span
-                className="font-serif text-[17px] leading-none"
-                style={{ color: CT.cream, opacity: 0.95 }}
-                aria-hidden
+                style={{
+                  fontFamily: "var(--display-2)",
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  color: CT.red,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                }}
+              >
+                {ctaLabel}
+              </span>
+              <span
+                style={{
+                  fontFamily: "var(--serif)",
+                  fontSize: 15.5,
+                  color: CT.red,
+                  lineHeight: 1,
+                }}
               >
                 ›
               </span>

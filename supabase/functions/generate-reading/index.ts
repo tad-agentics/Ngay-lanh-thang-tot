@@ -1446,6 +1446,7 @@ Deno.serve(async (req) => {
             INLINE_LICH_TO_SYSTEM,
             payload,
             READING_MAX_TOKENS_INLINE_LICH_TO,
+            REQUEST_TIMEOUT_MS,
           )
       : endpoint === "day-detail"
         ? question

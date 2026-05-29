@@ -242,7 +242,7 @@ export function LichToPageCard({
         <div
           className="flex items-center justify-between gap-2"
           style={{
-            padding: "12px 14px 14px",
+            padding: "8px 18px 12px",
             borderTop: `1px solid ${CT.hairline}`,
           }}
         >
@@ -251,15 +251,12 @@ export function LichToPageCard({
               type="button"
               onClick={onPrev}
               disabled={!onPrev}
-              className="flex min-h-[44px] max-w-[48%] items-center border px-3 py-2 text-left disabled:opacity-45"
+              className="flex min-h-[44px] max-w-[50%] items-center border-none bg-transparent px-0 py-2 text-left disabled:opacity-45"
               style={{
-                fontFamily: "var(--display-2)",
-                fontSize: 12.5,
-                fontWeight: 700,
-                letterSpacing: "0.02em",
-                color: onPrev ? CT.goldDeep : CT.muted,
-                background: onPrev ? "rgba(154,124,34,0.12)" : "transparent",
-                borderColor: onPrev ? "rgba(154,124,34,0.4)" : CT.hairline2,
+                fontFamily: "var(--serif)",
+                fontSize: 12,
+                fontWeight: 500,
+                color: onPrev ? CT.ink2 : CT.muted,
                 cursor: onPrev ? "pointer" : "default",
               }}
             >
@@ -273,15 +270,12 @@ export function LichToPageCard({
               type="button"
               onClick={onNext}
               disabled={!onNext}
-              className="flex min-h-[44px] max-w-[48%] items-center justify-end border px-3 py-2 text-right disabled:opacity-45"
+              className="flex min-h-[44px] max-w-[50%] items-center justify-end border-none bg-transparent px-0 py-2 text-right disabled:opacity-45"
               style={{
-                fontFamily: "var(--display-2)",
-                fontSize: 12.5,
-                fontWeight: 700,
-                letterSpacing: "0.02em",
-                color: onNext ? CT.goldDeep : CT.muted,
-                background: onNext ? "rgba(154,124,34,0.12)" : "transparent",
-                borderColor: onNext ? "rgba(154,124,34,0.4)" : CT.hairline2,
+                fontFamily: "var(--serif)",
+                fontSize: 12,
+                fontWeight: 500,
+                color: onNext ? CT.ink2 : CT.muted,
                 cursor: onNext ? "pointer" : "default",
               }}
             >
