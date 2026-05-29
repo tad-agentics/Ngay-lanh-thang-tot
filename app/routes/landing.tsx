@@ -20,7 +20,7 @@ const FAQS = [
   ],
   [
     "Mua gói nào hợp lý nhất?",
-    "Gói năm 449k — Lịch cả năm + Luận giải Bát tự + Luận giải Tiểu Vận. Tiết kiệm hơn mua riêng từng phần.",
+    "Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + Luận giải Tiểu Vận. Tiết kiệm hơn mua riêng từng phần.",
   ],
 ] as const;
 
@@ -39,7 +39,7 @@ function landingJsonLd() {
         offers: {
           "@type": "Offer",
           name: "Lịch 1 năm",
-          price: "449000",
+          price: "799000",
           priceCurrency: "VND",
         },
       },

@@ -33,9 +33,10 @@ describe("pay-commerce-ui", () => {
   it("maps subscription duration labels", () => {
     expect(subscriptionDurationLabel("goi_12thang")).toBe("1 năm");
     expect(subscriptionDurationLabel("goi_6thang")).toBe("6 tháng");
+    expect(subscriptionDurationLabel("goi_1thang")).toBe("3 tháng");
   });
 
   it("computes yearly upsell delta from addon price", () => {
-    expect(yearlyPlanUpsellDeltaVnd("luan_bat_tu")).toBe(150_000);
+    expect(yearlyPlanUpsellDeltaVnd("luan_bat_tu")).toBe(500_000);
   });
 });

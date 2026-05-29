@@ -171,9 +171,10 @@ export function CSettingsScreen() {
     const days = subscriptionDaysUntil(expiresAt);
     const months =
       (new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30);
-    let tier = "1 tháng";
+    let tier = "3 tháng";
     if (months >= 11) tier = "1 năm";
     else if (months >= 5) tier = "6 tháng";
+    else if (months < 2.5) tier = "gói ngắn";
     if (days == null) return tier;
     return `${tier} · còn ${days} ngày`;
   }, [expiresAt, isActive]);

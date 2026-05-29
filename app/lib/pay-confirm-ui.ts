@@ -8,21 +8,21 @@ export const PAY_CONFIRM_TIER_META: Partial<
 > = {
   goi_1thang: {
     baseline: null,
-    per: "/ tháng",
+    per: "3 tháng",
     save: null,
     sub: "Chỉ lịch · dùng thử",
   },
   goi_6thang: {
-    baseline: "294.000",
+    baseline: "797.000",
     per: "6 tháng",
-    save: "tiết kiệm 15%",
-    sub: "Chỉ lịch · người mới quen",
+    save: "tiết kiệm 298.000đ",
+    sub: "Lịch + luận Tiểu vận",
   },
   goi_12thang: {
-    baseline: "947.000",
+    baseline: "1.097.000",
     per: "cả năm",
-    save: "tiết kiệm 498.000đ",
-    sub: "Lịch + cả 2 luận giải",
+    save: "tiết kiệm 298.000đ",
+    sub: "Toàn bộ tính năng",
   },
 };
 
@@ -42,7 +42,7 @@ export const PAY_CONFIRM_ADDON_META: Partial<
 };
 
 const SUBSCRIPTION_MONTHS: Partial<Record<PackageSku, number>> = {
-  goi_1thang: 1,
+  goi_1thang: 3,
   goi_6thang: 6,
   goi_12thang: 12,
 };

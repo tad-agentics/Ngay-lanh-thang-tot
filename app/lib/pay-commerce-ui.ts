@@ -73,7 +73,7 @@ export function brandedSubscriptionPlanName(
 
 export function subscriptionDurationLabel(sku: PackageSku): string {
   const meta = PAY_CONFIRM_TIER_META[sku];
-  if (meta?.per === "/ tháng") return "1 tháng";
+  if (meta?.per === "3 tháng") return "3 tháng";
   if (meta?.per === "6 tháng") return "6 tháng";
   if (meta?.per === "cả năm") return "1 năm";
   return UI_PACKAGES.find((p) => p.sku === sku)?.title ?? "—";

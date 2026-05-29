@@ -44,7 +44,7 @@ const FAQS = [
   ],
   [
     "Mua gói nào hợp lý nhất?",
-    "Gói năm 449k — bao gồm Lịch cả năm + Luận giải Bát tự + Luận giải Tiểu Vận năm. Tổng giá trị 947k. Mua từng phần riêng tốn nhiều hơn và không có lịch hằng ngày.",
+    "Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + Luận giải Tiểu Vận. Tiết kiệm hơn mua riêng từng phần.",
   ],
   [
     "Có cần biết tử vi không?",
@@ -546,7 +546,7 @@ export function LandingDirectionC() {
                 <Mono style={{ color: T.gold, fontSize: 10, letterSpacing: "0.18em" }}>BẠN TRẢ</Mono>
                 <div className="flex items-baseline gap-1.5 mt-2">
                   <span className="ldc-hero-price font-display font-extrabold leading-[0.9] tabular-nums" style={{ fontSize: 104, color: T.gold, letterSpacing: "-0.03em" }}>
-                    449
+                    799
                   </span>
                   <span className="font-display font-bold text-[32px]" style={{ color: T.gold }}>
                     k
@@ -554,7 +554,7 @@ export function LandingDirectionC() {
                 </div>
                 <div className="mt-2">
                   <Mono style={{ color: T.gold, fontSize: 10, letterSpacing: "0.14em" }}>
-                    TIẾT KIỆM 498.000Đ · ≈ 53% RẺ HƠN
+                    TIẾT KIỆM 298.000Đ · ≈ 27% RẺ HƠN
                   </Mono>
                 </div>
               </div>
@@ -562,8 +562,8 @@ export function LandingDirectionC() {
           </div>
           <div className="ldc-other-tiers mt-9 grid gap-4" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             {[
-              { name: "1 tháng", sub: "Chỉ lịch · dùng thử", price: "49.000", per: "/ tháng" },
-              { name: "6 tháng", sub: "Chỉ lịch", price: "249.000", per: "6 tháng", save: "tiết kiệm 15%" },
+              { name: "3 tháng", sub: "Chỉ lịch · dùng thử", price: "299.000", per: "3 tháng" },
+              { name: "6 tháng", sub: "Lịch + luận Tiểu vận", price: "499.000", per: "6 tháng", save: "tiết kiệm 298.000đ" },
             ].map((t) => (
               <Link
                 key={t.name}

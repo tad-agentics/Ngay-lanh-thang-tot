@@ -236,22 +236,18 @@ export default function DatLichRoute() {
                         className="text-[11px] font-bold"
                         style={{ ...DISPLAY2, color: CT.gold }}
                       >
-                        tiết kiệm 52,6%
+                        tiết kiệm 27,2%
                       </span>
                     </div>
                     <div
                       className="mt-2.5 font-serif text-[11.5px] leading-snug"
                       style={{ color: "rgba(237,231,211,0.75)" }}
                     >
-                      Gồm: Lịch{" "}
-                      <strong className="font-semibold" style={{ color: CT.cream }}>
-                        449k
-                      </strong>{" "}
-                      + Luận giải Bát tự{" "}
+                      Gồm: Lịch cả năm + Luận giải Bát tự{" "}
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         299k
                       </strong>{" "}
-                      + Luận giải Tiểu Vận 2026{" "}
+                      + Luận giải Tiểu vận{" "}
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         199k
                       </strong>
@@ -315,8 +311,8 @@ export default function DatLichRoute() {
           className="mt-[22px] font-serif text-xs leading-relaxed"
           style={{ color: CT.muted }}
         >
-          Mọi gói đều có: lịch cá nhân theo lá số · trang hôm nay · tháng · tra
-          cứu ngày tốt không giới hạn · hợp tuổi.
+          Gói 3 tháng: lịch cá nhân · tra cứu ngày tốt · hợp tuổi. Gói 6 tháng thêm
+          luận Tiểu vận. Gói năm mở full luận Bát tự và toàn bộ tính năng.
         </p>
 
         <div
@@ -409,13 +405,13 @@ export default function DatLichRoute() {
           >
             Gói năm{" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.goldDeep }}>
-              449.000đ
+              799.000đ
             </strong>{" "}
-            đã tích hợp trọn vẹn cả hai bản — tiết kiệm ngay{" "}
+            đã tích hợp trọn vẹn cả hai bản luận + lịch cả năm — tiết kiệm ngay{" "}
             <strong className="font-semibold" style={{ color: CT.greenMute }}>
-              49.000đ
+              298.000đ
             </strong>{" "}
-            và sở hữu lịch dùng suốt cả năm.
+            so với mua lẻ từng phần.
           </div>
         </div>
 

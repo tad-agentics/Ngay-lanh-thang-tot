@@ -1,16 +1,24 @@
 import { Link, useNavigate } from "react-router";
 
+import { Mono } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
+import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { DayScoreMethodologyCollapsible } from "~/components/direction-c/DayScoreMethodologyCollapsible";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
+import { useProfile } from "~/hooks/useProfile";
 import { useTodayLichData } from "~/hooks/useTodayLichData";
 import { useAuth } from "~/lib/auth";
+import {
+  canUseBaziReading,
+  hasYearlySubscription,
+  subscriptionActive,
+} from "~/lib/entitlements";
 import { buildHomeInlineFallback } from "~/lib/home-bat-tu";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
@@ -19,6 +27,7 @@ import { addDaysToIso } from "~/lib/tu-tru-dates";
 export function CHomeScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { profile } = useProfile();
   const { pending: recomputePending } = useLaSoRecomputeGate();
   const {
     loading,
@@ -56,6 +65,9 @@ export function CHomeScreen() {
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
   const offlineMode = !online;
+  const baziUnlocked = canUseBaziReading(profile);
+  const subActive = subscriptionActive(profile?.subscription_expires_at ?? null);
+  const yearlySub = hasYearlySubscription(profile);
 
   return (
     <main
@@ -118,6 +130,40 @@ export function CHomeScreen() {
               )
             }
           />
+        ) : null}
+
+        {today && !showRecomputeSkeleton && subActive ? (
+          baziUnlocked ? (
+            <Link
+              to="/toi/luan-bat-tu"
+              className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
+              style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
+            >
+              <div className="flex items-baseline gap-2">
+                <span style={{ color: CT.goldDeep, fontSize: 14 }}>★</span>
+                <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                  {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
+                </Mono>
+              </div>
+              <div
+                className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
+                style={{ color: CT.ink }}
+              >
+                Luận giải Bát tự năm
+              </div>
+              <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
+                tính cách · vận năm · phong thuỷ · quý nhân
+              </div>
+              <div
+                className="mt-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"
+                style={{ color: CT.goldDeep }}
+              >
+                Đọc ngay →
+              </div>
+            </Link>
+          ) : (
+            <CMeLockedBaziCard />
+          )
         ) : null}
 
         {today && !showRecomputeSkeleton ? (
