@@ -10,8 +10,8 @@ import {
 } from "~/lib/tra-cuu-session";
 
 const sampleKetQua: ChonNgayKetQuaState = {
-  intent: "CUOI_HOI",
-  intentLabel: "Cưới hỏi",
+  intent: "DAM_CUOI",
+  intentLabel: "Đám cưới",
   rangeStart: "2026-06-01",
   rangeEnd: "2026-06-30",
   daysInclusive: 30,
@@ -26,7 +26,7 @@ describe("tra-cuu-session", () => {
   it("persists and loads ket-qua state", () => {
     persistTraCuuKetQua(sampleKetQua);
     const loaded = loadTraCuuKetQua();
-    expect(loaded?.intent).toBe("CUOI_HOI");
+    expect(loaded?.intent).toBe("DAM_CUOI");
     expect(loaded?.payload).toEqual(sampleKetQua.payload);
   });
 

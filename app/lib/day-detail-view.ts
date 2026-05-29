@@ -5,7 +5,10 @@ import {
   formatHourRangeForDayDetailFigmaVi,
 } from "~/lib/format-gio-tot-display-vi";
 import { pickCanChiLabel } from "~/lib/home-bat-tu";
-import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
+import {
+  matchesIntentVietnameseLabel,
+  TU_TRU_INTENT_OPTIONS,
+} from "~/lib/tu-tru-intents";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -219,18 +222,18 @@ function buildPurposeListFromApi(
   return null;
 }
 
-/** 26 mục chuẩn: khớp nhãn với `good_for` / `avoid_for`. */
+/** 28 mục chuẩn: khớp OpenAPI `IntentEnum` (trừ MAC_DINH) và `good_for` / `avoid_for`. */
 function buildPurposeListFromGoodAvoid(
   goodFor: string[],
   avoidFor: string[],
 ): DayDetailPurposeRow[] {
-  const good = new Set(goodFor.map((s) => s.trim().toLowerCase()));
-  const avoid = new Set(avoidFor.map((s) => s.trim().toLowerCase()));
   return TU_TRU_INTENT_OPTIONS.filter((o) => o.value !== "MAC_DINH").map((o) => {
-    const lc = o.label.toLowerCase();
     let verdict: DayDetailPurposeVerdict = "trung_lap";
-    if (good.has(lc)) verdict = "nen_lam";
-    else if (avoid.has(lc)) verdict = "khong_nen";
+    if (goodFor.some((g) => matchesIntentVietnameseLabel(o.value, g))) {
+      verdict = "nen_lam";
+    } else if (avoidFor.some((g) => matchesIntentVietnameseLabel(o.value, g))) {
+      verdict = "khong_nen";
+    }
     return { label: o.label, verdict };
   });
 }

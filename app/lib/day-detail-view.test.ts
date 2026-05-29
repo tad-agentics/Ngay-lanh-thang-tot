@@ -42,7 +42,7 @@ describe("parseDayDetailForView", () => {
     expect(v!.gioTot).toBe("Dần 3–5h");
     expect(v!.gioXau).toBe("Tý 23–1h");
     expect(v!.trucTitle).toContain("Khai");
-    expect(v!.purposeRows.length).toBe(26);
+    expect(v!.purposeRows.length).toBe(28);
     const khai = v!.purposeRows.find((r) => r.label === "Khai trương");
     expect(khai?.verdict).toBe("nen_lam");
     expect(v!.breakdown).toHaveLength(1);

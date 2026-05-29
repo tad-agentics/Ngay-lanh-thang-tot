@@ -9,10 +9,10 @@ export type TraCuuIntentPreset = {
 };
 
 const PURPOSE_TO_INTENT: Record<string, TuTruIntent> = {
-  "cưới hỏi": "CUOI_HOI",
+  "cưới hỏi": "DAM_CUOI",
   "hợp tác": "KY_HOP_DONG",
   "cộng sự": "KY_HOP_DONG",
-  "sống chung": "CUOI_HOI",
+  "sống chung": "DAM_CUOI",
 };
 
 export function purposeLabelToTraCuuIntent(

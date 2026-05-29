@@ -178,6 +178,8 @@ export type TuTruIntent =
   | "NHAP_HOC_THI_CU"
   | "KIEN_TUNG"
   | "TRONG_CAY"
+  | "CAT_TOC"
+  | "XAM_MINH"
   | "MAC_DINH";
 
 // ─── Edge: Bát Tự proxy ───────────────────────────────────────────────────

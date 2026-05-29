@@ -6,9 +6,9 @@ import {
 } from "./hop-tuoi-ui";
 
 describe("purposeLabelToTraCuuIntent", () => {
-  it("maps wedding purpose to CUOI_HOI", () => {
+  it("maps wedding purpose to DAM_CUOI", () => {
     const p = purposeLabelToTraCuuIntent("cưới hỏi");
-    expect(p?.intent).toBe("CUOI_HOI");
+    expect(p?.intent).toBe("DAM_CUOI");
   });
 
   it("maps partnership purpose to KY_HOP_DONG", () => {
@@ -25,7 +25,7 @@ describe("buildHopTuoiNextStepCopy", () => {
       naphAm2: "Kim B",
     });
     expect(copy.cta).toContain("cưới");
-    expect(copy.preset?.intent).toBe("CUOI_HOI");
+    expect(copy.preset?.intent).toBe("DAM_CUOI");
     expect(copy.body).toContain("Thổ A × Kim B");
   });
 });

@@ -4,6 +4,13 @@ import { toast } from "sonner";
 import { CPickLoadingScreen } from "~/components/direction-c/CPickLoadingScreen";
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useTraCuuPickOverlay } from "~/hooks/useTraCuuPickOverlay";
 import type { TuTruIntent } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
@@ -22,8 +29,11 @@ const CHON_NGAY_INTENT_OPTIONS = TU_TRU_INTENT_OPTIONS.filter(
   (o) => o.value !== "MAC_DINH",
 );
 
+/** Radix Select requires a string value; empty intent maps here for the trigger only. */
+const INTENT_UNSET = "__unset__";
+
 const QUICK_INTENTS: { label: string; value: TuTruIntent }[] = [
-  { label: "Cưới hỏi", value: "CUOI_HOI" },
+  { label: "Đám cưới", value: "DAM_CUOI" },
   { label: "Ký hợp đồng", value: "KY_HOP_DONG" },
   { label: "Xuất hành", value: "XUAT_HANH" },
   { label: "Động thổ", value: "DONG_THO" },
@@ -59,7 +69,6 @@ export default function TraCuuRoute() {
     useTraCuuPickOverlay();
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [intent, setIntent] = useState<TuTruIntent | "">("");
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     const formPreset = consumeTraCuuFormPreset();
@@ -137,62 +146,69 @@ export default function TraCuuRoute() {
           Tôi sắp làm
         </div>
 
-        <button
-          type="button"
+        <Select
+          value={intent || INTENT_UNSET}
+          onValueChange={(v) => {
+            if (v !== INTENT_UNSET) setIntent(v as TuTruIntent);
+          }}
           disabled={disabledForm}
-          onClick={() => setPickerOpen((o) => !o)}
-          className="mt-1.5 flex w-full cursor-pointer items-start justify-between border bg-white p-3.5 text-left disabled:opacity-60"
-          style={{ borderColor: CT.goldDeep }}
         >
-          <div>
-            <div
-              className="text-[26.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
-              style={{ fontFamily: "var(--display)", color: CT.ink }}
-            >
-              {intentParts.main}
-              {intentParts.accent ? (
-                <>
-                  <br />
-                  <span style={{ color: CT.goldDeep, fontWeight: 700 }}>
-                    {intentParts.accent}
-                  </span>
-                </>
-              ) : null}
-            </div>
-            <div className="mt-2 font-serif text-[12px]" style={{ color: CT.muted }}>
-              {CHON_NGAY_INTENT_OPTIONS.length} việc · chọn lại
-            </div>
-          </div>
-          <span className="font-serif text-base" style={{ color: CT.goldDeep }}>
-            ▾
-          </span>
-        </button>
-
-        {pickerOpen ? (
-          <div
-            className="mt-1 max-h-48 overflow-auto border bg-white"
-            style={{ borderColor: CT.hairline }}
+          <SelectTrigger
+            aria-label={`Chọn loại sự kiện — ${CHON_NGAY_INTENT_OPTIONS.length} việc`}
+            className="mt-1.5 flex !h-auto min-h-0 w-full cursor-pointer items-start justify-between gap-0 border bg-white p-3.5 text-left shadow-none !rounded-none focus-visible:border-[color:var(--gold-deep,#9a7c22)] focus-visible:ring-0 disabled:cursor-not-allowed disabled:opacity-60 [&>svg]:hidden"
+            style={{ borderColor: CT.goldDeep }}
+          >
+            <SelectValue asChild>
+              <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                <div className="min-w-0 text-left">
+                  <div
+                    className="text-[26.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+                    style={{ fontFamily: "var(--display)", color: CT.ink }}
+                  >
+                    {intentParts.main}
+                    {intentParts.accent ? (
+                      <>
+                        <br />
+                        <span style={{ color: CT.goldDeep, fontWeight: 700 }}>
+                          {intentParts.accent}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                  <div
+                    className="mt-2 font-serif text-[12px]"
+                    style={{ color: CT.muted }}
+                  >
+                    {CHON_NGAY_INTENT_OPTIONS.length} việc · chọn lại
+                  </div>
+                </div>
+                <span
+                  className="shrink-0 font-serif text-base"
+                  style={{ color: CT.goldDeep }}
+                >
+                  ▾
+                </span>
+              </div>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            className="z-50 max-h-48 overflow-y-auto rounded-none border bg-white p-0 font-serif shadow-md data-[side=bottom]:translate-y-0.5"
+            style={{ borderColor: CT.hairline, color: CT.ink }}
           >
             {CHON_NGAY_INTENT_OPTIONS.map((opt) => (
-              <button
+              <SelectItem
                 key={opt.value}
-                type="button"
-                className="block w-full border-none bg-transparent px-3.5 py-2.5 text-left font-serif text-[13.5px] cursor-pointer"
-                style={{
-                  color: intent === opt.value ? CT.goldDeep : CT.ink,
-                  fontWeight: intent === opt.value ? 600 : 400,
-                  borderBottom: `1px solid ${CT.hairline2}`,
-                }}
-                onClick={() => {
-                  setIntent(opt.value);
-                  setPickerOpen(false);
-                }}
+                value={opt.value}
+                textValue={opt.label}
+                className="cursor-pointer rounded-none border-b py-2.5 pr-3.5 pl-3.5 font-serif text-[13.5px] last:border-b-0 focus:bg-[rgba(154,124,34,0.08)] focus:text-[color:var(--ink,#1a1a1a)] data-[state=checked]:font-semibold data-[state=checked]:text-[color:var(--gold-deep,#9a7c22)] [&_svg]:hidden"
+                style={{ borderColor: CT.hairline2 }}
               >
                 {opt.label}
-              </button>
+              </SelectItem>
             ))}
-          </div>
-        ) : null}
+          </SelectContent>
+        </Select>
 
         <div
           className="mt-3.5 font-serif text-xs leading-relaxed"

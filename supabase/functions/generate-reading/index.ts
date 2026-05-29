@@ -205,7 +205,7 @@ Quy tắc:
 - Mỗi khóa trong day_readings là ngày dương lịch ISO (YYYY-MM-DD), trùng với từng ngày trong recommended_dates (hoặc mảng ngày gợi ý tương đương trong data). Tối đa **5** ngày đầu nếu danh sách dài hơn.
 - Mỗi giá trị: **2–3 câu** giải thích vì sao **ngày đó** thuận cho đúng meta.intent; dùng trực, sao cát/hung, hành ngày, reason_vi/summary_vi của **đúng object ngày**; diễn đạt đời thường — không đọc tên field.
 - Giọng văn theo nhóm intent như sau (bám meta.intent):
-  - Hôn nhân (CUOI_HOI, DAM_CUOI, AN_HOI): ấm, thiêng liêng — "hỷ sự", "lương duyên", "phúc khí".
+  - Hôn nhân (Dạm ngõ/CUOI_HOI, AN_HOI, DAM_CUOI): ấm, thiêng liêng — "hỷ sự", "lương duyên", "phúc khí".
   - Kinh doanh (KHAI_TRUONG, KY_HOP_DONG, CAU_TAI, NHAM_CHUC): tự tin — "tài lộc", "hanh thông", "phát đạt".
   - Xây dựng / nhà đất (DONG_THO, NHAP_TRACH, LAM_NHA, MUA_NHA_DAT): vững chãi — "nền móng", "an cư", "thuận phong thủy".
   - Tang lễ (AN_TANG, CAI_TANG): trang trọng, nhẹ — "an nghỉ", "thanh thản"; không từ vui.

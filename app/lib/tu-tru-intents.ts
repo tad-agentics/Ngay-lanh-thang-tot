@@ -1,5 +1,16 @@
 import type { TuTruIntent } from "~/lib/api-types";
 
+/**
+ * Legacy / upstream Vietnamese strings for `good_for` / `avoid_for` matching.
+ * `CUOI_HOI` displays as Dạm ngõ until API ships `DAM_NGO` (OpenAPI 0.1.2 still `CUOI_HOI`).
+ */
+export const INTENT_VIETNAMESE_ALIASES: Partial<
+  Record<TuTruIntent, readonly string[]>
+> = {
+  CUOI_HOI: ["cưới hỏi"],
+  DAM_CUOI: ["lễ cưới"],
+};
+
 /** Labels for Chọn ngày — value matches OpenAPI `IntentEnum`. */
 export const TU_TRU_INTENT_OPTIONS: readonly {
   value: TuTruIntent;
@@ -10,8 +21,8 @@ export const TU_TRU_INTENT_OPTIONS: readonly {
   { value: "KY_HOP_DONG", label: "Ký hợp đồng" },
   { value: "CAU_TAI", label: "Cầu tài" },
   { value: "NHAM_CHUC", label: "Nhậm chức" },
+  { value: "CUOI_HOI", label: "Dạm ngõ" },
   { value: "AN_HOI", label: "Ăn hỏi" },
-  { value: "CUOI_HOI", label: "Cưới hỏi" },
   { value: "DAM_CUOI", label: "Đám cưới" },
   { value: "CAU_TU", label: "Cầu tự" },
   { value: "DONG_THO", label: "Động thổ" },
@@ -32,4 +43,19 @@ export const TU_TRU_INTENT_OPTIONS: readonly {
   { value: "NHAP_HOC_THI_CU", label: "Nhập học / thi cử" },
   { value: "KIEN_TUNG", label: "Kiện tụng" },
   { value: "TRONG_CAY", label: "Trồng cây" },
+  { value: "CAT_TOC", label: "Cắt tóc" },
+  { value: "XAM_MINH", label: "Xăm hình" },
 ] as const;
+
+export function matchesIntentVietnameseLabel(
+  intentValue: TuTruIntent,
+  vietnameseLabel: string,
+): boolean {
+  const opt = TU_TRU_INTENT_OPTIONS.find((o) => o.value === intentValue);
+  if (!opt) return false;
+  const lc = vietnameseLabel.trim().toLowerCase();
+  if (!lc) return false;
+  if (opt.label.toLowerCase() === lc) return true;
+  const aliases = INTENT_VIETNAMESE_ALIASES[intentValue];
+  return aliases?.some((a) => a.toLowerCase() === lc) ?? false;
+}
