@@ -59,7 +59,7 @@ export function CPickLoadingScreen({
             </div>
             <div className="flex flex-1 items-center justify-center">
               <span
-                className="animate-pulse font-[family-name:var(--font-display-2)] text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
+                className="animate-pulse font-[family-name:var(--display-2)] text-[56px] font-extrabold leading-none tracking-[-0.04em] tabular-nums"
                 style={{ color: CT.red }}
               >
                 {String(phase + 1).padStart(2, "0")}
@@ -73,7 +73,7 @@ export function CPickLoadingScreen({
             Đang tìm ngày tốt
           </Mono>
           <p
-            className="mt-2.5 font-[family-name:var(--font-display)] text-[22px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
+            className="mt-2.5 font-[family-name:var(--display)] text-[22px] font-extrabold uppercase leading-[1.1] tracking-[-0.01em]"
             style={{ color: CT.ink }}
           >
             {accent}

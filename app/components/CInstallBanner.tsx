@@ -115,7 +115,7 @@ const primaryBtnStyle = {
   padding: 14,
   background: CT.forest,
   color: CT.cream,
-  fontFamily: "var(--font-display-2)",
+  fontFamily: "var(--display-2)",
   fontWeight: 800,
   fontSize: 13,
   letterSpacing: "0.08em",
@@ -160,7 +160,7 @@ export function CInstallBanner({ onDismiss }: CInstallBannerProps) {
             <div
               style={{
                 marginTop: 2,
-                fontFamily: "var(--font-display)",
+                fontFamily: "var(--display)",
                 fontWeight: 800,
                 fontSize: 22,
                 color: CT.ink,

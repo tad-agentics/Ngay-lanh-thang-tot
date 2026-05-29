@@ -16,7 +16,7 @@ export function CMeLockedTieuVanCard() {
     >
       <Mono style={{ color: CT.muted, fontSize: 9 }}>Luận Tiểu Vận</Mono>
       <div
-        className="mt-1.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-[-0.005em]"
+        className="mt-1.5 font-[family-name:var(--display)] text-base font-bold uppercase tracking-[-0.005em]"
       >
         Mở vận năm · 12 tháng
       </div>

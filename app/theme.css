@@ -291,6 +291,12 @@
   --color-forest: var(--forest);
   --color-forest-foreground: var(--forest-foreground);
 
+  /* Direction C typography — Tailwind `font-display`, `font-display-2`, … */
+  --font-display: var(--display);
+  --font-display-2: var(--display-2);
+  --font-serif: var(--serif);
+  --font-mono: var(--mono);
+
   /* Direction B tokens */
   --color-paper: var(--paper);
   --color-paper-warm: var(--paper-warm);
@@ -318,13 +324,15 @@
   --font-montserrat: 'Montserrat', system-ui, sans-serif;
   --font-barlow: 'Barlow Condensed', sans-serif;
 
-  /* Direction B.html: --display = Barlow (wordmark subline, tight labels); --display-2 = Montserrat (headlines) */
+  /* Direction C (`FE-HANDOFF` §4.2): Barlow Condensed for headlines + labels */
   --display: 'Barlow Condensed', sans-serif;
-  /* Direction C maket (`c-screens-a.jsx`): numerals + verdict labels use Barlow Condensed. */
-  --display-2: var(--font-barlow);
+  --display-2: 'Barlow Condensed', sans-serif;
   --serif: 'Lora', Georgia, serif;
   --mono: 'IBM Plex Mono', monospace;
   --hanzi: 'Noto Serif SC', serif;
+  /* Aliases used by Tailwind `font-display` / legacy component refs */
+  --font-display: var(--display);
+  --font-display-2: var(--display-2);
 }
 
 @layer base {

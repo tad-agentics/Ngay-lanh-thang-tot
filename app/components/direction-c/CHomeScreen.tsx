@@ -49,13 +49,10 @@ export function CHomeScreen() {
   return (
     <main
       className="flex min-h-full flex-col"
-      style={{
-        background: offlineMode ? CT.forest : CT.paper,
-        color: offlineMode ? CT.cream : CT.ink,
-      }}
+      style={{ background: CT.paper, color: CT.ink }}
     >
       {!online ? <COfflineBanner /> : null}
-      <CLichSegmentedNav dark={offlineMode} />
+      <CLichSegmentedNav dark={false} />
 
       <div className="flex-1 overflow-y-auto px-[22px] pb-[100px] pt-[18px]">
         {error ? <ErrorBanner message={error} /> : null}
@@ -115,7 +112,7 @@ export function CHomeScreen() {
         {offlineMode ? (
           <p
             className="mt-4 text-center font-serif text-xs italic leading-snug"
-            style={{ color: "rgba(237,231,211,0.5)" }}
+            style={{ color: CT.muted }}
           >
             Tra cứu, hợp tuổi, luận giải AI cần online — sẽ trở lại khi có mạng.
           </p>

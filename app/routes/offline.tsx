@@ -37,7 +37,7 @@ export default function OfflineRoute() {
         Ngoại tuyến
       </Mono>
       <h2
-        className="mt-2 font-[family-name:var(--font-display)] text-2xl font-extrabold uppercase tracking-[-0.01em]"
+        className="mt-2 font-[family-name:var(--display)] text-2xl font-extrabold uppercase tracking-[-0.01em]"
         style={{ color: CT.ink }}
       >
         Không có mạng
@@ -49,7 +49,7 @@ export default function OfflineRoute() {
 
       <Link
         to="/lich"
-        className="mt-8 inline-block px-6 py-3.5 font-[family-name:var(--font-display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
+        className="mt-8 inline-block px-6 py-3.5 font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
         style={{ background: CT.forest, color: CT.cream }}
       >
         Thử lại

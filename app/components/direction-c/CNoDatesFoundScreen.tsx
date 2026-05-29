@@ -108,7 +108,7 @@ export function CNoDatesFoundScreen({
             >
               <div className="flex-1">
                 <div
-                  className="font-[family-name:var(--font-display-2)] text-[13.5px] font-bold tracking-[-0.005em]"
+                  className="font-[family-name:var(--display-2)] text-[13.5px] font-bold tracking-[-0.005em]"
                   style={{ color: CT.ink }}
                 >
                   {title}

@@ -70,7 +70,7 @@ export function CSubExpired() {
         </Mono>
         <h2
           id="sub-expired-title"
-          className="mt-2.5 max-w-[320px] font-[family-name:var(--font-display)] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
+          className="mt-2.5 max-w-[320px] font-[family-name:var(--display)] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
           style={{ color: CT.ink }}
         >
           Lịch của bạn
@@ -101,18 +101,18 @@ export function CSubExpired() {
             <Mono className="text-[9px]" style={{ color: CT.gold }}>
               {renewSku === "goi_12thang" ? "Khuyên dùng" : "Gói trước đây của bạn"}
             </Mono>
-            <div className="mt-1 font-[family-name:var(--font-display)] text-lg font-extrabold uppercase tracking-[-0.005em]">
+            <div className="mt-1 font-[family-name:var(--display)] text-lg font-extrabold uppercase tracking-[-0.005em]">
               {renewPkg.title}
             </div>
             <div
-              className="mt-1.5 font-[family-name:var(--font-display-2)] text-[22px] font-extrabold tabular-nums"
+              className="mt-1.5 font-[family-name:var(--display-2)] text-[22px] font-extrabold tabular-nums"
               style={{ color: CT.gold }}
             >
               {renewPkg.priceLabel}
             </div>
             <Link
               to={`/dat-lich?plan=${renewSku}`}
-              className="mt-3 block w-full py-2.5 text-center font-[family-name:var(--font-display-2)] text-xs font-extrabold uppercase tracking-[0.08em] no-underline"
+              className="mt-3 block w-full py-2.5 text-center font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-[0.08em] no-underline"
               style={{ background: CT.gold, color: CT.forest }}
             >
               Gia hạn lịch

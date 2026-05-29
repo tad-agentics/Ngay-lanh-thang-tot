@@ -5,7 +5,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, LogoMark, Mono } from "~/components/brand";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import {
   DAY_LUAN_MAX_FOLLOW_UPS,
   incrementDayLuanFollowUpCount,
@@ -396,8 +396,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   type="button"
                   disabled={unlockBusy}
                   onClick={() => void unlockAndLoad()}
-                  className="w-full max-w-xs py-3 font-display text-xs font-extrabold uppercase tracking-wider"
-                  style={{ background: CT.forest, color: CT.cream, border: "none" }}
+                  className="w-full max-w-xs py-3 text-xs font-extrabold uppercase tracking-wider"
+                  style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
                 >
                   {unlockBusy ? "Đang mở…" : subActive ? "Tải luận giải" : "Mở luận giải"}
                 </button>

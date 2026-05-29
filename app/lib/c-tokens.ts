@@ -16,3 +16,9 @@ export const CT = {
   hairline: "rgba(154,124,34,0.18)",
   hairline2: "rgba(154,124,34,0.1)",
 } as const;
+
+/** Barlow Condensed — headlines, day numerals, page titles (`--display`). */
+export const DISPLAY = { fontFamily: "var(--display)" } as const;
+
+/** Barlow Condensed — kickers, CTAs, segmented labels (`--display-2`). */
+export const DISPLAY2 = { fontFamily: "var(--display-2)" } as const;

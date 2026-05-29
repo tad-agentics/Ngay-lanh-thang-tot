@@ -4,7 +4,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, Mono } from "~/components/brand";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { buildDayLuanSectionRows } from "~/lib/day-luan-sectioned";
 import { weekdayFromIso } from "~/lib/lich-format";
 import { formatIsoDateLichHeader } from "~/lib/tu-tru-dates";
@@ -68,8 +68,8 @@ export function CAiSectionedScreen({ iso }: { iso: string }) {
                 </p>
                 <Link
                   to="/dat-lich"
-                  className="inline-block py-3 px-6 font-display text-xs font-extrabold uppercase tracking-wider"
-                  style={{ background: CT.forest, color: CT.cream }}
+                  className="inline-block py-3 px-6 text-xs font-extrabold uppercase tracking-wider"
+                  style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
                 >
                   {subActive ? "Tải lại" : "Lập lịch / gia hạn"}
                 </Link>

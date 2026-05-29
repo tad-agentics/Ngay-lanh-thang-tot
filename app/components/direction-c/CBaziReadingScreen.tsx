@@ -12,7 +12,7 @@ import {
   persistBaziReadingSession,
   readBaziReadingSession,
 } from "~/lib/bazi-reading-session";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { canUseBaziReading } from "~/lib/entitlements";
 import {
   invokeGenerateReading,
@@ -20,6 +20,18 @@ import {
   type LaSoChiTietSection,
 } from "~/lib/generate-reading";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+
+function birthLine(profile: {
+  display_name: string | null;
+  ngay_sinh: string | null;
+  gio_sinh: string | null;
+}): string {
+  const parts: string[] = [];
+  if (profile.display_name) parts.push(profile.display_name);
+  if (profile.ngay_sinh) parts.push(`sinh ${profile.ngay_sinh}`);
+  if (profile.gio_sinh) parts.push(`giờ ${profile.gio_sinh}`);
+  return parts.join(" · ");
+}
 
 export function CBaziReadingScreen() {
   const { profile, loading: profileLoading } = useProfile();
@@ -142,7 +154,7 @@ export function CBaziReadingScreen() {
   return (
     <main
       className="min-h-[100svh] flex flex-col"
-      style={{ background: CT.paper, color: CT.ink }}
+      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
         title={`Luận giải Bát tự · ${year}`}
@@ -162,10 +174,20 @@ export function CBaziReadingScreen() {
           </p>
         </div>
 
+        {profile ? (
+          <p className="mt-4 font-serif text-[12.5px]" style={{ color: CT.muted }}>
+            {birthLine(profile)}
+          </p>
+        ) : null}
+
         {reveal ? (
-          <div className="mt-4">
-            <h2 className="font-display text-[28px] font-extrabold uppercase leading-none">
-              {reveal.nhatChu} ·{" "}
+          <div className="mt-3">
+            <h2
+              className="text-[28px] font-extrabold uppercase leading-none"
+              style={{ ...DISPLAY, letterSpacing: "-0.015em" }}
+            >
+              {reveal.nhatChu}
+              {reveal.hanh !== "—" ? ` ${reveal.hanh}` : ""} ·{" "}
               <span
                 className="font-serif italic font-bold normal-case"
                 style={{ color: CT.goldDeep }}
@@ -188,8 +210,8 @@ export function CBaziReadingScreen() {
             <button
               type="button"
               onClick={retryLoad}
-              className="mt-4 py-2.5 px-5 font-display text-xs font-extrabold uppercase tracking-wider"
-              style={{ background: CT.forest, color: CT.cream, border: "none" }}
+              className="mt-4 py-2.5 px-5 text-xs font-extrabold uppercase tracking-wider"
+              style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
             >
               Tải lại
             </button>
@@ -207,12 +229,15 @@ export function CBaziReadingScreen() {
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <span className="font-display text-lg font-extrabold uppercase tracking-tight">
+                <span
+                  className="text-lg font-extrabold uppercase tracking-tight"
+                  style={DISPLAY}
+                >
                   {s.title}
                 </span>
               </div>
               <p
-                className="mt-3 font-serif text-[13.5px] leading-relaxed whitespace-pre-wrap"
+                className="mt-3 text-[13.5px] leading-relaxed whitespace-pre-wrap"
                 style={{ color: CT.ink2 }}
               >
                 {s.text}

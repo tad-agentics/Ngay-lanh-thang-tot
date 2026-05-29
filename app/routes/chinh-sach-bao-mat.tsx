@@ -1,6 +1,4 @@
-import { Link } from "react-router";
-
-import { BackBar } from "~/components/brand";
+import { CLegalDocumentScreen } from "~/components/direction-c/CLegalDocumentScreen";
 
 const SECTIONS = [
   {
@@ -42,30 +40,10 @@ export function meta() {
 
 export default function ChinhSachBaoMatRoute() {
   return (
-    <main className="min-h-svh bg-background pb-8">
-      <div className="px-4">
-        <BackBar title="Chính sách bảo mật" />
-      </div>
-      <div className="px-4 flex flex-col gap-5 max-w-lg mx-auto">
-        <p className="text-muted-foreground text-xs">
-          Cập nhật lần cuối: 23 tháng 3, 2026
-        </p>
-        {SECTIONS.map((s) => (
-          <div key={s.title}>
-            <h2 className="text-foreground font-medium mb-2 text-sm">
-              {s.title}
-            </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-line">
-              {s.content}
-            </p>
-          </div>
-        ))}
-        <p className="text-sm text-muted-foreground pt-2">
-          <Link to="/" className="text-primary underline underline-offset-4">
-            Về trang chủ
-          </Link>
-        </p>
-      </div>
-    </main>
+    <CLegalDocumentScreen
+      title="Chính sách bảo mật"
+      updatedLabel="Cập nhật lần cuối: 23 tháng 3, 2026"
+      sections={SECTIONS}
+    />
   );
 }
