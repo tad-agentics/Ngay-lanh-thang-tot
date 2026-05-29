@@ -1,5 +1,4 @@
 import { CSettingsScreen } from "~/components/direction-c/CSettingsScreen";
+import { withDirectionCScreenBoundary } from "~/components/direction-c/withDirectionCScreenBoundary";
 
-export default function ToiCaiDatRoute() {
-  return <CSettingsScreen />;
-}
+export default withDirectionCScreenBoundary(CSettingsScreen, "Cài đặt");

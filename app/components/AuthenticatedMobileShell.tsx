@@ -3,8 +3,10 @@ import { useLocation } from "react-router";
 
 import { AppShellViewport } from "~/components/AppShellViewport";
 import { CBottomNav } from "~/components/brand/CBottomNav";
+import { CPaymentRecoveryBanner } from "~/components/direction-c/CPaymentRecoveryBanner";
 import { CSubscriptionExpiryBanner } from "~/components/direction-c/CSubscriptionExpiryBanner";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
+import { usePaymentRecovery } from "~/hooks/usePaymentRecovery";
 import { getActiveTab, shouldShowNav } from "~/lib/nav-config";
 
 type AuthenticatedMobileShellProps = {
@@ -14,6 +16,7 @@ type AuthenticatedMobileShellProps = {
 export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellProps) {
   const location = useLocation();
   const online = useOnlineStatus();
+  const { offer, checking, dismiss, checkPaymentStatus } = usePaymentRecovery();
   const showNav = shouldShowNav(location.pathname);
   const activeTab = getActiveTab(location.pathname);
   const lichTab =
@@ -26,6 +29,14 @@ export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellP
         style={{ paddingBottom: showNav ? 88 : 0 }}
       >
         {lichTab ? <CSubscriptionExpiryBanner /> : null}
+        {offer ? (
+          <CPaymentRecoveryBanner
+            offer={offer}
+            checking={checking}
+            onCheck={() => void checkPaymentStatus()}
+            onDismiss={dismiss}
+          />
+        ) : null}
         {children}
       </div>
       {showNav && activeTab ? (

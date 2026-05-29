@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CHopTuoiLoadingScreen } from "~/components/direction-c/CHopTuoiLoadingScreen";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -183,20 +184,23 @@ export default function TraCuuHopTuoiRoute() {
 
   if (profileLoading || !profile || !hasLaso) {
     return (
-      <div
-        className="flex min-h-full flex-col px-6 py-8"
-        style={{ background: CT.paper, color: CT.muted, fontFamily: "var(--serif)" }}
-      >
-        Đang tải…
-      </div>
+      <DirectionCScreenBoundary screen="Hợp tuổi">
+        <div
+          className="flex min-h-full flex-col px-6 py-8"
+          style={{ background: CT.paper, color: CT.muted, fontFamily: "var(--serif)" }}
+        >
+          Đang tải…
+        </div>
+      </DirectionCScreenBoundary>
     );
   }
 
   return (
-    <div
-      className="relative flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
-    >
+    <DirectionCScreenBoundary screen="Hợp tuổi">
+      <div
+        className="relative flex min-h-full flex-col"
+        style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
+      >
       <CTopStrip />
       <CTraCuuSegmentedNav />
 
@@ -399,6 +403,7 @@ export default function TraCuuHopTuoiRoute() {
           <CHopTuoiLoadingScreen purposeLabel={form.purposeLabel} />
         </div>
       ) : null}
-    </div>
+      </div>
+    </DirectionCScreenBoundary>
   );
 }

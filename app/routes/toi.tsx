@@ -12,6 +12,7 @@ import {
 
 import { Mono } from "~/components/brand";
 import { CConfirmDialog } from "~/components/direction-c/CConfirmDialog";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
@@ -168,11 +169,12 @@ export default function ToiRoute() {
       : null;
 
   return (
-    <div
-      className="flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
-    >
-      <div className="flex-1 overflow-auto px-6 pb-[100px] pt-5">
+    <DirectionCScreenBoundary screen="Tôi">
+      <div
+        className="flex min-h-full flex-col"
+        style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
+      >
+        <div className="flex-1 overflow-auto px-6 pb-[100px] pt-5">
         <div>
           <div
             className="font-[family-name:var(--display)] text-[26.5px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
@@ -593,6 +595,7 @@ export default function ToiRoute() {
           if (!deletingPickId) setPickToDelete(null);
         }}
       />
-    </div>
+      </div>
+    </DirectionCScreenBoundary>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { CInstallBanner } from "~/components/CInstallBanner";
 import { CHomeScreen } from "~/components/direction-c/CHomeScreen";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import {
   dismissInstallBanner,
   isInstallBannerDismissed,
@@ -16,9 +17,9 @@ export default function LichRoute() {
   }
 
   return (
-    <>
+    <DirectionCScreenBoundary screen="Lịch">
       {!installHidden ? <CInstallBanner onDismiss={dismissInstall} /> : null}
       <CHomeScreen />
-    </>
+    </DirectionCScreenBoundary>
   );
 }

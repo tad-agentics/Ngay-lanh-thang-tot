@@ -1,4 +1,5 @@
 import { CLegalDocumentScreen } from "~/components/direction-c/CLegalDocumentScreen";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 
 const SECTIONS = [
   {
@@ -40,10 +41,12 @@ export function meta() {
 
 export default function ChinhSachBaoMatRoute() {
   return (
-    <CLegalDocumentScreen
-      title="Chính sách bảo mật"
-      updatedLabel="Cập nhật lần cuối: 23 tháng 3, 2026"
-      sections={SECTIONS}
-    />
+    <DirectionCScreenBoundary screen="Chính sách bảo mật">
+      <CLegalDocumentScreen
+        title="Chính sách bảo mật"
+        updatedLabel="Cập nhật lần cuối: 23 tháng 3, 2026"
+        sections={SECTIONS}
+      />
+    </DirectionCScreenBoundary>
   );
 }

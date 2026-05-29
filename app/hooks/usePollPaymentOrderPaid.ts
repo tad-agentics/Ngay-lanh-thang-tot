@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 
-import { supabase } from "~/lib/supabase";
+import { clearPendingPayment } from "~/lib/pending-payment-session";
 import { TERMINAL_PAYMENT_ORDER_STATUSES } from "~/lib/pay-checkout-timeout";
+import { supabase } from "~/lib/supabase";
 
 const DEFAULT_INTERVAL_MS = 4_000;
 const DEFAULT_MAX_ATTEMPTS = 45;
@@ -54,10 +55,12 @@ export function usePollPaymentOrderPaid(
 
       if (cancelled) return true;
       if (row?.status === "paid") {
+        clearPendingPayment();
         await onPaidRef.current();
         return true;
       }
       if (row?.status && TERMINAL_PAYMENT_ORDER_STATUSES.has(row.status)) {
+        clearPendingPayment();
         onTerminalRef.current?.();
         return true;
       }

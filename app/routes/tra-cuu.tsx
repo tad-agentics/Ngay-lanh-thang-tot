@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { CPickLoadingScreen } from "~/components/direction-c/CPickLoadingScreen";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { CTraCuuSegmentedNav } from "~/components/direction-c/CTraCuuSegmentedNav";
 import { CTopStrip } from "~/components/brand";
 import {
@@ -68,7 +69,7 @@ export default function TraCuuRoute() {
   const { overlayOpen, slow, intentLabel, busy, startPick, cancel } =
     useTraCuuPickOverlay();
   const [rangeDays, setRangeDays] = useState<number>(30);
-  const [intent, setIntent] = useState<TuTruIntent | "">("");
+  const [intent, setIntent] = useState<TuTruIntent | "">("CAU_TAI");
 
   useEffect(() => {
     const formPreset = consumeTraCuuFormPreset();
@@ -125,14 +126,15 @@ export default function TraCuuRoute() {
   const disabledForm = profileLoading || !profile || overlayOpen;
 
   return (
-    <div
-      className="relative flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
-    >
-      <CTopStrip />
-      <CTraCuuSegmentedNav />
+    <DirectionCScreenBoundary screen="Tra cứu">
+      <div
+        className="relative flex min-h-full flex-col"
+        style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
+      >
+        <CTopStrip />
+        <CTraCuuSegmentedNav />
 
-      <div className="flex-1 overflow-auto px-6 pb-24 pt-0">
+      <div className="flex-1 overflow-auto px-6 pb-24 pt-[22px]">
         {!profileLoading && profile && !profile.ngay_sinh ? (
           <p
             className="mb-4 font-serif text-[13.5px] leading-relaxed"
@@ -320,6 +322,7 @@ export default function TraCuuRoute() {
           />
         </div>
       ) : null}
-    </div>
+      </div>
+    </DirectionCScreenBoundary>
   );
 }

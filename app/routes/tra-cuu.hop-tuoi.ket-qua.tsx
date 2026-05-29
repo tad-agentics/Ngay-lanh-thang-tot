@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { formatHopTuoiCriterionPoints } from "~/lib/hop-tuoi-result";
 import {
@@ -141,14 +142,15 @@ export default function TraCuuHopTuoiKetQuaRoute() {
   }
 
   return (
-    <div
-      className="flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
-    >
-      <BackBar
-        title="Luận giải tương hợp"
-        endAdornment={<HopTuoiSaveButton state={state} />}
-      />
+    <DirectionCScreenBoundary screen="Kết quả hợp tuổi">
+      <div
+        className="flex min-h-full flex-col"
+        style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
+      >
+        <BackBar
+          title="Luận giải tương hợp"
+          endAdornment={<HopTuoiSaveButton state={state} />}
+        />
 
       <div className="flex-1 overflow-auto px-[22px] pb-24 pt-1.5">
         <div className="mt-1.5 flex items-center gap-3.5">
@@ -289,6 +291,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
           </div>
         ) : null}
       </div>
-    </div>
+      </div>
+    </DirectionCScreenBoundary>
   );
 }

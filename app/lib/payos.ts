@@ -5,6 +5,10 @@ import type {
   CreatePayosCheckoutResponse,
   PayosTransferDetails,
 } from "~/lib/api-types";
+import {
+  paymentFlowForSku,
+  stashPendingPayment,
+} from "~/lib/pending-payment-session";
 import { supabase } from "~/lib/supabase";
 import { getAccessTokenForEdgeInvoke } from "~/lib/supabase-edge-auth";
 
@@ -166,14 +170,19 @@ export async function createPayosCheckout(
               : "",
         };
       }
-      return {
-        ok: true,
-        data: {
-          order_id: d.order_id,
-          checkout_url: d.checkout_url,
-          transfer,
-        },
+      const data = {
+        order_id: d.order_id,
+        checkout_url: d.checkout_url,
+        transfer,
       };
+      stashPendingPayment({
+        orderId: data.order_id,
+        packageSku: req.package_sku,
+        flow: paymentFlowForSku(req.package_sku),
+        checkoutUrl: data.checkout_url,
+        createdAt: new Date().toISOString(),
+      });
+      return { ok: true, data };
     }
   }
 

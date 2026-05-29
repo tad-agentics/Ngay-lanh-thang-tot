@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { CPayConfirmSheet } from "~/components/direction-c/CPayConfirmSheet";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { UI_PACKAGES } from "~/lib/packages";
@@ -37,18 +38,20 @@ export default function DatLichXacNhanRoute() {
   }
 
   return (
-    <CPayConfirmSheet
-      open
-      onOpenChange={(open) => {
-        if (!open) navigate("/dat-lich", { replace: true });
-      }}
-      variant="subscription"
-      pkg={pkg}
-      payload={state.checkout}
-      retryTo="/dat-lich"
-      backTo="/lich"
-      onRetry={() => navigate("/dat-lich", { replace: true })}
-      cancelLink={{ to: "/dat-lich", label: "Chọn gói khác" }}
-    />
+    <DirectionCScreenBoundary screen="Xác nhận đặt lịch">
+      <CPayConfirmSheet
+        open
+        onOpenChange={(open) => {
+          if (!open) navigate("/dat-lich", { replace: true });
+        }}
+        variant="subscription"
+        pkg={pkg}
+        payload={state.checkout}
+        retryTo="/dat-lich"
+        backTo="/lich"
+        onRetry={() => navigate("/dat-lich", { replace: true })}
+        cancelLink={{ to: "/dat-lich", label: "Chọn gói khác" }}
+      />
+    </DirectionCScreenBoundary>
   );
 }

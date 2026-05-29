@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { TraCuuMethodologyCollapsible } from "~/components/direction-c/TraCuuMethodologyCollapsible";
 import { BackBar } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -135,14 +136,15 @@ export default function TraCuuKetQuaRoute() {
   if (!hydrated || !state) return null;
 
   return (
-    <div
-      className="flex min-h-full flex-col"
-      style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
-    >
-      <BackBar
-        title="Kết quả tra cứu"
-        onBack={() => navigate("/tra-cuu")}
-      />
+    <DirectionCScreenBoundary screen="Kết quả tra cứu">
+      <div
+        className="flex min-h-full flex-col"
+        style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
+      >
+        <BackBar
+          title="Kết quả tra cứu"
+          onBack={() => navigate("/tra-cuu")}
+        />
 
       <div className="flex-1 overflow-auto px-6 pb-6 pt-3">
         <div
@@ -194,7 +196,8 @@ export default function TraCuuKetQuaRoute() {
 
         <TraCuuMethodologyCollapsible methodology={methodology} />
       </div>
-    </div>
+      </div>
+    </DirectionCScreenBoundary>
   );
 }
 

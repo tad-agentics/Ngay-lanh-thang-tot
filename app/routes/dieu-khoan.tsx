@@ -1,4 +1,5 @@
 import { CLegalDocumentScreen } from "~/components/direction-c/CLegalDocumentScreen";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 
 const SECTIONS = [
   {
@@ -41,10 +42,12 @@ export function meta() {
 
 export default function DieuKhoanRoute() {
   return (
-    <CLegalDocumentScreen
-      title="Điều khoản sử dụng"
-      updatedLabel="Hiệu lực từ: 1 tháng 1, 2026"
-      sections={SECTIONS}
-    />
+    <DirectionCScreenBoundary screen="Điều khoản">
+      <CLegalDocumentScreen
+        title="Điều khoản sử dụng"
+        updatedLabel="Hiệu lực từ: 1 tháng 1, 2026"
+        sections={SECTIONS}
+      />
+    </DirectionCScreenBoundary>
   );
 }

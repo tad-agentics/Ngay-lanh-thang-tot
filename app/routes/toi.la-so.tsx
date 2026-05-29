@@ -1,5 +1,4 @@
 import { CLaSoFullScreen } from "~/components/direction-c/CLaSoFullScreen";
+import { withDirectionCScreenBoundary } from "~/components/direction-c/withDirectionCScreenBoundary";
 
-export default function ToiLaSoRoute() {
-  return <CLaSoFullScreen />;
-}
+export default withDirectionCScreenBoundary(CLaSoFullScreen, "Lá số");

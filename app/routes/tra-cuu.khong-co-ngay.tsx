@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 
 import { CNoDatesFoundScreen } from "~/components/direction-c/CNoDatesFoundScreen";
+import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import type { TraCuuEmptyState } from "~/lib/tra-cuu-session";
 import {
   loadTraCuuEmpty,
@@ -37,5 +38,9 @@ export default function TraCuuKhongCoNgayRoute() {
 
   if (!hydrated || !state) return null;
 
-  return <CNoDatesFoundScreen state={state} />;
+  return (
+    <DirectionCScreenBoundary screen="Tra cứu">
+      <CNoDatesFoundScreen state={state} />
+    </DirectionCScreenBoundary>
+  );
 }
