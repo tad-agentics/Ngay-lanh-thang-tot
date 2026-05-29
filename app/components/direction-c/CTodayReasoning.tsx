@@ -150,7 +150,7 @@ export function CTodayReasoning({
                 style={{
                   fontFamily: "var(--display-2)",
                   fontWeight: 700,
-                  fontSize: 12,
+                  fontSize: 13.5,
                   color: CT.goldDeep,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
@@ -161,7 +161,7 @@ export function CTodayReasoning({
               <span
                 style={{
                   fontFamily: "var(--serif)",
-                  fontSize: 14.5,
+                  fontSize: 15.5,
                   color: CT.goldDeep,
                   lineHeight: 1,
                 }}

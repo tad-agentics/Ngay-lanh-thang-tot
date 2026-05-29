@@ -19,6 +19,9 @@ export type UserDataExport = {
     label: string | null;
     day_iso: string | null;
     score: number | null;
+    intent: string | null;
+    note: string | null;
+    source: string | null;
     payload: unknown;
   }>;
 };
@@ -44,6 +47,9 @@ export function buildUserDataExport(
       label: p.label,
       day_iso: p.day_iso,
       score: pickScoreNumber(p.score),
+      intent: p.intent,
+      note: p.note,
+      source: p.source,
       payload: p.payload,
     })),
   };

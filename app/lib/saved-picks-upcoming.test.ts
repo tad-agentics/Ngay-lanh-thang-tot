@@ -16,6 +16,9 @@ function pick(overrides: Partial<SavedPick> & Pick<SavedPick, "id">): SavedPick 
     label: null,
     day_iso: null,
     score: null,
+    intent: null,
+    note: null,
+    source: null,
     ...overrides,
   };
 }

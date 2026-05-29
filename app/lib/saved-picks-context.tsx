@@ -9,7 +9,9 @@ import {
   type ReactNode,
 } from "react";
 
+import type { TuTruIntent } from "~/lib/api-types";
 import type { Json } from "~/lib/database.types";
+import type { SavedPickSource } from "~/lib/saved-pick-mark";
 import { supabase } from "~/lib/supabase";
 
 export interface SavedPick {
@@ -20,14 +22,27 @@ export interface SavedPick {
   label: string | null;
   day_iso: string | null;
   score: number | string | null;
+  intent: TuTruIntent | string | null;
+  note: string | null;
+  source: SavedPickSource | string | null;
 }
 
 type SavePickArgs = {
   source_endpoint: string;
   payload: unknown;
-  label?: string;
+  label: string;
   day_iso?: string;
   score?: number;
+  intent?: TuTruIntent | null;
+  note?: string | null;
+  source?: SavedPickSource;
+};
+
+type UpdatePickArgs = {
+  label: string;
+  intent?: TuTruIntent | null;
+  note?: string | null;
+  source?: SavedPickSource;
 };
 
 type SavedPicksContextValue = {
@@ -35,11 +50,18 @@ type SavedPicksContextValue = {
   loading: boolean;
   error: string | null;
   savePick: (args: SavePickArgs) => Promise<{ ok: boolean; error?: string }>;
+  updatePick: (
+    id: string,
+    args: UpdatePickArgs,
+  ) => Promise<{ ok: boolean; error?: string }>;
   deletePick: (id: string) => Promise<{ ok: boolean; error?: string }>;
   refresh: () => void;
 };
 
 const SavedPicksContext = createContext<SavedPicksContextValue | null>(null);
+
+const PICK_COLUMNS =
+  "id, saved_at, source_endpoint, payload, label, day_iso, score, intent, note, source";
 
 export function SavedPicksProvider({
   userId,
@@ -60,7 +82,7 @@ export function SavedPicksProvider({
     setError(null);
     const { data, error: err } = await supabase
       .from("saved_picks")
-      .select("id, saved_at, source_endpoint, payload, label, day_iso, score")
+      .select(PICK_COLUMNS)
       .eq("user_id", userId)
       .order("saved_at", { ascending: false })
       .limit(200);
@@ -97,6 +119,9 @@ export function SavedPicksProvider({
       label,
       day_iso,
       score,
+      intent,
+      note,
+      source,
     }: SavePickArgs) => {
       const dayKey = day_iso?.slice(0, 10);
       if (dayKey) {
@@ -112,10 +137,39 @@ export function SavedPicksProvider({
         user_id: userId,
         source_endpoint,
         payload: payload as unknown as Json,
-        label: label ?? null,
+        label: label.trim(),
         day_iso: dayKey ?? null,
         score: score ?? null,
+        intent: intent ?? null,
+        note: note?.trim() || null,
+        source: source ?? null,
       });
+      if (err) return { ok: false, error: err.message };
+      notifyChanged();
+      return { ok: true };
+    },
+    [notifyChanged, userId],
+  );
+
+  const updatePick = useCallback(
+    async (id: string, { label, intent, note, source }: UpdatePickArgs) => {
+      const patch: {
+        label: string;
+        intent: TuTruIntent | null;
+        note: string | null;
+        source?: SavedPickSource;
+      } = {
+        label: label.trim(),
+        intent: intent ?? null,
+        note: note?.trim() || null,
+      };
+      if (source !== undefined) patch.source = source;
+
+      const { error: err } = await supabase
+        .from("saved_picks")
+        .update(patch)
+        .eq("id", id)
+        .eq("user_id", userId);
       if (err) return { ok: false, error: err.message };
       notifyChanged();
       return { ok: true };
@@ -140,8 +194,8 @@ export function SavedPicksProvider({
   const refresh = useCallback(() => notifyChanged(), [notifyChanged]);
 
   const value = useMemo(
-    () => ({ picks, loading, error, savePick, deletePick, refresh }),
-    [picks, loading, error, savePick, deletePick, refresh],
+    () => ({ picks, loading, error, savePick, updatePick, deletePick, refresh }),
+    [picks, loading, error, savePick, updatePick, deletePick, refresh],
   );
 
   return (

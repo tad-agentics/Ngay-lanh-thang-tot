@@ -23,6 +23,9 @@ const picks: SavedPick[] = [
     label: "Cưới",
     day_iso: "2026-06-01",
     score: 92,
+    intent: "CUOI",
+    note: null,
+    source: "lich",
   },
 ];
 

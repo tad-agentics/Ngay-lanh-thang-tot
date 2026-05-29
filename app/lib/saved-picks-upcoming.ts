@@ -35,6 +35,8 @@ export type UpcomingSavedPickRow = {
   iso: string;
   d: string;
   v: string;
+  note: string | null;
+  intent: string | null;
   s: number;
   in: string;
 };
@@ -60,6 +62,8 @@ export function upcomingSavedPicks(
       iso: p.day_iso!,
       d: formatPickDateDot(p.day_iso!),
       v: p.label ?? "Ngày đã đánh dấu",
+      note: p.note?.trim() || null,
+      intent: p.intent?.trim() || null,
       s: pickScoreNumber(p.score) ?? 78,
       in: daysUntilIso(p.day_iso, now)!,
     }));

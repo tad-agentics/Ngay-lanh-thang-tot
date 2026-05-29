@@ -234,6 +234,9 @@ export interface Database {
           label: string | null;
           day_iso: string | null;
           score: number | null;
+          intent: string | null;
+          note: string | null;
+          source: string | null;
         };
         Insert: {
           id?: string;
@@ -244,6 +247,9 @@ export interface Database {
           label?: string | null;
           day_iso?: string | null;
           score?: number | null;
+          intent?: string | null;
+          note?: string | null;
+          source?: string | null;
         };
         Update: {
           source_endpoint?: string;
@@ -251,6 +257,9 @@ export interface Database {
           label?: string | null;
           day_iso?: string | null;
           score?: number | null;
+          intent?: string | null;
+          note?: string | null;
+          source?: string | null;
         };
         Relationships: [];
       };

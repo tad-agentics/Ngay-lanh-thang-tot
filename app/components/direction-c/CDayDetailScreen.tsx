@@ -6,6 +6,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { CSubExpired } from "~/components/CSubExpired";
 import { BackBar } from "~/components/brand";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
+import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
@@ -25,6 +26,13 @@ import {
 import { yearCanChiFromLunarDisplay } from "~/lib/home-bat-tu";
 import { verdictLabelFromScore } from "~/lib/c-score";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import {
+  intentToLabel,
+  labelToIntent,
+  resolveSavedPickSource,
+} from "~/lib/saved-pick-mark";
+import type { TuTruIntent } from "~/lib/api-types";
+import { offerGoogleCalendarAfterSave } from "~/lib/saved-pick-calendar";
 import { findSavedPickForDay } from "~/lib/saved-picks-upcoming";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
 
@@ -39,10 +47,11 @@ export function CDayDetailScreen() {
   const location = useLocation();
   const online = useOnlineStatus();
   const { user, profile, loading: profileLoading } = useOptionalProfile();
-  const { savePick, picks } = useSavedPicks();
+  const { savePick, updatePick, picks } = useSavedPicks();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [markSheetOpen, setMarkSheetOpen] = useState(false);
   const [rawPayload, setRawPayload] = useState<unknown | null>(null);
   const [detail, setDetail] = useState<ReturnType<typeof parseDayDetailForView> | null>(
     null,
@@ -124,25 +133,54 @@ export function CDayDetailScreen() {
     return null;
   }, [menh, personalized]);
 
-  async function handleSavePick() {
-    if (!detail || !iso || saving || !user || savedPick) return;
+  const prefillLabel =
+    navState?.markLabel?.trim() ||
+    navState?.intentLabel?.trim() ||
+    intentToLabel(savedPick?.intent as TuTruIntent | null) ||
+    "";
+
+  async function handleMarkConfirm(values: {
+    label: string;
+    intent: TuTruIntent | null;
+    note: string | null;
+    addToGoogleCalendar: boolean;
+  }) {
+    if (!detail || !iso || saving || !user) return;
     setSaving(true);
-    const intentLabel = navState?.markLabel ?? navState?.intentLabel;
-    const label =
-      intentLabel ??
-      detail.goodFor[0] ??
-      detail.catThanLabels[0] ??
-      `Ngày ${iso.slice(8, 10)}.${iso.slice(5, 7)}`;
-    const r = await savePick({
-      source_endpoint: "day-detail",
-      payload: rawPayload ?? detail,
-      label,
-      day_iso: iso,
-      score: score ?? undefined,
-    });
+    const payload = rawPayload ?? detail;
+    const r = savedPick
+      ? await updatePick(savedPick.id, {
+          ...values,
+          source: resolveSavedPickSource(navState),
+        })
+      : await savePick({
+          source_endpoint: "day-detail",
+          payload,
+          label: values.label,
+          day_iso: iso,
+          score: score ?? undefined,
+          intent: values.intent,
+          note: values.note,
+          source: resolveSavedPickSource(navState),
+        });
     setSaving(false);
-    if (r.ok) toast.success("Đã lưu ngày này vào sổ tay của bạn.");
-    else toast.error(r.error ?? "Không lưu được.");
+    if (r.ok) {
+      setMarkSheetOpen(false);
+      if (values.addToGoogleCalendar) {
+        offerGoogleCalendarAfterSave({
+          dayIso: iso,
+          label: values.label,
+          note: values.note,
+          score,
+        });
+      } else {
+        toast.success(
+          savedPick ? "Đã cập nhật đánh dấu." : "Đã lưu ngày này vào sổ tay của bạn.",
+        );
+      }
+    } else {
+      toast.error(r.error ?? "Không lưu được.");
+    }
   }
 
   if (!profileLoading && calendarBlocked) {
@@ -247,32 +285,70 @@ export function CDayDetailScreen() {
               onNext={() => void navigate(`/ngay/${nextIso}`)}
             />
 
+            {savedPick ? (
+              <div
+                className="mt-4 border-l-[3px] px-3 py-2.5 font-serif text-[13px] leading-snug"
+                style={{
+                  borderColor: CT.goldDeep,
+                  background: "rgba(154,124,34,0.08)",
+                  color: CT.ink2,
+                }}
+              >
+                Đánh dấu cho:{" "}
+                <strong style={{ color: CT.ink, fontWeight: 600 }}>
+                  {savedPick.label}
+                </strong>
+                {savedPick.note ? (
+                  <div className="mt-1 text-[12px]" style={{ color: CT.muted }}>
+                    {savedPick.note}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
             {user && personalized ? (
               <button
                 type="button"
-                disabled={saving || Boolean(savedPick)}
-                onClick={() => void handleSavePick()}
-              className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
-              style={{
-                padding: 12,
-                background: savedPick ? CT.hairline2 : CT.forest,
-                color: savedPick ? CT.muted : CT.cream,
-                fontFamily: "var(--display-2)",
-                fontWeight: 800,
-                fontSize: 12.5,
-                letterSpacing: "0.08em",
-              }}
-            >
-              {savedPick
-                ? "Đã lưu ngày lành · xem trong sổ tay"
-                : saving
-                  ? "Đang lưu…"
-                  : "Lưu ngày lành · nhắc trước 1 ngày"}
-            </button>
+                disabled={saving}
+                onClick={() => setMarkSheetOpen(true)}
+                className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
+                style={{
+                  padding: 12,
+                  background: savedPick ? "transparent" : CT.forest,
+                  color: savedPick ? CT.goldDeep : CT.cream,
+                  fontFamily: "var(--display-2)",
+                  fontWeight: 800,
+                  fontSize: 12.5,
+                  letterSpacing: "0.08em",
+                  border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
+                }}
+              >
+                {savedPick
+                  ? "Sửa đánh dấu"
+                  : saving
+                    ? "Đang lưu…"
+                    : "Lưu ngày lành · nhắc trước 1 ngày"}
+              </button>
             ) : null}
           </>
         ) : null}
       </div>
+
+      <CSavedPickMarkSheet
+        open={markSheetOpen}
+        mode={savedPick ? "edit" : "create"}
+        dayIso={iso}
+        score={score ?? undefined}
+        suggestedLabels={detail?.goodFor ?? []}
+        initialLabel={savedPick?.label ?? prefillLabel}
+        initialNote={savedPick?.note}
+        initialIntent={(savedPick?.intent as TuTruIntent | null) ?? labelToIntent(prefillLabel)}
+        busy={saving}
+        onClose={() => {
+          if (!saving) setMarkSheetOpen(false);
+        }}
+        onConfirm={handleMarkConfirm}
+      />
     </main>
   );
 }

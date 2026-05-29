@@ -15,6 +15,7 @@ const loggedOutFallback: UseSavedPicksReturn = {
   loading: false,
   error: null,
   savePick: noopAsync,
+  updatePick: noopAsync,
   deletePick: noopAsync,
   refresh: () => {},
 };

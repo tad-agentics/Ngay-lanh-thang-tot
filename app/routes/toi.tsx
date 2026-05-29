@@ -1,6 +1,18 @@
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
+import { toast } from "sonner";
+
+import type { TuTruIntent } from "~/lib/api-types";
+import type { SavedPick } from "~/hooks/useSavedPicks";
+import { offerGoogleCalendarAfterSave } from "~/lib/saved-pick-calendar";
+import {
+  goodForFromSavedPickPayload,
+  pickMarkLabelForNav,
+} from "~/lib/saved-pick-mark";
 
 import { Mono } from "~/components/brand";
+import { CConfirmDialog } from "~/components/direction-c/CConfirmDialog";
+import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { currentYearVn } from "~/lib/bazi-reading-session";
@@ -19,7 +31,11 @@ import {
 } from "~/lib/entitlements";
 import { laSoJsonToChiTiet, laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { resolveProfileDisplayName } from "~/lib/profile-display-name";
-import { upcomingSavedPicks } from "~/lib/saved-picks-upcoming";
+import {
+  pickScoreNumber,
+  upcomingSavedPicks,
+  type UpcomingSavedPickRow,
+} from "~/lib/saved-picks-upcoming";
 
 const PILLAR_LABELS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
 
@@ -60,7 +76,19 @@ export default function ToiRoute() {
     canUseTieuVanReading: tieuVanUnlocked,
   } = useEntitlements();
   const tieuVanYear = currentYearVn();
-  const { picks, loading: picksLoading, error: picksError } = useSavedPicks();
+  const {
+    picks,
+    loading: picksLoading,
+    error: picksError,
+    deletePick,
+    updatePick,
+  } = useSavedPicks();
+  const [pickToDelete, setPickToDelete] = useState<UpcomingSavedPickRow | null>(
+    null,
+  );
+  const [pickToEdit, setPickToEdit] = useState<SavedPick | null>(null);
+  const [deletingPickId, setDeletingPickId] = useState<string | null>(null);
+  const [savingPickEdit, setSavingPickEdit] = useState(false);
 
   const expiryUrgent = subscriptionExpiryUrgent(expiresAt);
   const yearlySub = hasYearlySubscription(profile);
@@ -74,6 +102,53 @@ export default function ToiRoute() {
   const ageLabel = profile ? ageFromNgaySinh(profile.ngay_sinh) : null;
 
   const upcoming = upcomingSavedPicks(picks, { limit: 3 });
+
+  const editPickSuggestedLabels = useMemo(
+    () => (pickToEdit ? goodForFromSavedPickPayload(pickToEdit.payload) : []),
+    [pickToEdit],
+  );
+
+  async function confirmEditSavedPick(values: {
+    label: string;
+    intent: TuTruIntent | null;
+    note: string | null;
+    addToGoogleCalendar: boolean;
+  }) {
+    if (!pickToEdit || savingPickEdit) return;
+    setSavingPickEdit(true);
+    const r = await updatePick(pickToEdit.id, values);
+    setSavingPickEdit(false);
+    if (r.ok) {
+      const dayIso = pickToEdit.day_iso;
+      const pickScore = pickScoreNumber(pickToEdit.score);
+      setPickToEdit(null);
+      if (values.addToGoogleCalendar && dayIso) {
+        offerGoogleCalendarAfterSave({
+          dayIso,
+          label: values.label,
+          note: values.note,
+          score: pickScore,
+        });
+      } else {
+        toast.success("Đã cập nhật đánh dấu.");
+      }
+    } else {
+      toast.error(r.error ?? "Không lưu được.");
+    }
+  }
+
+  async function confirmDeleteSavedPick() {
+    if (!pickToDelete || deletingPickId) return;
+    setDeletingPickId(pickToDelete.id);
+    const r = await deletePick(pickToDelete.id);
+    setDeletingPickId(null);
+    if (r.ok) {
+      setPickToDelete(null);
+      toast.success("Đã xóa ngày khỏi sổ.");
+    } else {
+      toast.error(r.error ?? "Không xóa được. Thử lại.");
+    }
+  }
 
   const pillars = PILLAR_LABELS.map((label, i) => {
     const can = chiTiet?.thienCan[i] ?? "—";
@@ -312,37 +387,78 @@ export default function ToiRoute() {
             </p>
           ) : upcoming.length > 0 ? (
             upcoming.map((r, i) => (
-              <Link
+              <div
                 key={r.id}
-                to={`/ngay/${r.iso}`}
-                className="flex items-baseline gap-3.5 py-3 no-underline"
+                className="flex items-baseline gap-2 py-3"
                 style={{
                   borderBottom:
                     i < upcoming.length - 1 ? `1px solid ${CT.hairline2}` : "none",
-                  color: CT.ink,
                 }}
               >
-                <div className="min-w-[50px]">
-                  <div
-                    className="font-[family-name:var(--display-2)] text-[17.5px] font-extrabold tabular-nums tracking-[-0.015em]"
-                    style={{ color: CT.ink }}
-                  >
-                    {r.d}
-                  </div>
-                  <Mono style={{ color: CT.muted, fontSize: 9, marginTop: 3 }}>
-                    {r.in}
-                  </Mono>
-                </div>
-                <div className="flex-1 font-serif text-[14px]" style={{ color: CT.ink }}>
-                  {r.v}
-                </div>
-                <div
-                  className="font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
-                  style={{ color: scoreDotColor(r.s) }}
+                <Link
+                  to={`/ngay/${r.iso}`}
+                  state={{
+                    markLabel: pickMarkLabelForNav(r),
+                    intentLabel: pickMarkLabelForNav(r),
+                  }}
+                  className="flex min-w-0 flex-1 items-baseline gap-3.5 no-underline"
+                  style={{ color: CT.ink }}
                 >
-                  {r.s}
-                </div>
-              </Link>
+                  <div className="min-w-[50px] shrink-0">
+                    <div
+                      className="font-[family-name:var(--display-2)] text-[17.5px] font-extrabold tabular-nums tracking-[-0.015em]"
+                      style={{ color: CT.ink }}
+                    >
+                      {r.d}
+                    </div>
+                    <Mono style={{ color: CT.muted, fontSize: 9, marginTop: 3 }}>
+                      {r.in}
+                    </Mono>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-serif text-[14px]" style={{ color: CT.ink }}>
+                      {r.v}
+                    </div>
+                    {r.note ? (
+                      <div
+                        className="mt-0.5 font-serif text-[11.5px] leading-snug"
+                        style={{ color: CT.muted }}
+                      >
+                        {r.note}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div
+                    className="shrink-0 font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
+                    style={{ color: scoreDotColor(r.s) }}
+                  >
+                    {r.s}
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  disabled={deletingPickId === r.id || savingPickEdit}
+                  onClick={() => {
+                    const full = picks.find((p) => p.id === r.id);
+                    if (full) setPickToEdit(full);
+                  }}
+                  className="shrink-0 cursor-pointer border-none bg-transparent px-1 py-0.5 font-serif text-xs disabled:opacity-50"
+                  style={{ color: CT.goldDeep }}
+                  aria-label={`Sửa ${r.v} · ${r.d}`}
+                >
+                  Sửa
+                </button>
+                <button
+                  type="button"
+                  disabled={deletingPickId === r.id}
+                  onClick={() => setPickToDelete(r)}
+                  className="shrink-0 cursor-pointer border-none bg-transparent px-1 py-0.5 font-serif text-xs disabled:opacity-50"
+                  style={{ color: CT.muted }}
+                  aria-label={`Xóa ${r.v} · ${r.d}`}
+                >
+                  {deletingPickId === r.id ? "…" : "Xóa"}
+                </button>
+              </div>
             ))
           ) : (
             <p className="font-serif text-xs leading-relaxed" style={{ color: CT.muted }}>
@@ -446,6 +562,37 @@ export default function ToiRoute() {
           v1.0.4 · ngaylanhthangtot.vn
         </div>
       </div>
+
+      <CSavedPickMarkSheet
+        open={pickToEdit != null}
+        mode="edit"
+        dayIso={pickToEdit?.day_iso ?? ""}
+        score={pickToEdit ? pickScoreNumber(pickToEdit.score) ?? undefined : undefined}
+        suggestedLabels={editPickSuggestedLabels}
+        initialLabel={pickToEdit?.label ?? ""}
+        initialNote={pickToEdit?.note}
+        initialIntent={(pickToEdit?.intent as TuTruIntent | null) ?? null}
+        busy={savingPickEdit}
+        onClose={() => {
+          if (!savingPickEdit) setPickToEdit(null);
+        }}
+        onConfirm={confirmEditSavedPick}
+      />
+
+      <CConfirmDialog
+        open={pickToDelete != null}
+        title="Xóa ngày đã lưu?"
+        description={
+          pickToDelete
+            ? `${pickToDelete.d} · ${pickToDelete.v} sẽ được gỡ khỏi sổ nhắc. Bạn vẫn xem lại ngày đó trên lịch.`
+            : ""
+        }
+        confirmLabel="Xóa"
+        onConfirm={() => void confirmDeleteSavedPick()}
+        onCancel={() => {
+          if (!deletingPickId) setPickToDelete(null);
+        }}
+      />
     </div>
   );
 }
