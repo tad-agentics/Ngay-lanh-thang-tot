@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
 import { CBaziLockedScreen } from "~/components/direction-c/CBaziLockedScreen";
-import { useProfile } from "~/hooks/useProfile";
+import { useProfile, type Profile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import {
@@ -20,6 +20,11 @@ import {
   type LaSoChiTietSection,
 } from "~/lib/generate-reading";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
+import { fetchLuuNienYearFacts } from "~/lib/luu-nien-facts";
+import {
+  luuNienSectionsFromGenerateReading,
+  mergeLaSoWithLuuNienSections,
+} from "~/lib/luu-nien-ui";
 
 function birthLine(profile: {
   display_name: string | null;
@@ -31,6 +36,61 @@ function birthLine(profile: {
   if (profile.ngay_sinh) parts.push(`sinh ${profile.ngay_sinh}`);
   if (profile.gio_sinh) parts.push(`giờ ${profile.gio_sinh}`);
   return parts.join(" · ");
+}
+
+function laSoSectionsFromGenerateReading(
+  sections: LaSoChiTietSection[] | null,
+  reading: string | null,
+): LaSoChiTietSection[] {
+  const fromModel =
+    sections && sections.length > 0
+      ? sections
+      : reading?.trim()
+        ? [{ id: "tong_hop", title: "Luận giải", text: reading.trim() }]
+        : [];
+  return normalizeLaSoSectionsInput(fromModel);
+}
+
+async function loadBaziReadingSections(
+  profile: Profile,
+  year: number,
+): Promise<LaSoChiTietSection[]> {
+  const body = profileToBatTuPersonQuery(profile);
+  if (!body.birth_date) return [];
+
+  const [lasoRes, luuNienRes] = await Promise.all([
+    invokeBatTu<unknown>({ op: "la-so", body }),
+    fetchLuuNienYearFacts(profile, year),
+  ]);
+
+  if (!lasoRes.ok) {
+    toast.error(lasoRes.message ?? "Không tải lá số.");
+    return [];
+  }
+
+  const [lasoGen, luuNienGen] = await Promise.all([
+    invokeGenerateReading({
+      endpoint: "la-so-chi-tiet",
+      data: lasoRes.data,
+    }),
+    luuNienRes.ok
+      ? invokeGenerateReading({
+          endpoint: "luu-nien",
+          data: luuNienRes.data,
+        })
+      : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
+  ]);
+
+  const laSoSections = laSoSectionsFromGenerateReading(
+    lasoGen.sections,
+    lasoGen.reading,
+  );
+  const luuNienSections = luuNienSectionsFromGenerateReading(
+    luuNienGen.sections,
+    luuNienGen.reading,
+  );
+
+  return mergeLaSoWithLuuNienSections(laSoSections, luuNienSections);
 }
 
 export function CBaziReadingScreen() {
@@ -55,7 +115,7 @@ export function CBaziReadingScreen() {
       return;
     }
 
-    const revision = baziReadingCacheRevision(profile);
+    const revision = baziReadingCacheRevision(profile, year);
     const cached = readBaziReadingSession(profile.id, revision);
     if (cached && cached.length > 0) {
       setSections(normalizeLaSoSectionsInput(cached));
@@ -67,28 +127,11 @@ export function CBaziReadingScreen() {
     const gen = ++genRef.current;
     setLoading(true);
     void (async () => {
-      const laso = await invokeBatTu<unknown>({ op: "la-so", body });
+      const merged = await loadBaziReadingSections(profile, year);
       if (cancelled || gen !== genRef.current) return;
-      if (!laso.ok) {
-        setLoading(false);
-        toast.error(laso.message ?? "Không tải lá số.");
-        return;
-      }
-      const { reading, sections: sec } = await invokeGenerateReading({
-        endpoint: "la-so-chi-tiet",
-        data: laso.data,
-      });
-      if (cancelled || gen !== genRef.current) return;
-      const fromModel =
-        sec && sec.length > 0
-          ? sec
-          : reading?.trim()
-            ? [{ id: "tong_hop", title: "Luận giải", text: reading.trim() }]
-            : [];
-      const normalized = normalizeLaSoSectionsInput(fromModel);
-      setSections(normalized);
-      if (normalized.length > 0) {
-        persistBaziReadingSession(profile.id, revision, normalized);
+      setSections(merged);
+      if (merged.length > 0) {
+        persistBaziReadingSession(profile.id, revision, merged);
       }
       setLoading(false);
     })();
@@ -96,40 +139,21 @@ export function CBaziReadingScreen() {
     return () => {
       cancelled = true;
     };
-  }, [profile, profileLoading, unlocked]);
+  }, [profile, profileLoading, unlocked, year]);
 
   const retryLoad = () => {
     if (!profile || !unlocked) return;
-    const body = profileToBatTuPersonQuery(profile);
-    if (!body.birth_date) return;
     const gen = ++genRef.current;
     setLoading(true);
     void (async () => {
-      const laso = await invokeBatTu<unknown>({ op: "la-so", body });
+      const merged = await loadBaziReadingSections(profile, year);
       if (gen !== genRef.current) return;
-      if (!laso.ok) {
-        setLoading(false);
-        toast.error(laso.message ?? "Không tải lá số.");
-        return;
-      }
-      const { reading, sections: sec } = await invokeGenerateReading({
-        endpoint: "la-so-chi-tiet",
-        data: laso.data,
-      });
-      if (gen !== genRef.current) return;
-      const fromModel =
-        sec && sec.length > 0
-          ? sec
-          : reading?.trim()
-            ? [{ id: "tong_hop", title: "Luận giải", text: reading.trim() }]
-            : [];
-      const normalized = normalizeLaSoSectionsInput(fromModel);
-      setSections(normalized);
-      if (normalized.length > 0) {
+      setSections(merged);
+      if (merged.length > 0) {
         persistBaziReadingSession(
           profile.id,
-          baziReadingCacheRevision(profile),
-          normalized,
+          baziReadingCacheRevision(profile, year),
+          merged,
         );
       }
       setLoading(false);

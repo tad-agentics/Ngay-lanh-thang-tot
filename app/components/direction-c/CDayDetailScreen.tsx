@@ -80,11 +80,11 @@ export function CDayDetailScreen() {
     setLoading(true);
     setError(null);
 
-    void (async () => {
+      void (async () => {
       const body =
         personalized && birthQuery
           ? { ...birthQuery, date: iso }
-          : { date: iso };
+          : { date: iso, mode: "generic", tz: "Asia/Ho_Chi_Minh" };
 
       const res = await invokeBatTu<unknown>({
         op: "day-detail",
@@ -248,7 +248,7 @@ export function CDayDetailScreen() {
               onNext={() => void navigate(`/ngay/${nextIso}`)}
             />
 
-            <DayScoreMethodologyCollapsible />
+            <DayScoreMethodologyCollapsible methodology={detail?.scoreMethodology} />
 
             {user && personalized ? (
               <button

@@ -8,7 +8,7 @@ import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
-import { mapChonNgayPayloadToResultDays } from "~/lib/chon-ngay-result";
+import { mapChonNgayPayloadToResultDays, parseChonNgayEmptyReasonVi, parseChonNgayScoreMethodology } from "~/lib/chon-ngay-result";
 import {
   loadTraCuuKetQua,
   persistTraCuuKetQua,
@@ -112,6 +112,11 @@ export default function TraCuuKetQuaRoute() {
     [state?.payload],
   );
 
+  const methodology = useMemo(
+    () => (state?.payload ? parseChonNgayScoreMethodology(state.payload) : null),
+    [state?.payload],
+  );
+
   useEffect(() => {
     if (!state?.payload || days.length > 0) return;
     navigate("/tra-cuu/khong-co-ngay", {
@@ -121,6 +126,7 @@ export default function TraCuuKetQuaRoute() {
         daysInclusive: state.daysInclusive,
         rangeStart: state.rangeStart,
         rangeEnd: state.rangeEnd,
+        emptyReasonVi: parseChonNgayEmptyReasonVi(state.payload) ?? undefined,
       },
       replace: true,
     });
@@ -186,7 +192,7 @@ export default function TraCuuKetQuaRoute() {
           </div>
         )}
 
-        <TraCuuMethodologyCollapsible />
+        <TraCuuMethodologyCollapsible methodology={methodology} />
       </div>
     </div>
   );

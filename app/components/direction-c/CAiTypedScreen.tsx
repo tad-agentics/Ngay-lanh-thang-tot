@@ -237,6 +237,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     subActive,
     unlockAndLoad,
     askFollowUp,
+    compareWithTomorrow,
   } = useDayLuanReading(iso);
 
   const dayShort = formatDayIsoShort(iso);
@@ -296,7 +297,12 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       scrollToLatest();
 
       setSubmitBusy(true);
-      const res = await askFollowUp(question);
+      const isCompareTomorrow =
+        question === "So sánh với ngày mai" ||
+        question.toLowerCase().includes("so sánh với ngày mai");
+      const res = isCompareTomorrow
+        ? await compareWithTomorrow()
+        : await askFollowUp(question);
       setSubmitBusy(false);
 
       if (!res.ok || !res.reading) {
@@ -329,6 +335,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     },
     [
       askFollowUp,
+      compareWithTomorrow,
       iso,
       quotaExhausted,
       scrollToLatest,

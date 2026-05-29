@@ -1,5 +1,9 @@
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import { scoreToLetterGrade } from "~/lib/score-grade";
+import {
+  parseScoreMethodology,
+  type ScoreMethodologyView,
+} from "~/lib/score-methodology";
 
 const ARRAY_KEYS = [
   "ranked_days",
@@ -26,7 +30,9 @@ function extractCandidateArray(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
   const root = asRecord(data);
   if (!root) return [];
+  if (Array.isArray(root.ranked_days)) return root.ranked_days;
   for (const k of ARRAY_KEYS) {
+    if (k === "ranked_days") continue;
     const v = root[k];
     if (Array.isArray(v)) return v;
   }
@@ -34,6 +40,22 @@ function extractCandidateArray(data: unknown): unknown[] {
     if (Array.isArray(v) && v.length > 0 && asRecord(v[0])) return v as unknown[];
   }
   return [];
+}
+
+/** API prose when chon-ngay returns zero candidates (HTTP 200). */
+export function parseChonNgayEmptyReasonVi(data: unknown): string | null {
+  const root = asRecord(data);
+  if (!root) return null;
+  const v = root.empty_reason_vi ?? root.emptyReasonVi;
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+export function parseChonNgayScoreMethodology(
+  data: unknown,
+): ScoreMethodologyView | null {
+  const root = asRecord(data);
+  if (!root) return null;
+  return parseScoreMethodology(root.score_methodology);
 }
 
 function parseToIsoDate(raw: string): string | null {

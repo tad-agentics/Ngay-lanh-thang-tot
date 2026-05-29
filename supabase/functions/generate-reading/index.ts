@@ -17,6 +17,7 @@ import {
   readPivotTransitionUntil,
 } from "../_shared/entitlements.ts";
 import { buildDayLuanPromptContext } from "../_shared/day-luan-prompt-context.ts";
+import { isLuanContextPayload } from "../_shared/luan-context.ts";
 
 type ServiceClient = ReturnType<typeof createClient>;
 
@@ -1138,7 +1139,9 @@ Deno.serve(async (req) => {
     endpoint === "day-detail" && data !== null && typeof data === "object"
       ? {
           endpoint: "day-detail",
-          luan_context: buildDayLuanPromptContext(data),
+          luan_context: isLuanContextPayload(data)
+            ? data
+            : buildDayLuanPromptContext(data),
           ...(question ? { question } : {}),
           ...(variant === "inline" ? { variant: "inline" } : {}),
         }

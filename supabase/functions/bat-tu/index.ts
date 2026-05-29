@@ -137,6 +137,8 @@ const CALENDAR_GATE_OPS = new Set([
   "ngay-hom-nay",
   "lich-thang",
   "day-detail",
+  "day-luan-context",
+  "day-compare",
 ]);
 
 function bodyHasBirthDate(body: Record<string, unknown>): boolean {
@@ -166,6 +168,8 @@ const VALID_OPS = new Set([
   "chon-ngay/detail",
   "lich-thang",
   "day-detail",
+  "day-luan-context",
+  "day-compare",
   "convert-date",
   "tu-tru",
   "tu-tru-preview",
@@ -175,6 +179,7 @@ const VALID_OPS = new Set([
   "hop-tuoi",
   "phong-thuy",
   "la-so",
+  "la-so-luu-nien",
   "share",
 ]);
 
@@ -449,7 +454,60 @@ function buildUpstream(
       spec = {
         method: "GET",
         path: "/v1/day-detail",
-        queryKeys: ["birth_date", "birth_time", "gender", "date", "tz"],
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "date",
+          "tz",
+          "mode",
+          "intent",
+        ],
+      };
+      break;
+
+    case "day-luan-context":
+      if (!body.birth_date || !body.date) {
+        return {
+          ok: false,
+          message:
+            "Thiếu birth_date hoặc date (GET /v1/day-detail/luan-context).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/day-detail/luan-context",
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "date",
+          "intent",
+          "tz",
+        ],
+      };
+      break;
+
+    case "day-compare":
+      if (!body.birth_date || !body.date_a || !body.date_b) {
+        return {
+          ok: false,
+          message:
+            "Thiếu birth_date, date_a hoặc date_b (GET /v1/day-compare).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/day-compare",
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "date_a",
+          "date_b",
+          "intent",
+          "tz",
+        ],
       };
       break;
 
@@ -515,6 +573,32 @@ function buildUpstream(
         path: "/v1/la-so",
         // OpenAPI: https://tu-tru-api.fly.dev/docs#/default/la_so_endpoint_v1_la_so_get — chỉ birth_date, birth_time, gender
         queryKeys: ["birth_date", "birth_time", "gender"],
+      };
+      break;
+
+    case "la-so-luu-nien":
+      if (!body.birth_date) {
+        return {
+          ok: false,
+          message: "Thiếu birth_date (GET /v1/la-so/luu-nien).",
+        };
+      }
+      if (body.birth_time === undefined || body.birth_time === null) {
+        return {
+          ok: false,
+          message: "Thiếu birth_time (GET /v1/la-so/luu-nien).",
+        };
+      }
+      if (body.year === undefined || body.year === null) {
+        return {
+          ok: false,
+          message: "Thiếu year (GET /v1/la-so/luu-nien).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/la-so/luu-nien",
+        queryKeys: ["birth_date", "birth_time", "gender", "year"],
       };
       break;
 
@@ -696,7 +780,13 @@ function resolveFeatureKey(
       return "chon_ngay_detail";
     case "day-detail":
       return "day_detail";
+    case "day-luan-context":
+      return "day_detail";
+    case "day-compare":
+      return "day_detail";
     case "la-so":
+      return "la_so_diengiai";
+    case "la-so-luu-nien":
       return "la_so_diengiai";
     case "tu-tru":
     case "tu-tru-preview":
@@ -1195,6 +1285,7 @@ Deno.serve(async (req) => {
     featureKeyForBilling = null;
   }
   if (op === "la-so") featureKeyForBilling = null;
+  if (op === "la-so-luu-nien") featureKeyForBilling = null;
   if (phongThuyTeaser) featureKeyForBilling = null;
   if (traCuuPick) featureKeyForBilling = null;
   let chargedAmount = 0;

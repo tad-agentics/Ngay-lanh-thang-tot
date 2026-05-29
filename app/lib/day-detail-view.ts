@@ -1,8 +1,10 @@
-import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
+import type { ScoreMethodologyView } from "~/lib/score-methodology";
+import { parseScoreMethodology } from "~/lib/score-methodology";
 import {
   formatGioTotChiCompactDisplayVi,
   formatHourRangeForDayDetailFigmaVi,
 } from "~/lib/format-gio-tot-display-vi";
+import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
 import { pickCanChiLabel } from "~/lib/home-bat-tu";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 
@@ -116,6 +118,8 @@ export interface DayDetailViewModel {
    */
   purposeRows: DayDetailPurposeRow[];
   breakdown: DayDetailBreakdownRow[];
+  scoreMethodology: ScoreMethodologyView | null;
+  sourceLabels: string[];
 }
 
 function pickNumber(obj: Record<string, unknown>, keys: string[]): number | null {
@@ -414,6 +418,21 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     ? mergePurposeRowsByLabel(basePurposes, purposeFromApi)
     : basePurposes;
 
+  const scoreMethodology = parseScoreMethodology(
+    nested.score_methodology ?? root.score_methodology,
+  );
+
+  const sourceLabels: string[] = [];
+  const sourcesRaw = nested.sources ?? root.sources;
+  if (Array.isArray(sourcesRaw)) {
+    for (const item of sourcesRaw) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const label = pickStr(o, ["label_vi", "labelVi", "label", "description_vi"]);
+      if (label) sourceLabels.push(label);
+    }
+  }
+
   if (
     !lunarOut &&
     !canChi &&
@@ -445,5 +464,7 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     hungSatLabels,
     purposeRows,
     breakdown,
+    scoreMethodology,
+    sourceLabels,
   };
 }

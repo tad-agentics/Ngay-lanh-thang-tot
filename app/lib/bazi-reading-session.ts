@@ -3,8 +3,18 @@ import type { Profile } from "~/hooks/useProfile";
 
 const BAZI_READING_SESSION = "bazi-reading-ai:";
 
-export function baziReadingCacheRevision(p: Profile): string {
+export function baziReadingCacheRevision(p: Profile, year?: number): string {
+  const y =
+    year ??
+    Number.parseInt(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Ho_Chi_Minh",
+        year: "numeric",
+      }).format(new Date()),
+      10,
+    );
   return [
+    String(y),
     p.ngay_sinh ?? "",
     p.gio_sinh ?? "",
     p.gioi_tinh ?? "",

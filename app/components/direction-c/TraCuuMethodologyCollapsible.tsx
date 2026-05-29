@@ -8,7 +8,9 @@ import {
 import { Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
 
-const STEPS = [
+import type { ScoreMethodologyView } from "~/lib/score-methodology";
+
+const DEFAULT_STEPS = [
   [
     "1",
     "Đối chiếu Bát Tự",
@@ -32,7 +34,18 @@ const STEPS = [
 ] as const;
 
 /** Direction C — methodology on tra cứu kết quả (W6). */
-export function TraCuuMethodologyCollapsible() {
+export function TraCuuMethodologyCollapsible({
+  methodology,
+}: {
+  methodology?: ScoreMethodologyView | null;
+}) {
+  const summary =
+    methodology?.summaryVi?.trim() ||
+    "Hệ thống chọn ngày lành tháng tốt được cá nhân hóa trọn vẹn theo lá số Bát Tự riêng biệt của bản chủ — mang lại kết quả chuẩn xác hơn so với lịch vạn niên thông thường.";
+  const weights =
+    methodology && methodology.weights.length > 0
+      ? methodology.weights
+      : null;
   return (
     <Collapsible
       className="mt-6"
@@ -55,10 +68,26 @@ export function TraCuuMethodologyCollapsible() {
           className="m-0 font-serif text-[13px] leading-relaxed"
           style={{ color: CT.ink2 }}
         >
-          Hệ thống chọn ngày lành tháng tốt được cá nhân hóa trọn vẹn theo lá số Bát Tự riêng biệt của bản chủ — mang lại kết quả chuẩn xác hơn so với lịch vạn niên thông thường.
+          {summary}
         </p>
+        {weights ? (
+          <ul className="mt-3 space-y-2 p-0 list-none">
+            {weights.map((w) => (
+              <li
+                key={w.factor}
+                className="flex items-baseline justify-between gap-3 font-serif text-[12.5px]"
+                style={{ color: CT.ink }}
+              >
+                <span>{w.labelVi}</span>
+                <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>
+                  {w.maxPoints > 0 ? `${w.maxPoints} đ` : "—"}
+                </Mono>
+              </li>
+            ))}
+          </ul>
+        ) : (
         <div className="mt-3 space-y-2.5">
-          {STEPS.map(([n, title, body]) => (
+          {DEFAULT_STEPS.map(([n, title, body]) => (
             <div key={n} className="flex gap-2.5">
               <span
                 className="shrink-0 font-mono text-[10px] font-bold tabular-nums"
@@ -74,6 +103,7 @@ export function TraCuuMethodologyCollapsible() {
             </div>
           ))}
         </div>
+        )}
         <p
           className="mt-3 pt-2 font-serif text-[11px] italic leading-snug"
           style={{ color: CT.muted, borderTop: `1px solid ${CT.hairline2}` }}

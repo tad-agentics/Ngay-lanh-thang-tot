@@ -194,6 +194,23 @@ function pickGioBody(detail: DayDetailViewModel): string {
   return "Chưa có bảng giờ vàng cho ngày này — xem lại trên lịch tờ.";
 }
 
+function findBreakdownByFactor(
+  detail: DayDetailViewModel,
+  key: FactorKey,
+): DayDetailViewModel["breakdown"][number] | null {
+  const idMap: Record<FactorKey, string[]> = {
+    truc: ["truc"],
+    sao: ["sao28", "sao_28"],
+    can_chi: ["can_chi_laso", "can_chi"],
+    gio: ["gio_vang", "gio"],
+  };
+  for (const row of detail.breakdown ?? []) {
+    const id = row.id?.toLowerCase();
+    if (id && idMap[key].includes(id)) return row;
+  }
+  return null;
+}
+
 function buildFactorRow(
   key: FactorKey,
   detail: DayDetailViewModel,
@@ -201,6 +218,22 @@ function buildFactorRow(
   showZeroScores: boolean,
 ): DayLuanSectionRow {
   const meta = CANONICAL_FACTORS.find((f) => f.key === key)!;
+  const apiRow = findBreakdownByFactor(detail, key);
+  if (apiRow?.reasonVi && apiRow.reasonVi !== "—") {
+    const verdict =
+      apiRow.type && apiRow.type !== "—"
+        ? apiRow.type
+        : apiRow.source !== "—"
+          ? apiRow.source
+          : meta.title;
+    return {
+      title: meta.title,
+      sourceRef: meta.sourceRef,
+      verdict,
+      body: apiRow.reasonVi,
+      score: formatScoreChip(points, showZeroScores),
+    };
+  }
 
   switch (key) {
     case "truc": {

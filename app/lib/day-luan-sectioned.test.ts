@@ -27,6 +27,8 @@ const baseDetail: DayDetailViewModel = {
   catThanLabels: [],
   hungSatLabels: ["Thiên Cương"],
   purposeRows: [],
+  scoreMethodology: null,
+  sourceLabels: [],
   breakdown: [
     {
       source: "ĐIỂM CƠ BẢN",
@@ -71,20 +73,40 @@ describe("buildDayLuanSectionRows", () => {
       ...baseDetail,
       score: 76,
       breakdown: [
-        { id: "truc", source: "Trực ngày", points: 24, reasonVi: "Trực Định", type: "Định" },
-        { id: "sao28", source: "Nhị thập bát tú", points: 20, reasonVi: "Thiên Đức", type: "Thiên Đức" },
+        {
+          id: "truc",
+          source: "Trực ngày",
+          points: 24,
+          reasonVi: "Trực Khai thuận khai trương với mệnh Thổ.",
+          type: "Trực Khai",
+        },
+        {
+          id: "sao28",
+          source: "Nhị thập bát tú",
+          points: 20,
+          reasonVi: "Sao Giác hỗ trợ việc nhỏ.",
+          type: "Sao Giác",
+        },
         {
           id: "can_chi_laso",
           source: "Can chi",
           points: 18,
-          reasonVi: "Mậu Tuất",
-          type: "Mậu Tuất",
+          reasonVi: "Can Quý hòa Dụng Thần.",
+          type: "Quý Mão",
         },
-        { id: "gio_vang", source: "Giờ vàng", points: 14, reasonVi: "Thìn", type: "Thìn" },
+        {
+          id: "gio_vang",
+          source: "Giờ vàng",
+          points: 14,
+          reasonVi: "Buổi sáng Thìn thuận ký kết.",
+          type: "Thìn 7–9h",
+        },
       ],
     });
     expect(bundle.baseScore).toBeNull();
     expect(bundle.rows.map((r) => r.score)).toEqual(["+24", "+20", "+18", "+14"]);
+    expect(bundle.rows[0]?.body).toContain("Trực Khai");
+    expect(bundle.rows[2]?.body).toContain("Dụng Thần");
   });
 
   it("includes source refs for inline citations", () => {

@@ -4,7 +4,7 @@ import { BackBar } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
 import type { TraCuuEmptyState } from "~/lib/tra-cuu-session";
 
-type EmptyState = TraCuuEmptyState;
+type EmptyState = TraCuuEmptyState & { emptyReasonVi?: string };
 
 function formatRangeRecap(start?: string, end?: string): string {
   if (!start || !end) return "trong khoảng đã chọn";
@@ -27,6 +27,7 @@ export function CNoDatesFoundScreen({
   const intent = raw.intentLabel ?? "việc này";
   const range = formatRangeRecap(raw.rangeStart, raw.rangeEnd);
   const days = raw.daysInclusive ?? 30;
+  const emptyReasonVi = raw.emptyReasonVi?.trim();
 
   return (
     <div
@@ -86,11 +87,17 @@ export function CNoDatesFoundScreen({
             className="mt-2 max-w-[300px] text-[13.5px] leading-snug"
             style={{ color: CT.ink2 }}
           >
-            Trong khoảng thời gian {days} ngày đã chọn, không có ngày nào đạt đủ tiêu chuẩn cát lành để tiến hành việc{" "}
-            <strong className="font-semibold" style={{ color: CT.ink }}>
-              {intent.toLowerCase()}
-            </strong>
-            . Bản chủ hãy thử mở rộng khoảng thời gian tìm kiếm.
+            {emptyReasonVi ? (
+              emptyReasonVi
+            ) : (
+              <>
+                Trong khoảng thời gian {days} ngày đã chọn, không có ngày nào đạt đủ tiêu chuẩn cát lành để tiến hành việc{" "}
+                <strong className="font-semibold" style={{ color: CT.ink }}>
+                  {intent.toLowerCase()}
+                </strong>
+                . Bản chủ hãy thử mở rộng khoảng thời gian tìm kiếm.
+              </>
+            )}
           </p>
         </div>
 
