@@ -73,7 +73,17 @@ function PaywallLockedChapterBody({ chapter }: { chapter: BaziPaywallLockedChapt
   }
 }
 
-function LockedSectionBody({ children }: { children: ReactNode }) {
+/** Direction C Secondary — khớp Design System `.btn-secondary`. */
+const PAYWALL_SECONDARY_BTN_CLASS =
+  "flex w-full cursor-pointer border bg-transparent px-3.5 py-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]";
+
+function LockedSectionBody({
+  children,
+  onUnlock,
+}: {
+  children: ReactNode;
+  onUnlock: () => void;
+}) {
   return (
     <div className="relative mt-3 min-h-[120px]">
       <div
@@ -90,21 +100,18 @@ function LockedSectionBody({ children }: { children: ReactNode }) {
         className="pointer-events-none absolute inset-0"
         style={{
           background: `linear-gradient(180deg, rgba(240,236,226,0.15) 0%, rgba(240,236,226,0.72) 55%, ${CT.paper} 100%)`,
-          backdropFilter: "blur(1px)",
-          WebkitBackdropFilter: "blur(1px)",
         }}
         aria-hidden
       />
-      <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 py-2"
-        aria-hidden
-      >
-        <span className="text-[11px]" style={{ color: CT.goldDeep }}>
-          ◆
-        </span>
-        <Mono className="text-[9px] tracking-[0.14em]" style={{ color: CT.goldDeep }}>
-          Đã phân tích · mở khóa để đọc
-        </Mono>
+      <div className="absolute inset-x-0 bottom-0 pt-10">
+        <button
+          type="button"
+          onClick={onUnlock}
+          className={`${PAYWALL_SECONDARY_BTN_CLASS} items-center justify-center`}
+          style={{ borderColor: CT.goldDeep, color: CT.ink }}
+        >
+          Mở khóa để đọc
+        </button>
       </div>
     </div>
   );
@@ -222,7 +229,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
           {lockedChapters.map((sec) => (
             <section key={sec.key} className="mt-8">
               <BaziSectionHeading index={sec.index} title={sec.title} />
-              <LockedSectionBody>
+              <LockedSectionBody onUnlock={openAddonPaySheet}>
                 <PaywallLockedChapterBody chapter={sec} />
               </LockedSectionBody>
             </section>
@@ -284,7 +291,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
             <button
               type="button"
               onClick={openAddonPaySheet}
-              className="flex cursor-pointer items-baseline justify-between gap-2 border bg-transparent px-3.5 py-2.5 text-left font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"
+              className={`${PAYWALL_SECONDARY_BTN_CLASS} items-baseline justify-between gap-2 text-left`}
               style={{ borderColor: CT.goldDeep, color: CT.ink }}
             >
               <span>Chỉ mua riêng Bát tự</span>
