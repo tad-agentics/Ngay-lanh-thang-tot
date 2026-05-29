@@ -59,6 +59,7 @@ export function useInlineDayReading({
 
     let cancelled = false;
     setInstantTyping(hasSeenInlineReading(userId, iso));
+    setLoading(true);
 
     void (async () => {
       const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
@@ -81,8 +82,6 @@ export function useInlineDayReading({
         setInstantTyping(true);
         return;
       }
-
-      setLoading(true);
       const r = await invokeGenerateReading({
         endpoint,
         data: payloadRef.current,

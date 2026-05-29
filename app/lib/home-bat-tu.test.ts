@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCalendarDaysForMonth,
+  buildHomeInlineFallback,
   formatLichThangMonthKey,
   mergeDayDetailScoreIntoHome,
   parseLichThangLunarMonthLabel,
@@ -176,6 +177,37 @@ describe("mergeDayDetailScoreIntoHome", () => {
     const card = ngayHomNayToLichCard(merged, "Lộ Bàng Thổ", "2026-05-28");
     expect(card.score).toBe(35);
     expect(card.verdictLabel).toBe("Ngày tránh");
+  });
+
+  it("fills homeSummaryLine from day-detail reason_vi when ngay-hom-nay omits it", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-29",
+      day_type: "hoang-dao",
+      good_for: ["Khai trương"],
+    });
+    expect(home).not.toBeNull();
+    expect(home!.homeSummaryLine).toBe("");
+    const merged = mergeDayDetailScoreIntoHome(home!, {
+      score: 85,
+      reason_vi: "Can Quý hòa Dụng Thần Thổ — thuận ký kết và khai trương.",
+    });
+    expect(merged.score).toBe(85);
+    expect(merged.homeSummaryLine).toContain("Dụng Thần");
+  });
+});
+
+describe("buildHomeInlineFallback", () => {
+  it("builds teaser from good/avoid chips when prose missing", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-29",
+      day_type: "hoang-dao",
+      good_for: ["Khai trương", "Ký hợp đồng"],
+      avoid_for: ["Động thổ"],
+    });
+    expect(home).not.toBeNull();
+    const line = buildHomeInlineFallback(home!);
+    expect(line).toContain("Khai trương");
+    expect(line).toContain("Động thổ");
   });
 });
 

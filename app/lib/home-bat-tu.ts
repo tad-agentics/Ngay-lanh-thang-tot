@@ -452,16 +452,51 @@ export interface NgayHomNayHome {
   score: number | null;
 }
 
-/** Canonical personalized score lives on day-detail; ngay-hom-nay often omits it. */
+function pickInlineSummaryFromDayDetail(
+  detail: NonNullable<ReturnType<typeof parseDayDetailForView>>,
+): string {
+  for (const line of detail.reasonLines) {
+    const t = line.trim();
+    if (t) return t;
+  }
+  for (const row of detail.breakdown) {
+    const t = row.reasonVi.trim();
+    if (t && t !== "—") return t;
+  }
+  const truc = detail.trucDescription.trim();
+  if (truc) return truc;
+  return "";
+}
+
+/** Deterministic teaser when engine + LLM both omit prose. */
+export function buildHomeInlineFallback(home: NgayHomNayHome): string {
+  const parts: string[] = [];
+  if (home.goodForChips.length > 0) {
+    parts.push(`Ngày thuận cho ${home.goodForChips.slice(0, 3).join(", ")}.`);
+  }
+  if (home.avoidForChips.length > 0) {
+    parts.push(`Nên tránh ${home.avoidForChips.slice(0, 2).join(", ")}.`);
+  }
+  return parts.join(" ").trim();
+}
+
+/** Canonical personalized score + inline summary live on day-detail; ngay-hom-nay often omits both. */
 export function mergeDayDetailScoreIntoHome(
   home: NgayHomNayHome,
   dayDetailRaw: unknown,
 ): NgayHomNayHome {
   const detail = parseDayDetailForView(dayDetailRaw);
-  if (detail?.score != null && Number.isFinite(detail.score)) {
-    return { ...home, score: detail.score };
+  if (!detail) return home;
+
+  let next = home;
+  if (detail.score != null && Number.isFinite(detail.score)) {
+    next = { ...next, score: detail.score };
   }
-  return home;
+  if (!next.homeSummaryLine.trim()) {
+    const summary = pickInlineSummaryFromDayDetail(detail);
+    if (summary) next = { ...next, homeSummaryLine: summary };
+  }
+  return next;
 }
 
 /** Map engine /v1/ngay-hom-nay JSON → home cards (flexible keys). */
@@ -610,7 +645,17 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
       "reason_vi",
       "reasonVi",
       "hint_vi",
-    ]) || pickStr(root, ["summary_vi", "one_liner"]);
+    ]) ||
+    pickStr(root, ["summary_vi", "one_liner", "reason_vi"]) ||
+    pickStr(asRecord(nested.score_methodology) ?? {}, [
+      "summary_vi",
+      "summaryVi",
+    ]) ||
+    pickStr(asRecord(nested.daily_advice) ?? {}, [
+      "summary_vi",
+      "hint_vi",
+      "one_liner",
+    ]);
 
   let score =
     pickNumber(nested, ["score", "diem", "total_score", "totalScore"]) ??

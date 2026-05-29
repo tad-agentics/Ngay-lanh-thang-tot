@@ -9,12 +9,15 @@ import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
 import { useTodayLichData } from "~/hooks/useTodayLichData";
+import { useAuth } from "~/lib/auth";
+import { buildHomeInlineFallback } from "~/lib/home-bat-tu";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
 
 export function CHomeScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { pending: recomputePending } = useLaSoRecomputeGate();
   const {
     loading,
@@ -39,8 +42,14 @@ export function CHomeScreen() {
     iso: todayIso,
     endpoint: "ngay-hom-nay",
     batTuPayload: rawPayload,
-    enabled: Boolean(today && rawPayload && online && !showRecomputeSkeleton),
+    enabled: Boolean(
+      user && today && rawPayload && online && !showRecomputeSkeleton,
+    ),
   });
+
+  const inlineFallbackText =
+    today?.homeSummaryLine.trim() ||
+    (today ? buildHomeInlineFallback(today) : "");
 
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
@@ -98,7 +107,7 @@ export function CHomeScreen() {
               ) : (
                 <CTodayReasoning
                   text={readingText}
-                  fallbackText={today.homeSummaryLine}
+                  fallbackText={inlineFallbackText || null}
                   loading={readingLoading}
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
