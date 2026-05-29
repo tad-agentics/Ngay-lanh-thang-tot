@@ -51,7 +51,7 @@ function HopTuoiSaveButton({
       score: panel.score ?? undefined,
     });
     setSaving(false);
-    if (r.ok) toast.success("Đã lưu kết quả hợp tuổi.");
+    if (r.ok) toast.success("Đã lưu kết quả luận giải tương hợp.");
     else toast.error(r.error ?? "Không lưu được.");
   }
 
@@ -146,7 +146,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title="Hợp tuổi · kết quả"
+        title="Luận giải tương hợp"
         endAdornment={<HopTuoiSaveButton state={state} />}
       />
 
@@ -164,7 +164,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             </div>
             <div className="mt-0.5 font-serif text-[11px]" style={{ color: CT.muted }}>
               {panel.personCards.p1?.menh
-                ? `${panel.naphAm1} · mệnh ${panel.personCards.p1.menh}`
+                ? `${panel.naphAm1} · bản mệnh ${panel.personCards.p1.menh}`
                 : panel.naphAm1}
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
             </div>
             <div className="mt-0.5 font-serif text-[11px]" style={{ color: CT.muted }}>
               {panel.personCards.p2?.menh
-                ? `${panel.naphAm2} · mệnh ${panel.personCards.p2.menh}`
+                ? `${panel.naphAm2} · bản mệnh ${panel.personCards.p2.menh}`
                 : panel.naphAm2}
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function TraCuuHopTuoiKetQuaRoute() {
 
         <div className="mt-6 text-center">
           <Mono style={{ color: CT.goldDeep, fontSize: 10, letterSpacing: "0.22em" }}>
-            Độ hợp · {contextLabel}
+            Độ hòa hợp · {contextLabel}
           </Mono>
           {showScore ? (
             <div className="mt-2.5 flex items-baseline justify-center gap-1.5">

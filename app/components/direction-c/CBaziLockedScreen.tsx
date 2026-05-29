@@ -12,7 +12,7 @@ type CBaziLockedScreenProps = {
 
 /** Direction C — Bát tự reading paywall (artboard locked variant). */
 export function CBaziLockedScreen({
-  title = "Luận giải Bát tự · 2026",
+  title = "Luận giải Bát Tự · 2026",
   sku = "luan_bat_tu",
 }: CBaziLockedScreenProps) {
   const pkg = UI_PACKAGES.find((p) => p.sku === sku);
@@ -23,7 +23,7 @@ export function CBaziLockedScreen({
       className="flex min-h-[100svh] flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <BackBar title="Luận giải Bát tự" />
+      <BackBar title="Luận giải Bát Tự" />
 
       <div className="flex flex-1 flex-col px-6 pb-10 pt-2">
         <div
@@ -43,7 +43,7 @@ export function CBaziLockedScreen({
             {title}
           </h2>
           <p className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-            tính cách · vận năm · phong thuỷ · quý nhân
+            bản mệnh · tính cách · dụng hỷ thần · cát khí phong thủy
           </p>
           <div className="mt-2.5 flex flex-wrap items-baseline gap-2">
             <span
@@ -63,7 +63,7 @@ export function CBaziLockedScreen({
           className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
           style={{ background: CT.forest, color: CT.cream }}
         >
-          Mở khóa {pkg?.title ?? "luận giải"}
+          Mở khóa {pkg?.title ?? "luận giải Bát Tự"}
         </Link>
 
         {yearly ? (
@@ -72,7 +72,7 @@ export function CBaziLockedScreen({
             className="mt-3 block w-full border py-3 text-center font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em] no-underline"
             style={{ borderColor: CT.hairline, color: CT.ink }}
           >
-            Nâng lên {yearly.title} — kèm luận giải
+            Nâng cấp {yearly.title} — Tặng kèm luận giải
           </Link>
         ) : null}
 
@@ -80,7 +80,7 @@ export function CBaziLockedScreen({
           className="mt-6 text-center font-serif text-xs leading-relaxed"
           style={{ color: CT.ink2 }}
         >
-          Thanh toán một lần qua PayOS. Sau khi mở khóa, đọc lại bất cứ lúc nào trong mục Tôi.
+          Thanh toán bảo mật một lần qua PayOS. Bản chủ có thể đọc lại bài luận giải bất cứ lúc nào trong mục Sổ tay (tab Tôi).
         </p>
       </div>
     </main>

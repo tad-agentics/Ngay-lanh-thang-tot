@@ -14,7 +14,7 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
       className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <BackBar title={`Tiểu Vận ${year}`} />
+      <BackBar title={`Tiểu vận ${year}`} />
 
       <div className="flex flex-1 flex-col px-6 pb-10 pt-2">
         <div
@@ -25,10 +25,10 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
           <h2
             className="mt-1.5 font-[family-name:var(--display)] text-[19px] font-extrabold uppercase tracking-[-0.01em]"
           >
-            Luận giải Tiểu Vận
+            Luận giải Tiểu vận
           </h2>
           <p className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-            vận năm · phong thuỷ năm · 12 tháng tới
+            vận hạn cát hung · phong thủy cát tường · luận giải 12 tháng tới
           </p>
           <p
             className="mt-2.5 font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
@@ -46,7 +46,7 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
           className="mt-5 block w-full py-3.5 text-center font-[family-name:var(--display-2)] text-[13px] font-extrabold uppercase tracking-[0.08em] no-underline"
           style={{ background: CT.forest, color: CT.cream }}
         >
-          Mở khóa {pkg?.title ?? "Tiểu Vận"}
+          Mở khóa {pkg?.title ?? "luận giải Tiểu vận"}
         </Link>
 
         {yearly ? (
@@ -55,9 +55,16 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
             className="mt-3 block w-full border py-3 text-center font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em] no-underline"
             style={{ borderColor: CT.hairline, color: CT.ink }}
           >
-            Gói năm — kèm Tiểu Vận
+            Nâng cấp {yearly.title} — Tặng kèm Tiểu vận
           </Link>
         ) : null}
+
+        <p
+          className="mt-6 text-center font-serif text-xs leading-relaxed"
+          style={{ color: CT.ink2 }}
+        >
+          Thanh toán bảo mật một lần qua PayOS. Bản chủ có thể đọc lại bài luận giải bất cứ lúc nào trong mục Sổ tay (tab Tôi).
+        </p>
       </div>
     </main>
   );

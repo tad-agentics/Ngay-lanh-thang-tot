@@ -12,22 +12,22 @@ const STEPS = [
   [
     "1",
     "Đối chiếu Bát Tự",
-    "Lấy can chi bốn trụ từ lá số — xác định nhật chủ và đại vận hiện tại.",
+    "Phân tích can chi của Tứ Trụ từ lá số của bản chủ — xác định Nhật chủ và đại vận cát hung hiện tại.",
   ],
   [
     "2",
     "Kiểm Trực · Hoàng Đạo",
-    "12 trực, 28 sao, Hoàng/Hắc đạo — loại sớm ngày kỵ với việc bạn chọn.",
+    "Khảo sát 12 trực, 28 nhị thập bát tú, giờ Hoàng đạo và Hắc đạo — loại bỏ các ngày xung kỵ với công việc dự định của bạn.",
   ],
   [
     "3",
-    "Tính điểm phù hợp",
-    "Chấm 0–100 theo tương sinh nhật chủ, hợp việc và giờ tốt có sẵn.",
+    "Tính điểm tương hợp",
+    "Tính toán điểm số dựa trên sự tương sinh, tương hợp giữa Nhật chủ (bản mệnh) với can chi của ngày, tính chất công việc và khung giờ cát lành.",
   ],
   [
     "4",
-    "Sắp xếp & gợi ý",
-    "Top ngày được xếp hạng theo lá số riêng — không phải lịch chung.",
+    "Sắp xếp & Gợi ý",
+    "Danh sách ngày tốt nhất được sắp xếp theo thứ tự ưu tiên dựa trên mức độ cát lành cao nhất với lá số riêng biệt.",
   ],
 ] as const;
 
@@ -55,8 +55,7 @@ export function TraCuuMethodologyCollapsible() {
           className="m-0 font-serif text-[13px] leading-relaxed"
           style={{ color: CT.ink2 }}
         >
-          Ngày lành tháng tốt cá nhân hoá theo lá số Bát Tự của bạn — không phải lịch
-          vạn niên chung.
+          Hệ thống chọn ngày lành tháng tốt được cá nhân hóa trọn vẹn theo lá số Bát Tự riêng biệt của bản chủ — mang lại kết quả chuẩn xác hơn so với lịch vạn niên thông thường.
         </p>
         <div className="mt-3 space-y-2.5">
           {STEPS.map(([n, title, body]) => (

@@ -92,7 +92,7 @@ export default function DatLichRoute() {
           ‹
         </button>
         <span className="font-serif text-[12.5px]" style={{ color: CT.muted }}>
-          Tôi · Đặt lịch
+          Tôi · Đăng ký lịch cát tường
         </span>
       </div>
 
@@ -101,13 +101,13 @@ export default function DatLichRoute() {
           className="m-0 font-[family-name:var(--display)] text-[34px] font-extrabold uppercase leading-[0.98] tracking-[-0.015em]"
           style={{ color: CT.ink }}
         >
-          Lịch của bạn,
+          Lịch cát tường,
           <br />
           <span
             className="font-serif text-[34px] font-bold italic normal-case tracking-normal"
             style={{ color: CT.goldDeep }}
           >
-            cho cả năm.
+            đồng hành trọn năm.
           </span>
         </h1>
 
@@ -134,7 +134,7 @@ export default function DatLichRoute() {
             className="text-[17px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ ...DISPLAY, color: CT.ink }}
           >
-            Gói lịch · đăng ký
+            Đăng ký lịch cát tường
           </span>
         </div>
 
@@ -303,8 +303,8 @@ export default function DatLichRoute() {
                   {isBusy
                     ? "Đang tạo đơn…"
                     : hero
-                      ? `Đặt lịch năm — ${priceDisplay(pkg.priceLabel)}đ`
-                      : "Chọn gói này"}
+                      ? `Đăng ký lịch năm — ${priceDisplay(pkg.priceLabel)}đ`
+                      : "Đăng ký gói này"}
                 </button>
               </div>
             );
@@ -333,7 +333,7 @@ export default function DatLichRoute() {
             className="text-[17px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ ...DISPLAY, color: CT.ink }}
           >
-            Mua lẻ · không cần gói lịch
+            Mở luận giải chuyên sâu
           </span>
         </div>
 
@@ -366,7 +366,7 @@ export default function DatLichRoute() {
                     className="mt-2.5 cursor-pointer border-none bg-transparent p-0 text-[11px] font-bold uppercase tracking-[0.06em] disabled:opacity-60"
                     style={{ ...DISPLAY2, color: CT.goldDeep }}
                   >
-                    {isBusy ? "Đang tạo đơn…" : "Mua →"}
+                    {isBusy ? "Đang tạo đơn…" : "Khai mở →"}
                   </button>
                 </div>
                 <div className="text-right">
@@ -397,25 +397,25 @@ export default function DatLichRoute() {
             className="mt-2 font-serif text-[13px] leading-relaxed"
             style={{ color: CT.ink }}
           >
-            Mua lẻ cả 2 luận giải ={" "}
+            Mở lẻ cả hai bản luận giải ={" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.ink }}>
               498.000đ
             </strong>{" "}
-            — nhưng <strong className="font-semibold">không có lịch</strong>.
+            — nhưng <strong className="font-semibold">không kèm Lịch cát tường</strong>.
           </div>
           <div
             className="mt-1.5 font-serif text-[13px] leading-relaxed"
             style={{ color: CT.ink2 }}
           >
-            Lịch năm{" "}
+            Gói năm{" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.goldDeep }}>
               449.000đ
             </strong>{" "}
-            đã bao gồm cả 2 — rẻ hơn{" "}
+            đã tích hợp trọn vẹn cả hai bản — tiết kiệm ngay{" "}
             <strong className="font-semibold" style={{ color: CT.greenMute }}>
               49.000đ
             </strong>{" "}
-            mà còn có lịch dùng cả năm.
+            và sở hữu lịch dùng suốt cả năm.
           </div>
         </div>
 
@@ -423,9 +423,9 @@ export default function DatLichRoute() {
           className="mt-[22px] text-center font-serif text-[11.5px] leading-relaxed"
           style={{ color: CT.muted }}
         >
-          Thanh toán qua PayOS · MoMo · VietQR · thẻ
+          Thanh toán bảo mật qua PayOS · MoMo · VietQR · Thẻ ngân hàng
           <br />
-          Hoàn tiền 7 ngày · không tự gia hạn
+          Cam kết hoàn tiền trong 7 ngày · Không tự động gia hạn
         </p>
       </div>
     </div>

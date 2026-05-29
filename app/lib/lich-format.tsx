@@ -103,7 +103,7 @@ export function ngayHomNayToLichCard(
       </>
     ),
     verdictLabel: verdictLabelFromScore(verdictScore),
-    verdictSub: menh ? <>cho mệnh {menh}</> : null,
+    verdictSub: menh ? <>cho bản mệnh {menh}</> : null,
     score: displayScore,
     quote: data.homeSummaryLine || null,
     rows: [

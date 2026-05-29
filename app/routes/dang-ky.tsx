@@ -151,7 +151,7 @@ export default function DangKy() {
         }}
       >
         <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
-          Lập lịch · bước 1
+          Lập lá số · bước 1
         </Mono>
         <h1
           style={{
@@ -165,7 +165,7 @@ export default function DangKy() {
             margin: "12px 0 6px",
           }}
         >
-          Bạn là ai?
+          Thông tin bản mệnh
         </h1>
         <p
           style={{
@@ -176,8 +176,7 @@ export default function DangKy() {
             maxWidth: 280,
           }}
         >
-          Lá số tứ trụ cần đúng ngày, tháng, năm và giờ sinh. Sai một giờ —
-          sai cả luận đoán.
+          Lá số Bát Tự Tứ Trụ cần chính xác ngày, tháng, năm và giờ sinh. Sai lệch một giờ sinh, toàn bộ luận đoán cát hung sẽ thay đổi.
         </p>
 
         <div
@@ -239,7 +238,7 @@ export default function DangKy() {
                     cursor: "pointer",
                   }}
                 >
-                  chọn âm lịch
+                  chọn Âm lịch
                 </button>
               </span>
             </div>
@@ -265,8 +264,7 @@ export default function DangKy() {
                   lineHeight: 1.45,
                 }}
               >
-                Chọn ngày âm lịch đang được bổ sung — vui lòng nhập dương
-                lịch để tiếp tục lập lá số.
+                Tính năng nhập ngày sinh Âm lịch đang được cập nhật. Vui lòng nhập ngày Dương lịch tương ứng để lập lá số Tứ Trụ.
               </p>
             ) : null}
           </div>
@@ -299,7 +297,7 @@ export default function DangKy() {
           disabled={busy}
           style={{ ...btnPrimaryGold, marginTop: "auto" }}
         >
-          Tiếp — chọn giờ sinh
+          Tiếp tục — Chọn giờ sinh
         </button>
         <div
           style={{
@@ -310,7 +308,7 @@ export default function DangKy() {
             color: "rgba(237,231,211,0.45)",
           }}
         >
-          Mã hoá AES-256 · không bán dữ liệu
+          Bảo mật thông tin bản mệnh · Không chia sẻ dữ liệu
         </div>
       </form>
     </CForestShell>

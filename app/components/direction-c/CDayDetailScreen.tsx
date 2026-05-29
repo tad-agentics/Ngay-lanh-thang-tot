@@ -114,11 +114,11 @@ export function CDayDetailScreen() {
   const score = detail?.score ?? null;
 
   const verdictSub = useMemo(() => {
-    if (menh) return <>cho mệnh {menh}</>;
+    if (menh) return <>cho bản mệnh {menh}</>;
     if (!personalized) {
       return (
         <Link to="/dang-nhap" className="underline" style={{ color: CT.goldDeep }}>
-          Đăng nhập để xem cho mệnh bạn
+          Đăng nhập để xem theo bản mệnh của bạn
         </Link>
       );
     }
@@ -142,7 +142,7 @@ export function CDayDetailScreen() {
       score: score ?? undefined,
     });
     setSaving(false);
-    if (r.ok) toast.success("Đã lưu vào sổ ngày trên tab Tôi.");
+    if (r.ok) toast.success("Đã lưu ngày này vào sổ tay của bạn.");
     else toast.error(r.error ?? "Không lưu được.");
   }
 
@@ -255,23 +255,23 @@ export function CDayDetailScreen() {
                 type="button"
                 disabled={saving || Boolean(savedPick)}
                 onClick={() => void handleSavePick()}
-                className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
-                style={{
-                  padding: 12,
-                  background: savedPick ? CT.hairline2 : CT.forest,
-                  color: savedPick ? CT.muted : CT.cream,
-                  fontFamily: "var(--display-2)",
-                  fontWeight: 800,
-                  fontSize: 12,
-                  letterSpacing: "0.08em",
-                }}
-              >
-                {savedPick
-                  ? "Đã đánh dấu · xem trên tab Tôi"
-                  : saving
-                    ? "Đang lưu…"
-                    : "Đánh dấu để nhắc trước 1 ngày"}
-              </button>
+              className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
+              style={{
+                padding: 12,
+                background: savedPick ? CT.hairline2 : CT.forest,
+                color: savedPick ? CT.muted : CT.cream,
+                fontFamily: "var(--display-2)",
+                fontWeight: 800,
+                fontSize: 12,
+                letterSpacing: "0.08em",
+              }}
+            >
+              {savedPick
+                ? "Đã lưu ngày lành · xem trong sổ tay"
+                : saving
+                  ? "Đang lưu…"
+                  : "Lưu ngày lành · nhắc trước 1 ngày"}
+            </button>
             ) : null}
           </>
         ) : null}

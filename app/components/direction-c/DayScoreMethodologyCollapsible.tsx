@@ -12,7 +12,7 @@ const WEIGHTS = [
   ["Hoàng-đạo", "40%"],
   ["Trực", "20%"],
   ["Sao tốt / xấu", "25%"],
-  ["Tương sinh với mệnh", "15%"],
+  ["Tương sinh với bản mệnh", "15%"],
 ] as const;
 
 export function DayScoreMethodologyCollapsible() {
@@ -38,8 +38,7 @@ export function DayScoreMethodologyCollapsible() {
           className="m-0 font-serif text-[13px] leading-relaxed"
           style={{ color: CT.ink2 }}
         >
-          Điểm 0–100 ghép từ bốn lớp — cá nhân hoá theo lá số Bát Tự của bạn, không
-          phải lịch vạn niên chung.
+          Điểm số từ 0–100 được tổng hợp từ bốn yếu tố cốt lõi và luận giải riêng biệt dựa trên lá số Bát Tự (Tứ Trụ) của bạn, mang lại kết quả chuẩn xác hơn so với lịch vạn niên thông thường.
         </p>
         <ul className="mt-3 space-y-2 p-0 list-none">
           {WEIGHTS.map(([label, pct]) => (

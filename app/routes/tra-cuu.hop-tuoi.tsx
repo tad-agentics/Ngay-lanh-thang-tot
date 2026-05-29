@@ -46,7 +46,7 @@ const PURPOSE_OPTIONS = [
 
 function formatBirthTimeShort(value: string): string {
   if (value === HOP_OTHER_BIRTH_TIME_DEFAULT) {
-    return "Ngọ · 11–12h";
+    return "Chưa rõ giờ sinh";
   }
   const code = Number.parseInt(value, 10);
   const opt = BAT_TU_BIRTH_TIME_OPTIONS.find((o) => o.value === code);
@@ -288,9 +288,9 @@ export default function TraCuuHopTuoiRoute() {
                 <SelectContent>
                   <SelectItem
                     value={HOP_OTHER_BIRTH_TIME_DEFAULT}
-                    textValue="Ngọ · 11–12h"
+                    textValue="Chưa rõ giờ sinh"
                   >
-                    Không biết — Giờ Ngọ (11–13h)
+                    Chưa rõ giờ sinh (Tự động tính giờ Ngọ)
                   </SelectItem>
                   {BAT_TU_BIRTH_TIME_OPTIONS.map((opt) => (
                     <SelectItem
@@ -329,7 +329,7 @@ export default function TraCuuHopTuoiRoute() {
         </div>
 
         <div className="mt-[22px] font-serif text-[13px]" style={{ color: CT.muted }}>
-          Để
+          Xem tương hợp cho việc:
         </div>
         <div className="mt-2 font-serif text-[13px] leading-relaxed" style={{ color: CT.ink }}>
           {PURPOSE_OPTIONS.map((p, i) => {
@@ -362,7 +362,7 @@ export default function TraCuuHopTuoiRoute() {
 
         {hopOtherNgayInvalid ? (
           <p className="mt-2 font-serif text-[11px]" style={{ color: CT.red }}>
-            Đúng DD/MM/YYYY, ngày có thật.
+            Vui lòng nhập đúng định dạng ngày sinh DD/MM/YYYY.
           </p>
         ) : null}
 
@@ -378,7 +378,7 @@ export default function TraCuuHopTuoiRoute() {
           className="mt-8 w-full cursor-pointer border-none py-[15px] text-[13px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
           style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
         >
-          {busy ? "Đang phân tích…" : "Xem độ hợp"}
+          {busy ? "Đang phân tích…" : "Luận giải độ hòa hợp"}
         </button>
 
         {err ? (

@@ -129,7 +129,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
   if (profileLoading) {
     return (
       <main className="min-h-full px-6 py-10 font-serif" style={{ background: CT.paper, color: CT.muted }}>
-        Đang tải…
+        Đang đối chiếu lá số tiểu vận…
       </main>
     );
   }
@@ -146,8 +146,8 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title={`Luận giải Tiểu Vận · ${year}`}
-        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>AI · có nguồn</Mono>}
+        title={`Luận giải Tiểu vận · ${year}`}
+        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>Học thuật cổ thư</Mono>}
       />
 
       <div className="flex-1 overflow-auto px-6 pb-12 pt-1">
@@ -195,7 +195,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
 
         {loading ? (
           <p className="mt-8 text-sm" style={{ color: CT.muted }}>
-            Đang soạn luận giải…
+            Đang luận đoán cát hung tiểu vận…
           </p>
         ) : sections.length === 0 ? (
           <p className="mt-8 text-sm" style={{ color: CT.muted }}>

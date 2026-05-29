@@ -108,7 +108,7 @@ export default function DangNhap() {
               margin: 0,
             }}
           >
-            Lập lịch riêng
+            Lập lá số riêng
             <br />
             <span
               style={{
@@ -120,7 +120,7 @@ export default function DangNhap() {
                 letterSpacing: 0,
               }}
             >
-              cho mệnh của bạn.
+              cho bản mệnh.
             </span>
           </h1>
           <p
@@ -133,8 +133,7 @@ export default function DangNhap() {
               maxWidth: 280,
             }}
           >
-            Mỗi ngày một trang — chấm điểm theo lá số tứ trụ riêng. Dùng được
-            trên mọi thiết bị.
+            Mỗi ngày một trang lịch lành — tính cát hung và luận giải chi tiết dựa trên lá số Bát Tự Tứ Trụ riêng biệt.
           </p>
         </div>
 
@@ -156,7 +155,7 @@ export default function DangNhap() {
               boxSizing: "border-box",
             }}
           >
-            Lập lịch — 30 giây
+            Lập lá số — 30 giây
           </Link>
           <button
             type="button"
@@ -184,7 +183,7 @@ export default function DangNhap() {
                 color: "rgba(237,231,211,0.7)",
               }}
             >
-              Đã có lịch?
+              Đã có lá số?
             </span>
             <Link
               to={emailHref}
@@ -198,7 +197,7 @@ export default function DangNhap() {
                 textDecoration: "none",
               }}
             >
-              Mở lịch →
+              Đăng nhập →
             </Link>
           </div>
         </div>

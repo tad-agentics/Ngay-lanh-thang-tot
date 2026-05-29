@@ -134,7 +134,7 @@ export default function TraCuuKetQuaRoute() {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title="Tra cứu · kết quả"
+        title="Kết quả tra cứu"
         onBack={() => navigate("/tra-cuu")}
       />
 
@@ -164,7 +164,7 @@ export default function TraCuuKetQuaRoute() {
             color: CT.ink,
           }}
         >
-          {days.length} ngày tốt nhất
+          {days.length} ngày cát lành nhất
         </div>
 
         {days.length === 0 ? (
@@ -239,7 +239,7 @@ function ResultRow({
             padding: "2px 6px",
           }}
         >
-          ★ ĐỀ XUẤT
+          ★ CÁT LÀNH
         </span>
       ) : null}
       <div className="min-w-[54px]">

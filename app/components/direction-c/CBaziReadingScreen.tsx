@@ -139,9 +139,9 @@ export function CBaziReadingScreen() {
   if (profileLoading) {
     return (
       <main className="min-h-[100svh]" style={{ background: CT.paper }}>
-        <BackBar title="Luận giải Bát tự" />
+        <BackBar title="Luận giải Bát Tự" />
         <p className="px-6 font-serif text-sm" style={{ color: CT.muted }}>
-          Đang tải…
+          Đang luận giải bản mệnh…
         </p>
       </main>
     );
@@ -157,8 +157,8 @@ export function CBaziReadingScreen() {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title={`Luận giải Bát tự · ${year}`}
-        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>AI · có nguồn</Mono>}
+        title={`Luận giải Bát Tự · ${year}`}
+        endAdornment={<Mono style={{ color: CT.muted, fontSize: 9 }}>Học thuật cổ thư</Mono>}
       />
 
       <div className="flex-1 overflow-auto px-6 pb-10 pt-1">
@@ -200,7 +200,7 @@ export function CBaziReadingScreen() {
 
         {loading ? (
           <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
-            Đang luận giải theo lá số…
+            Đang luận giải chi tiết bản mệnh…
           </p>
         ) : sections.length === 0 ? (
           <div className="mt-8 text-center">

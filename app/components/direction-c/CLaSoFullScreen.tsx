@@ -75,14 +75,14 @@ export function CLaSoFullScreen() {
         <BackBar title="Lá số tứ trụ" />
         <div className="px-6 py-8 text-center">
           <p className="font-serif text-sm" style={{ color: CT.ink2 }}>
-            Chưa có lá số. Hoàn thành lập lịch để xem tứ trụ.
+            Chưa có dữ liệu lá số. Hoàn thành nhập giờ sinh để lập lá số Tứ Trụ riêng biệt của bạn.
           </p>
           <Link
             to="/gio-sinh"
             className="mt-4 inline-block py-3 px-6 font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-wider no-underline"
             style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
           >
-            Lập lịch →
+            Lập lá số Tứ Trụ →
           </Link>
         </div>
       </main>
@@ -318,7 +318,7 @@ export function CLaSoFullScreen() {
             borderLeft: `2px solid ${CT.goldDeep}`,
           }}
         >
-          <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>NLTT luận</Mono>
+          <Mono style={{ color: CT.goldDeep, fontSize: 9 }}>Tóm tắt bản mệnh</Mono>
           <p
             className="mt-1.5 font-serif italic text-[13px] leading-relaxed"
             style={{ color: CT.ink }}
@@ -330,7 +330,7 @@ export function CLaSoFullScreen() {
             className="mt-3.5 inline-block w-full py-2.5 text-center font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-wider no-underline"
             style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
           >
-            Đọc luận giải Bát tự đầy đủ →
+            Đọc luận giải Bát Tự đầy đủ →
           </Link>
         </div>
       </div>

@@ -66,31 +66,31 @@ export function CSubExpired() {
           className="mt-5 text-[10px] tracking-[0.22em]"
           style={{ color: CT.goldDeep }}
         >
-          Lịch đã hết hạn
+          Lịch cát tường hết hạn
         </Mono>
         <h2
           id="sub-expired-title"
           className="mt-2.5 max-w-[320px] font-[family-name:var(--display)] text-[28px] font-extrabold uppercase leading-[1.05] tracking-[-0.01em]"
           style={{ color: CT.ink }}
         >
-          Lịch của bạn
+          Lịch cát tường
           <br />
           <span
             className="font-serif text-[28px] font-bold normal-case not-italic tracking-normal"
             style={{ color: CT.goldDeep }}
           >
-            {expiryFormatted ? `dừng từ ${expiryFormatted}` : "đã hết hạn"}
+            {expiryFormatted ? `tạm dừng từ ngày ${expiryFormatted}` : "đã hết hạn"}
           </span>
         </h2>
         <p
           className="mt-3.5 max-w-[320px] text-[13.5px] leading-snug"
           style={{ color: CT.ink2 }}
         >
-          Gia hạn để tiếp tục xem trang hôm nay, tra cứu ngày tốt và đọc{" "}
+          Gia hạn để tiếp tục xem trang ngày cát lành, tra cứu vạn sự và khai mở{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
-            luận giải Bát tự + Tiểu Vận
+            luận giải Bát Tự + Tiểu vận
           </strong>
-          . Lá số tứ trụ vẫn được lưu — không cần lập lại.
+          . Thông tin lá số Tứ Trụ của bản chủ vẫn được lưu trữ an toàn, không cần lập lại sau khi gia hạn.
         </p>
 
         {renewPkg ? (
@@ -99,7 +99,7 @@ export function CSubExpired() {
             style={{ background: CT.forest, color: CT.cream }}
           >
             <Mono className="text-[9px]" style={{ color: CT.gold }}>
-              {renewSku === "goi_12thang" ? "Khuyên dùng" : "Gói trước đây của bạn"}
+              {renewSku === "goi_12thang" ? "Gói cát tường khuyên dùng" : "Gói đăng ký trước đây"}
             </Mono>
             <div className="mt-1 font-[family-name:var(--display)] text-lg font-extrabold uppercase tracking-[-0.005em]">
               {renewPkg.title}
@@ -115,7 +115,7 @@ export function CSubExpired() {
               className="mt-3 block w-full py-2.5 text-center font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-[0.08em] no-underline"
               style={{ background: CT.gold, color: CT.forest }}
             >
-              Gia hạn lịch
+              Tiến hành gia hạn
             </Link>
           </div>
         ) : null}
@@ -125,7 +125,7 @@ export function CSubExpired() {
           className="mt-3 text-[12.5px] no-underline"
           style={{ color: CT.muted }}
         >
-          Xem các gói khác →
+          Xem các gói lịch khác →
         </Link>
 
         <Link

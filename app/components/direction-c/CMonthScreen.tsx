@@ -316,7 +316,7 @@ export function CMonthScreen() {
               {" · "}
             </>
           ) : null}
-          chấm theo mệnh{" "}
+          chấm theo bản mệnh{" "}
           <strong style={{ color: CT.ink, fontWeight: 600 }}>{menh}</strong>
           {refreshing ? (
             <>

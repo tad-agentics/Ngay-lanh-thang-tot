@@ -199,7 +199,7 @@ export function CPayConfirmSheet({
     onStartCheckout?.();
   }
 
-  const eyebrow = variant === "subscription" ? "Đặt lịch" : "Mua lẻ";
+  const eyebrow = variant === "subscription" ? "Đăng ký Lịch cát tường" : "Khai mở luận giải";
   const footerNote =
     variant === "subscription"
       ? "Hoàn tiền 7 ngày · không tự gia hạn"
@@ -428,8 +428,7 @@ export function CPayConfirmSheet({
                   </div>
                 </div>
                 <p className="text-[11px] leading-relaxed" style={{ color: CT.muted }}>
-                  Hệ thống tự kiểm tra vài phút sau khi chuyển khoản. Lệnh hết hạn
-                  sau 15 phút.
+                  Hệ thống tự động xác nhận sau khi nhận được tiền. Lệnh chuyển khoản hết hạn sau 15 phút.
                 </p>
               </div>
             ) : payload ? (

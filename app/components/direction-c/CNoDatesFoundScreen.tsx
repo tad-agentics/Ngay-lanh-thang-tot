@@ -34,7 +34,7 @@ export function CNoDatesFoundScreen({
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title="Tra cứu · kết quả"
+        title="Kết quả tra cứu"
         onBack={() => navigate("/tra-cuu")}
       />
 
@@ -80,17 +80,17 @@ export function CNoDatesFoundScreen({
             className="mt-5 text-[22px] font-extrabold uppercase tracking-[-0.005em]"
             style={{ fontFamily: "var(--display)", color: CT.ink }}
           >
-            Không có ngày tốt
+            Không có ngày cát lành
           </h2>
           <p
             className="mt-2 max-w-[300px] text-[13.5px] leading-snug"
             style={{ color: CT.ink2 }}
           >
-            Trong {days} ngày tới, không ngày nào đạt điểm đủ cao cho{" "}
+            Trong khoảng thời gian {days} ngày đã chọn, không có ngày nào đạt đủ tiêu chuẩn cát lành để tiến hành việc{" "}
             <strong className="font-semibold" style={{ color: CT.ink }}>
               {intent.toLowerCase()}
             </strong>
-            . Thử mở rộng phạm vi hoặc bỏ bớt tiêu chí khắt khe.
+            . Bản chủ hãy thử mở rộng khoảng thời gian tìm kiếm.
           </p>
         </div>
 

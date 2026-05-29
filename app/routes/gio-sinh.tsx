@@ -120,7 +120,7 @@ export default function GioSinhRoute() {
         }}
       >
         <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
-          Lập lịch · bước 2
+          Lập lá số · bước 2
         </Mono>
         <h1
           style={{
@@ -134,7 +134,7 @@ export default function GioSinhRoute() {
             margin: "12px 0 6px",
           }}
         >
-          Sinh canh nào?
+          Canh giờ sinh?
         </h1>
         <p
           style={{
@@ -145,8 +145,7 @@ export default function GioSinhRoute() {
             maxWidth: 280,
           }}
         >
-          12 canh giờ — không nhớ chính xác cũng được, chọn khoảng rồi tinh
-          chỉnh sau.
+          Một ngày có 12 canh giờ — nếu bản chủ không nhớ chính xác, hãy chọn khoảng giờ gần đúng nhất.
         </p>
 
         <div
@@ -253,7 +252,7 @@ export default function GioSinhRoute() {
           onClick={() => void continueToBuild()}
           style={{ ...btnPrimaryGold, marginTop: "auto" }}
         >
-          {busy ? "Đang lưu…" : "Mở lịch của tôi →"}
+          {busy ? "Đang lưu…" : "Hoàn tất & Mở lịch cát tường →"}
         </button>
       </div>
     </CForestShell>

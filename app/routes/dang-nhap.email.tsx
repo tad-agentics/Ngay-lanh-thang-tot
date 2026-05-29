@@ -116,7 +116,7 @@ export default function DangNhapEmail() {
               textDecoration: "none",
             }}
           >
-            Lập lịch mới
+            Lập lá số mới
           </Link>
         }
       />
@@ -131,7 +131,7 @@ export default function DangNhapEmail() {
         }}
       >
         <Mono style={{ color: C.gold, fontSize: 10, letterSpacing: "0.22em" }}>
-          Mở lịch của bạn
+          Mở lịch cát tường của bạn
         </Mono>
         <h1
           style={{
@@ -155,8 +155,7 @@ export default function DangNhapEmail() {
             lineHeight: 1.55,
           }}
         >
-          Lịch của bạn được lưu trên cloud — đăng nhập là thấy ngay trang hôm
-          nay.
+          Lá số và lịch cá nhân của bản chủ được lưu trữ an toàn — đăng nhập để tiếp tục xem ngày cát lành hôm nay.
         </p>
 
         <div
@@ -196,7 +195,7 @@ export default function DangNhapEmail() {
                   textDecoration: "none",
                 }}
               >
-                Quên?
+                Quên mật khẩu?
               </Link>
             </div>
             <input
@@ -242,7 +241,7 @@ export default function DangNhapEmail() {
           disabled={busy}
           style={{ ...btnPrimaryGold, marginTop: 32 }}
         >
-          Mở lịch của tôi →
+          Đăng nhập & Xem lịch →
         </button>
 
         <div
