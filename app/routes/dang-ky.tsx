@@ -20,6 +20,7 @@ import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
+import { resolvePostLoginPath } from "~/lib/auth-post-login";
 import {
   returnToFromSearchParams,
   stashPendingReturnTo,
@@ -118,7 +119,8 @@ export default function DangKy() {
         }
       }
       toast.success("Đã tạo tài khoản.");
-      navigate("/gio-sinh", { replace: true });
+      const dest = await resolvePostLoginPath();
+      navigate(dest, { replace: true });
     } else {
       toast.success(
         "Đã gửi email xác nhận (nếu bật). Mở link trong thư rồi đăng nhập.",

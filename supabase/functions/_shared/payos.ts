@@ -94,6 +94,83 @@ export function isPackageSku(x: string): x is PackageSku {
   return x in PACKAGES;
 }
 
+/** Row fields used to cross-check PayOS webhook amount before fulfillment. */
+export type PaymentOrderFulfillmentRow = {
+  package_sku: string | null;
+  amount_vnd: number | null;
+  credits_to_add: number | null;
+  subscription_months: number | null;
+};
+
+export type WebhookSkuAmountValidation =
+  | { ok: true; sku: PackageSku; canonicalAmountVnd: number; pkg: PackageDef }
+  | { ok: false; reason: string };
+
+/** Parse PayOS webhook `data.amount` — must be a positive integer VND. */
+export function parseWebhookAmountVnd(raw: unknown): number | null {
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return Number.isInteger(raw) && raw > 0 ? raw : null;
+  }
+  if (typeof raw === "string") {
+    const t = raw.trim();
+    if (/^\d+$/.test(t)) {
+      const n = Number.parseInt(t, 10);
+      return n > 0 ? n : null;
+    }
+  }
+  return null;
+}
+
+function nullableIntMatch(
+  orderVal: number | null | undefined,
+  pkgVal: number | null,
+): boolean {
+  const o = orderVal ?? null;
+  const p = pkgVal ?? null;
+  if (o === null && p === null) return true;
+  if (o === null || p === null) return false;
+  return o === p;
+}
+
+/**
+ * Strict SKU ↔ amount gate: webhook amount, stored order amount, and PACKAGES
+ * canonical price must all match; order fulfillment columns must match the SKU.
+ */
+export function validateWebhookSkuAmount(
+  order: PaymentOrderFulfillmentRow,
+  webhookAmountVnd: number | null,
+): WebhookSkuAmountValidation {
+  if (webhookAmountVnd === null) {
+    return { ok: false, reason: "invalid_webhook_amount" };
+  }
+
+  const skuRaw = order.package_sku?.trim() ?? "";
+  if (!skuRaw || !isPackageSku(skuRaw)) {
+    return { ok: false, reason: "invalid_package_sku" };
+  }
+
+  const pkg = PACKAGES[skuRaw];
+  const canonical = pkg.amountVnd;
+
+  if (webhookAmountVnd !== canonical) {
+    return { ok: false, reason: "webhook_amount_not_canonical" };
+  }
+
+  if (order.amount_vnd == null || order.amount_vnd !== canonical) {
+    return { ok: false, reason: "order_amount_mismatch" };
+  }
+
+  if (!nullableIntMatch(order.credits_to_add, pkg.creditsToAdd)) {
+    return { ok: false, reason: "order_credits_mismatch" };
+  }
+
+  if (!nullableIntMatch(order.subscription_months, pkg.subscriptionMonths)) {
+    return { ok: false, reason: "order_subscription_months_mismatch" };
+  }
+
+  return { ok: true, sku: skuRaw, canonicalAmountVnd: canonical, pkg };
+}
+
 export function applyPackageEntitlements(
   profile: {
     subscription_expires_at: string | null;

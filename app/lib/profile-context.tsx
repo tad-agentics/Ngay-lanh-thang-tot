@@ -81,6 +81,7 @@ function useProfileState(user: User): ProfileContextValue {
     };
   }, [profile, user, userId, load]);
 
+  /** Fallback when authed shell mounts without `resolvePostLoginPath` (e.g. cold open on `/lich`). */
   useEffect(() => {
     let cancelled = false;
     void (async () => {

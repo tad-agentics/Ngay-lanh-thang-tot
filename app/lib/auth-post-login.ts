@@ -2,13 +2,20 @@ import {
   destinationAfterAuthFromProfile,
   type PostLoginProfile,
 } from "~/lib/pending-return-to";
+import { tryConsumePendingReferralClaim } from "~/lib/referral-claim";
 import { supabase } from "~/lib/supabase";
 
-/** Resolve post-login route from session + profile (email, Google OAuth, callback). */
+/**
+ * Resolve post-login route from session + profile (email, Google OAuth, callback).
+ * Consumes `sessionStorage` referral (OAuth / email login) via Edge `referral-claim`.
+ */
 export async function resolvePostLoginPath(): Promise<string> {
   const { data: sessionData, error } = await supabase.auth.getSession();
-  const uid = sessionData.session?.user?.id;
+  const session = sessionData.session;
+  const uid = session?.user?.id;
   if (error || !uid) return "/dang-nhap";
+
+  await tryConsumePendingReferralClaim(session);
 
   const { data: prof } = await supabase
     .from("profiles")

@@ -109,8 +109,8 @@ export function CHomeScreen() {
         {today && !showRecomputeSkeleton ? (
           <LichToPageCard
             {...ngayHomNayToLichCard(today, menh, todayIso)}
-            prevLabel={`‹ ${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm qua`}
-            nextLabel={`ngày mai ${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)} ›`}
+            prevLabel={`${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm qua`}
+            nextLabel={`ngày mai ${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)}`}
             onPrev={() => void navigate(`/ngay/${prevIso}`)}
             onNext={() => void navigate(`/ngay/${nextIso}`)}
             reasoning={

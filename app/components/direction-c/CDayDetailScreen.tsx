@@ -273,12 +273,12 @@ export function CDayDetailScreen() {
               ]}
               prevLabel={
                 prevIso
-                  ? `‹ ${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm trước`
+                  ? `${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm trước`
                   : undefined
               }
               nextLabel={
                 nextIso
-                  ? `${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)} hôm sau ›`
+                  ? `${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)} hôm sau`
                   : undefined
               }
               onPrev={() => void navigate(`/ngay/${prevIso}`)}

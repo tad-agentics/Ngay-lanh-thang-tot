@@ -2,8 +2,9 @@
  * CORS helpers for edge functions.
  *
  * Set ALLOWED_ORIGIN in Supabase secrets to the production app URL
- * (e.g. "https://ngaylanh.com"). Falls back to "*" when unset so local
- * development still works without extra configuration.
+ * (e.g. "https://ngaylanhthangtot.vn"). Falls back to "*" when unset so local
+ * development still works without extra configuration. PayOS return/cancel URLs
+ * require a concrete ALLOWED_ORIGIN (see allowed-origin.ts).
  *
  * Public endpoints (share-og, share-resolve) should use publicCorsHeaders
  * which always returns "*", since those URLs are opened by social-media bots

@@ -8,6 +8,7 @@ import {
   PAYOS_API_BASE,
   signPaymentRequest,
 } from "../_shared/payos.ts";
+import { isValidRedirectUrl } from "../_shared/allowed-origin.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 function json(
@@ -24,21 +25,6 @@ function appendOrderIdToUrl(raw: string, orderId: string): string {
   const u = new URL(raw);
   u.searchParams.set("order_id", orderId);
   return u.toString();
-}
-
-function isValidRedirectUrl(raw: string): boolean {
-  let u: URL;
-  try {
-    u = new URL(raw);
-  } catch {
-    return false;
-  }
-  if (u.protocol === "https:") return true;
-  // Allow plain HTTP only for local development origins.
-  if (u.protocol === "http:") {
-    return u.hostname === "localhost" || u.hostname === "127.0.0.1";
-  }
-  return false;
 }
 
 Deno.serve(async (req) => {
@@ -129,7 +115,8 @@ Deno.serve(async (req) => {
       {
         error: {
           code: "BAD_REQUEST",
-          message: "return_url and cancel_url must be https URLs.",
+          message:
+            "return_url and cancel_url must use the app origin (ALLOWED_ORIGIN).",
         },
       },
       400,

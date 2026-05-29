@@ -2,8 +2,8 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
   applyPackageEntitlements,
-  isPackageSku,
-  PACKAGES,
+  parseWebhookAmountVnd,
+  validateWebhookSkuAmount,
   verifyWebhookSignature,
 } from "../_shared/payos.ts";
 import { corsHeaders } from "../_shared/cors.ts";
@@ -91,23 +91,33 @@ Deno.serve(async (req) => {
     return ok({ missing_order: true });
   }
 
-  const amount = typeof data.amount === "number"
-    ? data.amount
-    : Number(data.amount);
-  if (order.amount_vnd != null && amount !== order.amount_vnd) {
-    console.error("amount mismatch", amount, order.amount_vnd);
-    return ok({ amount_mismatch: true });
+  const webhookAmountVnd = parseWebhookAmountVnd(data.amount);
+  const skuValidation = validateWebhookSkuAmount(
+    {
+      package_sku: order.package_sku as string | null,
+      amount_vnd: order.amount_vnd as number | null,
+      credits_to_add: order.credits_to_add as number | null,
+      subscription_months: order.subscription_months as number | null,
+    },
+    webhookAmountVnd,
+  );
+  if (!skuValidation.ok) {
+    console.error(
+      "payos-webhook: fulfillment rejected",
+      skuValidation.reason,
+      {
+        orderCode,
+        package_sku: order.package_sku,
+        webhookAmountVnd,
+        amount_vnd: order.amount_vnd,
+        credits_to_add: order.credits_to_add,
+        subscription_months: order.subscription_months,
+      },
+    );
+    return ok({ rejected: true, reason: skuValidation.reason });
   }
-  // Cross-check the stored order amount against the canonical package definition
-  // to catch any discrepancy introduced at checkout creation time.
-  if (
-    order.package_sku != null &&
-    isPackageSku(order.package_sku) &&
-    amount !== PACKAGES[order.package_sku].amountVnd
-  ) {
-    console.error("sku amount mismatch", order.package_sku, amount, PACKAGES[order.package_sku].amountVnd);
-    return ok({ sku_amount_mismatch: true });
-  }
+
+  const { sku, pkg } = skuValidation;
 
   // Single winner: pending → paid (PayOS retries get empty update)
   const { data: claimed, error: claimErr } = await admin
@@ -144,15 +154,15 @@ Deno.serve(async (req) => {
     return new Response("Profile missing", { status: 500 });
   }
 
-  if (order.credits_to_add != null && order.credits_to_add > 0) {
+  if (pkg.creditsToAdd != null && pkg.creditsToAdd > 0) {
     const { data: creditResult, error: creditErr } = await admin.rpc(
       "add_credits_atomic",
       {
         p_user_id: order.user_id,
-        p_credits_to_add: order.credits_to_add,
+        p_credits_to_add: pkg.creditsToAdd,
         p_idempotency_key: `payos:${eventId}:credits`,
         p_order_id: order.id,
-        p_package_sku: order.package_sku ?? "",
+        p_package_sku: sku,
       },
     );
     if (creditErr) {
@@ -166,60 +176,40 @@ Deno.serve(async (req) => {
     }
   }
 
-  const sku = order.package_sku;
-  if (sku && isPackageSku(sku)) {
-    const entitlementPatch = applyPackageEntitlements(
-      {
-        subscription_expires_at: profile.subscription_expires_at as string | null,
-        bazi_reading_unlocked_at: profile.bazi_reading_unlocked_at as string | null,
-        tieu_van_reading_expires_at: profile.tieu_van_reading_expires_at as string | null,
-      },
-      sku,
-    );
+  const entitlementPatch = applyPackageEntitlements(
+    {
+      subscription_expires_at: profile.subscription_expires_at as string | null,
+      bazi_reading_unlocked_at: profile.bazi_reading_unlocked_at as string | null,
+      tieu_van_reading_expires_at: profile.tieu_van_reading_expires_at as string | null,
+    },
+    sku,
+  );
 
-    if (Object.keys(entitlementPatch).length > 0) {
-      const { error: u2 } = await admin
-        .from("profiles")
-        .update(entitlementPatch)
-        .eq("id", order.user_id);
-
-      if (u2) {
-        console.error("entitlement update", u2);
-        return new Response("DB error", { status: 500 });
-      }
-
-      const { error: l2 } = await admin.from("credit_ledger").insert({
-        user_id: order.user_id,
-        delta: 0,
-        balance_after: profile.credits_balance,
-        reason: "payos_entitlement",
-        idempotency_key: `payos:${eventId}:ent`,
-        metadata: {
-          order_id: order.id,
-          package_sku: sku,
-          ...entitlementPatch,
-        },
-      });
-      if (l2 && (l2 as { code?: string }).code !== "23505") {
-        console.error("ledger entitlement", l2);
-      }
-    }
-  } else if (order.subscription_months != null && order.subscription_months > 0) {
-    const now = new Date();
-    const current = profile.subscription_expires_at
-      ? new Date(profile.subscription_expires_at)
-      : null;
-    const base = current && current > now ? current : now;
-    const expires = new Date(base);
-    expires.setMonth(expires.getMonth() + order.subscription_months);
-
-    const { error: u2 } = await admin.from("profiles").update({
-      subscription_expires_at: expires.toISOString(),
-    }).eq("id", order.user_id);
+  if (Object.keys(entitlementPatch).length > 0) {
+    const { error: u2 } = await admin
+      .from("profiles")
+      .update(entitlementPatch)
+      .eq("id", order.user_id);
 
     if (u2) {
-      console.error("sub update", u2);
+      console.error("entitlement update", u2);
       return new Response("DB error", { status: 500 });
+    }
+
+    const { error: l2 } = await admin.from("credit_ledger").insert({
+      user_id: order.user_id,
+      delta: 0,
+      balance_after: profile.credits_balance,
+      reason: "payos_entitlement",
+      idempotency_key: `payos:${eventId}:ent`,
+      metadata: {
+        order_id: order.id,
+        package_sku: sku,
+        ...entitlementPatch,
+      },
+    });
+    if (l2 && (l2 as { code?: string }).code !== "23505") {
+      console.error("ledger entitlement", l2);
     }
   }
 

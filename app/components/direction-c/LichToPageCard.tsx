@@ -1,7 +1,81 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+
+const dayNavButtonStyle: CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: 6,
+  minHeight: 44,
+  cursor: "pointer",
+  background: "none",
+  border: "none",
+  padding: 0,
+};
+
+const dayNavLabelStyle: CSSProperties = {
+  fontFamily: "var(--display-2)",
+  fontWeight: 700,
+  fontSize: 13.5,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+const dayNavChevronStyle: CSSProperties = {
+  fontFamily: "var(--serif)",
+  fontSize: 15.5,
+  lineHeight: 1,
+};
+
+function LichToDayNavButton({
+  label,
+  direction,
+  onClick,
+  disabled,
+  align,
+}: {
+  label: string;
+  direction: "prev" | "next";
+  onClick?: () => void;
+  disabled?: boolean;
+  align: "left" | "right";
+}) {
+  const active = Boolean(onClick) && !disabled;
+  const color = active ? CT.goldDeep : CT.muted;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!active}
+      className={`flex max-w-[50%] items-center border-none bg-transparent disabled:opacity-45 ${
+        align === "right" ? "justify-end text-right" : "text-left"
+      }`}
+      style={{
+        ...dayNavButtonStyle,
+        color,
+        cursor: active ? "pointer" : "default",
+      }}
+    >
+      {direction === "prev" ? (
+        <>
+          <span style={{ ...dayNavChevronStyle, color }} aria-hidden>
+            ‹
+          </span>
+          <span style={{ ...dayNavLabelStyle, color }}>{label}</span>
+        </>
+      ) : (
+        <>
+          <span style={{ ...dayNavLabelStyle, color }}>{label}</span>
+          <span style={{ ...dayNavChevronStyle, color }} aria-hidden>
+            ›
+          </span>
+        </>
+      )}
+    </button>
+  );
+}
 
 export type LichRow = {
   key: string;
@@ -247,40 +321,24 @@ export function LichToPageCard({
           }}
         >
           {prevLabel ? (
-            <button
-              type="button"
+            <LichToDayNavButton
+              label={prevLabel}
+              direction="prev"
               onClick={onPrev}
               disabled={!onPrev}
-              className="flex min-h-[44px] max-w-[50%] items-center border-none bg-transparent px-0 py-2 text-left disabled:opacity-45"
-              style={{
-                fontFamily: "var(--serif)",
-                fontSize: 12,
-                fontWeight: 500,
-                color: onPrev ? CT.ink2 : CT.muted,
-                cursor: onPrev ? "pointer" : "default",
-              }}
-            >
-              {prevLabel}
-            </button>
+              align="left"
+            />
           ) : (
             <span />
           )}
           {nextLabel ? (
-            <button
-              type="button"
+            <LichToDayNavButton
+              label={nextLabel}
+              direction="next"
               onClick={onNext}
               disabled={!onNext}
-              className="flex min-h-[44px] max-w-[50%] items-center justify-end border-none bg-transparent px-0 py-2 text-right disabled:opacity-45"
-              style={{
-                fontFamily: "var(--serif)",
-                fontSize: 12,
-                fontWeight: 500,
-                color: onNext ? CT.ink2 : CT.muted,
-                cursor: onNext ? "pointer" : "default",
-              }}
-            >
-              {nextLabel}
-            </button>
+              align="right"
+            />
           ) : (
             <span />
           )}
