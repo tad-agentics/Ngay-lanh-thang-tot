@@ -1,5 +1,6 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
+import { generateReadingFunctionName } from "~/lib/generate-reading-functions";
 import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
@@ -154,18 +155,19 @@ function handleGenerateReadingErrorCode(code: string): void {
 }
 
 /**
- * Gọi Edge luận giải (`generate-reading`) — luôn HTTP 200.
+ * Gọi Edge luận giải (generate-reading-day | -la-so | -tieu-van) — luôn HTTP 200.
  * `reading` / `sections` / `dayReadings` tùy endpoint có thể null.
  */
 export async function invokeGenerateReading(
   input: GenerateReadingInput,
 ): Promise<GenerateReadingResponse> {
+  const functionName = generateReadingFunctionName(input.endpoint);
   try {
     const {
       data: { session },
     } = await supabase.auth.getSession();
     const { data, error } =
-      await supabase.functions.invoke<unknown>("generate-reading", {
+      await supabase.functions.invoke<unknown>(functionName, {
         body: input,
         ...(session?.access_token
           ? {

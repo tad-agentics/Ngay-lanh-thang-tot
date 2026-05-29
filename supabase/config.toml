@@ -432,6 +432,15 @@ verify_jwt = false
 [functions.generate-reading]
 verify_jwt = false
 
+[functions.generate-reading-day]
+verify_jwt = false
+
+[functions.generate-reading-la-so]
+verify_jwt = false
+
+[functions.generate-reading-tieu-van]
+verify_jwt = false
+
 # Public share preview + OG HTML (anon `apikey` only).
 [functions.share-resolve]
 verify_jwt = false

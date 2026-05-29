@@ -12,7 +12,7 @@ Stack: React Router v7 (Vite) · Supabase (DB + Auth + RLS + Edge Functions) · 
 
 - **Frontend:** React SPA on Vercel. Pre-render **`/`** for SEO; PWA **`start_url`** → **`/splash`**. Authenticated routes under **`/lich`**, **`/tra-cuu`**, **`/toi`** (layout: `authenticated.tsx`). Legacy **`/app/*`** 302 via `nav-config` during transition.
 - **Backend:** Supabase only. Client via publishable key + JWT; **RLS** is the auth boundary.
-- **Server logic:** Edge Functions — **Bát Tự** proxy (`BAT_TU_*` secrets), **PayOS** checkout + webhook, share resolve/OG, `generate-reading` (Gemini), cron push. No PayOS, Bát Tự or Gemini calls from the browser.
+- **Server logic:** Edge Functions — **Bát Tự** proxy (`BAT_TU_*` secrets), **PayOS** checkout + webhook, share resolve/OG, `generate-reading-day` / `generate-reading-la-so` / `generate-reading-tieu-van` (Gemini), cron push. No PayOS, Bát Tự or Gemini calls from the browser.
 - **Design:** Direction C — lịch-tờ metaphor; forest-deep `#0e1c14` for ceremonial surfaces; 3-tab nav (Lịch · Tra cứu · Tôi). Source: `artifacts/design/ngaylanhthangtot-vn/` + `app/components/brand/`.
 
 ## What this app does
@@ -25,11 +25,11 @@ Generative chatbot; raw almanac tables as primary UI; marketplace thầy; commun
 
 ## LLM / AI Reading (first-class feature)
 
-AI Reading (Luận Giải) is first-class, powered by **Gemini Flash** via the `generate-reading` Edge Function. Engine = deterministic Bát Tự + Gemini templates. No generative chatbot. No raw LLM access from the browser. Gating: **subscription + entitlement columns** (`bazi_reading_unlocked_at`, `tieu_van_reading_expires_at`).
+AI Reading (Luận Giải) is first-class, powered by **Gemini Flash** via `generate-reading-day`, `generate-reading-la-so`, and `generate-reading-tieu-van`. Engine = deterministic Bát Tự + Gemini templates. No generative chatbot. No raw LLM access from the browser. Gating: **subscription + entitlement columns** (`bazi_reading_unlocked_at`, `tieu_van_reading_expires_at`).
 
 ## AI module boundary
 
-Gemini calls live exclusively in `supabase/functions/generate-reading/`. No AI SDK in the React app. RLS + `subscription_expires_at` / entitlement helpers (`app/lib/entitlements.ts`, `_shared/entitlements.ts`) enforce auth/payment boundary.
+Gemini calls live exclusively in `supabase/functions/generate-reading-{day,la-so,tieu-van}/` (shared handler in `_shared/generate-reading/`). No AI SDK in the React app. RLS + `subscription_expires_at` / entitlement helpers (`app/lib/entitlements.ts`, `_shared/entitlements.ts`) enforce auth/payment boundary.
 
 ## Key constraints
 
