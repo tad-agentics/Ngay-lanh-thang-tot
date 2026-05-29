@@ -17,6 +17,8 @@ export type GenerateReadingInput = {
   question?: string;
   /** Teaser on lịch tờ — short prompt for day-detail (full luận omits this). */
   variant?: "inline";
+  /** `la-so-chi-tiet` paywall — chỉ trả chương đầu cho user chưa mở khóa. */
+  preview?: boolean;
 };
 
 export type GenerateReadingResponse = {

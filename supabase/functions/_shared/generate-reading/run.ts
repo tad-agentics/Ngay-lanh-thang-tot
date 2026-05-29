@@ -1020,6 +1020,7 @@ export function createGenerateReadingHandler(
     typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
   const variant =
     body.variant === "inline" ? "inline" : "";
+  const preview = body.preview === true;
 
   if (!endpoint || data === undefined) {
     return ok(null, null, req);
@@ -1095,9 +1096,11 @@ export function createGenerateReadingHandler(
       return ok(null, null, req);
     }
     const adminGate = createClient(gateUrl, gateService);
-    const allowed = await userHasBaziReadingAccess(adminGate, uid);
-    if (!allowed) {
-      return ok(null, null, req);
+    if (!preview) {
+      const allowed = await userHasBaziReadingAccess(adminGate, uid);
+      if (!allowed) {
+        return ok(null, null, req);
+      }
     }
     rateLimitUserId = uid;
   }
@@ -1146,7 +1149,7 @@ export function createGenerateReadingHandler(
                   : "";
   // GLOBAL_LLM_VER ép invalidate mọi cache cũ khi đổi nhà cung cấp LLM, kể
   // cả endpoint chưa có per-endpoint version (ví dụ ngay-hom-nay).
-  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${dataJson}`;
+  const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${dataJson}`;
   const cacheKey = await sha256Prefix16(cacheInput);
 
   const payload = stableStringify(promptBody);
@@ -1173,7 +1176,10 @@ export function createGenerateReadingHandler(
         const cached = readCachedBody(endpoint, row.reading);
         if (endpoint === "la-so-chi-tiet") {
           if (cached.sections != null && cached.sections.length > 0) {
-            return ok(null, cached.sections, req);
+            const out = preview
+              ? cached.sections.slice(0, 1)
+              : cached.sections;
+            return ok(null, out, req);
           }
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         } else if (endpoint === "tieu-van" || endpoint === "luu-nien") {
@@ -1243,7 +1249,8 @@ export function createGenerateReadingHandler(
         },
       ];
     }
-    const toStore = JSON.stringify({ sections });
+    const sectionsOut = preview ? sections.slice(0, 1) : sections;
+    const toStore = JSON.stringify({ sections: sectionsOut });
     if (admin) {
       const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
       await admin.from("reading_cache").upsert(
@@ -1255,7 +1262,7 @@ export function createGenerateReadingHandler(
         { onConflict: "cache_key" },
       );
     }
-    return ok(null, sections, req);
+    return ok(null, sectionsOut, req);
   }
 
   if (endpoint === "tieu-van" || endpoint === "luu-nien") {

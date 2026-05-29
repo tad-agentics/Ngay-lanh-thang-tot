@@ -10,7 +10,7 @@ export function CMeLockedBaziCard() {
 
   return (
     <Link
-      to="/luan/mua/xac-nhan?sku=luan_bat_tu"
+      to="/toi/luan-bat-tu"
       className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
       style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
     >
