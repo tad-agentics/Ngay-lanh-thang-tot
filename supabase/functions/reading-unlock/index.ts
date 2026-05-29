@@ -4,7 +4,7 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
   inPivotCreditTransition,
   readPivotTransitionUntil,
@@ -20,10 +20,13 @@ const SINGLE_SCOPES = ["home", "day_detail"] as const;
 const BULK_SCOPE = "la_so_chi_tiet_bulk";
 
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -31,11 +34,11 @@ const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
-    return json({ ok: false, error_code: "METHOD_NOT_ALLOWED" }, 405);
+    return json({ ok: false, error_code: "METHOD_NOT_ALLOWED" }, 405, req);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -44,12 +47,12 @@ Deno.serve(async (req) => {
 
   if (!supabaseUrl || !anonKey || !serviceKey) {
     console.error("reading-unlock: missing Supabase env");
-    return json({ ok: false, error_code: "SERVER_CONFIG" }, 500);
+    return json({ ok: false, error_code: "SERVER_CONFIG" }, 500, req);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return json({ ok: false, error_code: "UNAUTHORIZED" }, 401);
+    return json({ ok: false, error_code: "UNAUTHORIZED" }, 401, req);
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
@@ -58,14 +61,14 @@ Deno.serve(async (req) => {
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   const user = userData?.user;
   if (userErr || !user) {
-    return json({ ok: false, error_code: "UNAUTHORIZED" }, 401);
+    return json({ ok: false, error_code: "UNAUTHORIZED" }, 401, req);
   }
 
   let body: { scope?: unknown; day_iso?: unknown; dry_run?: unknown };
   try {
     body = await req.json();
   } catch {
-    return json({ ok: false, error_code: "BAD_REQUEST", message: "JSON không hợp lệ." }, 400);
+    return json({ ok: false, error_code: "BAD_REQUEST", message: "JSON không hợp lệ." }, 400, req);
   }
 
   const dryRun = body.dry_run === true;
@@ -82,6 +85,7 @@ Deno.serve(async (req) => {
         message: `scope phải là ${SINGLE_SCOPES.join(", ")} hoặc ${BULK_SCOPE}.`,
       },
       400,
+      req,
     );
   }
 
@@ -94,9 +98,7 @@ Deno.serve(async (req) => {
         ok: false,
         error_code: "BAD_REQUEST",
         message: "day_iso cần dạng YYYY-MM-DD.",
-      },
-      400,
-    );
+      }, 400, req);
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
@@ -124,7 +126,7 @@ Deno.serve(async (req) => {
       charged: false,
       already_unlocked: true,
       dry_run: dryRun,
-    });
+    }, 200, req);
   }
 
   const { data: costRow } = await admin
@@ -150,9 +152,7 @@ Deno.serve(async (req) => {
         ok: false,
         error_code: "PROFILE_MISSING",
         message: "Chưa có hồ sơ.",
-      },
-      400,
-    );
+      }, 400, req);
   }
 
   if (subscriptionActive(profile.subscription_expires_at as string | null)) {
@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       already_unlocked: false,
       subscription_free: true,
       dry_run: dryRun,
-    });
+    }, 200, req);
   }
 
   const pivotUntil = await readPivotTransitionUntil(admin);
@@ -175,9 +175,7 @@ Deno.serve(async (req) => {
         error_code: "SUB_EXPIRED",
         message: "Lịch đã hết hạn. Gia hạn để mở luận giải.",
         unlocked: false,
-      },
-      403,
-    );
+      }, 403, req);
   }
 
   if (cost <= 0) {
@@ -188,7 +186,7 @@ Deno.serve(async (req) => {
       charged: false,
       already_unlocked: false,
       dry_run: dryRun,
-    });
+    }, 200, req);
   }
 
   if (dryRun) {
@@ -199,7 +197,7 @@ Deno.serve(async (req) => {
       charged: false,
       already_unlocked: false,
       dry_run: true,
-    });
+    }, 200, req);
   }
 
   const { data: deductResult, error: deductErr } = await admin.rpc(
@@ -217,9 +215,7 @@ Deno.serve(async (req) => {
   if (deductErr) {
     console.error("reading-unlock deduct_credits_atomic", deductErr);
     return json(
-      { ok: false, error_code: "DB_ERROR", message: "Không trừ lượng được." },
-      500,
-    );
+      { ok: false, error_code: "DB_ERROR", message: "Không trừ lượng được." }, 500, req);
   }
 
   const result = deductResult as { ok: boolean; error_code?: string; credits_balance: number };
@@ -233,14 +229,10 @@ Deno.serve(async (req) => {
           message: "Không đủ lượng để mở khóa luận giải.",
           credits_balance: result.credits_balance,
           unlocked: false,
-        },
-        402,
-      );
+        }, 402, req);
     }
     return json(
-      { ok: false, error_code: result.error_code ?? "DB_ERROR", message: "Không trừ lượng được." },
-      500,
-    );
+      { ok: false, error_code: result.error_code ?? "DB_ERROR", message: "Không trừ lượng được." }, 500, req);
   }
 
   return json({
@@ -249,5 +241,5 @@ Deno.serve(async (req) => {
     credits_balance: result.credits_balance,
     charged: true,
     already_unlocked: false,
-  });
+  }, 200, req);
 });

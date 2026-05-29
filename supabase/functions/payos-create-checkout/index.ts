@@ -9,15 +9,15 @@ import {
   signPaymentRequest,
 } from "../_shared/payos.ts";
 import { isValidRedirectUrl } from "../_shared/allowed-origin.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 
-function json(
-  body: unknown,
-  status = 200,
-): Response {
+function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -29,14 +29,12 @@ function appendOrderIdToUrl(raw: string, orderId: string): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
     return json(
-      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } },
-      405,
-    );
+      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405, req);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -57,17 +55,13 @@ Deno.serve(async (req) => {
           code: "SERVER_CONFIG",
           message: "Payment server not configured.",
         },
-      },
-      500,
-    );
+      }, 500, req);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return json(
-      { error: { code: "UNAUTHORIZED", message: "Authorization required." } },
-      401,
-    );
+      { error: { code: "UNAUTHORIZED", message: "Authorization required." } }, 401, req);
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
@@ -77,9 +71,7 @@ Deno.serve(async (req) => {
   const user = userData?.user;
   if (userErr || !user) {
     return json(
-      { error: { code: "UNAUTHORIZED", message: "Invalid session." } },
-      401,
-    );
+      { error: { code: "UNAUTHORIZED", message: "Invalid session." } }, 401, req);
   }
 
   let body: {
@@ -94,7 +86,7 @@ Deno.serve(async (req) => {
       cancel_url?: string;
     };
   } catch {
-    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400);
+    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400, req);
   }
 
   const { package_sku, return_url, cancel_url } = body;
@@ -107,6 +99,7 @@ Deno.serve(async (req) => {
         },
       },
       400,
+      req,
     );
   }
 
@@ -118,9 +111,7 @@ Deno.serve(async (req) => {
           message:
             "return_url and cancel_url must use the app origin (ALLOWED_ORIGIN).",
         },
-      },
-      400,
-    );
+      }, 400, req);
   }
 
   if (!isPackageSku(package_sku)) {
@@ -130,9 +121,7 @@ Deno.serve(async (req) => {
           code: "INVALID_SKU",
           message: `Unknown package_sku: ${package_sku}`,
         },
-      },
-      422,
-    );
+      }, 422, req);
   }
 
   if (!CHECKOUT_PACKAGE_SKUS.includes(package_sku)) {
@@ -142,9 +131,7 @@ Deno.serve(async (req) => {
           code: "SKU_RETIRED",
           message: "Gói này không còn bán. Chọn gói lịch mới.",
         },
-      },
-      422,
-    );
+      }, 422, req);
   }
 
   const pkg = PACKAGES[package_sku];
@@ -174,9 +161,7 @@ Deno.serve(async (req) => {
   if (insErr || !orderRow) {
     console.error("payment_orders insert", insErr);
     return json(
-      { error: { code: "DB_ERROR", message: "Could not create order." } },
-      500,
-    );
+      { error: { code: "DB_ERROR", message: "Could not create order." } }, 500, req);
   }
 
   const returnWithOrder = appendOrderIdToUrl(return_url, orderRow.id);
@@ -251,9 +236,7 @@ Deno.serve(async (req) => {
           code: "PAYOS_ERROR",
           message: payosJson.desc ?? "PayOS checkout failed.",
         },
-      },
-      502,
-    );
+      }, 502, req);
   }
 
   const pdata = payosJson.data;
@@ -296,5 +279,5 @@ Deno.serve(async (req) => {
     order_id: orderRow.id,
     checkout_url: pdata.checkoutUrl,
     transfer,
-  });
+  }, 200, req);
 });

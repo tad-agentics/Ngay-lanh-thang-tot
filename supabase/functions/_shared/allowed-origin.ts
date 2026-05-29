@@ -1,10 +1,9 @@
 /**
- * App origin allowlist — must match Supabase secret ALLOWED_ORIGIN
- * (e.g. https://ngaylanhthangtot.vn). Used for PayOS return/cancel URLs.
- * CORS may fall back to "*"; redirect URLs never accept "*".
+ * App origin allowlist — Supabase secret ALLOWED_ORIGIN (comma-separated origins).
+ * Apex host automatically pairs with www (and vice versa) for CORS + PayOS redirects.
  */
 
-/** Normalize ALLOWED_ORIGIN secret to a URL origin (scheme + host + port). */
+/** Normalize one entry to a URL origin (scheme + host + port). */
 export function normalizeAppOrigin(raw: string | null | undefined): string | null {
   const t = raw?.trim() ?? "";
   if (!t || t === "*") return null;
@@ -15,16 +14,66 @@ export function normalizeAppOrigin(raw: string | null | undefined): string | nul
   }
 }
 
-export function readAllowedAppOrigin(): string | null {
-  return normalizeAppOrigin(Deno.env.get("ALLOWED_ORIGIN"));
+/** Add apex ↔ www counterpart when hostname is a bare registrable domain. */
+export function expandOriginAllowlist(origins: string[]): string[] {
+  const out = new Set<string>();
+  for (const origin of origins) {
+    out.add(origin);
+    try {
+      const u = new URL(origin);
+      const host = u.hostname.toLowerCase();
+      if (host.startsWith("www.")) {
+        const apexHost = host.slice(4);
+        if (!apexHost) continue;
+        out.add(`${u.protocol}//${apexHost}${u.port ? `:${u.port}` : ""}`);
+      } else if (
+        host !== "localhost" &&
+        host !== "127.0.0.1" &&
+        !host.startsWith("www.")
+      ) {
+        out.add(`${u.protocol}//www.${host}${u.port ? `:${u.port}` : ""}`);
+      }
+    } catch {
+      /* skip malformed */
+    }
+  }
+  return [...out];
 }
 
-/** PayOS return_url / cancel_url must be same origin as ALLOWED_ORIGIN. */
+/** Parse ALLOWED_ORIGIN — comma-separated list of app URLs/origins. */
+export function parseAllowedOriginsFromEnv(
+  raw: string | null | undefined,
+): string[] {
+  const t = raw?.trim() ?? "";
+  if (!t || t === "*") return [];
+  const parts = t.split(",").map((s) => normalizeAppOrigin(s.trim())).filter(
+    (o): o is string => o != null,
+  );
+  return expandOriginAllowlist(parts);
+}
+
+export function readAllowedAppOrigins(): string[] {
+  return parseAllowedOriginsFromEnv(Deno.env.get("ALLOWED_ORIGIN"));
+}
+
+/** CORS: echo request Origin when it is on the allowlist; else first entry or "*". */
+export function pickCorsAllowOrigin(
+  requestOrigin: string | null,
+  allowlist: string[],
+): string {
+  if (allowlist.length === 0) return "*";
+  if (requestOrigin && allowlist.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return allowlist[0]!;
+}
+
+/** PayOS return_url / cancel_url must match an allowed app origin. */
 export function isRedirectUrlAllowed(
   redirectUrl: string,
-  allowedOrigin: string | null,
+  allowlist: string[],
 ): boolean {
-  if (!allowedOrigin) return false;
+  if (allowlist.length === 0) return false;
   let u: URL;
   try {
     u = new URL(redirectUrl);
@@ -32,9 +81,9 @@ export function isRedirectUrlAllowed(
     return false;
   }
   if (u.username || u.password) return false;
-  return u.origin === allowedOrigin;
+  return allowlist.includes(u.origin);
 }
 
 export function isValidRedirectUrl(raw: string): boolean {
-  return isRedirectUrlAllowed(raw, readAllowedAppOrigin());
+  return isRedirectUrlAllowed(raw, readAllowedAppOrigins());
 }

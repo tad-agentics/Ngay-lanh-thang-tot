@@ -4,7 +4,7 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { subscriptionActive } from "../_shared/subscription.ts";
 
 const FEATURE_KEY = "share_card";
@@ -25,10 +25,13 @@ const PAYLOAD_STRING_KEYS = [
   "section_label",
 ] as const;
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -59,14 +62,12 @@ function randomToken(): string {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
     return json(
-      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } },
-      405,
-    );
+      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405, req);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -80,17 +81,13 @@ Deno.serve(async (req) => {
           code: "SERVER_CONFIG",
           message: "Supabase not configured.",
         },
-      },
-      500,
-    );
+      }, 500, req);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return json(
-      { error: { code: "UNAUTHORIZED", message: "Đăng nhập để tạo liên kết." } },
-      401,
-    );
+      { error: { code: "UNAUTHORIZED", message: "Đăng nhập để tạo liên kết." } }, 401, req);
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
@@ -100,16 +97,14 @@ Deno.serve(async (req) => {
   const user = userData?.user;
   if (userErr || !user) {
     return json(
-      { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } },
-      401,
-    );
+      { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } }, 401, req);
   }
 
   let bodyIn: { result_type?: unknown; payload?: unknown };
   try {
     bodyIn = await req.json();
   } catch {
-    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400);
+    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400, req);
   }
 
   const resultType =
@@ -123,6 +118,7 @@ Deno.serve(async (req) => {
         },
       },
       400,
+      req,
     );
   }
 
@@ -137,9 +133,7 @@ Deno.serve(async (req) => {
           code: "BAD_REQUEST",
           message: "payload.headline là bắt buộc.",
         },
-      },
-      400,
-    );
+      }, 400, req);
   }
   if (headline) payload.headline = headline;
   if (isReadingOnly && !payload.reading_text) {
@@ -149,9 +143,7 @@ Deno.serve(async (req) => {
           code: "BAD_REQUEST",
           message: "payload.reading_text là bắt buộc cho reading_only.",
         },
-      },
-      400,
-    );
+      }, 400, req);
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
@@ -186,9 +178,7 @@ Deno.serve(async (req) => {
             code: "PROFILE_MISSING",
             message: "Chưa có hồ sơ.",
           },
-        },
-        400,
-      );
+        }, 400, req);
     }
 
     if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
@@ -216,9 +206,7 @@ Deno.serve(async (req) => {
         if (deductErr) {
           console.error("create-share-token deduct_credits_atomic", deductErr);
           return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-            500,
-          );
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } }, 500, req);
         }
 
         const result = deductResult as { ok: boolean; error_code?: string; credits_balance: number };
@@ -226,14 +214,10 @@ Deno.serve(async (req) => {
         if (!result.ok) {
           if (result.error_code === "INSUFFICIENT_CREDITS") {
             return json(
-              { error: { code: "INSUFFICIENT_CREDITS", message: "Không đủ lượng để tạo thẻ chia sẻ." } },
-              402,
-            );
+              { error: { code: "INSUFFICIENT_CREDITS", message: "Không đủ lượng để tạo thẻ chia sẻ." } }, 402, req);
           }
           return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-            500,
-          );
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } }, 500, req);
         }
 
         chargedAmount = cost;
@@ -274,9 +258,7 @@ Deno.serve(async (req) => {
       });
     }
     return json(
-      { error: { code: "DB_ERROR", message: "Không tạo liên kết được." } },
-      500,
-    );
+      { error: { code: "DB_ERROR", message: "Không tạo liên kết được." } }, 500, req);
   }
 
   return json({
@@ -284,5 +266,5 @@ Deno.serve(async (req) => {
       token,
       expires_at: expiresAt,
     },
-  });
+  }, 200, req);
 });

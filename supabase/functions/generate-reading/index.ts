@@ -110,7 +110,7 @@ async function userHasBaziReadingAccess(
   return canUseBaziReading(profile);
 }
 
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 
 const SYSTEM_PROMPT = `Bạn là chuyên gia phong thủy và lịch số Việt Nam, viết luận giải cho ứng dụng xem ngày và lá số.
 
@@ -486,7 +486,8 @@ Không markdown, không code fence.`;
 
 function ok(
   reading: string | null,
-  sections?: LaSoChiTietSection[] | null,
+  sections: LaSoChiTietSection[] | null | undefined,
+  req: Request,
   dayReadings?: Record<string, string> | null,
 ): Response {
   const body: Record<string, unknown> = { reading: reading ?? null };
@@ -496,7 +497,10 @@ function ok(
   }
   return new Response(JSON.stringify(body), {
     status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -1037,18 +1041,18 @@ async function geminiLaSoChiTietStructRetry(
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
-    return ok(null, null);
+    return ok(null, null, req);
   }
 
   let parsed: unknown;
   try {
     parsed = await req.json();
   } catch {
-    return ok(null, null);
+    return ok(null, null, req);
   }
 
   if (
@@ -1056,7 +1060,7 @@ Deno.serve(async (req) => {
     typeof parsed !== "object" ||
     Array.isArray(parsed)
   ) {
-    return ok(null, null);
+    return ok(null, null, req);
   }
 
   const body = parsed as Record<string, unknown>;
@@ -1069,11 +1073,11 @@ Deno.serve(async (req) => {
     body.variant === "inline" ? "inline" : "";
 
   if (!endpoint || data === undefined) {
-    return ok(null, null);
+    return ok(null, null, req);
   }
 
   if (data !== null && typeof data !== "object") {
-    return ok(null, null);
+    return ok(null, null, req);
   }
 
   if (endpoint === "ngay-hom-nay" || endpoint === "day-detail") {
@@ -1082,7 +1086,7 @@ Deno.serve(async (req) => {
     const gateService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const authHeader = req.headers.get("Authorization");
     if (!gateUrl || !gateAnon || !gateService || !authHeader?.startsWith("Bearer ")) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     const userClient = createClient(gateUrl, gateAnon, {
       global: { headers: { Authorization: authHeader } },
@@ -1090,14 +1094,14 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     const uid = userData?.user?.id;
     if (userErr || !uid) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     const dayIso =
       endpoint === "ngay-hom-nay"
         ? todayIsoVietnam()
         : dayIsoFromDayDetailData(data);
     if (!dayIso) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
     const adminGate = createClient(gateUrl, gateService);
@@ -1108,7 +1112,7 @@ Deno.serve(async (req) => {
       dayIso,
     );
     if (!allowed) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
   }
 
@@ -1118,7 +1122,7 @@ Deno.serve(async (req) => {
     const gateService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const authHeader = req.headers.get("Authorization");
     if (!gateUrl || !gateAnon || !gateService || !authHeader?.startsWith("Bearer ")) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     const userClient = createClient(gateUrl, gateAnon, {
       global: { headers: { Authorization: authHeader } },
@@ -1126,12 +1130,12 @@ Deno.serve(async (req) => {
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     const uid = userData?.user?.id;
     if (userErr || !uid) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     const adminGate = createClient(gateUrl, gateService);
     const allowed = await userHasBaziReadingAccess(adminGate, uid);
     if (!allowed) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
   }
 
@@ -1184,7 +1188,7 @@ Deno.serve(async (req) => {
 
   const payload = stableStringify(promptBody);
   if (payload.length > MAX_BODY_CHARS) {
-    return ok(null, null);
+    return ok(null, null, req);
   }
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -1206,30 +1210,30 @@ Deno.serve(async (req) => {
         const cached = readCachedBody(endpoint, row.reading);
         if (endpoint === "la-so-chi-tiet") {
           if (cached.sections != null && cached.sections.length > 0) {
-            return ok(null, cached.sections);
+            return ok(null, cached.sections, req);
           }
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         } else if (endpoint === "tieu-van" || endpoint === "luu-nien") {
           if (cached.sections != null && cached.sections.length > 0) {
             if (!tieuVanSectionsNeedLengthRetry(cached.sections)) {
-              return ok(null, cached.sections);
+              return ok(null, cached.sections, req);
             }
             await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
           }
           const r = cached.reading?.trim() ?? "";
-          if (r.length > 0) return ok(r, null);
+          if (r.length > 0) return ok(r, null, req);
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         } else if (endpoint === "chon-ngay-cards") {
           if (
             cached.dayReadings != null &&
             Object.keys(cached.dayReadings).length > 0
           ) {
-            return ok(null, null, cached.dayReadings);
+            return ok(null, null, req, cached.dayReadings);
           }
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         } else {
           const r = cached.reading?.trim() ?? "";
-          if (r.length > 0) return ok(r, null);
+          if (r.length > 0) return ok(r, null, req);
           await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
         }
       }
@@ -1238,7 +1242,7 @@ Deno.serve(async (req) => {
 
   if (endpoint === "la-so-chi-tiet") {
     const raw = await geminiLaSoChiTiet(payload);
-    if (!raw) return ok(null, null);
+    if (!raw) return ok(null, null, req);
     let sections = parseLaSoChiTietSections(raw);
     if (!sections?.length) {
       const retryText = await geminiLaSoChiTietStructRetry(payload);
@@ -1258,7 +1262,7 @@ Deno.serve(async (req) => {
           "[luận-giải] la-so-chi-tiet: luận giải dự phòng (một khối văn) thất bại",
           raw.slice(0, 400),
         );
-        return ok(null, null);
+        return ok(null, null, req);
       }
       sections = [
         {
@@ -1280,7 +1284,7 @@ Deno.serve(async (req) => {
         { onConflict: "cache_key" },
       );
     }
-    return ok(null, sections);
+    return ok(null, sections, req);
   }
 
   if (endpoint === "tieu-van" || endpoint === "luu-nien") {
@@ -1344,7 +1348,7 @@ Deno.serve(async (req) => {
         READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN,
         TIEU_VAN_LUU_NIEN_TIMEOUT_MS,
       );
-      if (!reading) return ok(null, null);
+      if (!reading) return ok(null, null, req);
       if (admin) {
         const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
         await admin.from("reading_cache").upsert(
@@ -1356,7 +1360,7 @@ Deno.serve(async (req) => {
           { onConflict: "cache_key" },
         );
       }
-      return ok(reading, null);
+      return ok(reading, null, req);
     }
     const toStore = JSON.stringify({ sections });
     if (admin) {
@@ -1370,7 +1374,7 @@ Deno.serve(async (req) => {
         { onConflict: "cache_key" },
       );
     }
-    return ok(null, sections);
+    return ok(null, sections, req);
   }
 
   if (endpoint === "chon-ngay") {
@@ -1381,7 +1385,7 @@ Deno.serve(async (req) => {
       CHON_NGAY_REQUEST_TIMEOUT_MS,
     );
     if (!reading) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     if (admin) {
       const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
@@ -1394,7 +1398,7 @@ Deno.serve(async (req) => {
         { onConflict: "cache_key" },
       );
     }
-    return ok(reading, null);
+    return ok(reading, null, req);
   }
 
   if (endpoint === "chon-ngay-cards") {
@@ -1417,7 +1421,7 @@ Deno.serve(async (req) => {
       map = retry ? parseChonNgayDayReadingsJson(retry) : null;
     }
     if (!map || Object.keys(map).length === 0) {
-      return ok(null, null);
+      return ok(null, null, req);
     }
     const toStore = JSON.stringify({ day_readings: map });
     if (admin) {
@@ -1431,7 +1435,7 @@ Deno.serve(async (req) => {
         { onConflict: "cache_key" },
       );
     }
-    return ok(null, null, map);
+    return ok(null, null, req, map);
   }
 
   const reading =
@@ -1471,7 +1475,7 @@ Deno.serve(async (req) => {
               )
       : await geminiReading(payload);
   if (!reading) {
-    return ok(null, null);
+    return ok(null, null, req);
   }
 
   if (admin) {
@@ -1486,5 +1490,5 @@ Deno.serve(async (req) => {
     );
   }
 
-  return ok(reading, null);
+  return ok(reading, null, req);
 });

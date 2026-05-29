@@ -1,11 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -21,14 +24,12 @@ export type ReferralClaimErrorCode =
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
     return json(
-      { ok: false, error_code: "method_not_allowed" as ReferralClaimErrorCode },
-      405,
-    );
+      { ok: false, error_code: "method_not_allowed" as ReferralClaimErrorCode }, 405, req);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -37,12 +38,12 @@ Deno.serve(async (req) => {
 
   if (!supabaseUrl || !anonKey || !serviceKey) {
     console.error("referral-claim: missing Supabase env");
-    return json({ ok: false, error_code: "server_error" }, 500);
+    return json({ ok: false, error_code: "server_error" }, 500, req);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return json({ ok: false, error_code: "unauthorized" }, 401);
+    return json({ ok: false, error_code: "unauthorized" }, 401, req);
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   const user = userData?.user;
   if (userErr || !user) {
-    return json({ ok: false, error_code: "unauthorized" }, 401);
+    return json({ ok: false, error_code: "unauthorized" }, 401, req);
   }
 
   let body: { code?: string } = {};
@@ -63,7 +64,7 @@ Deno.serve(async (req) => {
 
   const codeNorm = String(body.code ?? "").trim().toUpperCase();
   if (!codeNorm) {
-    return json({ ok: false, error_code: "invalid_code" }, 400);
+    return json({ ok: false, error_code: "invalid_code" }, 400, req);
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
@@ -76,21 +77,21 @@ Deno.serve(async (req) => {
 
   if (refErr) {
     console.error("referral-claim profile read", refErr);
-    return json({ ok: false, error_code: "server_error" }, 500);
+    return json({ ok: false, error_code: "server_error" }, 500, req);
   }
   if (!refereeRow) {
-    return json({ ok: false, error_code: "server_error" }, 500);
+    return json({ ok: false, error_code: "server_error" }, 500, req);
   }
 
   if (refereeRow.referred_by != null) {
-    return json({ ok: false, error_code: "already_redeemed" }, 200);
+    return json({ ok: false, error_code: "already_redeemed" }, 200, req);
   }
 
   if (
     refereeRow.referral_code &&
     refereeRow.referral_code.toUpperCase() === codeNorm
   ) {
-    return json({ ok: false, error_code: "self" }, 200);
+    return json({ ok: false, error_code: "self" }, 200, req);
   }
 
   const { data: referrerRow, error: refRerr } = await admin
@@ -102,10 +103,10 @@ Deno.serve(async (req) => {
 
   if (refRerr) {
     console.error("referral-claim referrer lookup", refRerr);
-    return json({ ok: false, error_code: "server_error" }, 500);
+    return json({ ok: false, error_code: "server_error" }, 500, req);
   }
   if (!referrerRow) {
-    return json({ ok: false, error_code: "invalid_code" }, 200);
+    return json({ ok: false, error_code: "invalid_code" }, 200, req);
   }
 
   const { error: rpcErr } = await admin.rpc("apply_referral_pair", {
@@ -115,7 +116,7 @@ Deno.serve(async (req) => {
 
   if (rpcErr) {
     console.error("apply_referral_pair", rpcErr);
-    return json({ ok: false, error_code: "server_error" }, 500);
+    return json({ ok: false, error_code: "server_error" }, 500, req);
   }
 
   const { data: after } = await admin
@@ -125,8 +126,8 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (after?.referred_by == null) {
-    return json({ ok: false, error_code: "already_redeemed" }, 200);
+    return json({ ok: false, error_code: "already_redeemed" }, 200, req);
   }
 
-  return json({ ok: true, error_code: "success" }, 200);
+  return json({ ok: true, error_code: "success" }, 200, req);
 });

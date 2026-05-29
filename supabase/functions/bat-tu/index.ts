@@ -10,7 +10,7 @@ import {
   redisRestConfigured,
   redisSetExString,
 } from "./redis-cache.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
   canUseCalendar,
   isTraCuuPickChonNgay,
@@ -746,10 +746,13 @@ function parseUpstreamApplicationError(data: unknown): {
   return { code, message, resetAt };
 }
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -986,6 +989,7 @@ async function readBatTuCache(
   op: string,
   upstreamUrl: string,
   upstreamInit: RequestInit,
+  req: Request,
 ): Promise<Response | null> {
   if (!isUpstreamCacheable(op, upstreamInit)) return null;
   if (!redisRestConfigured()) return null;
@@ -995,7 +999,7 @@ async function readBatTuCache(
     if (raw == null) return null;
     const parsed = JSON.parse(raw) as { data?: unknown };
     if (!("data" in parsed)) return null;
-    return json(parsed);
+    return json(parsed, 200, req);
   } catch {
     return null;
   }
@@ -1033,14 +1037,12 @@ async function refundCredits(
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
     return json(
-      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } },
-      405,
-    );
+      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405, req);
   }
 
   const batUrlRaw = Deno.env.get("BAT_TU_API_URL");
@@ -1057,24 +1059,20 @@ Deno.serve(async (req) => {
           code: "SERVER_CONFIG",
           message: "Bát Tự API not configured.",
         },
-      },
-      503,
-    );
+      }, 503, req);
   }
   if (!supabaseUrl || !anonKey || !serviceKey) {
     return json(
       {
         error: { code: "SERVER_CONFIG", message: "Supabase not configured." },
-      },
-      500,
-    );
+      }, 500, req);
   }
 
   let payload: { op?: string; body?: unknown };
   try {
     payload = await req.json();
   } catch {
-    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400);
+    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400, req);
   }
 
   const op = payload.op;
@@ -1092,12 +1090,13 @@ Deno.serve(async (req) => {
         },
       },
       422,
+      req,
     );
   }
 
   const upstream = buildUpstream(op, body, batUrl);
   if (!upstream.ok) {
-    return json({ error: { code: "BAD_REQUEST", message: upstream.message } }, 400);
+    return json({ error: { code: "BAD_REQUEST", message: upstream.message } }, 400, req);
   }
 
   const { url: upstreamUrl, init: upstreamInit } = upstream;
@@ -1109,7 +1108,7 @@ Deno.serve(async (req) => {
   let userId: string | null = null;
 
   if (ANONYMOUS_OPS.has(op)) {
-    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
+    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit, req);
     if (cached) return cached;
   }
 
@@ -1124,6 +1123,7 @@ Deno.serve(async (req) => {
           },
         },
         401,
+        req,
       );
     }
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -1133,9 +1133,7 @@ Deno.serve(async (req) => {
     const u = userData?.user;
     if (userErr || !u) {
       return json(
-        { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } },
-        401,
-      );
+        { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } }, 401, req);
     }
     userId = u.id;
   }
@@ -1156,9 +1154,7 @@ Deno.serve(async (req) => {
               code: "PROFILE_MISSING",
               message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
             },
-          },
-          400,
-        );
+          }, 400, req);
       }
       if (!canUseCalendar(subProfile)) {
         return json(
@@ -1168,9 +1164,7 @@ Deno.serve(async (req) => {
               message:
                 "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục xem lịch cá nhân.",
             },
-          },
-          402,
-        );
+          }, 402, req);
       }
     }
   }
@@ -1189,9 +1183,7 @@ Deno.serve(async (req) => {
             code: "PROFILE_MISSING",
             message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
           },
-        },
-        400,
-      );
+        }, 400, req);
     }
     if (!canUseCalendar(subProfile)) {
       return json(
@@ -1201,9 +1193,7 @@ Deno.serve(async (req) => {
             message:
               "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục tra cứu ngày tốt.",
           },
-        },
-        402,
-      );
+        }, 402, req);
     }
   }
 
@@ -1211,9 +1201,7 @@ Deno.serve(async (req) => {
     const allowed = await assertBirthEditAllowed(admin, userId);
     if (!allowed.ok) {
       return json(
-        { error: { code: "BIRTH_EDIT_LIMIT", message: allowed.message } },
-        403,
-      );
+        { error: { code: "BIRTH_EDIT_LIMIT", message: allowed.message } }, 403, req);
     }
     await admin
       .from("profiles")
@@ -1232,9 +1220,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (lasoErr) {
       return json(
-        { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } },
-        500,
-      );
+        { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } }, 500, req);
     }
     if (profileHasStoredLaso(lasoRow?.la_so)) {
       return json(
@@ -1243,9 +1229,7 @@ Deno.serve(async (req) => {
             code: "LASO_ALREADY_EXISTS",
             message: "Bạn đã có lá số. Mở Lá số tứ trụ để xem.",
           },
-        },
-        409,
-      );
+        }, 409, req);
     }
   }
 
@@ -1263,7 +1247,7 @@ Deno.serve(async (req) => {
       if (unlockReadErr) {
         console.error("tieu_van_unlocks read", unlockReadErr);
       } else if (unlockedRow?.payload != null) {
-        return json({ data: unlockedRow.payload });
+        return json({ data: unlockedRow.payload }, 200, req);
       }
     }
   }
@@ -1314,9 +1298,7 @@ Deno.serve(async (req) => {
               code: "PROFILE_MISSING",
               message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
             },
-          },
-          400,
-        );
+          }, 400, req);
       }
 
       if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
@@ -1340,9 +1322,7 @@ Deno.serve(async (req) => {
                 message:
                   "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
               },
-            },
-            402,
-          );
+            }, 402, req);
         }
 
         const bal = profile.credits_balance as number;
@@ -1354,9 +1334,7 @@ Deno.serve(async (req) => {
                 message:
                   "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
               },
-            },
-            402,
-          );
+            }, 402, req);
         }
 
         const newBal = bal - cost;
@@ -1368,9 +1346,7 @@ Deno.serve(async (req) => {
         if (uErr) {
           console.error("bat-tu deduct", uErr);
           return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-            500,
-          );
+            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } }, 500, req);
         }
 
         const { error: lErr } = await admin.from("credit_ledger").insert({
@@ -1389,9 +1365,7 @@ Deno.serve(async (req) => {
             .update({ credits_balance: bal })
             .eq("id", userId);
           return json(
-            { error: { code: "DB_ERROR", message: "Ghi sổ lượng thất bại." } },
-            500,
-          );
+            { error: { code: "DB_ERROR", message: "Ghi sổ lượng thất bại." } }, 500, req);
         }
 
         chargedAmount = cost;
@@ -1414,9 +1388,7 @@ Deno.serve(async (req) => {
           code: "BAT_TU_UPSTREAM",
           message: "Không kết nối được máy chủ Bát Tự.",
         },
-      },
-      502,
-    );
+      }, 502, req);
   }
 
   const rawText = await upstreamRes.text();
@@ -1454,6 +1426,7 @@ Deno.serve(async (req) => {
           },
         },
         rateLimited ? 429 : 502,
+        req,
       );
     }
     const http429 = upstreamRes.status === 429;
@@ -1465,6 +1438,7 @@ Deno.serve(async (req) => {
         },
       },
       http429 ? 429 : 502,
+      req,
     );
   }
 
@@ -1482,9 +1456,7 @@ Deno.serve(async (req) => {
         await refundCredits(admin, userId, featureKey, chargedAmount, op);
       }
       return json(
-        { error: { code: "DB_ERROR", message: persistMsg } },
-        500,
-      );
+        { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
     }
   }
 
@@ -1504,9 +1476,7 @@ Deno.serve(async (req) => {
         })
         .eq("id", userId);
       return json(
-        { error: { code: "DB_ERROR", message: persistMsg } },
-        500,
-      );
+        { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
     }
   }
 
@@ -1551,5 +1521,5 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ data: outData });
+  return json({ data: outData }, 200, req);
 });
