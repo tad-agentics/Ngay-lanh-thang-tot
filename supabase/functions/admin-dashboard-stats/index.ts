@@ -1,17 +1,26 @@
 /**
  * Admin dashboard aggregates — service_role + email allowlist (ADMIN_EMAILS).
- * Deploy: set secret ADMIN_EMAILS=comma-separated lowercased emails.
+ * Direction C revenue buckets: subscription / add-on luận / legacy (incl. `le`).
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const SUB_SKUS = new Set(["goi_6thang", "goi_12thang"]);
+const SUBSCRIPTION_SKUS = new Set(["goi_1thang", "goi_6thang", "goi_12thang"]);
+const ADDON_SKUS = new Set(["luan_bat_tu", "luan_tieu_van"]);
+
+type RevenueBucket = "subscription" | "addon" | "legacy";
 
 type RowPay = {
   amount_vnd: number | null;
   created_at: string;
   package_sku: string;
+};
+
+type MonthBucket = {
+  subscription: number;
+  addon: number;
+  legacy: number;
 };
 
 function json(body: unknown, status = 200): Response {
@@ -26,6 +35,12 @@ function parseAdminEmails(raw: string | undefined): string[] {
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
+}
+
+function classifySku(sku: string): RevenueBucket {
+  if (SUBSCRIPTION_SKUS.has(sku)) return "subscription";
+  if (ADDON_SKUS.has(sku)) return "addon";
+  return "legacy";
 }
 
 async function fetchAllPaidOrders(
@@ -59,6 +74,10 @@ function formatPct(p: number | null): string {
   if (p === null) return "—";
   const sign = p >= 0 ? "+" : "";
   return `${sign}${p.toFixed(1).replace(".", ",")}%`;
+}
+
+function emptyMonthBucket(): MonthBucket {
+  return { subscription: 0, addon: 0, legacy: 0 };
 }
 
 Deno.serve(async (req) => {
@@ -120,6 +139,7 @@ Deno.serve(async (req) => {
   });
 
   try {
+    const nowIso = new Date().toISOString();
     const thirtyIso = new Date(
       Date.now() - 30 * 24 * 60 * 60 * 1000,
     ).toISOString();
@@ -127,12 +147,46 @@ Deno.serve(async (req) => {
       Date.now() - 60 * 24 * 60 * 60 * 1000,
     ).toISOString();
 
-    const [{ count: profilesCount, error: pErr }, paidOrders] = await Promise.all([
+    const [
+      { count: profilesCount, error: pErr },
+      paidOrders,
+      { count: activeSubscribers, error: subActiveErr },
+      { count: expiredSubscribers, error: subExpiredErr },
+      { count: neverSubscribed, error: neverSubErr },
+      { count: baziUnlocked, error: baziErr },
+      { count: tieuVanActive, error: tvErr },
+    ] = await Promise.all([
       admin.from("profiles").select("*", { count: "exact", head: true }),
       fetchAllPaidOrders(admin),
+      admin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gt("subscription_expires_at", nowIso),
+      admin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .not("subscription_expires_at", "is", null)
+        .lte("subscription_expires_at", nowIso),
+      admin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .is("subscription_expires_at", null),
+      admin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .not("bazi_reading_unlocked_at", "is", null),
+      admin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .gt("tieu_van_reading_expires_at", nowIso),
     ]);
 
     if (pErr) throw pErr;
+    if (subActiveErr) throw subActiveErr;
+    if (subExpiredErr) throw subExpiredErr;
+    if (neverSubErr) throw neverSubErr;
+    if (baziErr) throw baziErr;
+    if (tvErr) throw tvErr;
 
     const { count: newProfilesLast30, error: n30Err } = await admin
       .from("profiles")
@@ -146,6 +200,16 @@ Deno.serve(async (req) => {
       .gte("created_at", sixtyIso)
       .lt("created_at", thirtyIso);
     if (nPrevErr) throw nPrevErr;
+
+    const revenueByBucket = { subscription: 0, addon: 0, legacy: 0 };
+    const ordersBySku: Record<string, number> = {};
+
+    for (const r of paidOrders) {
+      const v = r.amount_vnd ?? 0;
+      const bucket = classifySku(r.package_sku);
+      revenueByBucket[bucket] += v;
+      ordersBySku[r.package_sku] = (ordersBySku[r.package_sku] ?? 0) + 1;
+    }
 
     const totalRevenueVnd = paidOrders.reduce(
       (s, r) => s + (r.amount_vnd ?? 0),
@@ -186,9 +250,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const buckets = new Map<string, { le: number; subscription: number }>();
+    const buckets = new Map<string, MonthBucket>();
     for (const k of monthKeys) {
-      buckets.set(k, { le: 0, subscription: 0 });
+      buckets.set(k, emptyMonthBucket());
     }
 
     for (const r of paidOrders) {
@@ -197,11 +261,8 @@ Deno.serve(async (req) => {
       if (!buckets.has(key)) continue;
       const b = buckets.get(key)!;
       const v = r.amount_vnd ?? 0;
-      if (SUB_SKUS.has(r.package_sku)) {
-        b.subscription += v;
-      } else {
-        b.le += v;
-      }
+      const kind = classifySku(r.package_sku);
+      b[kind] += v;
     }
 
     const monthly = monthKeys.map((key) => {
@@ -209,20 +270,27 @@ Deno.serve(async (req) => {
       const [y, m] = key.split("-").map(Number);
       const d = new Date(y, m - 1, 1);
       const label = d.toLocaleString("en-US", { month: "short" }).toUpperCase();
+      const subscriptionM = b.subscription / 1_000_000;
+      const addonM = b.addon / 1_000_000;
+      const legacyM = b.legacy / 1_000_000;
       return {
         key,
         label,
-        leRevenueVnd: b.le,
         subscriptionRevenueVnd: b.subscription,
-        /** Triệu ₫ (số thực cho scale cột) */
-        leM: b.le / 1_000_000,
-        subscriptionM: b.subscription / 1_000_000,
+        addonRevenueVnd: b.addon,
+        legacyRevenueVnd: b.legacy,
+        subscriptionM,
+        addonM,
+        legacyM,
+        /** @deprecated use legacyRevenueVnd — kept for older admin UI builds */
+        leRevenueVnd: b.legacy,
+        leM: legacyM,
       };
     });
 
     const maxStackM = Math.max(
       0.000_001,
-      ...monthly.map((m) => m.leM + m.subscriptionM),
+      ...monthly.map((m) => m.subscriptionM + m.addonM + m.legacyM),
     );
 
     const newU = newProfilesLast30 ?? 0;
@@ -234,6 +302,13 @@ Deno.serve(async (req) => {
         paidOrdersCount,
         profilesCount: profilesCount ?? 0,
         newProfilesLast30Days: newU,
+        activeSubscribers: activeSubscribers ?? 0,
+        expiredSubscribers: expiredSubscribers ?? 0,
+        neverSubscribed: neverSubscribed ?? 0,
+        baziReadingUnlocked: baziUnlocked ?? 0,
+        tieuVanReadingActive: tieuVanActive ?? 0,
+        revenueByBucketVnd: revenueByBucket,
+        ordersBySku,
         revenueMomPct: formatPct(pctChange(revenueThisMonth, revenuePrevMonth)),
         ordersMomPct: formatPct(pctChange(ordersThisMonth, ordersPrevMonth)),
         newUsersMomPct: formatPct(pctChange(newU, newPrev)),

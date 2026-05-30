@@ -1,16 +1,22 @@
 # Admin dashboard — context handoff (Ngày Lành Tháng Tốt / ngaylanhthangtot.vn)
 
-Tài liệu này để **copy sang Cursor window / repo khác** khi xây admin dashboard cho team nội bộ. Repo gốc: **React Router v7 (Vite) + Supabase + PayOS + Vercel**; business logic credits/subscription nằm ở Postgres + Edge Functions.
+Tài liệu cho **admin dashboard nội bộ** (repo riêng hoặc window Cursor khác), kết nối cùng Supabase project production/staging.
+
+**Stack app user:** React Router v7 · Supabase · PayOS · Vercel · DeepSeek (luận giải)  
+**Monetization (Direction C):** **Gói lịch** (`subscription_expires_at`) + **add-on luận** — **không còn lượng trong UX/runtime** (2026-05).
+
+Chi tiết pivot: `artifacts/plans/direction-c-pivot-plan.md` · credits retire: `artifacts/issues/credits-retire-housekeeping.md`
 
 ---
 
-## 1. Sản phẩm (tóm tắt)
+## 1. Sản phẩm (admin cần biết)
 
-- PWA chọn ngày lành theo Bát Tự, cá nhân hóa bằng lá số (`profiles.la_so`).
-- Người dùng tiêu **lượng (credits)** hoặc dùng **gói thời hạn** (subscription) — không auto-renew.
-- Chi phí từng tính năng đọc từ DB `feature_credit_costs`; thanh toán qua **PayOS** (checkout + webhook).
-
-Chi tiết kiến trúc: `artifacts/docs/tech-spec.md`, `AGENTS.md`, `.cursor/rules/project.mdc`.
+| Khía cạnh | Mô tả |
+|-----------|--------|
+| Core | PWA **lịch ngày lành** cá nhân hóa Bát Tự (`profiles.la_so`, ngày/giờ sinh). |
+| Monetization | **PayOS** one-shot: gói 3/6/12 tháng lịch + mua lẻ Luận Bát tự / Tiểu vận. **Không auto-renew.** |
+| Gating | `subscription_expires_at` → lịch + luận ngày (sub active). `bazi_reading_unlocked_at` / `tieu_van_reading_expires_at` → luận add-on hoặc gói năm. |
+| Credits / lượng | **Retired runtime.** Cột `credits_balance` + `credit_ledger` giữ cho audit; user mới = 0; không trừ lượng trên Edge. |
 
 ---
 
@@ -18,181 +24,176 @@ Chi tiết kiến trúc: `artifacts/docs/tech-spec.md`, `AGENTS.md`, `.cursor/ru
 
 | Khu vực | Đường dẫn |
 |--------|-----------|
-| App (user) | `app/` (React Router v7) |
-| Supabase migrations | `supabase/migrations/` |
+| App user | `app/` |
+| Migrations | `supabase/migrations/` |
 | Edge Functions | `supabase/functions/` |
-| Định nghĩa gói PayOS (server) | `supabase/functions/_shared/payos.ts` → `PACKAGES` |
-| Copy + giá hiển thị UI mua lượng | `app/lib/packages.ts` → `UI_PACKAGES` |
-| Map UI key → `feature_key` DB | `app/lib/constants.ts` → `FEATURE_KEY_MAP`, `toDbFeatureKey` |
-| Type DB-aligned | `app/lib/database.types.ts`, `app/lib/api-types.ts` |
-| Giới thiệu + thưởng lượng | Edge `referral-claim`, SQL `apply_referral_pair`, `app_config.referral_bonus_credits` |
+| PayOS catalog (server) | `supabase/functions/_shared/payos.ts` → `PACKAGES` |
+| UI gói + giá hiển thị | `app/lib/packages.ts` → `UI_PACKAGES` |
+| Entitlements (FE) | `app/lib/entitlements.ts` |
+| Entitlements (Edge) | `supabase/functions/_shared/entitlements.ts` |
+| Types | `app/lib/database.types.ts`, `app/lib/api-types.ts` |
+| Referral (cash on sub purchase) | `referral_reward_events`, `grant_referral_subscription_reward`, `checkout_referral_discount_percent` |
 
-**Lưu ý:** Giá gói và số lượng/tháng subscription hiện **hardcode** ở hai chỗ: Edge (`PACKAGES`) và frontend (`UI_PACKAGES`). Admin “sửa gói” theo yêu cầu growth thường cần **hoặc** (A) migration thêm bảng `commerce_packages` + đọc trong `payos-create-checkout` + API cho app, **hoặc** (B) tiếp tục deploy code khi đổi giá — document rõ cho team.
-
----
-
-## 3. Biến môi trường (handoff)
-
-### 3.1 App user (Vite) — public
-
-File mẫu: `.env.example`.
-
-| Biến | Mục đích |
-|------|-----------|
-| `VITE_SUPABASE_URL` | URL project Supabase |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | anon / publishable key (client) |
-| `VITE_APP_URL` | Base URL app (redirect, share) |
-| `VITE_VAPID_PUBLIC_KEY` | Web push (nếu admin không cần) |
-
-### 3.2 Admin dashboard — **không** đưa Service Role vào browser
-
-- `SUPABASE_SERVICE_ROLE_KEY` **bypass RLS** — chỉ dùng trên **server** (SSR route, Edge Function riêng, hoặc script local).
-- Cách an toàn cho admin UI:
-  1. **Supabase Auth** cho admin users + **Edge Function** `admin-*` kiểm tra JWT custom claim hoặc allowlist email + verify bằng `SUPABASE_SERVICE_ROLE_KEY` trong EF; client chỉ gọi EF với user JWT.
-  2. Hoặc **Postgres**: cột `is_admin` / bảng `admin_users` + RLS policy `auth.jwt() ->> 'role'` / custom claim — cần migration mới (hiện **chưa có** admin role trong schema).
-
-### 3.3 Edge Functions (Supabase Dashboard → Secrets)
-
-| Secret | Dùng ở |
-|--------|--------|
-| `SUPABASE_URL` | auto |
-| `SUPABASE_ANON_KEY` | EF verify JWT trong handler (vd. `referral-claim`, `payos-create-checkout`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | hầu hết EF ghi DB |
-| `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` | `payos-create-checkout`, `payos-webhook` |
-| `BAT_TU_API_URL`, `BAT_TU_API_KEY` | `bat-tu` |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (optional) | `generate-reading` |
-| `SHARE_TOKEN_SECRET` | share |
-| `VAPID_*`, `CRON_SECRET` | push / cron (nếu bật) |
-
-**Giới thiệu — `referral-claim`:** trong `supabase/config.toml` đặt `verify_jwt = false`; handler kiểm tra Bearer + `auth.getUser()`, cộng lượng qua RPC `apply_referral_pair` với service role. Không cần thêm secret ngoài bảng trên.
-
-Local EF: `supabase/functions/.env` (gitignored).
+**Giá gói:** vẫn hardcode `PACKAGES` + `UI_PACKAGES` — đổi giá = deploy code (hoặc tương lai: bảng `commerce_packages`).
 
 ---
 
-## 4. Schema Postgres (public) — liên quan admin
+## 3. Edge Functions admin (repo này)
 
-### 4.1 `profiles` (1:1 `auth.users`)
+| Function | Auth | Mục đích |
+|----------|------|----------|
+| `admin-dashboard-stats` | JWT + secret `ADMIN_EMAILS` | KPI + doanh thu 12 tháng |
+| `admin-site-banner` | Cùng pattern | GET/PUT `app_config.site_banner` |
 
-| Cột | Ý nghĩa |
-|-----|---------|
-| `id` | PK = `auth.users.id` |
-| `email`, `display_name` | Hiển thị; `email` có thể lệch OAuth |
-| `ngay_sinh`, `gio_sinh`, `gioi_tinh` | Sinh học; sau `birth_data_locked_at` user **không** sửa được (trigger) |
-| `la_so` | JSON lá số — user **không** sửa trực tiếp (trigger); service_role được |
-| `credits_balance` | `integer >= 0` (CHECK) — user **không** PATCH trực tiếp (trigger); service_role / `apply_referral_pair` được |
-| `referral_code` | Mã mời duy nhất (UPPER), sinh khi tạo profile; user **không** sửa qua client |
-| `referred_by` | FK → `profiles.id`, `ON DELETE SET NULL` — người giới thiệu khi thưởng đã áp; user **không** sửa qua client |
-| `subscription_expires_at` | Hết hạn gói “không giới hạn lượng” |
-| `birth_data_locked_at`, `onboarding_completed_at`, `push_enabled` | |
-| `created_at`, `updated_at` | |
-
-**RLS:** user chỉ SELECT/UPDATE/INSERT own row. **Service role** bypass + được phép sửa `la_so` / lock (xem trigger).
-
-**Xóa user:** xóa `auth.users` (Admin API) → CASCADE xóa `profiles` và các bảng FK tới `user_id`.
-
-### 4.2 `credit_ledger`
-
-- Mọi thay đổi số dư “có truy vết” nên có dòng ledger.
-- Cột: `user_id`, `delta` (âm = trừ), `balance_after`, `reason`, `feature_key` (nullable FK), `idempotency_key` (unique), `metadata`, `created_at`.
-- **RLS:** user chỉ đọc own; **không** có policy INSERT cho authenticated — ghi qua **service_role** (Edge).
-
-**Reason** thực tế từ code: `starter_grant`, `referral_bonus_referee`, `referral_bonus_referrer`, `payos_purchase`, `payos_subscription`, và các lý do deduct trong `bat-tu` (xem EF).
-
-**Admin nạp / hoàn / trừ lượng (khuyến nghị):**
-
-1. Trong transaction: `SELECT credits_balance FOR UPDATE` → tính `new_bal` (≥ 0) → `UPDATE profiles` → `INSERT credit_ledger` với `reason` ví dụ `admin_adjustment`, `metadata` JSON (note, ticket).
-2. Dùng `idempotency_key` unique cho mỗi thao tác idempotent (vd. `admin:{uuid}`).
-
-### 4.3 `feature_credit_costs`
-
-- PK `feature_key` (text), `credit_cost`, `is_free`, `updated_at`.
-- **RLS:** mọi người đọc được; **không** có policy UPDATE cho user thường — chỉnh qua **service_role** hoặc migration.
-
-**Danh sách key đã seed / migration** (có thể đã đổi `credit_cost` theo file migration sau):
-
-- `ngay_hom_nay`, `weekly_summary`, `convert_date`, `lich_thang_overview` — free
-- `chon_ngay_30`, `chon_ngay_60`, `chon_ngay_90`, `chon_ngay_detail`, `day_detail`, `tu_tru`, `tieu_van`, `hop_tuoi`, `phong_thuy`, `share_card`
-- `la_so_diengiai` — có migration free/paid
-
-Khi thêm key mới: đồng bộ `FEATURE_KEY_MAP` trong app + EF `bat-tu` nếu có billing.
-
-### 4.4 `app_config`
-
-- `config_key` / `value` (text).
-- Đã dùng: `starter_credits` (int string, default fallback 20), `credit_expiry_months`, **`referral_bonus_credits`** (int string, ví dụ `10`) — số lượng mỗi bên (người được mời + người mời) khi áp referral thành công. **Chỉ user/sự kiện sau khi đổi giá trị** nhận mức mới (không retroactive).
-- **RLS:** read all; ghi bằng service_role.
-
-### 4.5 `payment_orders`
-
-- Đơn PayOS: `package_sku`, `credits_to_add`, `subscription_months`, `amount_vnd`, `status`, v.v.
-- Admin có thể chỉ đọc để hỗ trợ CS; không cần sửa trừ khi reconcile thủ công.
-
-### 4.6 Bảng khác (tham khảo)
-
-- `webhook_events` — idempotency PayOS
-- `share_tokens`, `push_subscriptions`
-- `reading_cache` — cache LLM; chỉ service_role
-
----
-
-## 5. PayOS & gói (`package_sku`)
-
-**SKU hợp lệ (cố định product):** `le` | `goi_6thang` | `goi_12thang`.
-
-Định nghĩa server (`supabase/functions/_shared/payos.ts`):
-
-| SKU | amountVnd | creditsToAdd | subscriptionMonths |
-|-----|-----------|--------------|---------------------|
-| `le` | 99_000 | 100 | null |
-| `goi_6thang` | 789_000 | null | 6 |
-| `goi_12thang` | 989_000 | null | 12 |
-
-Checkout: `supabase/functions/payos-create-checkout` — tạo `payment_orders` với snapshot `credits_to_add` / `subscription_months` / `amount_vnd` từ `PACKAGES`.
-
-Webhook: `supabase/functions/payos-webhook` — khi `paid`: cộng `credits_balance` + ledger `payos_purchase`, hoặc kéo dài `subscription_expires_at` + ledger `payos_subscription` (delta 0).
-
----
-
-## 6. Yêu cầu nghiệp vụ admin → mapping kỹ thuật
-
-| Yêu cầu | Thực hiện |
-|---------|-----------|
-| Sửa thông tin user | `profiles` qua service_role; email có thể cần đồng bộ `auth.users` qua Admin API |
-| Xóa user | `auth.admin.deleteUser` (Supabase) — cascade |
-| Nạp / refund / xóa lượng | `profiles.credits_balance` + `credit_ledger` (transaction, `balance_after` đúng, CHECK ≥ 0) |
-| Sửa giá tính năng | `UPDATE feature_credit_costs` |
-| Sửa gói lẻ / 6T / 12T | Hiện: sửa `PACKAGES` + `UI_PACKAGES` + deploy EF + app; tương lai: đưa vào DB + đọc trong checkout |
-| Sửa starter credits user mới | `app_config.starter_credits` |
-
----
-
-## 7. Rủi ro & tuân thủ
-
-- **PII / lá số:** chỉ staff được phép; log audit (ai sửa gì, khi nào).
-- **Service role:** không commit, không expose client.
-- **Trigger `profiles`:** user thường không đổi được birth fields sau lock — admin có thể cần policy riêng hoặc chỉ sửa qua service_role (trigger cho phép service_role).
-
----
-
-## 8. Lệnh hữu ích (repo gốc)
+Deploy secret:
 
 ```bash
-# Types DB (sau khi đổi schema)
-npx supabase gen types typescript --linked > app/lib/database.types.ts
+supabase secrets set ADMIN_EMAILS=you@company.com,other@company.com
+```
 
-# Local
-supabase start
-supabase functions serve ...
+**Không** expose `SUPABASE_SERVICE_ROLE_KEY` trên browser admin.
+
+---
+
+## 4. `admin-dashboard-stats` response (v2 — Direction C)
+
+`GET` hoặc `POST` với `Authorization: Bearer <user_jwt>`.
+
+### `totals`
+
+| Field | Ý nghĩa |
+|-------|---------|
+| `totalRevenueVnd` | Tổng đơn `paid` |
+| `paidOrdersCount` | Số đơn paid |
+| `profilesCount` | Tổng profiles |
+| `newProfilesLast30Days` | Đăng ký 30 ngày |
+| `activeSubscribers` | `subscription_expires_at > now()` |
+| `expiredSubscribers` | Có `subscription_expires_at` nhưng ≤ now |
+| `neverSubscribed` | `subscription_expires_at IS NULL` |
+| `baziReadingUnlocked` | `bazi_reading_unlocked_at IS NOT NULL` |
+| `tieuVanReadingActive` | `tieu_van_reading_expires_at > now()` |
+| `revenueByBucketVnd` | `{ subscription, addon, legacy }` (VND) |
+| `ordersBySku` | Map `package_sku` → số đơn paid |
+| `*MomPct` | MoM % (chuỗi hiển thị, dấu phẩy thập phân VN) |
+
+### `monthly[]` (12 tháng)
+
+Mỗi phần tử:
+
+| Field | Ý nghĩa |
+|-------|---------|
+| `subscriptionRevenueVnd` | `goi_1thang`, `goi_6thang`, `goi_12thang` |
+| `addonRevenueVnd` | `luan_bat_tu`, `luan_tieu_van` |
+| `legacyRevenueVnd` | `le` + SKU lạ / đơn cũ |
+| `*M` | Cùng giá trị / 1e6 (scale chart) |
+| `leRevenueVnd`, `leM` | **Deprecated** — alias của `legacy*` |
+
+---
+
+## 5. PayOS `package_sku` (Direction C)
+
+| SKU | VND | Hiệu ứng chính |
+|-----|-----|----------------|
+| `goi_1thang` | 299_000 | `subscription_expires_at` +3 tháng |
+| `goi_6thang` | 499_000 | +6 tháng + Tiểu vận 1 năm |
+| `goi_12thang` | 799_000 | +12 tháng + unlock cả hai luận |
+| `luan_bat_tu` | 299_000 | `bazi_reading_unlocked_at` |
+| `luan_tieu_van` | 199_000 | `tieu_van_reading_expires_at` +1 năm |
+| `le` | 99_000 | **Legacy** — +100 lượng (webhook only, không checkout) |
+
+Checkout UI: `/dat-lich` — chỉ `CHECKOUT_PACKAGE_SKUS` (không có `le`).
+
+Webhook: `payos-webhook` → ghi entitlement + ledger (legacy credit path chỉ khi SKU `le`).
+
+---
+
+## 6. Schema `profiles` (admin-relevant)
+
+| Cột | Admin use |
+|-----|-----------|
+| `subscription_expires_at` | Gia hạn lịch — **field chính** |
+| `bazi_reading_unlocked_at` | Mở luận Bát tự (vĩnh viễn) |
+| `tieu_van_reading_expires_at` | Hết hạn luận Tiểu vận |
+| `credits_balance` | **Legacy** — đọc only; không CS “nạp lượng” là flow chính |
+| `la_so`, `ngay_sinh`, `gio_sinh`, `gioi_tinh` | CS / debug |
+| `la_so_recompute_status` | `pending` \| `ready` \| `failed` sau sửa sinh |
+| `birth_edit_count`, `birth_edit_window_start` | Giới hạn sửa sinh (max từ `app_config.birth_edit_max_per_30d`) |
+| `referral_code`, `referred_by`, `referral_reward_total_vnd` | Referral |
+| `onboarding_completed_at` | Onboarding |
+
+**RLS:** user chỉ own row; admin ghi qua **service_role** hoặc EF `admin-*`.
+
+---
+
+## 7. Bảng khác
+
+| Bảng | Admin |
+|------|--------|
+| `payment_orders` | Đọc — hỗ trợ CS, đối soát |
+| `credit_ledger` | Đọc — lịch sử (legacy + unlock idempotency) |
+| `feature_credit_costs` | **Không** dùng để trừ lượng nữa; `bat-tu` chỉ dùng để biết op “paid” → cần sub |
+| `referral_reward_events` | Đọc thưởng giới thiệu |
+| `webhook_events` | Idempotency PayOS |
+| `reading_cache` | Debug luận AI (service_role) |
+
+### `app_config` keys
+
+| Key | Ý nghĩa |
+|-----|---------|
+| `site_banner` | JSON banner sticky |
+| `birth_edit_max_per_30d` | Số lần sửa sinh / 30 ngày (default 2) |
+| `checkout_referral_discount_percent` | % giảm checkout referral |
+| `starter_credits` | **Legacy** — 0 sau migration retire |
+| `pivot_transition_until` | **Legacy** — đóng |
+
+---
+
+## 8. Nghiệp vụ admin → kỹ thuật
+
+| Yêu cầu | Cách làm |
+|---------|----------|
+| Xem KPI / doanh thu | Gọi `admin-dashboard-stats` |
+| Sửa banner site | `admin-site-banner` |
+| Gia hạn lịch user | `UPDATE profiles SET subscription_expires_at = …` (stack từ `max(now, expires)`) qua service_role / EF tương lai |
+| Mở luận Bát tự / Tiểu vận | Set `bazi_reading_unlocked_at` / `tieu_van_reading_expires_at` |
+| Đơn PayOS lỗi | Đọc `payment_orders` + `webhook_events` |
+| Xóa user | `auth.admin.deleteUser` → cascade |
+| Nạp lượng | **Deprecated** — chỉ legacy user; nếu bắt buộc: `credits_balance` + `credit_ledger` (`reason: admin_adjustment`) |
+| Sửa giá gói | Sửa `PACKAGES` + `UI_PACKAGES` + deploy |
+
+**EF đề xuất (chưa có):** `admin-user-detail`, `admin-user-entitlements` (PATCH), `admin-orders` (filter).
+
+---
+
+## 9. Secrets (Edge)
+
+| Secret | Dùng cho |
+|--------|----------|
+| `SUPABASE_*` | Auto |
+| `ADMIN_EMAILS` | Admin EF allowlist |
+| `PAYOS_*` | PayOS (admin thường không cần) |
+| `BAT_TU_API_*` | Engine |
+| `DEEPSEEK_*` | `generate-reading-*` |
+| `SHARE_TOKEN_SECRET` | Share |
+
+---
+
+## 10. Lệnh hữu ích
+
+```bash
+npx supabase db push
+npx supabase functions deploy admin-dashboard-stats admin-site-banner
+npx supabase gen types typescript --linked > app/lib/database.types.ts
 ```
 
 ---
 
-## 9. Checklist mang sang window mới
+## 11. Checklist admin UI
 
-- [ ] Clone / mở đúng repo hoặc repo admin riêng kết nối cùng Supabase project
-- [ ] Có `VITE_SUPABASE_*` nếu client đọc public data; mọi thao tác nhạy cảm qua server/EF + service role
-- [ ] Quyết định mô hình auth admin (EF + allowlist, hoặc DB role + RLS)
-- [ ] Copy file này + `tech-spec.md` (mục credits/PayOS) nếu cần chi tiết FR
+- [ ] Auth: Supabase login + gọi EF với user JWT (không service role client-side)
+- [ ] Dashboard: 3 cột doanh thu (subscription / add-on / legacy) + KPI sub
+- [ ] User detail: entitlements editable (sub + luận), không ưu tiên credits
+- [ ] Orders table: filter theo `package_sku` Direction C
+- [ ] Banner: `admin-site-banner`
 
-**Phiên bản context:** theo migrations tới `20260406120000_*` trong repo; khi schema đổi, cập nhật mục 4–5.
+**Phiên bản context:** 2026-05-31 — sau `20260531210000_retire_credits_runtime` + Direction C entitlements.
