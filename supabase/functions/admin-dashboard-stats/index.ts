@@ -4,7 +4,7 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 
 const SUBSCRIPTION_SKUS = new Set(["goi_1thang", "goi_6thang", "goi_12thang"]);
 const ADDON_SKUS = new Set(["luan_bat_tu", "luan_tieu_van"]);
@@ -23,10 +23,21 @@ type MonthBucket = {
   legacy: number;
 };
 
-function json(body: unknown, status = 200): Response {
+function corsFor(req: Request): Record<string, string> {
+  return {
+    ...corsHeadersForRequest(req),
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  };
+}
+
+function json(
+  body: unknown,
+  cors: Record<string, string>,
+  status = 200,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
@@ -81,13 +92,16 @@ function emptyMonthBucket(): MonthBucket {
 }
 
 Deno.serve(async (req) => {
+  const cors = corsFor(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   if (req.method !== "POST" && req.method !== "GET") {
     return json(
       { error: { code: "METHOD_NOT_ALLOWED", message: "GET/POST only" } },
+      cors,
       405,
     );
   }
@@ -99,13 +113,18 @@ Deno.serve(async (req) => {
   if (!supabaseUrl || !anonKey || !serviceKey) {
     return json(
       { error: { code: "SERVER_CONFIG", message: "Missing Supabase env" } },
+      cors,
       500,
     );
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return json({ error: { code: "UNAUTHORIZED", message: "Missing JWT" } }, 401);
+    return json(
+      { error: { code: "UNAUTHORIZED", message: "Missing JWT" } },
+      cors,
+      401,
+    );
   }
   const jwt = authHeader.slice(7);
 
@@ -119,6 +138,7 @@ Deno.serve(async (req) => {
           message: "Set Edge secret ADMIN_EMAILS (comma-separated admin emails).",
         },
       },
+      cors,
       503,
     );
   }
@@ -127,11 +147,15 @@ Deno.serve(async (req) => {
   const { data: userData, error: authErr } =
     await verifyClient.auth.getUser(jwt);
   if (authErr || !userData.user?.email) {
-    return json({ error: { code: "UNAUTHORIZED", message: "Invalid session" } }, 401);
+    return json(
+      { error: { code: "UNAUTHORIZED", message: "Invalid session" } },
+      cors,
+      401,
+    );
   }
   const email = userData.user.email.toLowerCase();
   if (!allow.includes(email)) {
-    return json({ error: { code: "FORBIDDEN", message: "Not an admin" } }, 403);
+    return json({ error: { code: "FORBIDDEN", message: "Not an admin" } }, cors, 403);
   }
 
   const admin = createClient(supabaseUrl, serviceKey, {
@@ -315,7 +339,7 @@ Deno.serve(async (req) => {
       },
       monthly,
       chartScaleMaxM: maxStackM,
-    });
+    }, cors);
   } catch (e) {
     console.error("admin-dashboard-stats", e);
     return json(
@@ -325,6 +349,7 @@ Deno.serve(async (req) => {
           message: e instanceof Error ? e.message : "Query failed",
         },
       },
+      cors,
       500,
     );
   }

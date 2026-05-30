@@ -10,15 +10,10 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders as baseCorsHeaders } from "../_shared/cors.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
 
 const CONFIG_KEY = "site_banner";
 const MAX_MESSAGE_LEN = 600;
-
-const corsHeaders = {
-  ...baseCorsHeaders,
-  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
-};
 
 type SiteBannerPayload = {
   enabled: boolean;
@@ -26,10 +21,21 @@ type SiteBannerPayload = {
   href: string | null;
 };
 
-function json(body: unknown, status = 200): Response {
+function corsFor(req: Request): Record<string, string> {
+  return {
+    ...corsHeadersForRequest(req),
+    "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
+  };
+}
+
+function json(
+  body: unknown,
+  cors: Record<string, string>,
+  status = 200,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
@@ -89,6 +95,7 @@ async function requireAdmin(
   req: Request,
   supabaseUrl: string,
   anonKey: string,
+  cors: Record<string, string>,
 ): Promise<
   | { admin: ReturnType<typeof createClient>; email: string }
   | Response
@@ -103,13 +110,18 @@ async function requireAdmin(
           message: "Set Edge secret ADMIN_EMAILS (comma-separated admin emails).",
         },
       },
+      cors,
       503,
     );
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return json({ error: { code: "UNAUTHORIZED", message: "Missing JWT" } }, 401);
+    return json(
+      { error: { code: "UNAUTHORIZED", message: "Missing JWT" } },
+      cors,
+      401,
+    );
   }
   const jwt = authHeader.slice(7);
 
@@ -119,18 +131,24 @@ async function requireAdmin(
   if (authErr || !userData.user?.email) {
     return json(
       { error: { code: "UNAUTHORIZED", message: "Invalid session" } },
+      cors,
       401,
     );
   }
   const email = userData.user.email.toLowerCase();
   if (!allow.includes(email)) {
-    return json({ error: { code: "FORBIDDEN", message: "Not an admin" } }, 403);
+    return json(
+      { error: { code: "FORBIDDEN", message: "Not an admin" } },
+      cors,
+      403,
+    );
   }
 
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!serviceKey) {
     return json(
       { error: { code: "SERVER_CONFIG", message: "Missing service role" } },
+      cors,
       500,
     );
   }
@@ -143,8 +161,10 @@ async function requireAdmin(
 }
 
 Deno.serve(async (req) => {
+  const cors = corsFor(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: cors });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -153,12 +173,13 @@ Deno.serve(async (req) => {
   if (!supabaseUrl || !anonKey) {
     return json(
       { error: { code: "SERVER_CONFIG", message: "Missing Supabase env" } },
+      cors,
       500,
     );
   }
 
   if (req.method === "GET") {
-    const gate = await requireAdmin(req, supabaseUrl, anonKey);
+    const gate = await requireAdmin(req, supabaseUrl, anonKey, cors);
     if (gate instanceof Response) return gate;
     const { admin } = gate;
 
@@ -172,19 +193,23 @@ Deno.serve(async (req) => {
       console.error("admin-site-banner get", error);
       return json(
         { error: { code: "DB_ERROR", message: error.message } },
+        cors,
         500,
       );
     }
 
     const banner = parseBannerValue(data?.value ?? null);
-    return json({
-      banner,
-      updated_at: data?.updated_at ?? null,
-    });
+    return json(
+      {
+        banner,
+        updated_at: data?.updated_at ?? null,
+      },
+      cors,
+    );
   }
 
   if (req.method === "PUT" || req.method === "POST") {
-    const gate = await requireAdmin(req, supabaseUrl, anonKey);
+    const gate = await requireAdmin(req, supabaseUrl, anonKey, cors);
     if (gate instanceof Response) return gate;
     const { admin, email } = gate;
 
@@ -192,11 +217,19 @@ Deno.serve(async (req) => {
     try {
       body = await req.json();
     } catch {
-      return json({ error: { code: "BAD_JSON", message: "Invalid JSON" } }, 400);
+      return json(
+        { error: { code: "BAD_JSON", message: "Invalid JSON" } },
+        cors,
+        400,
+      );
     }
 
     if (!body || typeof body !== "object") {
-      return json({ error: { code: "BAD_BODY", message: "Object body required" } }, 400);
+      return json(
+        { error: { code: "BAD_BODY", message: "Object body required" } },
+        cors,
+        400,
+      );
     }
 
     const o = body as Record<string, unknown>;
@@ -219,6 +252,7 @@ Deno.serve(async (req) => {
             message: `message max ${MAX_MESSAGE_LEN} characters`,
           },
         },
+        cors,
         422,
       );
     }
@@ -232,6 +266,7 @@ Deno.serve(async (req) => {
               "href must be empty, a relative path starting with /, or http(s) URL",
           },
         },
+        cors,
         422,
       );
     }
@@ -244,6 +279,7 @@ Deno.serve(async (req) => {
             message: "message required when enabled is true",
           },
         },
+        cors,
         422,
       );
     }
@@ -266,19 +302,24 @@ Deno.serve(async (req) => {
       console.error("admin-site-banner put", upErr);
       return json(
         { error: { code: "DB_ERROR", message: upErr.message } },
+        cors,
         500,
       );
     }
 
-    return json({
-      ok: true,
-      banner,
-      updated_by: email,
-    });
+    return json(
+      {
+        ok: true,
+        banner,
+        updated_by: email,
+      },
+      cors,
+    );
   }
 
   return json(
     { error: { code: "METHOD_NOT_ALLOWED", message: "GET, PUT, or POST only" } },
+    cors,
     405,
   );
 });
