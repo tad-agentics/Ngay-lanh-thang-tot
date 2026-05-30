@@ -86,6 +86,30 @@ function normalizeBatTuApiBaseUrl(raw: string): string {
   return s;
 }
 
+/** tu-tru-api expects dd/mm/yyyy; accept ISO YYYY-MM-DD from legacy callers. */
+function normalizeBirthDateForUpstream(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const t = raw.trim();
+  if (!t.length) return undefined;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)) return t;
+  const iso = t.slice(0, 10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return t;
+  const [, y, mo, d] = m;
+  return `${d}/${mo}/${y}`;
+}
+
+function normalizeBatTuBodyDates(body: Record<string, unknown>): void {
+  for (const key of [
+    "birth_date",
+    "person1_birth_date",
+    "person2_birth_date",
+  ] as const) {
+    const normalized = normalizeBirthDateForUpstream(body[key]);
+    if (normalized) body[key] = normalized;
+  }
+}
+
 function stableStringify(value: unknown): string {
   if (value === null) return "null";
   if (value === undefined) return "null";
@@ -748,6 +772,20 @@ function parseUpstreamApplicationError(data: unknown): {
   return { code, message, resetAt };
 }
 
+/** Map upstream HTTP status to client status (4xx passthrough; else 502). */
+function upstreamFailureStatus(
+  upstreamRes: Response,
+  appErr: { code: string } | null,
+): number {
+  if (appErr?.code === "RATE_LIMITED" || upstreamRes.status === 429) {
+    return 429;
+  }
+  if (upstreamRes.status >= 400 && upstreamRes.status < 500) {
+    return upstreamRes.status;
+  }
+  return 502;
+}
+
 function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -1098,6 +1136,8 @@ Deno.serve(async (req) => {
     payload.body && typeof payload.body === "object" && !Array.isArray(payload.body)
       ? (payload.body as Record<string, unknown>)
       : {};
+
+  normalizeBatTuBodyDates(body);
 
   if (!op || typeof op !== "string" || !VALID_OPS.has(op)) {
     return json(
@@ -1497,7 +1537,7 @@ Deno.serve(async (req) => {
             ...(appErr.resetAt != null ? { reset_at: appErr.resetAt } : {}),
           },
         },
-        rateLimited ? 429 : 502,
+        upstreamFailureStatus(upstreamRes, appErr),
         req,
       );
     }
@@ -1509,7 +1549,7 @@ Deno.serve(async (req) => {
           message: rawText.slice(0, 500) || "Bát Tự từ chối yêu cầu.",
         },
       },
-      http429 ? 429 : 502,
+      upstreamFailureStatus(upstreamRes, null),
       req,
     );
   }

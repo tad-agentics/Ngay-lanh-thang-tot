@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { C, CANH_HOURS, inputLabel } from "~/components/auth/c-auth-ui";
 import { Mono } from "~/components/brand";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { gioiTinhToBatTuGender } from "~/lib/bat-tu-birth";
+import { gioiTinhToBatTuGender, ngaySinhToBatTuBirthDate } from "~/lib/bat-tu-birth";
 import { formatCanhRangeDetail } from "~/lib/first-run-ui";
 import { extractHourPillarPreview } from "~/lib/la-so-ui";
 
@@ -38,8 +38,14 @@ export function BirthHourCanhPicker({
 
     const canh = CANH_HOURS[selected]!;
     const gender = gioiTinhToBatTuGender(gioiTinh);
+    const birth_date = ngaySinhToBatTuBirthDate(birthDateIso);
+    if (!birth_date) {
+      setHourPillar(null);
+      setPreviewLoading(false);
+      return;
+    }
     const body = {
-      birth_date: birthDateIso!,
+      birth_date,
       birth_time: canh.code,
       tz: "Asia/Ho_Chi_Minh",
       ...(gender !== undefined ? { gender } : {}),
