@@ -6,6 +6,10 @@ import { CBaziReadingPaywallView } from "~/components/direction-c/CBaziReadingPa
 import type { LaSoJson } from "~/lib/api-types";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import {
+  deliveryToLoadResult,
+  fetchBaziReadingDelivery,
+} from "~/lib/bazi-reading-delivery";
 import { loadBaziReadingFull } from "~/lib/bazi-reading-load";
 import {
   buildBaziDisplayChapters,
@@ -56,20 +60,44 @@ export function CBaziReadingScreen() {
       return;
     }
 
-    const revision = baziReadingCacheRevision(profile, year);
-    const cached = readBaziReadingSession(profile.id, revision);
-    if (cached) {
-      setChapters(
-        chaptersFromSession(cached, (profile.la_so as LaSoJson) ?? null),
-      );
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
-    const gen = ++genRef.current;
-    setLoading(true);
+
     void (async () => {
+      const dbDelivery = await fetchBaziReadingDelivery(profile, year);
+      if (cancelled) return;
+      if (dbDelivery) {
+        const fromDb = deliveryToLoadResult(dbDelivery);
+        setChapters(
+          buildBaziDisplayChapters({
+            sections: fromDb.sections,
+            laSo: fromDb.laSoDisplay ?? (profile.la_so as LaSoJson) ?? null,
+            luuNienFactsRaw: fromDb.luuNienFactsRaw,
+            phongThuyFactsRaw: fromDb.phongThuyFactsRaw,
+            yearCanChi: fromDb.yearCanChi,
+          }),
+        );
+        setLoading(false);
+        return;
+      }
+
+      const revision = baziReadingCacheRevision(profile, year);
+      const cached = readBaziReadingSession(profile.id, revision);
+      if (cancelled) return;
+      if (cached) {
+        setChapters(
+          chaptersFromSession(cached, (profile.la_so as LaSoJson) ?? null),
+        );
+        setLoading(false);
+        return;
+      }
+
+      await runFullLoad();
+    })();
+
+    async function runFullLoad() {
+      const gen = ++genRef.current;
+      if (cancelled) return;
+      setLoading(true);
       const full = await loadBaziReadingFull(profile, year);
       if (cancelled || gen !== genRef.current) return;
       const built = buildBaziDisplayChapters({
@@ -81,6 +109,7 @@ export function CBaziReadingScreen() {
       });
       setChapters(built);
       if (full.sections.length > 0) {
+        const revision = baziReadingCacheRevision(profile, year);
         persistBaziReadingSession(profile.id, revision, {
           sections: full.sections,
           yearCanChi: full.yearCanChi,
@@ -90,7 +119,7 @@ export function CBaziReadingScreen() {
         });
       }
       setLoading(false);
-    })();
+    }
 
     return () => {
       cancelled = true;
@@ -102,7 +131,9 @@ export function CBaziReadingScreen() {
     const gen = ++genRef.current;
     setLoading(true);
     void (async () => {
-      const full = await loadBaziReadingFull(profile, year);
+      const full = await loadBaziReadingFull(profile, year, {
+        forceRegenerate: true,
+      });
       if (gen !== genRef.current) return;
       setChapters(
         buildBaziDisplayChapters({

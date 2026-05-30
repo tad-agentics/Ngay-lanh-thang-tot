@@ -1,6 +1,11 @@
 import { toast } from "sonner";
 
 import type { LaSoJson } from "~/lib/api-types";
+import {
+  deliveryToLoadResult,
+  fetchBaziReadingDelivery,
+  persistBaziReadingDelivery,
+} from "~/lib/bazi-reading-delivery";
 import type { Profile } from "~/lib/profile-context";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -164,10 +169,11 @@ export async function loadBaziPaywallMenhOverview(
   return bundle.menhOverview;
 }
 
-/** Full load: facts + Gemini cho màn 18 đã mở khóa. */
+/** Full load: DB delivery → facts + DeepSeek; lưu lại DB sau generate. */
 export async function loadBaziReadingFull(
   profile: Profile,
   year: number,
+  options?: { skipPersist?: boolean; forceRegenerate?: boolean },
 ): Promise<BaziReadingLoadResult> {
   const empty: BaziReadingLoadResult = {
     sections: [],
@@ -176,6 +182,13 @@ export async function loadBaziReadingFull(
     phongThuyFactsRaw: null,
     yearCanChi: fallbackFlowYearCanChiLabel(year) || "",
   };
+
+  if (!options?.forceRegenerate) {
+    const stored = await fetchBaziReadingDelivery(profile, year);
+    if (stored) {
+      return deliveryToLoadResult(stored);
+    }
+  }
 
   const body = profileToBatTuPersonQuery(profile);
   if (!body.birth_date) return empty;
@@ -237,13 +250,22 @@ export async function loadBaziReadingFull(
   const withLuuNien = mergeLaSoWithLuuNienSections(laSoSections, luuNienSections);
   const sections = mergeBaziReadingWithPhongThuy(withLuuNien, phongThuySections);
 
-  return {
+  const result: BaziReadingLoadResult = {
     sections,
     laSoDisplay,
     luuNienFactsRaw,
     phongThuyFactsRaw,
     yearCanChi,
   };
+
+  if (sections.length > 0 && !options?.skipPersist) {
+    const saved = await persistBaziReadingDelivery(profile, year, result);
+    if (!saved && import.meta.env.DEV) {
+      console.warn("[bazi-delivery] persist failed after full generate");
+    }
+  }
+
+  return result;
 }
 
 /** @deprecated Use `loadBaziReadingFull` — giữ cho session cache. */

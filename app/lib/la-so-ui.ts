@@ -48,7 +48,7 @@ function numOrStrToInt(x: unknown): number | null {
 }
 
 /**
- * Khoảng tuổi đại vận để hiển thị — ưu tiên số `start`/`end`, rồi tuổi mụ / âm lịch nếu API tách khỏi `age_range`.
+ * Khoảng tuổi một đại vận trên timeline (chu kỳ 10 năm từ `dai_van_list` / `cycles`).
  */
 function pickDaiVanYearsFromObject(o: Record<string, unknown>): string {
   const start = numOrStrToInt(
@@ -84,6 +84,89 @@ function pickDaiVanYearsFromObject(o: Record<string, unknown>): string {
   ]);
 }
 
+/**
+ * Khoảng tuổi **đại vận hiện tại** — ưu tiên tuổi mụ / âm lịch hơn `age_range` (chu kỳ dương).
+ * GET `/v1/la-so` thường tách `dai_van_current` hoặc `age_range_muc` khỏi `dai_van_list[].years`.
+ */
+function pickDaiVanCurrentYearsFromObject(o: Record<string, unknown>): string {
+  const mucStart = numOrStrToInt(
+    o.tuoi_muc_tu ??
+      o.tuoi_muc_from ??
+      o.muc_age_from ??
+      o.age_muc_from ??
+      o.ageMucFrom,
+  );
+  const mucEnd = numOrStrToInt(
+    o.tuoi_muc_den ??
+      o.tuoi_muc_to ??
+      o.muc_age_to ??
+      o.age_muc_to ??
+      o.ageMucTo,
+  );
+  if (mucStart != null && mucEnd != null && mucStart <= mucEnd) {
+    return `${mucStart}-${mucEnd}`;
+  }
+  const mucRange = pickStr(o, [
+    "age_range_muc",
+    "tuoi_muc_range",
+    "age_range_lunar",
+    "age_range_vn",
+  ]);
+  if (mucRange !== "—") return mucRange;
+
+  const start = numOrStrToInt(
+    o.start_age ??
+      o.startAge ??
+      o.age_from ??
+      o.ageFrom ??
+      o.tuoi_tu ??
+      o.tuoiTu,
+  );
+  const end = numOrStrToInt(
+    o.end_age ??
+      o.endAge ??
+      o.age_to ??
+      o.ageTo ??
+      o.tuoi_den ??
+      o.tuoiDen,
+  );
+  if (start != null && end != null && start <= end) {
+    return `${start}-${end}`;
+  }
+  return pickStr(o, ["age_range", "ageRange", "years", "range", "nam"]);
+}
+
+function mergeDaiVanCurrentRecords(
+  base: Record<string, unknown>,
+  overlay: Record<string, unknown>,
+): Record<string, unknown> {
+  const labelBase = pickStr(base, ["display", "label", "name", "ten", "pillar"]);
+  const labelOver = pickStr(overlay, ["display", "label", "name", "ten", "pillar"]);
+  if (
+    labelBase !== "—" &&
+    labelOver !== "—" &&
+    labelBase.trim() !== labelOver.trim()
+  ) {
+    return base;
+  }
+  return { ...base, ...overlay };
+}
+
+/** Gộp `dai_van_current` (GET la-so) vào `dai_van.current` khi API tách hai field. */
+function mergeDaiVanParentCurrent(
+  parentObj: Record<string, unknown> | null,
+  flatCurrent: Record<string, unknown>,
+): Record<string, unknown> {
+  const hasFlat =
+    pickStr(flatCurrent, ["display", "label", "name", "ten", "pillar"]) !==
+      "—" || pickDaiVanCurrentYearsFromObject(flatCurrent) !== "—";
+  if (!hasFlat) return parentObj;
+  if (!parentObj) return { current: flatCurrent };
+  const cur = asRecord(parentObj.current);
+  if (!cur) return { ...parentObj, current: flatCurrent };
+  return { ...parentObj, current: mergeDaiVanCurrentRecords(cur, flatCurrent) };
+}
+
 function formatDaiVanField(daiVanRaw: unknown): string {
   if (typeof daiVanRaw === "string" && daiVanRaw.trim()) return daiVanRaw.trim();
   const o = asRecord(daiVanRaw);
@@ -91,7 +174,7 @@ function formatDaiVanField(daiVanRaw: unknown): string {
   const cur = asRecord(o.current);
   if (cur) {
     const display = pickStr(cur, ["display", "label", "name", "ten"]);
-    const range = pickDaiVanYearsFromObject(cur);
+    const range = pickDaiVanCurrentYearsFromObject(cur);
     if (display !== "—" && range !== "—") return `${display} (${range})`;
     if (display !== "—") return display;
   }
@@ -117,6 +200,7 @@ function getDaiVanContext(root: Record<string, unknown>): {
   );
   let listRaw: unknown[] | null = null;
   let parentObj: Record<string, unknown> | null = null;
+  let flatCurrent: Record<string, unknown> | null = null;
   for (const layer of layers) {
     const lr = layer.dai_van_list ?? layer.daiVanList;
     if (Array.isArray(lr) && lr.length > 0 && !listRaw) listRaw = lr;
@@ -124,16 +208,13 @@ function getDaiVanContext(root: Record<string, unknown>): {
     if (po && (po.current != null || Array.isArray(po.cycles)) && !parentObj) {
       parentObj = po;
     }
-    if (!parentObj) {
-      const flat =
+    if (!flatCurrent) {
+      flatCurrent =
         asRecord(layer.dai_van_current) ?? asRecord(layer.daiVanCurrent);
-      if (flat) {
-        const hasCur =
-          pickStr(flat, ["display", "label", "name", "ten"]) !== "—" ||
-          pickDaiVanYearsFromObject(flat) !== "—";
-        if (hasCur) parentObj = { current: flat };
-      }
     }
+  }
+  if (flatCurrent) {
+    parentObj = mergeDaiVanParentCurrent(parentObj, flatCurrent);
   }
   return { listRaw, parentObj };
 }
@@ -145,7 +226,7 @@ function applyCurrentToDaiVanRows(
   const current = parentObj ? asRecord(parentObj.current) : null;
   const curLabel = current ? pickStr(current, ["display", "label", "name", "pillar"]) : "—";
   const curYears =
-    current != null ? pickDaiVanYearsFromObject(current) : "—";
+    current != null ? pickDaiVanCurrentYearsFromObject(current) : "—";
   const curYearsKey = curYears !== "—" ? normalizeAgeRangeKey(curYears) : "";
 
   if (curLabel === "—" && !curYearsKey) return rows;
@@ -173,7 +254,7 @@ function preferCurrentYearsOnActiveRow(
   const current = parentObj ? asRecord(parentObj.current) : null;
   if (!current) return rows;
   const curLabel = pickStr(current, ["display", "label", "name", "pillar"]);
-  const curYears = pickDaiVanYearsFromObject(current);
+  const curYears = pickDaiVanCurrentYearsFromObject(current);
   if (curLabel === "—" || curYears === "—") return rows;
   return rows.map((row) => {
     if (
@@ -654,7 +735,7 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
     const current = dvObj ? asRecord(dvObj.current) : null;
     const curLabel = current ? pickStr(current, ["display", "label"]) : "—";
     const curYears =
-      current != null ? pickDaiVanYearsFromObject(current) : "—";
+      current != null ? pickDaiVanCurrentYearsFromObject(current) : "—";
     if (dvObj && Array.isArray(cycles)) {
       daiVanList = cycles.map((item) => {
         const o = asRecord(item) ?? {};

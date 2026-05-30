@@ -91,7 +91,16 @@ sequenceDiagram
 
 File: `supabase/functions/bat-tu/index.ts`.
 
-### 3.2 `generate-reading-*` (Gemini + `reading_cache`)
+### 3.2 `bazi_reading_deliveries` (purchased full — durable)
+
+| | |
+|--|--|
+| Table | `bazi_reading_deliveries` — `UNIQUE (user_id, flow_year)` |
+| RLS | `SELECT` own row when `bazi_reading_unlocked_at` or active yearly sub |
+| Write | Edge `bazi-reading-delivery` (service_role upsert) after full generate |
+| Read | FE `fetchBaziReadingDelivery` before LLM; invalidates on `birth_revision` / `content_version` mismatch |
+
+### 3.3 `generate-reading-*` (DeepSeek + `reading_cache` TTL)
 
 | Endpoint | Edge function | Entitlement | Ghi chú |
 |----------|---------------|-------------|---------|

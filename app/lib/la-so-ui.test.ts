@@ -145,6 +145,29 @@ describe("laSoJsonToChiTiet", () => {
     expect(active[0]!.years).toBe("35-44");
   });
 
+  it("gộp dai_van_current — active hiển thị tuổi mụ thay vì chu kỳ list", () => {
+    const d = laSoJsonToChiTiet({
+      dai_van: {
+        current: { display: "Quý Mùi", age_range: "31-40" },
+      },
+      dai_van_current: {
+        display: "Quý Mùi",
+        age_range_muc: "36-45",
+      },
+      dai_van_list: [
+        { label: "Canh Thìn", years: "1-10" },
+        { label: "Tân Tỵ", years: "11-20" },
+        { label: "Nhâm Ngọ", years: "21-30" },
+        { label: "Quý Mùi", years: "31-40" },
+      ],
+    });
+    const active = d.daiVanList.find((x) => x.isActive);
+    expect(active?.label).toBe("Quý Mùi");
+    expect(active?.years).toBe("36-45");
+    const quy = d.daiVanList.find((x) => x.label === "Quý Mùi");
+    expect(quy?.isActive).toBe(true);
+  });
+
   it("đọc khoảng tuổi từ start_age / end_age", () => {
     const d = laSoJsonToChiTiet({
       dai_van: {

@@ -438,6 +438,10 @@ verify_jwt = false
 [functions.generate-reading-tieu-van]
 verify_jwt = false
 
+# Persist purchased full Bát Tự luận giải (JWT + bazi entitlement in handler).
+[functions.bazi-reading-delivery]
+verify_jwt = false
+
 # Public share preview + OG HTML (anon `apikey` only).
 [functions.share-resolve]
 verify_jwt = false

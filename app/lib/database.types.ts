@@ -205,6 +205,48 @@ export interface Database {
         };
         Relationships: [];
       };
+      bazi_reading_deliveries: {
+        Row: {
+          id: string;
+          user_id: string;
+          flow_year: number;
+          birth_revision: string;
+          content_version: string;
+          sections: Json;
+          la_so_display: Json | null;
+          luu_nien_facts: Json | null;
+          phong_thuy_facts: Json | null;
+          year_can_chi: string;
+          generated_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          flow_year: number;
+          birth_revision: string;
+          content_version: string;
+          sections: Json;
+          la_so_display?: Json | null;
+          luu_nien_facts?: Json | null;
+          phong_thuy_facts?: Json | null;
+          year_can_chi?: string;
+          generated_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          birth_revision?: string;
+          content_version?: string;
+          sections?: Json;
+          la_so_display?: Json | null;
+          luu_nien_facts?: Json | null;
+          phong_thuy_facts?: Json | null;
+          year_can_chi?: string;
+          generated_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       reading_cache: {
         Row: {
           cache_key: string;

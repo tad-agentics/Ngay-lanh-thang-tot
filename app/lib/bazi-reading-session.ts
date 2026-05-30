@@ -12,6 +12,16 @@ export type BaziReadingSessionData = {
   phongThuyFactsRaw: unknown | null;
 };
 
+/** Hash hồ sơ sinh — khớp `bazi_reading_deliveries.birth_revision`. */
+export function baziReadingBirthRevision(p: Profile): string {
+  return [
+    p.ngay_sinh ?? "",
+    p.gio_sinh ?? "",
+    p.gioi_tinh ?? "",
+    p.birth_data_locked_at ?? "",
+  ].join("\x1e");
+}
+
 export function baziReadingCacheRevision(p: Profile, year?: number): string {
   const y =
     year ??
@@ -22,14 +32,7 @@ export function baziReadingCacheRevision(p: Profile, year?: number): string {
       }).format(new Date()),
       10,
     );
-  return [
-    String(y),
-    "w11",
-    p.ngay_sinh ?? "",
-    p.gio_sinh ?? "",
-    p.gioi_tinh ?? "",
-    p.birth_data_locked_at ?? "",
-  ].join("\x1e");
+  return [String(y), "w12", baziReadingBirthRevision(p)].join("\x1e");
 }
 
 function sessionKey(profileId: string): string {
