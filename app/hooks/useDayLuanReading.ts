@@ -1,9 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
+import { baziReadingBirthRevision } from "~/lib/bazi-reading-session";
 import { canUseCalendar, isNewUserDayLuanTeaser } from "~/lib/entitlements";
+import {
+  DAY_LUAN_MAX_FOLLOW_UPS,
+  invokeDayLuanChatAsk,
+  invokeDayLuanChatOpen,
+} from "~/lib/day-luan-chat";
 import {
   invokeGenerateReading,
   type LuanThreadTurn,
@@ -12,6 +18,12 @@ import { parseDayDetailForView, type DayDetailViewModel } from "~/lib/day-detail
 import { parseDayCompareResponse } from "~/lib/luan-context";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
+
+type ThreadOpenSnapshot = {
+  iso: string;
+  birthRevision: string;
+  anchorLen: number;
+};
 
 export function useDayLuanReading(iso: string) {
   const { profile, loading: profileLoading } = useProfile();
@@ -25,6 +37,15 @@ export function useDayLuanReading(iso: string) {
   const [readingLoading, setReadingLoading] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [unlockBusy, setUnlockBusy] = useState(false);
+
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [followUpRemaining, setFollowUpRemaining] = useState(DAY_LUAN_MAX_FOLLOW_UPS);
+  const [serverThreadMessages, setServerThreadMessages] = useState<LuanThreadTurn[]>(
+    [],
+  );
+
+  const threadIdRef = useRef<string | null>(null);
+  const threadOpenRef = useRef<ThreadOpenSnapshot | null>(null);
 
   const subActive = canUseCalendar(profile);
   const paywallTeaser = isNewUserDayLuanTeaser(profile);
@@ -42,6 +63,14 @@ export function useDayLuanReading(iso: string) {
     },
     [],
   );
+
+  useEffect(() => {
+    threadIdRef.current = null;
+    threadOpenRef.current = null;
+    setThreadId(null);
+    setFollowUpRemaining(DAY_LUAN_MAX_FOLLOW_UPS);
+    setServerThreadMessages([]);
+  }, [iso]);
 
   useEffect(() => {
     if (profileLoading || !profile || !iso) return;
@@ -90,6 +119,57 @@ export function useDayLuanReading(iso: string) {
     };
   }, [iso, profile, profileLoading, subActive, loadReading]);
 
+  const ensureDayLuanThread = useCallback(
+    async (anchorReading?: string): Promise<string | null> => {
+      if (!profile || !luanContext || !unlocked || paywallTeaser) return null;
+
+      const birthRevision = baziReadingBirthRevision(profile);
+      const anchorLen = anchorReading?.trim().length ?? 0;
+      const snap = threadOpenRef.current;
+      const cachedId = threadIdRef.current;
+
+      if (
+        cachedId &&
+        snap?.iso === iso &&
+        snap.birthRevision === birthRevision &&
+        anchorLen <= snap.anchorLen
+      ) {
+        return cachedId;
+      }
+
+      const open = await invokeDayLuanChatOpen({
+        day_iso: iso,
+        birth_revision: birthRevision,
+        luan_context_raw: luanContext,
+        ...(anchorReading ? { anchor_reading: anchorReading } : {}),
+      });
+      if (!open.ok) return null;
+
+      threadIdRef.current = open.thread_id;
+      threadOpenRef.current = { iso, birthRevision, anchorLen };
+      setThreadId(open.thread_id);
+      setFollowUpRemaining(open.follow_up_remaining);
+      setServerThreadMessages(open.messages);
+      return open.thread_id;
+    },
+    [profile, luanContext, unlocked, paywallTeaser, iso],
+  );
+
+  useEffect(() => {
+    if (!reading || !unlocked || paywallTeaser || !luanContext || !profile) return;
+    const anchorLen = reading.trim().length;
+    const snap = threadOpenRef.current;
+    if (
+      threadIdRef.current &&
+      snap?.iso === iso &&
+      snap.birthRevision === baziReadingBirthRevision(profile) &&
+      anchorLen <= snap.anchorLen
+    ) {
+      return;
+    }
+    void ensureDayLuanThread(reading);
+  }, [reading, unlocked, paywallTeaser, luanContext, profile, iso, ensureDayLuanThread]);
+
   const unlockAndLoad = useCallback(async () => {
     if (!luanContext || unlockBusy || paywallTeaser) return;
     setUnlockBusy(true);
@@ -110,10 +190,7 @@ export function useDayLuanReading(iso: string) {
   }, [luanContext, unlockBusy, paywallTeaser, iso, loadReading]);
 
   const askFollowUp = useCallback(
-    async (
-      question: string,
-      opts?: { threadHistory?: LuanThreadTurn[]; anchorReading?: string },
-    ) => {
+    async (question: string, idempotencyKey: string) => {
       if (!luanContext || !unlocked || paywallTeaser) {
         return {
           ok: false as const,
@@ -129,20 +206,50 @@ export function useDayLuanReading(iso: string) {
           message: "Nhập câu hỏi.",
         };
       }
-      const r = await invokeGenerateReading({
-        endpoint: "day-detail",
-        data: luanContext,
+
+      let tid = threadIdRef.current;
+      if (!tid) {
+        tid = await ensureDayLuanThread(reading ?? undefined);
+      }
+      if (!tid) {
+        return {
+          ok: false as const,
+          reading: null,
+          message: "Không mở được hội thoại. Thử lại ›",
+        };
+      }
+
+      const res = await invokeDayLuanChatAsk({
+        thread_id: tid,
         question: q,
-        anchor_reading: opts?.anchorReading ?? reading ?? undefined,
-        thread_history: opts?.threadHistory,
+        idempotency_key: idempotencyKey,
       });
+      if (!res.ok) {
+        const message =
+          res.code === "IN_PROGRESS"
+            ? "Đang xử lý câu hỏi. Đợi vài giây rồi thử lại."
+            : res.message;
+        return {
+          ok: false as const,
+          reading: null,
+          message,
+        };
+      }
+
+      setFollowUpRemaining(res.follow_up_remaining);
+      setServerThreadMessages((prev) => [
+        ...prev,
+        { role: "user", content: q },
+        { role: "assistant", content: res.answer },
+      ]);
+
       return {
         ok: true as const,
-        reading: r.reading?.trim() ?? null,
+        reading: res.answer,
         message: undefined as string | undefined,
       };
     },
-    [luanContext, unlocked, paywallTeaser, reading],
+    [luanContext, unlocked, paywallTeaser, ensureDayLuanThread, reading],
   );
 
   const compareWithIso = useCallback(
@@ -222,5 +329,8 @@ export function useDayLuanReading(iso: string) {
     askFollowUp,
     compareWithIso,
     compareWithTomorrow,
+    threadId,
+    followUpRemaining,
+    serverThreadMessages,
   };
 }

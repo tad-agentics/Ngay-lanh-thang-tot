@@ -6,6 +6,7 @@ import {
   READING_MAX_TOKENS_CHON_NGAY,
   READING_MAX_TOKENS_CHON_NGAY_CARDS,
   READING_MAX_TOKENS_DAY_DETAIL,
+  READING_MAX_TOKENS_DAY_DETAIL_FOLLOW_UP,
   READING_MAX_TOKENS_HOP_TUOI,
   READING_MAX_TOKENS_INLINE_LICH_TO,
   REQUEST_TIMEOUT_MS,
@@ -116,9 +117,9 @@ export async function generateDayReading(
       );
       reading = await llmChat(
         messages,
-        220,
+        READING_MAX_TOKENS_DAY_DETAIL_FOLLOW_UP,
         DAY_DETAIL_REQUEST_TIMEOUT_MS,
-        { profile: "flash" },
+        { profile: "flash", disableThinking: true },
       );
     } else if (variant === "inline") {
       reading = await llmCompletion(

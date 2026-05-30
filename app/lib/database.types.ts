@@ -135,6 +135,38 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      day_luan_ask_idempotency: {
+        Row: {
+          id: string;
+          thread_id: string;
+          idempotency_key: string;
+          question: string;
+          answer: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      day_luan_threads: {
+        Row: {
+          id: string;
+          user_id: string;
+          day_iso: string;
+          birth_revision: string;
+          luan_context: Json;
+          anchor_reading: string;
+          messages: Json;
+          follow_up_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       payment_orders: {
         Row: {
           id: string;

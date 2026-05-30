@@ -8,11 +8,7 @@ import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectioned
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
-import {
-  DAY_LUAN_MAX_FOLLOW_UPS,
-  incrementDayLuanFollowUpCount,
-  readDayLuanFollowUpCount,
-} from "~/lib/day-luan-chat-quota";
+import { DAY_LUAN_MAX_FOLLOW_UPS } from "~/lib/day-luan-chat";
 import {
   anchorQuestionForScore,
   buildDayLuanSectionBundle,
@@ -34,22 +30,23 @@ type FollowUpTurn = {
   typingDone: boolean;
 };
 
-function buildDayLuanThreadHistory(
-  followUps: FollowUpTurn[],
-  beforeTurnId?: string,
-): LuanThreadTurn[] {
-  const end =
-    beforeTurnId != null
-      ? followUps.findIndex((t) => t.id === beforeTurnId)
-      : followUps.length;
-  const slice = end < 0 ? followUps : followUps.slice(0, end);
-  const turns = slice
-    .filter((t) => t.answer && !t.loading)
-    .flatMap((t) => [
-      { role: "user" as const, content: t.question },
-      { role: "assistant" as const, content: t.answer! },
-    ]);
-  return turns.length > 8 ? turns.slice(-8) : turns;
+function threadMessagesToFollowUps(messages: LuanThreadTurn[]): FollowUpTurn[] {
+  const out: FollowUpTurn[] = [];
+  for (let i = 0; i < messages.length; i += 2) {
+    const user = messages[i];
+    const assistant = messages[i + 1];
+    if (user?.role === "user" && assistant?.role === "assistant") {
+      out.push({
+        id: `srv-${i}`,
+        question: user.content,
+        answer: assistant.content,
+        loading: false,
+        error: null,
+        typingDone: true,
+      });
+    }
+  }
+  return out;
 }
 
 function TypedBody({
@@ -262,6 +259,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     retryReading,
     askFollowUp,
     compareWithTomorrow,
+    followUpRemaining,
+    serverThreadMessages,
   } = useDayLuanReading(iso);
 
   const dayShort = formatDayIsoShort(iso);
@@ -273,15 +272,9 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const [followUps, setFollowUps] = useState<FollowUpTurn[]>([]);
   const [input, setInput] = useState("");
   const [submitBusy, setSubmitBusy] = useState(false);
-  const [quotaUsed, setQuotaUsed] = useState(0);
+  const threadHydratedIsoRef = useRef<string | null>(null);
 
-  const userId = profile?.id ?? "";
-  useEffect(() => {
-    if (!userId) return;
-    setQuotaUsed(readDayLuanFollowUpCount(userId, iso));
-  }, [userId, iso]);
-
-  const quotaRemaining = Math.max(0, DAY_LUAN_MAX_FOLLOW_UPS - quotaUsed);
+  const quotaRemaining = followUpRemaining;
   const quotaExhausted = quotaRemaining <= 0;
 
   const readingSplit = useMemo(
@@ -306,9 +299,17 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     !detailError;
 
   useEffect(() => {
+    threadHydratedIsoRef.current = null;
     setAnchorTypingDone(false);
     setFollowUps([]);
   }, [iso]);
+
+  useEffect(() => {
+    if (serverThreadMessages.length === 0) return;
+    if (threadHydratedIsoRef.current === iso) return;
+    threadHydratedIsoRef.current = iso;
+    setFollowUps(threadMessagesToFollowUps(serverThreadMessages));
+  }, [iso, serverThreadMessages]);
 
   useEffect(() => {
     if (!anchorDone) return;
@@ -345,10 +346,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         question.toLowerCase().includes("so sánh với ngày mai");
       const res = isCompareTomorrow
         ? await compareWithTomorrow()
-        : await askFollowUp(question, {
-            anchorReading: reading ?? undefined,
-            threadHistory: buildDayLuanThreadHistory(followUps),
-          });
+        : await askFollowUp(question, turnId);
       setSubmitBusy(false);
 
       if (!res.ok || !res.reading) {
@@ -364,11 +362,6 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
           ),
         );
         return;
-      }
-
-      if (userId) {
-        incrementDayLuanFollowUpCount(userId, iso);
-        setQuotaUsed(readDayLuanFollowUpCount(userId, iso));
       }
 
       setFollowUps((prev) =>
@@ -388,7 +381,6 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       scrollToLatest,
       submitBusy,
       unlocked,
-      userId,
     ],
   );
 
@@ -400,10 +392,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
       setSubmitBusy(true);
-      const res = await askFollowUp(question, {
-        anchorReading: reading ?? undefined,
-        threadHistory: buildDayLuanThreadHistory(followUps, turnId),
-      });
+      const res = await askFollowUp(question, turnId);
       setSubmitBusy(false);
       if (!res.ok || !res.reading) {
         setFollowUps((prev) =>
@@ -419,10 +408,6 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         );
         return;
       }
-      if (userId) {
-        incrementDayLuanFollowUpCount(userId, iso);
-        setQuotaUsed(readDayLuanFollowUpCount(userId, iso));
-      }
       setFollowUps((prev) =>
         prev.map((t) =>
           t.id === turnId
@@ -431,7 +416,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
     },
-    [askFollowUp, followUps, iso, reading, userId],
+    [askFollowUp],
   );
 
   const askedQuestions = [
@@ -751,7 +736,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   className="font-serif italic text-[11px]"
                   style={{ color: CT.muted }}
                 >
-                  Chỉ trả lời về ngày này và lá số của bạn
+                  Chỉ trả lời về ngày này · so sánh ngày mai không tính lượt
                 </span>
                 <Mono
                   style={{
@@ -766,7 +751,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   <span style={{ color: CT.goldDeep, fontWeight: 700 }}>
                     {quotaRemaining}/{DAY_LUAN_MAX_FOLLOW_UPS}
                   </span>{" "}
-                  câu hôm nay
+                  câu hỏi AI
                 </Mono>
               </>
             )}

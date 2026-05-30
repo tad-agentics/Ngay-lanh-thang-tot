@@ -22,6 +22,7 @@
 
 | Feature | What changed | Blocking? | Fixed? | Commit |
 |---|---|---|---|---|
+| Day luận chat (B) | Server thread `day_luan_threads` + Edge `day-luan-chat` (`open`/`ask`); idempotency `day_luan_ask_idempotency`; FE `/luan-ai` follow-up; deprecated `generate-reading-day` with `question`. Deploy: `db push` + `functions deploy day-luan-chat`. | No | Yes | — |
 | Direction C pivot | Wave 0–11 scaffold: `authenticated` layout, `/lich` `/tra-cuu` `/toi`, entitlements migration, `SUB_EXPIRED` in bat-tu, PayOS SKUs, `/splash` PWA entry, legacy `/app/*` redirects. Full C visual reskin of screens still incremental on top of ported routes. | No | Partial | — |
 | Web Push v1 | Retired: `push_subscriptions`, `push_enabled`, `CNotifPerm`, section Thông báo on `/toi/cai-dat`. Make `CSettings` still shows notif rows — FE omits; subtitle `/toi` updated. Migration `20260527150000`. | No | Yes | — |
 | `/toi/cai-dat` UI | Align Direction C: `--display-2` typography, legal picker (Điều khoản + Bảo mật), FAQ → `/#hoi-dap`, remove duplicate PWA block + back link, logout text-only. | No | Yes | — |

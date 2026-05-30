@@ -21,6 +21,8 @@ export const READING_MAX_TOKENS_HOP_TUOI = 1_536;
 export const READING_MAX_TOKENS_CHON_NGAY = 1_024;
 export const READING_MAX_TOKENS_CHON_NGAY_CARDS = 2_048;
 export const READING_MAX_TOKENS_DAY_DETAIL = 2_560;
+/** Day-detail chat follow-up — đủ token, không thinking (tránh content rỗng). */
+export const READING_MAX_TOKENS_DAY_DETAIL_FOLLOW_UP = 640;
 export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = 2048;
 export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON = 4096;
 /** Paywall preview `menh_tong_quan` — pro model; cần đủ token cho JSON (không bị thinking ăn hết). */

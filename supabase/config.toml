@@ -435,6 +435,9 @@ verify_jwt = false
 [functions.generate-reading-day]
 verify_jwt = false
 
+[functions.day-luan-chat]
+verify_jwt = false
+
 [functions.generate-reading-la-so]
 verify_jwt = false
 

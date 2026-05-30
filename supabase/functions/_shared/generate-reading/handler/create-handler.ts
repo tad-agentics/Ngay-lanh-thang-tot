@@ -84,6 +84,14 @@ export function createGenerateReadingHandler(
       return ok(null, null, req);
     }
 
+    /** Follow-up Q/A for day-detail lives in `day-luan-chat` Edge (server thread). */
+    if (endpoint === "day-detail" && question) {
+      console.warn(
+        "generate-reading day-detail question deprecated; use day-luan-chat",
+      );
+      return ok(null, null, req);
+    }
+
     let rateLimitUserId: string | null = null;
 
     if (endpoint === "ngay-hom-nay" || endpoint === "day-detail") {
@@ -264,9 +272,15 @@ export function createGenerateReadingHandler(
     }
 
     if (rateLimitUserId) {
-      const slot = await acquireGenerateReadingRateLimit(rateLimitUserId);
+      const slot = await acquireGenerateReadingRateLimit(rateLimitUserId, {
+        followUp: question.length > 0,
+      });
       if (!slot) {
-        console.warn("generate-reading rate limited", rateLimitUserId);
+        console.warn(
+          "generate-reading rate limited",
+          rateLimitUserId,
+          question ? "follow-up" : "primary",
+        );
         return ok(null, null, req);
       }
     }

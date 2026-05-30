@@ -12,6 +12,7 @@ import { redisGetString, redisSetNxEx } from "./redis-cache.ts";
 
 const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
 const RATE_LIMIT_WINDOW_SEC = 10;
+const FOLLOW_UP_RATE_LIMIT_WINDOW_SEC = 2;
 
 export type GenerateReadingPreflight =
   | { allowed: true }
@@ -86,14 +87,22 @@ export async function preflightAiReadingAccess(
 }
 
 /**
- * Fixed window: at most one generate-reading LLM path per user per 10s.
+ * Fixed window: at most one generate-reading LLM path per user per window.
+ * Follow-ups use a separate key so the initial day luận does not block chat 10s.
  * @returns true when the caller may proceed (slot acquired or Redis unavailable).
  */
 export async function acquireGenerateReadingRateLimit(
   userId: string,
+  opts?: { followUp?: boolean },
 ): Promise<boolean> {
-  const key = `gen_reading_rl:v1:${userId}`;
-  const acquired = await redisSetNxEx(key, "1", RATE_LIMIT_WINDOW_SEC);
+  const followUp = opts?.followUp === true;
+  const key = followUp
+    ? `gen_reading_rl_followup:v1:${userId}`
+    : `gen_reading_rl:v1:${userId}`;
+  const windowSec = followUp
+    ? FOLLOW_UP_RATE_LIMIT_WINDOW_SEC
+    : RATE_LIMIT_WINDOW_SEC;
+  const acquired = await redisSetNxEx(key, "1", windowSec);
   if (acquired) return true;
   const held = await redisGetString(key);
   return held == null;

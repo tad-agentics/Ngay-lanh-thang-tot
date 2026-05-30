@@ -33,6 +33,19 @@ describe("acquireGenerateReadingRateLimit", () => {
     expect(redisGetString).not.toHaveBeenCalled();
   });
 
+  it("follow-up uses a separate Redis key from primary generation", async () => {
+    redisSetNxEx.mockResolvedValue(true);
+
+    await expect(
+      acquireGenerateReadingRateLimit("user-1", { followUp: true }),
+    ).resolves.toBe(true);
+    expect(redisSetNxEx).toHaveBeenCalledWith(
+      "gen_reading_rl_followup:v1:user-1",
+      "1",
+      2,
+    );
+  });
+
   it("blocks when NX misses and the rate-limit key is held", async () => {
     redisSetNxEx.mockResolvedValue(false);
     redisGetString.mockResolvedValue("1");
