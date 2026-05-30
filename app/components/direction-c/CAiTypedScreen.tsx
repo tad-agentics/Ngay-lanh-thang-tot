@@ -66,6 +66,8 @@ function TypedBody({
 }) {
   const [len, setLen] = useState(0);
   const completedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
   const paragraphs = useMemo(
     () => paragraphSpansInText(text, sentencesPerParagraph),
     [text, sentencesPerParagraph],
@@ -75,9 +77,9 @@ function TypedBody({
     completedRef.current = false;
     if (!active || !text) {
       setLen(text.length);
-      if (text && onComplete && !completedRef.current) {
+      if (text && onCompleteRef.current && !completedRef.current) {
         completedRef.current = true;
-        onComplete();
+        onCompleteRef.current();
       }
       return;
     }
@@ -88,14 +90,14 @@ function TypedBody({
       setLen(i);
       if (i >= text.length) {
         window.clearInterval(id);
-        if (onComplete && !completedRef.current) {
+        if (onCompleteRef.current && !completedRef.current) {
           completedRef.current = true;
-          onComplete();
+          onCompleteRef.current();
         }
       }
     }, TYPED_MS);
     return () => window.clearInterval(id);
-  }, [text, active, onComplete]);
+  }, [text, active]);
 
   const typing = active && len < text.length;
   const lineHeight = fontSize >= 14 ? 1.65 : 1.6;
@@ -269,6 +271,9 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const sectionBundle = buildDayLuanSectionBundle(detail);
 
   const [anchorTypingDone, setAnchorTypingDone] = useState(false);
+  const handleAnchorTypingComplete = useCallback(() => {
+    setAnchorTypingDone(true);
+  }, []);
   const [followUps, setFollowUps] = useState<FollowUpTurn[]>([]);
   const [input, setInput] = useState("");
   const [submitBusy, setSubmitBusy] = useState(false);
@@ -510,7 +515,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                       paywallTeaser ? readingSplit.visible : (reading ?? "")
                     }
                     active={showAnchorHead && !anchorTypingDone}
-                    onComplete={() => setAnchorTypingDone(true)}
+                    onComplete={handleAnchorTypingComplete}
                   />
                 )}
               </AiAnswerRow>
