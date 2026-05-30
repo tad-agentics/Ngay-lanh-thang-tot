@@ -463,7 +463,8 @@ Error envelope (non-stream):
 | Constraint | Server enforcement | UI affordance |
 |---|---|---|
 | **Scope-locked** | System prompt injects `{day, la_so, 4_sources}` and instructs refusal on off-topic. Post-process classifier flags `refused: true` if model strays. | Placeholder `"Hỏi tiếp về ngày DD.MM…"`; italic hint `"Chỉ trả lời về ngày này và lá số của bạn"` |
-| **Rate-limited** | `profiles.daily_chat_used_count` + `daily_chat_reset_at`. Atomic increment per non-refused turn. Reset 0h Asia/Ho_Chi_Minh by cron. Returns `QUOTA_EXCEEDED` past 10. | Quota chip `"còn N/10"`; disabled state at 0 |
+| **Today-only chat** | `day-luan-chat` `ask` only when `thread.day_iso === today` (Asia/Ho_Chi_Minh). Other dates: anchor luận + read-only thread history. `FOLLOW_UP_TODAY_ONLY` on new asks. | Composer + chips hidden; banner + link to `/luan-ai/day-{today}` |
+| **Rate-limited** | `day_luan_threads.follow_up_count` max **10** per thread (today). Redis **1 req / 2s** per user on follow-up. `QUOTA_EXCEEDED` at 10. | Quota chip `"còn N/10"` on today only; disabled at 0 |
 | **Length-bounded** | `max_tokens: 200` on the LLM call. | If response ends mid-sentence with "…", show inline "Tóm tắt thêm" button → resubmits with `mode: 'continue'` (does NOT count against quota) |
 | **Citation-only** | Post-process regex: every claim sentence must contain `[1]`–`[4]` or be a connective. Strip uncited claims before returning. | Citations rendered as `--gold-deep` mono `[n]` inline, tappable → scroll to that source row |
 | **Off-topic** | Classifier flags + refusal template. **Does not decrement quota.** | Answer renders as muted "Câu này ngoài phạm vi…" with redirect chips ("Tra cứu ngày", "Hỏi về lá số") |

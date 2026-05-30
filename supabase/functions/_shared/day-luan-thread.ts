@@ -1,4 +1,5 @@
 import { buildDayLuanPromptContext } from "./day-luan-prompt-context.ts";
+import { todayIsoVietnam } from "./generate-reading/core/dates.ts";
 import { isLuanContextPayload } from "./luan-context.ts";
 import {
   parseAnchorReading,
@@ -8,6 +9,9 @@ import {
 
 /** Max follow-up Q/A turns per user per day (server-enforced). */
 export const MAX_DAY_LUAN_FOLLOW_UPS = 10;
+
+export const DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE =
+  "Hỏi thêm chỉ dùng cho hôm nay (giờ Việt Nam). Ngày này chỉ xem luận giải.";
 
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -67,6 +71,13 @@ export function freezeLuanContext(raw: unknown): Record<string, unknown> {
 
 export function followUpRemaining(count: number): number {
   return Math.max(0, MAX_DAY_LUAN_FOLLOW_UPS - Math.max(0, count));
+}
+
+/** Follow-up chat only for calendar today (Asia/Ho_Chi_Minh); other days are anchor-only. */
+export function dayLuanFollowUpAllowed(dayIso: string): boolean {
+  const d = parseDayIso(dayIso);
+  if (!d) return false;
+  return d === todayIsoVietnam();
 }
 
 export function parseStoredMessages(raw: unknown): ThreadTurn[] {

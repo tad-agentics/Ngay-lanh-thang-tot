@@ -9,6 +9,7 @@ import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { DAY_LUAN_MAX_FOLLOW_UPS } from "~/lib/day-luan-chat";
+import { todayIsoInVn } from "~/lib/today-reading-cache";
 import {
   anchorQuestionForScore,
   buildDayLuanSectionBundle,
@@ -263,9 +264,12 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     compareWithTomorrow,
     followUpRemaining,
     serverThreadMessages,
+    followUpChatEnabled,
   } = useDayLuanReading(iso);
 
   const dayShort = formatDayIsoShort(iso);
+  const todayIso = todayIsoInVn();
+  const todayShort = formatDayIsoShort(todayIso);
   const score = detail?.score ?? null;
   const anchorQuestion = anchorQuestionForScore(score, iso);
   const sectionBundle = buildDayLuanSectionBundle(detail);
@@ -333,7 +337,14 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const submitFollowUp = useCallback(
     async (rawQuestion: string) => {
       const question = rawQuestion.trim();
-      if (!question || submitBusy || quotaExhausted || !unlocked || paywallTeaser) {
+      if (
+        !question ||
+        submitBusy ||
+        quotaExhausted ||
+        !unlocked ||
+        paywallTeaser ||
+        !followUpChatEnabled
+      ) {
         return;
       }
 
@@ -380,9 +391,9 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     [
       askFollowUp,
       compareWithTomorrow,
-      iso,
+      followUpChatEnabled,
+      paywallTeaser,
       quotaExhausted,
-      reading,
       scrollToLatest,
       submitBusy,
       unlocked,
@@ -541,42 +552,46 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   canChi={detail?.canChi ?? "—"}
                   sourceLabels={resolveLuanSourceLabels(detail)}
                 />
-                <div
-                  className="mt-[22px] pt-4"
-                  style={{ borderTop: `1px solid ${CT.hairline}` }}
-                >
-                  <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Hỏi tiếp gợi ý</Mono>
-                  <div className="mt-2 flex flex-col gap-1.5">
-                    {DAY_LUAN_SUGGESTED_CHIPS.slice(0, 3).map((chip) => (
-                      <div
-                        key={chip}
-                        className="py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
-                        style={{
-                          background: "#fff",
-                          border: `1px solid ${CT.hairline}`,
-                          color: CT.ink2,
-                        }}
-                      >
-                        {chip}
+                {followUpChatEnabled ? (
+                  <>
+                    <div
+                      className="mt-[22px] pt-4"
+                      style={{ borderTop: `1px solid ${CT.hairline}` }}
+                    >
+                      <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Hỏi tiếp gợi ý</Mono>
+                      <div className="mt-2 flex flex-col gap-1.5">
+                        {DAY_LUAN_SUGGESTED_CHIPS.slice(0, 3).map((chip) => (
+                          <div
+                            key={chip}
+                            className="py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
+                            style={{
+                              background: "#fff",
+                              border: `1px solid ${CT.hairline}`,
+                              color: CT.ink2,
+                            }}
+                          >
+                            {chip}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-                <div
-                  className="mt-4 flex items-center gap-2.5 py-2.5 px-3.5"
-                  style={{
-                    background: "#fff",
-                    border: `1px solid ${CT.hairline}`,
-                    borderRadius: 999,
-                  }}
-                >
-                  <span
-                    className="flex-1 font-serif text-[13.5px] italic"
-                    style={{ color: CT.muted }}
-                  >
-                    Hỏi tiếp về ngày {dayShort}…
-                  </span>
-                </div>
+                    </div>
+                    <div
+                      className="mt-4 flex items-center gap-2.5 py-2.5 px-3.5"
+                      style={{
+                        background: "#fff",
+                        border: `1px solid ${CT.hairline}`,
+                        borderRadius: 999,
+                      }}
+                    >
+                      <span
+                        className="flex-1 font-serif text-[13.5px] italic"
+                        style={{ color: CT.muted }}
+                      >
+                        Hỏi tiếp về ngày {dayShort}…
+                      </span>
+                    </div>
+                  </>
+                ) : null}
               </DayLuanPaywallBlur>
             ) : null}
 
@@ -589,6 +604,15 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 canChi={detail?.canChi ?? "—"}
                 sourceLabels={resolveLuanSourceLabels(detail)}
               />
+            ) : null}
+
+            {!paywallTeaser && !followUpChatEnabled && followUps.length > 0 ? (
+              <Mono
+                className="mt-[22px] block"
+                style={{ color: CT.muted, fontSize: 9.5, letterSpacing: "0.08em" }}
+              >
+                Lịch sử hỏi đáp · chỉ xem
+              </Mono>
             ) : null}
 
             {!paywallTeaser
@@ -648,6 +672,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               : null}
 
             {!paywallTeaser &&
+            followUpChatEnabled &&
             anchorDone &&
             remainingChips.length > 0 &&
             !quotaExhausted ? (
@@ -678,12 +703,41 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </div>
             ) : null}
 
+            {!paywallTeaser && anchorDone && unlocked && !followUpChatEnabled ? (
+              <div
+                className="mt-[22px] pt-4"
+                style={{ borderTop: `1px solid ${CT.hairline}` }}
+              >
+                <p
+                  className="font-serif text-[13.5px] leading-snug m-0"
+                  style={{ color: CT.ink2 }}
+                >
+                  Phần hỏi thêm chỉ dùng cho{" "}
+                  <strong style={{ fontWeight: 600 }}>hôm nay</strong> ({todayShort},
+                  giờ Việt Nam). Với ngày {dayShort} bạn xem luận giải phía trên.
+                </p>
+                {iso !== todayIso ? (
+                  <Link
+                    to={`/luan-ai/day-${todayIso}`}
+                    className="inline-block mt-3 font-[family-name:var(--display-2)] text-[11px] font-extrabold uppercase tracking-wider no-underline"
+                    style={{ color: CT.goldDeep }}
+                  >
+                    Xem luận hôm nay →
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+
             <div ref={turnEndRef} aria-hidden className="h-1" />
           </>
         ) : null}
       </div>
 
-      {!paywallTeaser && unlocked && !detailLoading && !detailError ? (
+      {!paywallTeaser &&
+      followUpChatEnabled &&
+      unlocked &&
+      !detailLoading &&
+      !detailError ? (
         <div
           className="px-5 pt-2 pb-[18px]"
           style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}

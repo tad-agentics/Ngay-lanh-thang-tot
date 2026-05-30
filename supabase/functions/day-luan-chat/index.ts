@@ -8,6 +8,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
   appendThreadTurns,
+  DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
+  dayLuanFollowUpAllowed,
   findCachedAnswerInMessages,
   followUpRemaining,
   freezeLuanContext,
@@ -377,6 +379,20 @@ Deno.serve(async (req) => {
     const cachedInThread = findCachedAnswerInMessages(storedMessages, question);
     if (cachedInThread) {
       return json(askSuccessPayload(count, cachedInThread), 200, req);
+    }
+
+    if (!dayLuanFollowUpAllowed(dayIso)) {
+      return json(
+        {
+          ok: false,
+          error_code: "FOLLOW_UP_TODAY_ONLY",
+          message: DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
+          follow_up_count: count,
+          follow_up_remaining: 0,
+        },
+        403,
+        req,
+      );
     }
 
     const now = new Date().toISOString();

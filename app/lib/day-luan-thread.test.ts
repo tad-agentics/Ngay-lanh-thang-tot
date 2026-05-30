@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   appendThreadTurns,
+  dayLuanFollowUpAllowed,
   findCachedAnswerInMessages,
   followUpRemaining,
   MAX_DAY_LUAN_FOLLOW_UPS,
@@ -43,6 +44,19 @@ describe("day-luan-thread", () => {
   it("parses idempotency keys", () => {
     expect(parseIdempotencyKey("1730000000123")).toBe("1730000000123");
     expect(parseIdempotencyKey("ab")).toBeNull();
+  });
+
+  it("allows follow-up only for today in Asia/Ho_Chi_Minh", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-29T05:00:00.000Z"));
+    expect(dayLuanFollowUpAllowed("2026-05-29")).toBe(true);
+    expect(dayLuanFollowUpAllowed("2026-05-28")).toBe(false);
+    expect(dayLuanFollowUpAllowed("invalid")).toBe(false);
+    vi.useRealTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("finds cached answer in message history", () => {

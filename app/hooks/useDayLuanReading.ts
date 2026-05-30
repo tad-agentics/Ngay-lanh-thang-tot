@@ -17,7 +17,12 @@ import {
 import { parseDayDetailForView, type DayDetailViewModel } from "~/lib/day-detail-view";
 import { parseDayCompareResponse } from "~/lib/luan-context";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
+import {
+  DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
+  dayLuanFollowUpAllowed,
+} from "~/lib/day-luan-follow-up";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
+import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 type ThreadOpenSnapshot = {
   iso: string;
@@ -156,7 +161,9 @@ export function useDayLuanReading(iso: string) {
   );
 
   useEffect(() => {
-    if (!reading || !unlocked || paywallTeaser || !luanContext || !profile) return;
+    if (!reading || !unlocked || paywallTeaser || !luanContext || !profile) {
+      return;
+    }
     const anchorLen = reading.trim().length;
     const snap = threadOpenRef.current;
     if (
@@ -198,6 +205,13 @@ export function useDayLuanReading(iso: string) {
           message: "Cần mở luận giải trước.",
         };
       }
+      if (!dayLuanFollowUpAllowed(iso)) {
+        return {
+          ok: false as const,
+          reading: null as string | null,
+          message: DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
+        };
+      }
       const q = question.trim();
       if (!q) {
         return {
@@ -228,7 +242,9 @@ export function useDayLuanReading(iso: string) {
         const message =
           res.code === "IN_PROGRESS"
             ? "Đang xử lý câu hỏi. Đợi vài giây rồi thử lại."
-            : res.message;
+            : res.code === "FOLLOW_UP_TODAY_ONLY"
+              ? DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE
+              : res.message;
         return {
           ok: false as const,
           reading: null,
@@ -249,7 +265,7 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [luanContext, unlocked, paywallTeaser, ensureDayLuanThread, reading],
+    [luanContext, unlocked, paywallTeaser, ensureDayLuanThread, reading, iso],
   );
 
   const compareWithIso = useCallback(
@@ -296,7 +312,15 @@ export function useDayLuanReading(iso: string) {
   );
 
   const compareWithTomorrow = useCallback(async () => {
-    const nextIso = addDaysToIso(iso, 1);
+    if (!dayLuanFollowUpAllowed(iso)) {
+      return {
+        ok: false as const,
+        reading: null as string | null,
+        message:
+          "So sánh với ngày mai chỉ dùng khi xem luận hôm nay.",
+      };
+    }
+    const nextIso = addDaysToIso(todayIsoInVn(), 1);
     return compareWithIso(nextIso);
   }, [compareWithIso, iso]);
 
@@ -332,5 +356,6 @@ export function useDayLuanReading(iso: string) {
     threadId,
     followUpRemaining,
     serverThreadMessages,
+    followUpChatEnabled: dayLuanFollowUpAllowed(iso),
   };
 }

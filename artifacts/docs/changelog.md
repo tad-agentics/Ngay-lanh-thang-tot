@@ -23,6 +23,7 @@
 | Feature | What changed | Blocking? | Fixed? | Commit |
 |---|---|---|---|---|
 | Day luận chat (B) | Server thread `day_luan_threads` + Edge `day-luan-chat` (`open`/`ask`); idempotency `day_luan_ask_idempotency`; FE `/luan-ai` follow-up; deprecated `generate-reading-day` with `question`. Deploy: `db push` + `functions deploy day-luan-chat`. | No | Yes | — |
+| Day luận follow-up today-only | `ask` returns `FOLLOW_UP_TODAY_ONLY` when `thread.day_iso` ≠ today (VN). Other days: anchor + read-only thread via `open`; max 10 FU on today. Shared `dayLuanFollowUpAllowed` in `_shared/day-luan-thread.ts`. Deploy: `functions deploy day-luan-chat` + FE. | No | Yes | — |
 | Coupon replay | Unique `(user_id, coupon)` on `payment_orders` pending + paid; `claim_payment_order_paid` RPC (claim + `increment` in one txn); quote blocks active pending; checkout `COUPON_IN_USE` on `23505`. | No | Yes | — |
 | Quote→pay race | `create_checkout_payment_order` RPC locks coupon + re-prices atomically; webhook re-validates coupon at claim; `CPayConfirmSheet` re-quotes before Pay. | No | Yes | — |
 | Direction C pivot | Wave 0–11 scaffold: `authenticated` layout, `/lich` `/tra-cuu` `/toi`, entitlements migration, `SUB_EXPIRED` in bat-tu, PayOS SKUs, `/splash` PWA entry, legacy `/app/*` redirects. Full C visual reskin of screens still incremental on top of ported routes. | No | Partial | — |
