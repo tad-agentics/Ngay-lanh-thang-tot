@@ -24,6 +24,7 @@ import { resolvePostLoginPath } from "./auth-post-login";
 function mockProfileRow(row: {
   onboarding_completed_at: string | null;
   ngay_sinh: string | null;
+  gio_sinh?: string | null;
 }) {
   const maybeSingle = vi.fn().mockResolvedValue({ data: row, error: null });
   const eq = vi.fn().mockReturnValue({ maybeSingle });
@@ -43,12 +44,28 @@ describe("resolvePostLoginPath", () => {
     mockProfileRow({
       onboarding_completed_at: null,
       ngay_sinh: "1990-01-01",
+      gio_sinh: null,
     });
 
     const dest = await resolvePostLoginPath();
 
     expect(tryConsumePendingReferralClaim).toHaveBeenCalledWith(session);
-    expect(dest).toBe("/gio-sinh");
+    expect(dest).toBe("/dang-ky");
+  });
+
+  it("routes to calendar build when birth date and hour exist", async () => {
+    const session = { access_token: "tok", user: { id: "u1" } };
+    getSession.mockResolvedValue({ data: { session }, error: null });
+    tryConsumePendingReferralClaim.mockResolvedValue(undefined);
+    mockProfileRow({
+      onboarding_completed_at: null,
+      ngay_sinh: "1990-01-01",
+      gio_sinh: "05:00:00",
+    });
+
+    const dest = await resolvePostLoginPath();
+
+    expect(dest).toBe("/dang-dung-lich");
   });
 
   it("skips referral when there is no session", async () => {

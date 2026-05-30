@@ -41,12 +41,12 @@ export default function DangDungLichRoute() {
     const body = profileToBatTuPersonQuery(profile);
     if (!body.birth_date) {
       toast.error("Thiếu ngày sinh trên hồ sơ.");
-      navigate("/gio-sinh", { replace: true });
+      navigate("/dang-ky", { replace: true });
       return;
     }
     if (!body.birth_time) {
       toast.error("Thiếu giờ sinh trên hồ sơ.");
-      navigate("/gio-sinh", { replace: true });
+      navigate("/dang-ky", { replace: true });
       return;
     }
     ranRef.current = true;
@@ -61,7 +61,7 @@ export default function DangDungLichRoute() {
       if (cancelled) return;
       if (!res.ok) {
         toast.error(res.message ?? "Không lập được lá số.");
-        navigate("/gio-sinh", { replace: true });
+        navigate("/dang-ky", { replace: true });
         return;
       }
 

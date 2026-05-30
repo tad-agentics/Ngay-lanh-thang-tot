@@ -26,14 +26,20 @@ export default function SplashRoute() {
     void (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("onboarding_completed_at")
+        .select("onboarding_completed_at, ngay_sinh, gio_sinh")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
       if (data?.onboarding_completed_at) {
         navigate("/lich", { replace: true });
       } else {
-        navigate("/gio-sinh", { replace: true });
+        const hasDate =
+          data?.ngay_sinh != null && String(data.ngay_sinh).trim() !== "";
+        const hasGio =
+          data?.gio_sinh != null && String(data.gio_sinh).trim() !== "";
+        navigate(hasDate && hasGio ? "/dang-dung-lich" : "/dang-ky", {
+          replace: true,
+        });
       }
     })();
 

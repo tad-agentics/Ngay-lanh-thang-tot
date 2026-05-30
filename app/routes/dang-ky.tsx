@@ -2,24 +2,18 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
+import { BirthHourCanhPicker } from "~/components/auth/BirthHourCanhPicker";
 import {
   btnPrimaryGold,
   C,
+  CANH_HOURS,
   CForestShell,
   inputLabel,
   inputUnderline,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
+import { useProfile } from "~/hooks/useProfile";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
-import {
-  ddMmYyyyInputToIsoDate,
-  formatDdMmYyyyWithAutoSlash,
-  isoYmdToDdMmYyyyInput,
-} from "~/lib/bat-tu-birth";
-import {
-  landingSignupPrefillHasAny,
-  parseLandingSignupPrefill,
-} from "~/lib/landing-cta-constants";
 import { useAuth } from "~/lib/auth";
 import {
   displayNameFromAuthUser,
@@ -28,6 +22,17 @@ import {
   oauthProviderLabel,
 } from "~/lib/auth-onboarding";
 import { resolvePostLoginPath } from "~/lib/auth-post-login";
+import {
+  batTuBirthTimeCodeToGioSinh,
+  ddMmYyyyInputToIsoDate,
+  formatDdMmYyyyWithAutoSlash,
+  isoYmdToDdMmYyyyInput,
+} from "~/lib/bat-tu-birth";
+import { canhPickerIndexFromGioSinh } from "~/lib/birth-hour-canh";
+import {
+  landingSignupPrefillHasAny,
+  parseLandingSignupPrefill,
+} from "~/lib/landing-cta-constants";
 import {
   returnToFromSearchParams,
   stashPendingReturnTo,
@@ -41,6 +46,7 @@ import { supabase } from "~/lib/supabase";
 export default function DangKy() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
+  const { profile } = useProfile();
   const [searchParams] = useSearchParams();
   const completingProfile = isCompletingAuthOnboarding(user);
   const oauthLabel = oauthProviderLabel(user);
@@ -68,8 +74,19 @@ export default function DangKy() {
     prefill.ngaySinh ? isoYmdToDdMmYyyyInput(prefill.ngaySinh) : "",
   );
   const [password, setPassword] = useState("");
+  const [selectedCanh, setSelectedCanh] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [lunarNote, setLunarNote] = useState(false);
+
+  const ngayIsoForPicker = useMemo(
+    () => ddMmYyyyInputToIsoDate(ngaySinh.trim()),
+    [ngaySinh],
+  );
+
+  const gioiTinhForPicker =
+    profile?.gioi_tinh === "nam" || profile?.gioi_tinh === "nu"
+      ? profile.gioi_tinh
+      : prefill.gioiTinh;
 
   useEffect(() => {
     if (!user) return;
@@ -80,13 +97,58 @@ export default function DangKy() {
   }, [user]);
 
   useEffect(() => {
+    if (!profile) return;
+    if (profile.display_name?.trim()) {
+      setFullName((prev) => (prev.trim() ? prev : profile.display_name!.trim()));
+    }
+    if (profile.ngay_sinh?.trim()) {
+      setNgaySinh((prev) =>
+        prev.trim() ? prev : isoYmdToDdMmYyyyInput(profile.ngay_sinh!),
+      );
+    }
+    const idx = canhPickerIndexFromGioSinh(profile.gio_sinh);
+    if (idx != null) {
+      setSelectedCanh((prev) => (prev == null ? idx : prev));
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (prefill.gioSinh && selectedCanh == null) {
+      const idx = canhPickerIndexFromGioSinh(prefill.gioSinh);
+      if (idx != null) setSelectedCanh(idx);
+    }
+  }, [prefill.gioSinh, selectedCanh]);
+
+  useEffect(() => {
     if (authLoading || !user) return;
     void resolvePostLoginPath().then((dest) => {
-      if (dest !== "/dang-ky" && dest !== "/gio-sinh") {
+      if (dest !== "/dang-ky") {
         navigate(dest, { replace: true });
       }
     });
   }, [authLoading, user, navigate]);
+
+  async function persistBirthProfile(uid: string, ngayIso: string, gioSinh: string) {
+    const patch = {
+      display_name: fullName.trim() || undefined,
+      ngay_sinh: ngayIso,
+      gio_sinh: gioSinh,
+    };
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update(patch)
+      .eq("id", uid);
+    if (profileError) return profileError.message;
+
+    if (landingSignupPrefillHasAny(prefill)) {
+      const pe = await applyLandingPrefillToProfile(uid, prefill);
+      if (pe) {
+        return "Đã lưu lá số nhưng chưa áp dụng được thông tin từ trang chủ.";
+      }
+    }
+    window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+    return null;
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -95,35 +157,27 @@ export default function DangKy() {
       toast.error("Nhập ngày sinh theo định dạng DD/MM/YYYY.");
       return;
     }
+    if (selectedCanh == null) {
+      toast.error("Chọn canh giờ sinh.");
+      return;
+    }
+    const gioSinh = batTuBirthTimeCodeToGioSinh(CANH_HOURS[selectedCanh]!.code);
+    if (!gioSinh) {
+      toast.error("Không chọn được giờ sinh.");
+      return;
+    }
 
     if (completingProfile && user) {
       setBusy(true);
       stashPendingReferralCode(referralFromUrl);
-      const patch = {
-        display_name: fullName.trim() || undefined,
-        ngay_sinh: ngayIso,
-      };
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update(patch)
-        .eq("id", user.id);
-      if (profileError) {
-        toast.error("Chưa lưu được hồ sơ — thử lại.");
+      const err = await persistBirthProfile(user.id, ngayIso, gioSinh);
+      if (err) {
+        toast.error(err);
         setBusy(false);
         return;
       }
-      if (landingSignupPrefillHasAny(prefill)) {
-        const pe = await applyLandingPrefillToProfile(user.id, prefill);
-        if (pe) {
-          toast.error(
-            "Đã lưu ngày sinh nhưng chưa áp dụng được thông tin từ trang chủ.",
-          );
-        }
-      }
-      window.dispatchEvent(new Event("ngaytot:profile-refresh"));
       toast.success("Đã lưu thông tin bản mệnh.");
-      const dest = await resolvePostLoginPath();
-      navigate(dest, { replace: true });
+      navigate("/dang-dung-lich", { replace: true });
       setBusy(false);
       return;
     }
@@ -158,30 +212,18 @@ export default function DangKy() {
     const uid = data.user?.id;
 
     if (session && uid) {
-      const patch = {
-        display_name: fullName.trim() || undefined,
-        ngay_sinh: ngayIso,
-      };
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update(patch)
-        .eq("id", uid);
-      if (profileError) {
-        toast.error("Tài khoản đã tạo nhưng chưa lưu được hồ sơ — thử lại.");
+      const err = await persistBirthProfile(uid, ngayIso, gioSinh);
+      if (err) {
+        toast.error(
+          err.startsWith("Đã lưu")
+            ? err
+            : "Tài khoản đã tạo nhưng chưa lưu được hồ sơ — thử lại.",
+        );
         setBusy(false);
         return;
       }
-      if (landingSignupPrefillHasAny(prefill)) {
-        const pe = await applyLandingPrefillToProfile(uid, prefill);
-        if (pe) {
-          toast.error(
-            "Tài khoản đã tạo nhưng chưa lưu được thông tin từ form trang chủ.",
-          );
-        }
-      }
       toast.success("Đã tạo tài khoản.");
-      const dest = await resolvePostLoginPath();
-      navigate(dest, { replace: true });
+      navigate("/dang-dung-lich", { replace: true });
     } else {
       toast.success(
         "Đã gửi email xác nhận (nếu bật). Mở link trong thư rồi đăng nhập.",
@@ -195,11 +237,12 @@ export default function DangKy() {
     <CForestShell>
       <BackBar
         dark
-        onBack={() => navigate(referralFromUrl ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}` : "/dang-nhap")}
-        endAdornment={
-          <Mono style={{ color: "rgba(200,188,152,0.5)", fontSize: 9.5 }}>
-            1 / 2
-          </Mono>
+        onBack={() =>
+          navigate(
+            referralFromUrl
+              ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}`
+              : "/dang-nhap",
+          )
         }
       />
 
@@ -214,7 +257,7 @@ export default function DangKy() {
         }}
       >
         <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
-          {completingProfile ? "Hoàn tất lá số · bước 1" : "Lập lá số · bước 1"}
+          Lập lá số
         </Mono>
         <h1
           style={{
@@ -236,14 +279,14 @@ export default function DangKy() {
             fontSize: 14,
             color: "rgba(237,231,211,0.65)",
             lineHeight: 1.55,
-            maxWidth: 280,
+            maxWidth: 300,
           }}
         >
           {completingProfile
             ? oauthLabel
-              ? `Đã đăng nhập bằng ${oauthLabel}. Thêm họ tên và ngày sinh để lập lá số — không cần tạo mật khẩu mới.`
-              : "Thêm họ tên và ngày sinh để lập lá số — tài khoản của bạn đã được tạo."
-            : "Lá số Bát Tự Tứ Trụ cần chính xác ngày, tháng, năm và giờ sinh. Sai lệch một giờ sinh, toàn bộ luận đoán cát hung sẽ thay đổi."}
+              ? `Đã đăng nhập bằng ${oauthLabel}. Nhập ngày sinh và canh giờ để lập lá số — không cần mật khẩu mới.`
+              : "Nhập ngày sinh và canh giờ để lập lá số — tài khoản của bạn đã được tạo."
+            : "Lá số Bát Tự Tứ Trụ cần chính xác ngày, tháng, năm và giờ sinh. Sai lệch một canh giờ, toàn bộ luận đoán cát hung sẽ thay đổi."}
         </p>
 
         <div
@@ -379,14 +422,21 @@ export default function DangKy() {
               </div>
             </div>
           ) : null}
+
+          <BirthHourCanhPicker
+            birthDateIso={ngayIsoForPicker}
+            gioiTinh={gioiTinhForPicker}
+            selected={selectedCanh}
+            onSelect={setSelectedCanh}
+          />
         </div>
 
         <button
           type="submit"
           disabled={busy}
-          style={{ ...btnPrimaryGold, marginTop: "auto" }}
+          style={{ ...btnPrimaryGold, marginTop: 24 }}
         >
-          Tiếp tục — Chọn giờ sinh
+          {busy ? "Đang lưu…" : "Hoàn tất & Dựng lịch →"}
         </button>
         <div
           style={{

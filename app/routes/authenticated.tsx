@@ -126,7 +126,7 @@ function AuthenticatedShellWithProfile({
 
   const needsOnboarding = profile.onboarding_completed_at == null;
   if (needsOnboarding && !isOnboardingExemptPath(location.pathname)) {
-    return <Navigate to="/gio-sinh" replace />;
+    return <Navigate to="/dang-ky" replace />;
   }
 
   if (
