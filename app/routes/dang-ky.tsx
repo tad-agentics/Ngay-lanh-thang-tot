@@ -13,7 +13,6 @@ import {
   inputUnderline,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
-import { useProfile } from "~/hooks/useProfile";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import { useAuth } from "~/lib/auth";
 import {
@@ -42,12 +41,19 @@ import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
+import type { Database } from "~/lib/database.types";
 import { supabase } from "~/lib/supabase";
+
+type OnboardingProfileRow = Pick<
+  Database["public"]["Tables"]["profiles"]["Row"],
+  "display_name" | "ngay_sinh" | "gio_sinh" | "gioi_tinh"
+>;
 
 export default function DangKy() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { profile } = useProfile();
+  const [onboardingProfile, setOnboardingProfile] =
+    useState<OnboardingProfileRow | null>(null);
   const [searchParams] = useSearchParams();
   const completingProfile = isCompletingAuthOnboarding(user);
   const oauthLabel = oauthProviderLabel(user);
@@ -90,31 +96,51 @@ export default function DangKy() {
   const gioiTinhForPicker = gioiTinh;
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setOnboardingProfile(null);
+      return;
+    }
     const fromAuth = displayNameFromAuthUser(user);
     if (fromAuth) {
       setFullName((prev) => (prev.trim() ? prev : fromAuth));
     }
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, ngay_sinh, gio_sinh, gioi_tinh")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!cancelled) setOnboardingProfile(data ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
   useEffect(() => {
-    if (!profile) return;
-    if (profile.display_name?.trim()) {
-      setFullName((prev) => (prev.trim() ? prev : profile.display_name!.trim()));
-    }
-    if (profile.ngay_sinh?.trim()) {
-      setNgaySinh((prev) =>
-        prev.trim() ? prev : isoYmdToDdMmYyyyInput(profile.ngay_sinh!),
+    if (!onboardingProfile) return;
+    if (onboardingProfile.display_name?.trim()) {
+      setFullName((prev) =>
+        prev.trim() ? prev : onboardingProfile.display_name!.trim(),
       );
     }
-    if (profile.gioi_tinh === "nam" || profile.gioi_tinh === "nu") {
-      setGioiTinh((prev) => prev ?? profile.gioi_tinh);
+    if (onboardingProfile.ngay_sinh?.trim()) {
+      setNgaySinh((prev) =>
+        prev.trim()
+          ? prev
+          : isoYmdToDdMmYyyyInput(onboardingProfile.ngay_sinh!),
+      );
     }
-    const idx = canhPickerIndexFromGioSinh(profile.gio_sinh);
+    const gt = onboardingProfile.gioi_tinh;
+    if (gt === "nam" || gt === "nu") {
+      setGioiTinh((prev) => prev ?? gt);
+    }
+    const idx = canhPickerIndexFromGioSinh(onboardingProfile.gio_sinh);
     if (idx != null) {
       setSelectedCanh((prev) => (prev == null ? idx : prev));
     }
-  }, [profile]);
+  }, [onboardingProfile]);
 
   useEffect(() => {
     if (prefill.gioSinh && selectedCanh == null) {
