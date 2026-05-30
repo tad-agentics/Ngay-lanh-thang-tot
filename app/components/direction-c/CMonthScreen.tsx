@@ -105,18 +105,18 @@ function MonthGrid({
             <div
               style={{
                 aspectRatio: "1 / 1",
-                padding: "5px 0 8px",
+                padding: "4px 0 3px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                position: "relative",
                 cursor: c.otherMonth || !c.iso ? "default" : "pointer",
               }}
             >
               <div
                 style={{
-                  width: 28,
-                  height: 28,
+                  width: 29,
+                  height: 29,
+                  flexShrink: 0,
                   borderRadius: "50%",
                   background: isToday ? CT.forest : "transparent",
                   display: "flex",
@@ -128,7 +128,7 @@ function MonthGrid({
                   style={{
                     fontFamily: "var(--display-2)",
                     fontWeight: isToday ? 800 : 600,
-                    fontSize: 15.5,
+                    fontSize: 16.5,
                     color: isToday
                       ? CT.cream
                       : c.otherMonth
@@ -143,37 +143,39 @@ function MonthGrid({
               </div>
               <div
                 style={{
-                  marginTop: 3,
-                  height: 11,
+                  marginTop: 2,
+                  height: 12,
+                  flexShrink: 0,
                   lineHeight: 1,
                   fontFamily: "var(--serif)",
-                  fontSize: 10.5,
+                  fontSize: 11.5,
                   color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
                 }}
               >
                 {c.otherMonth ? "·" : lunarDay ?? "·"}
               </div>
-              {!c.otherMonth && c.score != null ? (
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 6,
-                    left: 0,
-                    right: 0,
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 6,
+                  display: "flex",
+                  alignItems: "flex-end",
+                  justifyContent: "center",
+                  paddingBottom: 2,
+                }}
+              >
+                {!c.otherMonth && c.score != null ? (
                   <span
                     style={{
-                      width: 4,
-                      height: 4,
+                      width: 5,
+                      height: 5,
+                      flexShrink: 0,
                       borderRadius: "50%",
                       background: scoreDotColor(c.score),
                     }}
                   />
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
           );
           if (c.iso && !c.otherMonth) {

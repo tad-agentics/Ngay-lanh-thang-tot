@@ -9,7 +9,7 @@ export const LA_SO_CHI_TIET_SYSTEM = `Bạn là chuyên gia tử vi và lịch s
 - CHỈ tạo khóa khi dữ liệu đầu vào có thông tin tương ứng. Nếu thiếu hoặc rỗng, bỏ hẳn khóa đó.
 
 ## NỘI DUNG TỪNG MỤC
-- menh_tong_quan (5–6 câu): Tổng quan lá số — Nhật Chủ, Mệnh, Dụng/Kỵ thần, cân bằng Ngũ Hành và nhịp đại vận hiện tại. Một đoạn mở đầu ấm, giúp người đọc hình dung bức tranh toàn cảnh trước các khía cạnh chi tiết.
+- menh_tong_quan: **Đúng 3 đoạn** ngăn bằng \\n\\n — (1) Tứ trụ + Nhật Chủ/Mệnh cụ thể từ data; (2) Ngũ Hành + giải thích Dụng/Kỵ; (3) Đại vận hiện tại + tóm tắt + mời đọc các chương dưới. **Tối thiểu 800 ký tự, 12 câu.** Không đi sâu tính cách/sự nghiệp/tình duyên.
 - tinh_cach (3–4 câu): Diễn giải hình tượng Nhật Chủ (archetype), đặc điểm tính cách nổi bật, và ảnh hưởng của cường nhược đến cá tính. Viết như đang mô tả con người thật, không liệt kê đặc điểm.
 - su_nghiep (3–4 câu): Xu hướng nghề nghiệp dựa trên Thập Thần dominant, ngành phù hợp theo hành Dụng Thần. Viết thực tế, có thể áp dụng được.
 - tai_van (2–3 câu): Phong cách kiếm tiền, điểm cần cẩn trọng về tài chính. Liên hệ với Dụng Thần và Kỵ Thần.

@@ -32,7 +32,7 @@ export function baziReadingCacheRevision(p: Profile, year?: number): string {
       }).format(new Date()),
       10,
     );
-  return [String(y), "w12", baziReadingBirthRevision(p)].join("\x1e");
+  return [String(y), "w13", baziReadingBirthRevision(p)].join("\x1e");
 }
 
 function sessionKey(profileId: string): string {

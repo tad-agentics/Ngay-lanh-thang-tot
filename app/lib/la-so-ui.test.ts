@@ -291,6 +291,37 @@ describe("laSoJsonToChiTiet", () => {
     });
   });
 
+  it("extractLaSoChiTietEnrichment merges dai_van fields from GET la-so", () => {
+    const ext = extractLaSoChiTietEnrichment({
+      dai_van_current: { display: "Ất Dậu", age_range: "28-37" },
+      dai_van_list: [{ label: "Canh Thìn", years: "1-10" }],
+      _raw: { element_counts: { Kim: 2, Mộc: 2 } },
+    });
+    expect(ext?.dai_van_current).toEqual({
+      display: "Ất Dậu",
+      age_range: "28-37",
+    });
+    expect(Array.isArray(ext?.dai_van_list)).toBe(true);
+    const merged = mergeLaSoJsonForChiTietDisplay(
+      { dai_van_list: [{ label: "Canh Thìn", years: "1-10" }] } as LaSoJson,
+      ext,
+    );
+    const d = laSoJsonToChiTiet(merged);
+    const active = d.daiVanList.filter((x) => x.isActive);
+    expect(active).toHaveLength(1);
+    expect(active[0]?.label).toBe("Ất Dậu");
+    expect(active[0]?.years).toBe("28-37");
+  });
+
+  it("dai_van_list row prefers age_range_muc over years", () => {
+    const d = laSoJsonToChiTiet({
+      dai_van_list: [
+        { label: "Quý Mùi", years: "31-40", age_range_muc: "36-45" },
+      ],
+    });
+    expect(d.daiVanList[0]?.years).toBe("36-45");
+  });
+
   it("element_counts trong data._raw (shape la-so đầy đủ)", () => {
     const d = laSoJsonToChiTiet({
       data: {

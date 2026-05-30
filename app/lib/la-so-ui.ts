@@ -48,40 +48,10 @@ function numOrStrToInt(x: unknown): number | null {
 }
 
 /**
- * Khoảng tuổi một đại vận trên timeline (chu kỳ 10 năm từ `dai_van_list` / `cycles`).
+ * Khoảng tuổi một đại vận — ưu tiên tuổi mụ / âm lịch, rồi start/end hoặc age_range.
  */
 function pickDaiVanYearsFromObject(o: Record<string, unknown>): string {
-  const start = numOrStrToInt(
-    o.start_age ??
-      o.startAge ??
-      o.age_from ??
-      o.ageFrom ??
-      o.tuoi_tu ??
-      o.tuoiTu,
-  );
-  const end = numOrStrToInt(
-    o.end_age ??
-      o.endAge ??
-      o.age_to ??
-      o.ageTo ??
-      o.tuoi_den ??
-      o.tuoiDen,
-  );
-  if (start != null && end != null && start <= end) {
-    return `${start}-${end}`;
-  }
-  return pickStr(o, [
-    "age_range_lunar",
-    "age_range_muc",
-    "tuoi_muc_range",
-    "tuoi_range",
-    "age_range_vn",
-    "age_range",
-    "ageRange",
-    "years",
-    "range",
-    "nam",
-  ]);
+  return pickDaiVanCurrentYearsFromObject(o);
 }
 
 /**
@@ -210,7 +180,9 @@ function getDaiVanContext(root: Record<string, unknown>): {
     }
     if (!flatCurrent) {
       flatCurrent =
-        asRecord(layer.dai_van_current) ?? asRecord(layer.daiVanCurrent);
+        asRecord(layer.dai_van_current) ??
+        asRecord(layer.daiVanCurrent) ??
+        asRecord(layer.current_dai_van);
     }
   }
   if (flatCurrent) {
@@ -244,6 +216,30 @@ function applyCurrentToDaiVanRows(
       isActive: row.isActive || labelMatch || rangeMatch,
     };
   });
+}
+
+/** Khi `dai_van.current` có nhãn không nằm trong `dai_van_list` (cache cũ), chèn hàng hiện tại lên đầu. */
+function injectCurrentDaiVanIfMissingFromList(
+  rows: { label: string; years: string; isActive: boolean }[],
+  parentObj: Record<string, unknown> | null,
+): { label: string; years: string; isActive: boolean }[] {
+  const current = parentObj ? asRecord(parentObj.current) : null;
+  if (!current || rows.length === 0) return rows;
+  const curLabel = pickStr(current, ["display", "label", "name", "pillar"]);
+  const curYears = pickDaiVanCurrentYearsFromObject(current);
+  if (curLabel === "—") return rows;
+  const inList = rows.some(
+    (r) => r.label !== "—" && r.label.trim() === curLabel.trim(),
+  );
+  if (inList) return rows;
+  return [
+    {
+      label: curLabel,
+      years: curYears !== "—" ? curYears : "—",
+      isActive: true,
+    },
+    ...rows.map((r) => ({ ...r, isActive: false })),
+  ];
 }
 
 /** Khi `dai_van.current` có khoảng tuổi chi tiết hơn `dai_van_list`, hiển thị theo `current`. */
@@ -714,7 +710,15 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
     daiVanList = dvRaw.map((item) => {
       const o = asRecord(item) ?? {};
       return {
-        label: pickStr(o, ["label", "ten", "name", "pillar", "display"]),
+        label: pickStr(o, [
+          "display",
+          "label",
+          "can_chi",
+          "canChi",
+          "ten",
+          "name",
+          "pillar",
+        ]),
         years: pickDaiVanYearsFromObject(o),
         isActive:
           Boolean(o.active) ||
@@ -725,6 +729,7 @@ export function laSoJsonToChiTiet(j: LaSoJson | null | undefined): LaSoChiTietVi
     });
     daiVanList = applyCurrentToDaiVanRows(daiVanList, dvParent);
     daiVanList = preferCurrentYearsOnActiveRow(daiVanList, dvParent);
+    daiVanList = injectCurrentDaiVanIfMissingFromList(daiVanList, dvParent);
     if (!daiVanList.some((x) => x.isActive) && daiVanList.length === 1) {
       daiVanList = [{ ...daiVanList[0], isActive: true }];
     }
@@ -843,6 +848,45 @@ const LA_SO_ENRICH_NEST_KEYS = [
   "detail",
 ] as const;
 
+/** Trường GET /v1/la-so cần ghép vào `profile.la_so` (onboarding chỉ có tu-tru nhẹ). */
+const LA_SO_ENRICHMENT_FIELDS = [
+  "dai_van",
+  "daiVan",
+  "dai_van_current",
+  "daiVanCurrent",
+  "current_dai_van",
+  "dai_van_list",
+  "daiVanList",
+  "pillars",
+  "nhat_chu",
+  "nhatChu",
+  "dung_than",
+  "dungThan",
+  "ky_than",
+  "kyThan",
+  "hi_than",
+  "hiThan",
+  "element_counts",
+  "elementCounts",
+  "personality_traits",
+  "personalityTraits",
+] as const;
+
+function laSoLayerFromUpstream(upstream: unknown): Record<string, unknown> | null {
+  const normalized = normalizeLaSoPayload(upstream);
+  return asRecord(normalized);
+}
+
+function pickLaSoEnrichmentFields(
+  layer: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of LA_SO_ENRICHMENT_FIELDS) {
+    if (layer[k] != null) out[k] = layer[k];
+  }
+  return out;
+}
+
 function tryNestedElementCountsEnrichment(
   r: Record<string, unknown> | null,
 ): Record<string, unknown> | null {
@@ -863,6 +907,28 @@ export function extractLaSoChiTietEnrichment(
     return null;
   }
   const root = upstream as Record<string, unknown>;
+  const layer = laSoLayerFromUpstream(upstream);
+  const out: Record<string, unknown> = layer
+    ? pickLaSoEnrichmentFields(layer)
+    : {};
+
+  if (layer) {
+    for (const nestKey of LA_SO_ENRICH_NEST_KEYS) {
+      const inner = asRecord(layer[nestKey]);
+      if (!inner) continue;
+      for (const [k, v] of Object.entries(pickLaSoEnrichmentFields(inner))) {
+        if (out[k] == null) out[k] = v;
+      }
+    }
+    const counts = tryLayerElementCountsEnrichment(layer);
+    if (counts?._raw) {
+      const raw = asRecord(out._raw) ?? {};
+      out._raw = { ...raw, ...(counts._raw as Record<string, unknown>) };
+    }
+  }
+
+  if (Object.keys(out).length > 0) return out;
+
   return (
     tryNestedElementCountsEnrichment(root) ??
     tryNestedElementCountsEnrichment(asRecord(root.data)) ??

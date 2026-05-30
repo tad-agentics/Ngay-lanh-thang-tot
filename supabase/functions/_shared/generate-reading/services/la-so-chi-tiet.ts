@@ -23,6 +23,43 @@ import {
 const LA_SO_CHI_TIET_PROFILE = llmProfileForEndpoint("la-so-chi-tiet");
 const LA_SO_PREVIEW_LLM_OPTS = { disableThinking: true } as const;
 
+async function expandMenhTongQuanIfShort(
+  menh: LaSoChiTietSection,
+  payload: string,
+): Promise<LaSoChiTietSection> {
+  if (!menhTongQuanProseTooShort(menh.text)) return menh;
+
+  const expandRaw = await llmCompletion(
+    LA_SO_CHI_TIET_PREVIEW_EXPAND_SYSTEM,
+    JSON.stringify({
+      endpoint: "la-so-chi-tiet",
+      menh_tong_quan_hien_tai: menh.text,
+      ...(() => {
+        try {
+          const o = JSON.parse(payload) as Record<string, unknown>;
+          return { data: o.data };
+        } catch {
+          return {};
+        }
+      })(),
+    }),
+    READING_MAX_TOKENS_LA_SO_PREVIEW,
+    LA_SO_CHI_TIET_TIMEOUT_MS,
+    {
+      jsonMode: true,
+      profile: LA_SO_CHI_TIET_PROFILE,
+      disableThinking: true,
+    },
+  );
+  if (!expandRaw) return menh;
+
+  const expanded = menhSectionFromParsed(parseLaSoChiTietSections(expandRaw));
+  if (expanded && !menhTongQuanProseTooShort(expanded.text)) {
+    return expanded;
+  }
+  return menh;
+}
+
 export async function generateLaSoChiTietPreviewSections(
   payload: string,
 ): Promise<LaSoChiTietSection[] | null> {
@@ -57,37 +94,8 @@ export async function generateLaSoChiTietPreviewSections(
   }
 
   let menh = menhSectionFromParsed(sections);
-  if (menh && menhTongQuanProseTooShort(menh.text)) {
-    const expandRaw = await llmCompletion(
-      LA_SO_CHI_TIET_PREVIEW_EXPAND_SYSTEM,
-      JSON.stringify({
-        endpoint: "la-so-chi-tiet",
-        menh_tong_quan_hien_tai: menh.text,
-        ...(() => {
-          try {
-            const o = JSON.parse(payload) as Record<string, unknown>;
-            return { data: o.data };
-          } catch {
-            return {};
-          }
-        })(),
-      }),
-      READING_MAX_TOKENS_LA_SO_PREVIEW,
-      LA_SO_CHI_TIET_TIMEOUT_MS,
-      {
-        jsonMode: true,
-        profile: LA_SO_CHI_TIET_PROFILE,
-        disableThinking: true,
-      },
-    );
-    if (expandRaw) {
-      const expanded = menhSectionFromParsed(
-        parseLaSoChiTietSections(expandRaw),
-      );
-      if (expanded && !menhTongQuanProseTooShort(expanded.text)) {
-        menh = expanded;
-      }
-    }
+  if (menh) {
+    menh = await expandMenhTongQuanIfShort(menh, payload);
   }
 
   return menh ? [menh] : laSoChiTietPreviewSections(sections);
@@ -128,5 +136,19 @@ export async function generateLaSoChiTietFullSections(
       },
     ];
   }
+
+  const menhIdx = sections.findIndex((s) => s.id === "menh_tong_quan");
+  if (menhIdx >= 0) {
+    const expanded = await expandMenhTongQuanIfShort(
+      sections[menhIdx]!,
+      payload,
+    );
+    sections = [
+      ...sections.slice(0, menhIdx),
+      expanded,
+      ...sections.slice(menhIdx + 1),
+    ];
+  }
+
   return sections;
 }
