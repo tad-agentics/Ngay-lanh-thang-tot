@@ -147,6 +147,7 @@ export interface Database {
           subscription_months: number | null;
           amount_vnd: number | null;
           checkout_url: string | null;
+          expires_at: string | null;
           raw_request: Json | null;
           raw_webhook: Json | null;
           created_at: string;

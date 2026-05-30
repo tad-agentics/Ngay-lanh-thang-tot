@@ -1,15 +1,20 @@
 import { useEffect, useRef } from "react";
 
 import { clearPendingPayment } from "~/lib/pending-payment-session";
-import { TERMINAL_PAYMENT_ORDER_STATUSES } from "~/lib/pay-checkout-timeout";
+import {
+  PAY_CHECKOUT_TIMEOUT_MS,
+  TERMINAL_PAYMENT_ORDER_STATUSES,
+} from "~/lib/pay-checkout-timeout";
 import { supabase } from "~/lib/supabase";
 
 const DEFAULT_INTERVAL_MS = 4_000;
-const DEFAULT_MAX_ATTEMPTS = 45;
+const DEFAULT_MAX_ATTEMPTS = Math.ceil(
+  PAY_CHECKOUT_TIMEOUT_MS / DEFAULT_INTERVAL_MS,
+) + 5;
 
 /**
  * Poll `payment_orders.status` until `paid` (webhook PayOS đã xử lý).
- * Tối đa `maxAttempts` lần (mặc định ~3 phút nếu mỗi 4s).
+ * Tối đa `maxAttempts` lần (mặc định ~5 phút + buffer nếu mỗi 4s).
  */
 export function usePollPaymentOrderPaid(
   orderId: string | null | undefined,

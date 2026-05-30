@@ -88,11 +88,11 @@ function LockedSectionBody({
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, rgba(240,236,226,0.15) 0%, rgba(240,236,226,0.72) 55%, ${CT.paper} 100%)`,
+          background: `linear-gradient(180deg, rgba(240,236,226,0.2) 0%, rgba(240,236,226,0.78) 45%, rgba(240,236,226,0.92) 100%)`,
         }}
         aria-hidden
       />
-      <div className="absolute inset-x-0 bottom-0 pt-10">
+      <div className="absolute inset-0 flex items-center justify-center px-1">
         <button
           type="button"
           onClick={onUnlock}

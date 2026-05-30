@@ -31,6 +31,12 @@ describe("payment-order-recovery", () => {
     ).toBe(true);
     expect(
       isRecoverablePendingOrder(
+        { status: "pending", created_at: "2026-05-29T11:54:00.000Z" },
+        now,
+      ),
+    ).toBe(false);
+    expect(
+      isRecoverablePendingOrder(
         { status: "paid", created_at: "2026-05-29T11:00:00.000Z" },
         now,
       ),

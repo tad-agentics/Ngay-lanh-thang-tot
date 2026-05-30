@@ -1,6 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import {
+  payCheckoutExpiredAtUnix,
+  payCheckoutExpiresAtIso,
+} from "../_shared/pay-checkout-timeout.ts";
+import {
   CHECKOUT_PACKAGE_SKUS,
   generateOrderCode,
   isPackageSku,
@@ -136,6 +140,9 @@ Deno.serve(async (req) => {
 
   const pkg = PACKAGES[package_sku];
   const orderCode = generateOrderCode();
+  const checkoutStartedAt = Date.now();
+  const expiresAtIso = payCheckoutExpiresAtIso(checkoutStartedAt);
+  const expiredAtUnix = payCheckoutExpiredAtUnix(checkoutStartedAt);
 
   const admin = createClient(supabaseUrl, serviceKey);
   const { data: orderRow, error: insErr } = await admin
@@ -149,10 +156,12 @@ Deno.serve(async (req) => {
       credits_to_add: pkg.creditsToAdd,
       subscription_months: pkg.subscriptionMonths,
       amount_vnd: pkg.amountVnd,
+      expires_at: expiresAtIso,
       raw_request: {
         orderCode,
         amount: pkg.amountVnd,
         description: pkg.description,
+        expiredAt: expiredAtUnix,
       },
     })
     .select("id")
@@ -181,6 +190,7 @@ Deno.serve(async (req) => {
     description: pkg.description,
     cancelUrl: cancel_url,
     returnUrl: returnWithOrder,
+    expiredAt: expiredAtUnix,
     signature,
   };
 

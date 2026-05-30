@@ -17,7 +17,10 @@ import {
   previewSubscriptionExpiry,
   priceDisplay,
 } from "~/lib/pay-confirm-ui";
-import { PAY_CHECKOUT_TIMEOUT_MS } from "~/lib/pay-checkout-timeout";
+import {
+  formatCheckoutCountdownMs,
+  PAY_CHECKOUT_TIMEOUT_MS,
+} from "~/lib/pay-checkout-timeout";
 import { brandedSubscriptionPlanName } from "~/lib/pay-commerce-ui";
 import { formatVnd, payosBankLabel } from "~/lib/payos-display";
 import { UI_PACKAGES } from "~/lib/packages";
@@ -110,6 +113,7 @@ export function CPayConfirmSheet({
   const transfer = payload?.transfer ?? null;
   const orderId = payload?.order_id;
   const [failureOpen, setFailureOpen] = useState(false);
+  const [countdownMs, setCountdownMs] = useState(PAY_CHECKOUT_TIMEOUT_MS);
   const openedAtRef = useRef<number | null>(null);
   const price = priceDisplay(pkg.priceLabel);
   const tierMeta = PAY_CONFIRM_TIER_META[pkg.sku];
@@ -132,6 +136,7 @@ export function CPayConfirmSheet({
     if (open) {
       openedAtRef.current = Date.now();
       setFailureOpen(false);
+      setCountdownMs(PAY_CHECKOUT_TIMEOUT_MS);
     } else {
       openedAtRef.current = null;
     }
@@ -146,6 +151,18 @@ export function CPayConfirmSheet({
       Math.max(0, remaining),
     );
     return () => window.clearTimeout(t);
+  }, [open, payload?.order_id]);
+
+  useEffect(() => {
+    if (!open || !payload) return;
+    const startedAt = openedAtRef.current ?? Date.now();
+    const tick = () => {
+      const left = PAY_CHECKOUT_TIMEOUT_MS - (Date.now() - startedAt);
+      setCountdownMs(Math.max(0, left));
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
   }, [open, payload?.order_id]);
 
   usePollPaymentOrderPaid(orderId, open && Boolean(orderId), {
@@ -314,6 +331,42 @@ export function CPayConfirmSheet({
               </div>
             ) : null}
 
+            {payload ? (
+              <div
+                className="mt-4 flex items-center justify-between gap-3 border px-3.5 py-3"
+                style={{
+                  borderColor:
+                    countdownMs <= 60_000 ? "rgba(197,64,42,0.35)" : CT.hairline,
+                  background:
+                    countdownMs <= 60_000
+                      ? "rgba(197,64,42,0.06)"
+                      : "rgba(154,124,34,0.06)",
+                }}
+                role="timer"
+                aria-live="polite"
+                aria-atomic="true"
+                aria-label={`Thời gian còn lại ${formatCheckoutCountdownMs(countdownMs)}`}
+              >
+                <Mono
+                  className="text-[10.5px] tracking-[0.12em]"
+                  style={{
+                    color: countdownMs <= 60_000 ? CT.red : CT.muted,
+                  }}
+                >
+                  Hoàn tất thanh toán trong
+                </Mono>
+                <span
+                  className="text-[22px] font-extrabold tabular-nums tracking-tight"
+                  style={{
+                    fontFamily: "var(--mono)",
+                    color: countdownMs <= 60_000 ? CT.red : CT.goldDeep,
+                  }}
+                >
+                  {formatCheckoutCountdownMs(countdownMs)}
+                </span>
+              </div>
+            ) : null}
+
             {payload && transfer ? (
               <div className="mt-4 space-y-3">
                 <Mono
@@ -424,7 +477,7 @@ export function CPayConfirmSheet({
                   </div>
                 </div>
                 <p className="text-[11.5px] leading-relaxed" style={{ color: CT.muted }}>
-                  Hệ thống tự động xác nhận sau khi nhận được tiền. Lệnh chuyển khoản hết hạn sau 15 phút.
+                  Hệ thống tự động xác nhận sau khi nhận được tiền. Lệnh chuyển khoản hết hạn sau 5 phút.
                 </p>
               </div>
             ) : payload ? (

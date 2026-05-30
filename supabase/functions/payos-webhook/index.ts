@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
 
   const { sku, pkg } = skuValidation;
 
-  // Single winner: pending → paid (PayOS retries get empty update)
+  // Single winner: pending|expired → paid (late webhook after cron expire is OK)
   const { data: claimed, error: claimErr } = await admin
     .from("payment_orders")
     .update({
@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       raw_webhook: payload as unknown as Record<string, unknown>,
     })
     .eq("id", order.id)
-    .eq("status", "pending")
+    .in("status", ["pending", "expired"])
     .select("*")
     .maybeSingle();
 
