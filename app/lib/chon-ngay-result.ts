@@ -1,19 +1,9 @@
 import type { ResultDay, ResultGrade } from "~/lib/api-types";
 import { scoreToLetterGrade } from "~/lib/score-grade";
-
-const ARRAY_KEYS = [
-  "recommended_dates",
-  "top_dates",
-  "days",
-  "results",
-  "top_days",
-  "suggested_days",
-  "items",
-  "ranked_days",
-  "candidates",
-  "recommended",
-  "top",
-];
+import {
+  parseScoreMethodology,
+  type ScoreMethodologyView,
+} from "~/lib/score-methodology";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -26,14 +16,23 @@ function extractCandidateArray(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
   const root = asRecord(data);
   if (!root) return [];
-  for (const k of ARRAY_KEYS) {
-    const v = root[k];
-    if (Array.isArray(v)) return v;
-  }
-  for (const v of Object.values(root)) {
-    if (Array.isArray(v) && v.length > 0 && asRecord(v[0])) return v as unknown[];
-  }
-  return [];
+  return Array.isArray(root.ranked_days) ? root.ranked_days : [];
+}
+
+/** API prose when chon-ngay returns zero candidates (HTTP 200). */
+export function parseChonNgayEmptyReasonVi(data: unknown): string | null {
+  const root = asRecord(data);
+  if (!root) return null;
+  const v = root.empty_reason_vi ?? root.emptyReasonVi;
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+export function parseChonNgayScoreMethodology(
+  data: unknown,
+): ScoreMethodologyView | null {
+  const root = asRecord(data);
+  if (!root) return null;
+  return parseScoreMethodology(root.score_methodology);
 }
 
 function parseToIsoDate(raw: string): string | null {
@@ -124,10 +123,38 @@ function pickHours(obj: Record<string, unknown>): string {
   return "—";
 }
 
+function pickBestHourSlots(obj: Record<string, unknown>): unknown {
+  const v =
+    obj.gio_tot ?? obj.gio_hoang_dao ?? obj.time_slots ?? obj.timeSlots;
+  return Array.isArray(v) && v.length > 0 ? v : undefined;
+}
+
 function gradeFromIndex(i: number): ResultGrade {
   if (i === 0) return "A";
   if (i === 1) return "B";
   return "C";
+}
+
+/** UI body on `/tra-cuu/ket-qua` — `reason_vi` first; legacy `reasons[]` only if prose absent. */
+function pickReasonsForUi(obj: Record<string, unknown>): string[] {
+  const prose = pickString(obj, [
+    "reason_vi",
+    "summary_vi",
+    "one_liner",
+    "summary",
+    "mo_ta",
+  ]);
+  if (prose !== "—") return [prose];
+
+  const r = obj.reasons ?? obj.ly_do ?? obj.giai_thich;
+  if (
+    Array.isArray(r) &&
+    r.length > 0 &&
+    r.every((x) => typeof x === "string")
+  ) {
+    return r as string[];
+  }
+  return [];
 }
 
 /** `sourceIndex` = position in API array (0-based); drives default A/B/C when rank/score absent. */
@@ -147,24 +174,9 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
     grade = gradeFromIndex(rk - 1);
   }
 
-  const reasons: string[] = [];
-  const r = obj.reasons ?? obj.ly_do ?? obj.giai_thich;
-  if (
-    Array.isArray(r) &&
-    r.length > 0 &&
-    r.every((x) => typeof x === "string")
-  ) {
-    reasons.push(...(r as string[]));
-  } else {
-    const prose = pickString(obj, [
-      "reason_vi",
-      "summary_vi",
-      "one_liner",
-      "summary",
-      "mo_ta",
-    ]);
-    if (prose !== "—") reasons.push(prose);
-  }
+  const reasons = pickReasonsForUi(obj);
+
+  const bestHourSlots = pickBestHourSlots(obj);
 
   return {
     grade,
@@ -178,8 +190,17 @@ function mapOneDay(raw: unknown, sourceIndex: number): ResultDay | null {
       "lunar_text",
       "amlich",
     ]),
+    canChi: pickString(obj, [
+      "can_chi",
+      "can_chi_day",
+      "can_chi_ngay",
+      "chi_ngay",
+      "day_can_chi",
+      "canchi",
+    ]),
     truc: pickString(obj, ["truc", "truc_star", "truc_ngay"]),
     bestHour: pickHours(obj),
+    ...(bestHourSlots != null ? { bestHourSlots } : {}),
     reasons,
   };
 }

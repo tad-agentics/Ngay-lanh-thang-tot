@@ -7,19 +7,38 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { QueryProvider } from "~/components/QueryProvider";
+import { SavedPicksGate } from "~/components/SavedPicksGate";
+import { SiteBanner } from "~/components/SiteBanner";
 import { Toaster } from "~/components/ui/sonner";
 import { AuthProvider } from "~/lib/auth";
+import { captureClientException, initSentry } from "~/lib/sentry";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 
+initSentry();
+
 export const links: Route.LinksFunction = () => [
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap",
+  },
   { rel: "manifest", href: "/manifest.json" },
+  {
+    rel: "icon",
+    href: "/favicon.svg",
+    type: "image/svg+xml",
+  },
   {
     rel: "icon",
     href: "/icons/icon-192.png",
     sizes: "192x192",
     type: "image/png",
+  },
+  {
+    rel: "apple-touch-icon",
+    href: "/icons/icon-192.png",
   },
 ];
 
@@ -43,10 +62,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Outlet />
-      <Toaster richColors position="top-center" />
-    </AuthProvider>
+    <QueryProvider>
+      <AuthProvider>
+        <SavedPicksGate>
+          <SiteBanner />
+          <Outlet />
+          <Toaster richColors position="top-center" />
+        </SavedPicksGate>
+      </AuthProvider>
+    </QueryProvider>
   );
 }
 
@@ -61,9 +85,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "Không tìm thấy trang bạn yêu cầu."
         : error.statusText || "Máy chủ trả về lỗi. Thử lại sau.";
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else if (error && error instanceof Error) {
+    captureClientException(error, { tags: { boundary: "root" } });
+    if (import.meta.env.DEV) {
+      details = error.message;
+      stack = error.stack;
+    }
   }
 
   return (

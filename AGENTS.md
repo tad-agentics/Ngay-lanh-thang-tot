@@ -105,15 +105,15 @@ Blocking gates are enforced — no agent self-proceeds to the next phase.
 
 | Path | Purpose |
 |---|---|
-| `src/make-import/` | Figma Make code dump (temporary — human copies here, agent decomposes, deleted after porting) |
-| `src/routes/_index/route.tsx` | Landing page (pre-rendered at build time for SEO) |
-| `src/routes/_auth/login/route.tsx` | Login screen |
-| `src/routes/_auth/signup/route.tsx` | Signup screen |
-| `src/routes/_auth/callback/route.tsx` | OAuth callback handler |
-| `src/routes/_app/layout.tsx` | Auth guard layout — checks session, redirects to /login |
-| `src/routes/_app/[feature]/route.tsx` | Feature screen (ported from Figma Make TSX) |
-| `src/routes/_app/[feature]/components/` | Route-specific components |
-| `src/components/ui/` | Make's UI primitives (moved from `src/make-import/components/ui/` as-is) |
+| `app/components/brand/` | Direction B brand primitives (Logo, LogoMark, Ticket, Stamp, Kanji, Mono, BackBar, BottomNav) |
+| `app/routes/landing.tsx` | Landing page (pre-rendered at build time for SEO) |
+| `app/routes/dang-nhap.tsx` | Login screen |
+| `app/routes/dang-ky.tsx` | Signup screen |
+| `app/routes/auth.callback.tsx` | OAuth callback handler |
+| `app/routes/app.tsx` | Auth guard layout — checks session, redirects to /dang-nhap |
+| `app/routes/app.[feature].tsx` | Feature screen |
+| `app/routes/app.[feature]/components/` | Route-specific components |
+| `app/components/ui/` | shadcn/ui primitives |
 | `src/components/` | Shared components (used by 2+ screens) |
 | `src/hooks/` | Shared hooks (`useAuth`, `useProfile`, `useInstallPrompt`) |
 | `src/lib/supabase.ts` | Single Supabase client (publishable key) |

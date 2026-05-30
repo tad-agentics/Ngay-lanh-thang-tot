@@ -11,6 +11,8 @@ import {
 import type { User } from "@supabase/supabase-js";
 
 import type { Database } from "~/lib/database.types";
+import { displayNameFromAuthUser } from "~/lib/profile-display-name";
+import { tryConsumePendingReferralClaim } from "~/lib/referral-claim";
 import { supabase } from "~/lib/supabase";
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -31,10 +33,14 @@ function useProfileState(user: User): ProfileContextValue {
   const [error, setError] = useState<string | null>(null);
   const loadSeqRef = useRef(0);
   const userId = user.id;
+  const syncedNameRef = useRef(false);
+
+  const profileRef = useRef<Profile | null>(null);
+  profileRef.current = profile;
 
   const load = useCallback(async (mode: "full" | "silent") => {
     const seq = ++loadSeqRef.current;
-    if (mode === "full") setLoading(true);
+    if (mode === "full" && profileRef.current === null) setLoading(true);
     const { data, error: qe } = await supabase
       .from("profiles")
       .select("*")
@@ -49,10 +55,60 @@ function useProfileState(user: User): ProfileContextValue {
 
   useEffect(() => {
     void load("full");
+    syncedNameRef.current = false;
   }, [load, userId]);
 
+  useEffect(() => {
+    if (!profile || profile.display_name?.trim() || syncedNameRef.current) return;
+    const fromAuth = displayNameFromAuthUser(user);
+    if (!fromAuth) return;
+    syncedNameRef.current = true;
+    let cancelled = false;
+    void (async () => {
+      const { error: upErr } = await supabase
+        .from("profiles")
+        .update({ display_name: fromAuth })
+        .eq("id", userId)
+        .is("display_name", null);
+      if (cancelled || upErr) {
+        syncedNameRef.current = false;
+        return;
+      }
+      void load("silent");
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, user, userId, load]);
+
+  /** Fallback when authed shell mounts without `resolvePostLoginPath` (e.g. cold open on `/lich`). */
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled || !session?.access_token) return;
+      await tryConsumePendingReferralClaim(session);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    const onRefresh = () => {
+      void load("silent");
+    };
+    window.addEventListener("ngaytot:profile-refresh", onRefresh);
+    return () => window.removeEventListener("ngaytot:profile-refresh", onRefresh);
+  }, [load]);
+
   const refresh = useCallback(() => load("silent"), [load]);
-  const reload = useCallback(() => load("full"), [load]);
+  const reload = useCallback(
+    () => load(profileRef.current ? "silent" : "full"),
+    [load],
+  );
 
   return useMemo(
     () => ({ profile, loading, error, refresh, reload }),

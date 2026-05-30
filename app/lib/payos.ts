@@ -3,9 +3,15 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import type {
   CreatePayosCheckoutRequest,
   CreatePayosCheckoutResponse,
+  PayosCheckoutQuote,
   PayosTransferDetails,
 } from "~/lib/api-types";
+import {
+  paymentFlowForSku,
+  stashPendingPayment,
+} from "~/lib/pending-payment-session";
 import { supabase } from "~/lib/supabase";
+import { getAccessTokenForEdgeInvoke } from "~/lib/supabase-edge-auth";
 
 type EdgeErrorBody = {
   error?: { code?: string; message?: string };
@@ -59,37 +65,52 @@ function withPayosHint(code: string, message: string): string {
   if (code === "PAYOS_ERROR" || code === "DB_ERROR") {
     return message;
   }
+  if (code === "RATE_LIMITED") {
+    return message;
+  }
   return message;
 }
 
-/** Session access token for Edge invoke; refresh nếu sắp hết hạn. */
-async function accessTokenForFunctionsInvoke(): Promise<string | null> {
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-  if (error || !session?.access_token) return null;
-
-  const exp = session.expires_at;
-  const expMs = typeof exp === "number" ? exp * 1000 : 0;
-  if (expMs > 0 && expMs < Date.now() + 120_000) {
-    const { data: refreshed, error: refErr } =
-      await supabase.auth.refreshSession();
-    if (!refErr && refreshed.session?.access_token) {
-      return refreshed.session.access_token;
-    }
+function parsePayosCheckoutQuote(raw: unknown): PayosCheckoutQuote | null {
+  if (!raw || typeof raw !== "object") return null;
+  const q = raw as Record<string, unknown>;
+  const list = q.list_amount_vnd;
+  const amount = q.amount_vnd;
+  if (
+    typeof list !== "number" ||
+    typeof amount !== "number" ||
+    !Number.isFinite(list) ||
+    !Number.isFinite(amount)
+  ) {
+    return null;
   }
-
-  return session.access_token;
+  const sku = q.package_sku;
+  if (typeof sku !== "string") return null;
+  return {
+    package_sku: sku as PayosCheckoutQuote["package_sku"],
+    list_amount_vnd: list,
+    amount_vnd: amount,
+    coupon_discount_vnd:
+      typeof q.coupon_discount_vnd === "number" ? q.coupon_discount_vnd : 0,
+    referral_discount_vnd:
+      typeof q.referral_discount_vnd === "number" ? q.referral_discount_vnd : 0,
+    coupon_code: typeof q.coupon_code === "string" ? q.coupon_code : null,
+    checkout_referral_code:
+      typeof q.checkout_referral_code === "string"
+        ? q.checkout_referral_code
+        : null,
+    referrer_profile_id:
+      typeof q.referrer_profile_id === "string" ? q.referrer_profile_id : null,
+  };
 }
 
-export async function createPayosCheckout(
+async function invokePayosCheckout(
   req: CreatePayosCheckoutRequest,
 ): Promise<
-  | { ok: true; data: CreatePayosCheckoutResponse }
+  | { ok: true; data: Record<string, unknown> }
   | { ok: false; code: string; message: string }
 > {
-  let accessToken = await accessTokenForFunctionsInvoke();
+  let accessToken = await getAccessTokenForEdgeInvoke();
   if (!accessToken) {
     return {
       ok: false,
@@ -101,17 +122,18 @@ export async function createPayosCheckout(
     };
   }
 
-  let data: CreatePayosCheckoutResponse | EdgeErrorBody | null = null;
+  let data: Record<string, unknown> | EdgeErrorBody | null = null;
   let error: unknown = null;
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const out = await supabase.functions.invoke<
-      CreatePayosCheckoutResponse | EdgeErrorBody
-    >("payos-create-checkout", {
-      body: req,
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    data = out.data;
+    const out = await supabase.functions.invoke<Record<string, unknown> | EdgeErrorBody>(
+      "payos-create-checkout",
+      {
+        body: req,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      },
+    );
+    data = out.data as Record<string, unknown> | EdgeErrorBody | null;
     error = out.error;
 
     if (!error) break;
@@ -145,7 +167,7 @@ export async function createPayosCheckout(
     "error" in data &&
     data.error != null
   ) {
-    const e = data.error;
+    const e = (data as EdgeErrorBody).error!;
     return {
       ok: false,
       code: e.code ?? "PAYMENT_ERROR",
@@ -154,47 +176,107 @@ export async function createPayosCheckout(
   }
 
   if (data && typeof data === "object") {
-    const d = data as Record<string, unknown>;
-    if (
-      typeof d.checkout_url === "string" &&
-      typeof d.order_id === "string" &&
-      d.checkout_url.length > 0 &&
-      d.order_id.length > 0
-    ) {
-      let transfer: PayosTransferDetails | null = null;
-      const tr = d.transfer;
-      if (tr && typeof tr === "object" && tr !== null) {
-        const t = tr as Record<string, unknown>;
-        transfer = {
-          qr_code: typeof t.qr_code === "string" ? t.qr_code : null,
-          bank_bin: typeof t.bank_bin === "string" ? t.bank_bin : null,
-          account_number:
-            typeof t.account_number === "string" ? t.account_number : null,
-          account_name:
-            typeof t.account_name === "string" ? t.account_name : null,
-          amount_vnd:
-            typeof t.amount_vnd === "number" && Number.isFinite(t.amount_vnd)
-              ? t.amount_vnd
-              : 0,
-          transfer_content:
-            typeof t.transfer_content === "string"
-              ? t.transfer_content
-              : "",
-          provider_order_code:
-            typeof t.provider_order_code === "string"
-              ? t.provider_order_code
-              : "",
-        };
-      }
-      return {
-        ok: true,
-        data: {
-          order_id: d.order_id,
-          checkout_url: d.checkout_url,
-          transfer,
-        },
+    return { ok: true, data: data as Record<string, unknown> };
+  }
+
+  return {
+    ok: false,
+    code: "UNKNOWN",
+    message: "Phản hồi thanh toán không hợp lệ.",
+  };
+}
+
+export async function quotePayosCheckout(
+  req: Pick<
+    CreatePayosCheckoutRequest,
+    "package_sku" | "coupon_code" | "referral_code"
+  >,
+): Promise<
+  | { ok: true; quote: PayosCheckoutQuote }
+  | { ok: false; code: string; message: string }
+> {
+  const result = await invokePayosCheckout({
+    package_sku: req.package_sku,
+    quote_only: true,
+    coupon_code: req.coupon_code,
+    referral_code: req.referral_code,
+  });
+  if (!result.ok) return result;
+  const quote = parsePayosCheckoutQuote(result.data.quote);
+  if (!quote) {
+    return {
+      ok: false,
+      code: "UNKNOWN",
+      message: "Không đọc được báo giá.",
+    };
+  }
+  return { ok: true, quote };
+}
+
+export async function createPayosCheckout(
+  req: CreatePayosCheckoutRequest,
+): Promise<
+  | { ok: true; data: CreatePayosCheckoutResponse }
+  | { ok: false; code: string; message: string }
+> {
+  if (!req.return_url || !req.cancel_url) {
+    return {
+      ok: false,
+      code: "BAD_REQUEST",
+      message: "Thiếu return_url hoặc cancel_url.",
+    };
+  }
+
+  const result = await invokePayosCheckout(req);
+  if (!result.ok) return result;
+
+  const d = result.data;
+  if (
+    typeof d.checkout_url === "string" &&
+    typeof d.order_id === "string" &&
+    d.checkout_url.length > 0 &&
+    d.order_id.length > 0
+  ) {
+    let transfer: PayosTransferDetails | null = null;
+    const tr = d.transfer;
+    if (tr && typeof tr === "object" && tr !== null) {
+      const t = tr as Record<string, unknown>;
+      transfer = {
+        qr_code: typeof t.qr_code === "string" ? t.qr_code : null,
+        bank_bin: typeof t.bank_bin === "string" ? t.bank_bin : null,
+        account_number:
+          typeof t.account_number === "string" ? t.account_number : null,
+        account_name:
+          typeof t.account_name === "string" ? t.account_name : null,
+        amount_vnd:
+          typeof t.amount_vnd === "number" && Number.isFinite(t.amount_vnd)
+            ? t.amount_vnd
+            : 0,
+        transfer_content:
+          typeof t.transfer_content === "string"
+            ? t.transfer_content
+            : "",
+        provider_order_code:
+          typeof t.provider_order_code === "string"
+            ? t.provider_order_code
+            : "",
       };
     }
+    const quote = parsePayosCheckoutQuote(d.quote) ?? undefined;
+    const data: CreatePayosCheckoutResponse = {
+      order_id: d.order_id as string,
+      checkout_url: d.checkout_url as string,
+      transfer,
+      quote,
+    };
+    stashPendingPayment({
+      orderId: data.order_id,
+      packageSku: req.package_sku,
+      flow: paymentFlowForSku(req.package_sku),
+      checkoutUrl: data.checkout_url,
+      createdAt: new Date().toISOString(),
+    });
+    return { ok: true, data };
   }
 
   return {

@@ -1,12 +1,12 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { verifyWebhookSignature } from "../_shared/payos.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+import {
+  applyPackageEntitlements,
+  parseWebhookAmountVnd,
+  validateWebhookSkuAmount,
+  verifyWebhookSignature,
+} from "../_shared/payos.ts";
+import { corsHeaders } from "../_shared/cors.ts";
 
 function ok(body: unknown = { received: true }): Response {
   return new Response(JSON.stringify(body), {
@@ -91,39 +91,109 @@ Deno.serve(async (req) => {
     return ok({ missing_order: true });
   }
 
-  const amount = typeof data.amount === "number"
-    ? data.amount
-    : Number(data.amount);
-  if (order.amount_vnd != null && amount !== order.amount_vnd) {
-    console.error("amount mismatch", amount, order.amount_vnd);
-    return ok({ amount_mismatch: true });
+  const webhookAmountVnd = parseWebhookAmountVnd(data.amount);
+  const skuValidation = validateWebhookSkuAmount(
+    {
+      package_sku: order.package_sku as string | null,
+      amount_vnd: order.amount_vnd as number | null,
+      credits_to_add: order.credits_to_add as number | null,
+      subscription_months: order.subscription_months as number | null,
+    },
+    webhookAmountVnd,
+  );
+  if (!skuValidation.ok) {
+    console.error(
+      "payos-webhook: fulfillment rejected",
+      skuValidation.reason,
+      {
+        orderCode,
+        package_sku: order.package_sku,
+        webhookAmountVnd,
+        amount_vnd: order.amount_vnd,
+        credits_to_add: order.credits_to_add,
+        subscription_months: order.subscription_months,
+      },
+    );
+    return ok({ rejected: true, reason: skuValidation.reason });
   }
 
-  // Single winner: pending → paid (PayOS retries get empty update)
-  const { data: claimed, error: claimErr } = await admin
-    .from("payment_orders")
-    .update({
-      status: "paid",
-      raw_webhook: payload as unknown as Record<string, unknown>,
-    })
-    .eq("id", order.id)
-    .eq("status", "pending")
-    .select("*")
-    .maybeSingle();
+  const { sku, pkg } = skuValidation;
+
+  const { data: claimRaw, error: claimErr } = await admin.rpc(
+    "claim_payment_order_paid",
+    {
+      p_order_id: order.id,
+      p_raw_webhook: payload as unknown as Record<string, unknown>,
+    },
+  );
 
   if (claimErr) {
-    console.error("claim", claimErr);
+    console.error("claim_payment_order_paid", claimErr);
     return new Response("DB error", { status: 500 });
   }
 
-  if (!claimed) {
+  const claim = claimRaw as {
+    ok?: boolean;
+    reason?: string;
+    order?: Record<string, unknown>;
+  } | null;
+
+  if (!claim?.ok) {
+    if (
+      claim?.reason === "coupon_already_used" ||
+      claim?.reason === "coupon_invalid_at_payment" ||
+      claim?.reason === "coupon_missing_at_payment" ||
+      claim?.reason === "amount_mismatch"
+    ) {
+      console.error(
+        "payos-webhook: discount rejected at fulfillment",
+        claim.reason,
+        order.id,
+        order.user_id,
+        order.coupon_code,
+        order.amount_vnd,
+      );
+      return ok({ rejected: true, reason: claim.reason });
+    }
+    if (claim?.reason === "not_claimable") {
+      return ok({ already_processed: true });
+    }
     return ok({ already_processed: true });
+  }
+
+  if (claim.reason === "already_processed") {
+    return ok({ already_processed: true });
+  }
+
+  const claimed = claim.order;
+  if (!claimed || typeof claimed.id !== "string") {
+    console.error("claim_payment_order_paid missing order row", order.id);
+    return new Response("DB error", { status: 500 });
+  }
+
+  const { data: referralGrant, error: referralErr } = await admin.rpc(
+    "grant_referral_subscription_reward",
+    { p_order_id: claimed.id as string },
+  );
+  if (referralErr) {
+    console.error("grant_referral_subscription_reward", referralErr);
+  } else if (
+    referralGrant &&
+    typeof referralGrant === "object" &&
+    (referralGrant as { ok?: boolean }).ok === false &&
+    (referralGrant as { reason?: string }).reason !== "no_referrer" &&
+    (referralGrant as { reason?: string }).reason !== "package_not_eligible" &&
+    (referralGrant as { reason?: string }).reason !== "already_granted"
+  ) {
+    console.error("grant_referral_subscription_reward result", referralGrant);
   }
 
   const { data: profile, error: profErr } = await admin
     .from("profiles")
-    .select("credits_balance, subscription_expires_at")
-    .eq("id", order.user_id)
+    .select(
+      "credits_balance, subscription_expires_at, bazi_reading_unlocked_at, tieu_van_reading_expires_at",
+    )
+    .eq("id", claimed.user_id as string)
     .single();
 
   if (profErr || !profile) {
@@ -132,65 +202,62 @@ Deno.serve(async (req) => {
     return new Response("Profile missing", { status: 500 });
   }
 
-  if (order.credits_to_add != null && order.credits_to_add > 0) {
-    const newBal = profile.credits_balance + order.credits_to_add;
-    const { error: u1 } = await admin.from("profiles").update({
-      credits_balance: newBal,
-    }).eq("id", order.user_id);
-    if (u1) {
-      console.error("credit update", u1);
+  if (pkg.creditsToAdd != null && pkg.creditsToAdd > 0) {
+    const { data: creditResult, error: creditErr } = await admin.rpc(
+      "add_credits_atomic",
+      {
+        p_user_id: claimed.user_id as string,
+        p_credits_to_add: pkg.creditsToAdd,
+        p_idempotency_key: `payos:${eventId}:credits`,
+        p_order_id: claimed.id as string,
+        p_package_sku: sku,
+      },
+    );
+    if (creditErr) {
+      console.error("add_credits_atomic", creditErr);
       return new Response("DB error", { status: 500 });
     }
-    const { error: l1 } = await admin.from("credit_ledger").insert({
-      user_id: order.user_id,
-      delta: order.credits_to_add,
-      balance_after: newBal,
-      reason: "payos_purchase",
-      idempotency_key: `payos:${eventId}:credits`,
-      metadata: {
-        order_id: order.id,
-        package_sku: order.package_sku,
-      },
-    });
-    if (l1 && (l1 as { code?: string }).code !== "23505") {
-      console.error("ledger", l1);
+    const cr = creditResult as { ok: boolean; error_code?: string };
+    if (!cr.ok) {
+      console.error("add_credits_atomic result", cr);
       return new Response("DB error", { status: 500 });
     }
   }
 
-  if (order.subscription_months != null && order.subscription_months > 0) {
-    const now = new Date();
-    const current = profile.subscription_expires_at
-      ? new Date(profile.subscription_expires_at)
-      : null;
-    const base = current && current > now ? current : now;
-    const expires = new Date(base);
-    expires.setMonth(expires.getMonth() + order.subscription_months);
+  const entitlementPatch = applyPackageEntitlements(
+    {
+      subscription_expires_at: profile.subscription_expires_at as string | null,
+      bazi_reading_unlocked_at: profile.bazi_reading_unlocked_at as string | null,
+      tieu_van_reading_expires_at: profile.tieu_van_reading_expires_at as string | null,
+    },
+    sku,
+  );
 
-    const { error: u2 } = await admin.from("profiles").update({
-      subscription_expires_at: expires.toISOString(),
-    }).eq("id", order.user_id);
+  if (Object.keys(entitlementPatch).length > 0) {
+    const { error: u2 } = await admin
+      .from("profiles")
+      .update(entitlementPatch)
+      .eq("id", claimed.user_id as string);
 
     if (u2) {
-      console.error("sub update", u2);
+      console.error("entitlement update", u2);
       return new Response("DB error", { status: 500 });
     }
 
     const { error: l2 } = await admin.from("credit_ledger").insert({
-      user_id: order.user_id,
+      user_id: claimed.user_id as string,
       delta: 0,
       balance_after: profile.credits_balance,
-      reason: "payos_subscription",
-      idempotency_key: `payos:${eventId}:sub`,
+      reason: "payos_entitlement",
+      idempotency_key: `payos:${eventId}:ent`,
       metadata: {
-        order_id: order.id,
-        package_sku: order.package_sku,
-        months: order.subscription_months,
-        subscription_expires_at: expires.toISOString(),
+        order_id: claimed.id as string,
+        package_sku: sku,
+        ...entitlementPatch,
       },
     });
     if (l2 && (l2 as { code?: string }).code !== "23505") {
-      console.error("ledger sub", l2);
+      console.error("ledger entitlement", l2);
     }
   }
 

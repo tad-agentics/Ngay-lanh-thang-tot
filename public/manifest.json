@@ -1,8 +1,8 @@
 {
   "name": "Ngày Lành Tháng Tốt",
   "short_name": "Ngày Lành",
-  "description": "Chọn ngày tốt theo Bát Tự Tử Trụ — kết quả cá nhân hóa.",
-  "start_url": "/",
+  "description": "Chọn ngày lành theo Bát Tự Tử Trụ — kết quả cá nhân hóa.",
+  "start_url": "/splash",
   "scope": "/",
   "display": "standalone",
   "background_color": "#e4dfd6",
@@ -26,6 +26,43 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hôm nay",
+      "short_name": "Hôm nay",
+      "description": "Xem ngày hôm nay theo lá số",
+      "url": "/lich",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tháng",
+      "short_name": "Tháng",
+      "description": "Lịch tháng và tuần theo lá số",
+      "url": "/lich/thang",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Chọn ngày",
+      "short_name": "Chọn ngày",
+      "description": "Tìm ngày lành cho việc cụ thể",
+      "url": "/tra-cuu",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tra cứu",
+      "short_name": "Tra cứu",
+      "description": "Hợp tuổi, phong thủy và công cụ tra cứu",
+      "url": "/tra-cuu",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tôi",
+      "short_name": "Tôi",
+      "description": "Hồ sơ, ví lượng và cài đặt",
+      "url": "/toi",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

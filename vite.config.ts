@@ -30,7 +30,8 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         /** Skip large hashed bundles in precache; they load on demand and enter runtime cache below. */
         maximumFileSizeToCacheInBytes: 160 * 1024,
-        navigateFallback: "/index.html",
+        /** Match React Router SPA shell (not prerendered `/` landing in index.html). */
+        navigateFallback: "/__spa-fallback.html",
         navigateFallbackDenylist: [
           /^\/api\//,
           /^\/icons\//,

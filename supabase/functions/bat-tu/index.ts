@@ -10,12 +10,60 @@ import {
   redisRestConfigured,
   redisSetExString,
 } from "./redis-cache.ts";
+import { corsHeadersForRequest } from "../_shared/cors.ts";
+import {
+  canUseBaziReading,
+  canUseCalendar,
+  isNeverSubscribedUser,
+  isTraCuuPickChonNgay,
+} from "../_shared/entitlements.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+/**
+ * GET /v1/phong-thuy + `detail=teaser`: bỏ các key paywall khỏi JSON trả client
+ * (upstream có thể vẫn trả full — không dựa vào UI để giữ bí mật).
+ */
+const PHONG_THUY_TEASER_STRIP_KEYS = [
+  "ky_than",
+  "huong_xau",
+  "mau_ky",
+  "so_ky",
+  "vat_pham",
+  "purpose_specific",
+  "personalization",
+  "phi_tinh_year",
+  "phi_tinh",
+  "huong_tot_nam_nay",
+  "huong_xau_nam_nay",
+  "hoa_giai",
+  "phi_tinh_note_vi",
+  "couple_harmony",
+  "kyThan",
+  "huongXau",
+  "mauKy",
+  "soKy",
+  "vatPham",
+  "purposeSpecific",
+  "phiTinhYear",
+  "phiTinh",
+  "huongTotNamNay",
+  "huongXauNamNay",
+  "hoaGiai",
+  "phiTinhNoteVi",
+  "coupleHarmony",
+] as const;
+
+function stripPhongThuyTeaserPayload(body: unknown): unknown {
+  if (
+    body == null || typeof body !== "object" || Array.isArray(body)
+  ) {
+    return body;
+  }
+  const o = { ...(body as Record<string, unknown>) };
+  for (const k of PHONG_THUY_TEASER_STRIP_KEYS) {
+    delete o[k];
+  }
+  return o;
+}
 
 /**
  * Expect API origin only (e.g. `https://tu-tru-api.fly.dev`). Paths already include `/v1/...`.
@@ -38,13 +86,106 @@ function normalizeBatTuApiBaseUrl(raw: string): string {
   return s;
 }
 
+/** tu-tru-api expects dd/mm/yyyy; accept ISO YYYY-MM-DD from legacy callers. */
+function normalizeBirthDateForUpstream(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const t = raw.trim();
+  if (!t.length) return undefined;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)) return t;
+  const iso = t.slice(0, 10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return t;
+  const [, y, mo, d] = m;
+  return `${d}/${mo}/${y}`;
+}
+
+function normalizeBatTuBodyDates(body: Record<string, unknown>): void {
+  for (const key of [
+    "birth_date",
+    "person1_birth_date",
+    "person2_birth_date",
+  ] as const) {
+    const normalized = normalizeBirthDateForUpstream(body[key]);
+    if (normalized) body[key] = normalized;
+  }
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "null";
+  if (typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => stableStringify(v)).join(",")}]`;
+  }
+  const o = value as Record<string, unknown>;
+  const keys = Object.keys(o).sort();
+  const parts = keys.map((k) => {
+    const v = o[k];
+    return `${JSON.stringify(k)}:${stableStringify(v === undefined ? null : v)}`;
+  });
+  return `{${parts.join(",")}}`;
+}
+
+function tieVanUnlockIdentityKey(body: Record<string, unknown>): string {
+  const normalized = {
+    birth_date: body.birth_date != null ? String(body.birth_date) : null,
+    birth_time:
+      typeof body.birth_time === "number" && Number.isFinite(body.birth_time)
+        ? body.birth_time
+        : null,
+    gender:
+      typeof body.gender === "number" && Number.isFinite(body.gender)
+        ? body.gender
+        : null,
+    tz: body.tz != null ? String(body.tz) : null,
+  };
+  return stableStringify(normalized);
+}
+
+function tieVanYearMonth(body: Record<string, unknown>): string | null {
+  if (body.month == null) return null;
+  const s = String(body.month).trim();
+  if (!/^\d{4}-\d{2}$/.test(s)) return null;
+  return s;
+}
+
 /** Ops callable without Supabase session (caller may still send birth_* in `body`). */
 const ANONYMOUS_OPS = new Set([
   "ngay-hom-nay",
   "weekly-summary",
   "convert-date",
   "lich-thang",
+  "day-detail",
 ]);
+
+/** Personalized calendar ops — gate when JWT + birth_date present. */
+const CALENDAR_GATE_OPS = new Set([
+  "ngay-hom-nay",
+  "lich-thang",
+  "day-detail",
+  "day-luan-context",
+  "day-compare",
+]);
+
+function bodyHasBirthDate(body: Record<string, unknown>): boolean {
+  const v = body.birth_date;
+  return v != null && String(v).trim() !== "";
+}
+
+async function resolveUserIdFromRequest(
+  req: Request,
+  supabaseUrl: string,
+  anonKey: string,
+): Promise<string | null> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userErr } = await userClient.auth.getUser();
+  if (userErr || !userData?.user) return null;
+  return userData.user.id;
+}
 
 const VALID_OPS = new Set([
   "ngay-hom-nay",
@@ -53,12 +194,18 @@ const VALID_OPS = new Set([
   "chon-ngay/detail",
   "lich-thang",
   "day-detail",
+  "day-luan-context",
+  "day-compare",
   "convert-date",
   "tu-tru",
+  "tu-tru-preview",
+  "recompute-la-so",
   "profile",
   "tieu-van",
   "hop-tuoi",
   "phong-thuy",
+  "la-so",
+  "la-so-luu-nien",
   "share",
 ]);
 
@@ -324,16 +471,69 @@ function buildUpstream(
       break;
 
     case "day-detail":
-      if (!body.birth_date || !body.date) {
+      if (!body.date) {
         return {
           ok: false,
-          message: "Thiếu birth_date hoặc date (GET /v1/day-detail).",
+          message: "Thiếu date YYYY-MM-DD (GET /v1/day-detail).",
         };
       }
       spec = {
         method: "GET",
         path: "/v1/day-detail",
-        queryKeys: ["birth_date", "birth_time", "gender", "date", "tz"],
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "date",
+          "tz",
+          "mode",
+          "intent",
+        ],
+      };
+      break;
+
+    case "day-luan-context":
+      if (!body.birth_date || !body.date) {
+        return {
+          ok: false,
+          message:
+            "Thiếu birth_date hoặc date (GET /v1/day-detail/luan-context).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/day-detail/luan-context",
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "date",
+          "intent",
+          "tz",
+        ],
+      };
+      break;
+
+    case "day-compare":
+      if (!body.birth_date || !body.date_a || !body.date_b) {
+        return {
+          ok: false,
+          message:
+            "Thiếu birth_date, date_a hoặc date_b (GET /v1/day-compare).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/day-compare",
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "date_a",
+          "date_b",
+          "intent",
+          "tz",
+        ],
       };
       break;
 
@@ -367,11 +567,70 @@ function buildUpstream(
       spec = {
         method: "GET",
         path: "/v1/phong-thuy",
-        queryKeys: ["birth_date", "birth_time", "gender", "tz"],
+        queryKeys: [
+          "birth_date",
+          "birth_time",
+          "gender",
+          "tz",
+          "purpose",
+          "year",
+          "partner_birth_date",
+          /** `teaser` | `full` — upstream may trim payload; teaser không trừ lượng. */
+          "detail",
+        ],
+      };
+      break;
+
+    case "la-so":
+      if (!body.birth_date) {
+        return {
+          ok: false,
+          message: "Thiếu birth_date (GET /v1/la-so).",
+        };
+      }
+      if (body.birth_time === undefined || body.birth_time === null) {
+        return {
+          ok: false,
+          message: "Thiếu birth_time (GET /v1/la-so).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/la-so",
+        // OpenAPI: https://tu-tru-api.fly.dev/docs#/default/la_so_endpoint_v1_la_so_get — chỉ birth_date, birth_time, gender
+        queryKeys: ["birth_date", "birth_time", "gender"],
+      };
+      break;
+
+    case "la-so-luu-nien":
+      if (!body.birth_date) {
+        return {
+          ok: false,
+          message: "Thiếu birth_date (GET /v1/la-so/luu-nien).",
+        };
+      }
+      if (body.birth_time === undefined || body.birth_time === null) {
+        return {
+          ok: false,
+          message: "Thiếu birth_time (GET /v1/la-so/luu-nien).",
+        };
+      }
+      if (body.year === undefined || body.year === null) {
+        return {
+          ok: false,
+          message: "Thiếu year (GET /v1/la-so/luu-nien).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/la-so/luu-nien",
+        queryKeys: ["birth_date", "birth_time", "gender", "year"],
       };
       break;
 
     case "tu-tru":
+    case "tu-tru-preview":
+    case "recompute-la-so":
       if (!body.birth_date) {
         return {
           ok: false,
@@ -405,6 +664,7 @@ function buildUpstream(
           "person2_birth_date",
           "person2_birth_time",
           "person2_gender",
+          "relationship_type",
         ],
       };
       break;
@@ -512,10 +772,27 @@ function parseUpstreamApplicationError(data: unknown): {
   return { code, message, resetAt };
 }
 
-function json(body: unknown, status = 200): Response {
+/** Map upstream HTTP status to client status (4xx passthrough; else 502). */
+function upstreamFailureStatus(
+  upstreamRes: Response,
+  appErr: { code: string } | null,
+): number {
+  if (appErr?.code === "RATE_LIMITED" || upstreamRes.status === 429) {
+    return 429;
+  }
+  if (upstreamRes.status >= 400 && upstreamRes.status < 500) {
+    return upstreamRes.status;
+  }
+  return 502;
+}
+
+function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeadersForRequest(req),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -546,7 +823,17 @@ function resolveFeatureKey(
       return "chon_ngay_detail";
     case "day-detail":
       return "day_detail";
+    case "day-luan-context":
+      return "day_detail";
+    case "day-compare":
+      return "day_detail";
+    case "la-so":
+      return "la_so_diengiai";
+    case "la-so-luu-nien":
+      return "la_so_diengiai";
     case "tu-tru":
+    case "tu-tru-preview":
+    case "recompute-la-so":
       return "tu_tru";
     case "tieu-van":
       return "tieu_van";
@@ -598,6 +885,103 @@ async function persistTuTruToProfile(
   return null;
 }
 
+async function readBirthEditMax(admin: SupabaseAdmin): Promise<number> {
+  const { data } = await admin
+    .from("app_config")
+    .select("value")
+    .eq("config_key", "birth_edit_max_per_30d")
+    .maybeSingle();
+  const n = Number(data?.value ?? 2);
+  return Number.isFinite(n) && n > 0 ? n : 2;
+}
+
+async function assertBirthEditAllowed(
+  admin: SupabaseAdmin,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { data: profile, error } = await admin
+    .from("profiles")
+    .select("birth_edit_count, birth_edit_window_start")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error || !profile) {
+    return { ok: false, message: "Không đọc hồ sơ." };
+  }
+  const max = await readBirthEditMax(admin);
+  const now = Date.now();
+  const windowStart = profile.birth_edit_window_start
+    ? new Date(profile.birth_edit_window_start as string).getTime()
+    : null;
+  const inWindow =
+    windowStart != null && !Number.isNaN(windowStart) &&
+    now - windowStart < 30 * 24 * 60 * 60 * 1000;
+  const count = inWindow ? (profile.birth_edit_count as number) ?? 0 : 0;
+  if (count >= max) {
+    return {
+      ok: false,
+      message: `Bạn đã sửa hồ sơ ${max} lần trong 30 ngày qua.`,
+    };
+  }
+  return { ok: true };
+}
+
+async function persistRecomputeLaSo(
+  admin: SupabaseAdmin,
+  userId: string,
+  body: Record<string, unknown>,
+  laSoPayload: unknown,
+): Promise<string | null> {
+  const iso = typeof body.birth_date === "string"
+    ? birthDdMmYyyyToIso(body.birth_date)
+    : null;
+  const gio = birthTimeToGioSinh(body.birth_time);
+  const gt = genderToGioiTinh(body.gender);
+
+  const { data: existing } = await admin
+    .from("profiles")
+    .select("birth_edit_count, birth_edit_window_start")
+    .eq("id", userId)
+    .maybeSingle();
+
+  const now = Date.now();
+  const windowStart = existing?.birth_edit_window_start
+    ? new Date(existing.birth_edit_window_start as string).getTime()
+    : null;
+  const inWindow =
+    windowStart != null && !Number.isNaN(windowStart) &&
+    now - windowStart < 30 * 24 * 60 * 60 * 1000;
+  const nextCount = inWindow
+    ? ((existing?.birth_edit_count as number) ?? 0) + 1
+    : 1;
+
+  const patch: Record<string, unknown> = {
+    la_so: laSoPayload,
+    la_so_recompute_status: "ready",
+    birth_edit_count: nextCount,
+    birth_edit_window_start: inWindow
+      ? existing!.birth_edit_window_start
+      : new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  if (iso) patch.ngay_sinh = iso;
+  if (gio) patch.gio_sinh = gio;
+  if (gt) patch.gioi_tinh = gt;
+
+  const { error } = await admin.from("profiles").update(patch).eq("id", userId);
+  if (error) {
+    console.error("persistRecomputeLaSo", error);
+    return "Không lưu lá số vào hồ sơ được.";
+  }
+
+  await admin
+    .from("credit_ledger")
+    .delete()
+    .eq("user_id", userId)
+    .like("idempotency_key", "ai_reading%");
+
+  return null;
+}
+
 /** TTL tối đa 60 phút; BAT_TU_CACHE_TTL_SEC (giây), clamp 1…3600, mặc định 3600. */
 function cacheTtlSec(): number {
   const raw = Deno.env.get("BAT_TU_CACHE_TTL_SEC");
@@ -622,7 +1006,9 @@ async function sha256Hex(text: string): Promise<string> {
 function isUpstreamCacheable(op: string, init: RequestInit): boolean {
   const m = (init.method ?? "GET").toUpperCase();
   if (op === "profile" && m === "POST") return false;
-  if (op === "tu-tru") return false;
+  if (op === "tu-tru" || op === "tu-tru-preview" || op === "recompute-la-so") {
+    return false;
+  }
   return true;
 }
 
@@ -643,6 +1029,7 @@ async function readBatTuCache(
   op: string,
   upstreamUrl: string,
   upstreamInit: RequestInit,
+  req: Request,
 ): Promise<Response | null> {
   if (!isUpstreamCacheable(op, upstreamInit)) return null;
   if (!redisRestConfigured()) return null;
@@ -652,52 +1039,20 @@ async function readBatTuCache(
     if (raw == null) return null;
     const parsed = JSON.parse(raw) as { data?: unknown };
     if (!("data" in parsed)) return null;
-    return json(parsed);
+    return json(parsed, 200, req);
   } catch {
     return null;
   }
 }
 
-async function refundCredits(
-  admin: SupabaseAdmin,
-  userId: string,
-  featureKey: string,
-  charged: number,
-  op: string,
-): Promise<void> {
-  if (charged <= 0) return;
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("credits_balance")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile) return;
-  const bal = profile.credits_balance as number;
-  const newBal = bal + charged;
-  await admin
-    .from("profiles")
-    .update({ credits_balance: newBal })
-    .eq("id", userId);
-  await admin.from("credit_ledger").insert({
-    user_id: userId,
-    delta: charged,
-    balance_after: newBal,
-    reason: "bat_tu_refund",
-    feature_key: featureKey,
-    metadata: { op, note: "upstream_failure" },
-  });
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersForRequest(req) });
   }
 
   if (req.method !== "POST") {
     return json(
-      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } },
-      405,
-    );
+      { error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405, req);
   }
 
   const batUrlRaw = Deno.env.get("BAT_TU_API_URL");
@@ -714,24 +1069,20 @@ Deno.serve(async (req) => {
           code: "SERVER_CONFIG",
           message: "Bát Tự API not configured.",
         },
-      },
-      503,
-    );
+      }, 503, req);
   }
   if (!supabaseUrl || !anonKey || !serviceKey) {
     return json(
       {
         error: { code: "SERVER_CONFIG", message: "Supabase not configured." },
-      },
-      500,
-    );
+      }, 500, req);
   }
 
   let payload: { op?: string; body?: unknown };
   try {
     payload = await req.json();
   } catch {
-    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400);
+    return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400, req);
   }
 
   const op = payload.op;
@@ -739,6 +1090,8 @@ Deno.serve(async (req) => {
     payload.body && typeof payload.body === "object" && !Array.isArray(payload.body)
       ? (payload.body as Record<string, unknown>)
       : {};
+
+  normalizeBatTuBodyDates(body);
 
   if (!op || typeof op !== "string" || !VALID_OPS.has(op)) {
     return json(
@@ -749,12 +1102,13 @@ Deno.serve(async (req) => {
         },
       },
       422,
+      req,
     );
   }
 
   const upstream = buildUpstream(op, body, batUrl);
   if (!upstream.ok) {
-    return json({ error: { code: "BAD_REQUEST", message: upstream.message } }, 400);
+    return json({ error: { code: "BAD_REQUEST", message: upstream.message } }, 400, req);
   }
 
   const { url: upstreamUrl, init: upstreamInit } = upstream;
@@ -766,7 +1120,7 @@ Deno.serve(async (req) => {
   let userId: string | null = null;
 
   if (ANONYMOUS_OPS.has(op)) {
-    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
+    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit, req);
     if (cached) return cached;
   }
 
@@ -781,6 +1135,7 @@ Deno.serve(async (req) => {
           },
         },
         401,
+        req,
       );
     }
     const userClient = createClient(supabaseUrl, anonKey, {
@@ -790,11 +1145,86 @@ Deno.serve(async (req) => {
     const u = userData?.user;
     if (userErr || !u) {
       return json(
-        { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } },
-        401,
-      );
+        { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } }, 401, req);
     }
     userId = u.id;
+  }
+
+  if (CALENDAR_GATE_OPS.has(op)) {
+    const calendarUserId =
+      userId ?? (await resolveUserIdFromRequest(req, supabaseUrl, anonKey));
+    if (calendarUserId && bodyHasBirthDate(body)) {
+      const { data: subProfile, error: subErr } = await admin
+        .from("profiles")
+        .select("subscription_expires_at")
+        .eq("id", calendarUserId)
+        .maybeSingle();
+      if (subErr || !subProfile) {
+        return json(
+          {
+            error: {
+              code: "PROFILE_MISSING",
+              message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
+            },
+          }, 400, req);
+      }
+      if (
+        !canUseCalendar(subProfile) &&
+        !isNeverSubscribedUser(subProfile)
+      ) {
+        return json(
+          {
+            error: {
+              code: "SUB_EXPIRED",
+              message:
+                "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục xem lịch cá nhân.",
+            },
+          }, 402, req);
+      }
+    }
+  }
+
+  const traCuuPick = isTraCuuPickChonNgay(op, body);
+  if (traCuuPick && userId) {
+    const { data: subProfile, error: subErr } = await admin
+      .from("profiles")
+      .select("subscription_expires_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (subErr || !subProfile) {
+      return json(
+        {
+          error: {
+            code: "PROFILE_MISSING",
+            message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
+          },
+        }, 400, req);
+    }
+    if (!canUseCalendar(subProfile)) {
+      return json(
+        {
+          error: {
+            code: "SUB_EXPIRED",
+            message:
+              "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục tra cứu ngày tốt.",
+          },
+        }, 402, req);
+    }
+  }
+
+  if (op === "recompute-la-so" && userId) {
+    const allowed = await assertBirthEditAllowed(admin, userId);
+    if (!allowed.ok) {
+      return json(
+        { error: { code: "BIRTH_EDIT_LIMIT", message: allowed.message } }, 403, req);
+    }
+    await admin
+      .from("profiles")
+      .update({
+        la_so_recompute_status: "pending",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
   }
 
   if (op === "tu-tru" && userId) {
@@ -805,52 +1235,95 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (lasoErr) {
       return json(
-        { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } },
-        500,
-      );
+        { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } }, 500, req);
     }
     if (profileHasStoredLaso(lasoRow?.la_so)) {
+      // Idempotent onboarding retry — return cached lá số, skip upstream recompute.
+      return json({ data: lasoRow!.la_so }, 200, req);
+    }
+  }
+
+  const phongThuyFull =
+    op === "phong-thuy" &&
+    String(body.detail ?? "").toLowerCase() === "full";
+  if (userId && (op === "la-so-luu-nien" || phongThuyFull)) {
+    const { data: baziProfile, error: baziProfErr } = await admin
+      .from("profiles")
+      .select("subscription_expires_at, bazi_reading_unlocked_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (baziProfErr || !baziProfile) {
+      return json(
+        { error: { code: "PROFILE_MISSING", message: "Chưa có hồ sơ." } },
+        400,
+        req,
+      );
+    }
+    if (!canUseBaziReading(baziProfile)) {
       return json(
         {
           error: {
-            code: "LASO_ALREADY_EXISTS",
-            message: "Bạn đã có lá số. Mở Lá số tứ trụ để xem.",
+            code: "BAZI_READING_LOCKED",
+            message:
+              "Cần mở khóa Luận giải Bát tự năm hoặc gói Lịch năm để xem nội dung này.",
           },
         },
-        409,
+        403,
+        req,
       );
     }
   }
 
-  if (!ANONYMOUS_OPS.has(op)) {
-    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit);
-    if (cached) return cached;
+  if (op === "tieu-van" && userId) {
+    const ymEarly = tieVanYearMonth(body);
+    if (ymEarly) {
+      const ikeyEarly = tieVanUnlockIdentityKey(body);
+      const { data: unlockedRow, error: unlockReadErr } = await admin
+        .from("tieu_van_unlocks")
+        .select("payload")
+        .eq("user_id", userId)
+        .eq("year_month", ymEarly)
+        .eq("identity_key", ikeyEarly)
+        .maybeSingle();
+      if (unlockReadErr) {
+        console.error("tieu_van_unlocks read", unlockReadErr);
+      } else if (unlockedRow?.payload != null) {
+        return json({ data: unlockedRow.payload }, 200, req);
+      }
+    }
   }
 
+  /**
+   * Paid authenticated ops require active subscription (Direction C — no credit/lượng).
+   * Calendar/sub gates above cover most routes; this catches paid feature_credit_costs rows
+   * for ops that skip the calendar block (e.g. tieu-van before unlock cache).
+   */
   const featureKey = resolveFeatureKey(op, body);
-  /** Client hint: bootstrap first chart from Settings — no credits (only when profile has no lá số yet). */
-  const firstLaSoFree =
-    op === "tu-tru" &&
-    Boolean(userId) &&
-    body.first_la_so_free === true;
-  const featureKeyForBilling =
-    firstLaSoFree && featureKey === "tu_tru" ? null : featureKey;
-  let chargedAmount = 0;
+  const phongThuyTeaser =
+    op === "phong-thuy" &&
+    String(body.detail ?? "").toLowerCase() === "teaser";
+  let requiresSub: string | null = featureKey;
+  if (op === "tu-tru" || op === "tu-tru-preview" || op === "recompute-la-so") {
+    requiresSub = null;
+  }
+  if (op === "la-so") requiresSub = null;
+  if (op === "la-so-luu-nien") requiresSub = null;
+  if (phongThuyTeaser) requiresSub = null;
+  if (traCuuPick) requiresSub = null;
 
-  if (featureKeyForBilling && userId) {
+  if (requiresSub && userId) {
     const { data: costRow } = await admin
       .from("feature_credit_costs")
       .select("credit_cost, is_free")
-      .eq("feature_key", featureKeyForBilling)
+      .eq("feature_key", requiresSub)
       .maybeSingle();
 
     if (
       costRow && !costRow.is_free && (costRow.credit_cost as number) > 0
     ) {
-      const cost = costRow.credit_cost as number;
       const { data: profile, error: pErr } = await admin
         .from("profiles")
-        .select("credits_balance, subscription_expires_at")
+        .select("subscription_expires_at")
         .eq("id", userId)
         .maybeSingle();
 
@@ -863,59 +1336,22 @@ Deno.serve(async (req) => {
             },
           },
           400,
+          req,
         );
       }
 
       if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
-        const bal = profile.credits_balance as number;
-        if (bal < cost) {
-          return json(
-            {
-              error: {
-                code: "INSUFFICIENT_CREDITS",
-                message: "Không đủ lượng để dùng tính năng này.",
-              },
+        return json(
+          {
+            error: {
+              code: "SUB_EXPIRED",
+              message:
+                "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
             },
-            402,
-          );
-        }
-
-        const newBal = bal - cost;
-        const { error: uErr } = await admin
-          .from("profiles")
-          .update({ credits_balance: newBal })
-          .eq("id", userId);
-
-        if (uErr) {
-          console.error("bat-tu deduct", uErr);
-          return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-            500,
-          );
-        }
-
-        const { error: lErr } = await admin.from("credit_ledger").insert({
-          user_id: userId,
-          delta: -cost,
-          balance_after: newBal,
-          reason: "bat_tu",
-          feature_key: featureKeyForBilling,
-          metadata: { op },
-        });
-
-        if (lErr) {
-          console.error("bat-tu ledger", lErr);
-          await admin
-            .from("profiles")
-            .update({ credits_balance: bal })
-            .eq("id", userId);
-          return json(
-            { error: { code: "DB_ERROR", message: "Ghi sổ lượng thất bại." } },
-            500,
-          );
-        }
-
-        chargedAmount = cost;
+          },
+          402,
+          req,
+        );
       }
     }
   }
@@ -926,18 +1362,13 @@ Deno.serve(async (req) => {
     upstreamRes = await fetch(upstreamUrl, upstreamInit);
   } catch (e) {
     console.error("bat-tu fetch", e);
-    if (userId && featureKey) {
-      await refundCredits(admin, userId, featureKey, chargedAmount, op);
-    }
     return json(
       {
         error: {
           code: "BAT_TU_UPSTREAM",
           message: "Không kết nối được máy chủ Bát Tự.",
         },
-      },
-      502,
-    );
+      }, 502, req);
   }
 
   const rawText = await upstreamRes.text();
@@ -961,9 +1392,6 @@ Deno.serve(async (req) => {
       appErr?.code ?? "",
       rawText.slice(0, 400),
     );
-    if (userId && featureKey) {
-      await refundCredits(admin, userId, featureKey, chargedAmount, op);
-    }
     if (appErr) {
       const rateLimited = appErr.code === "RATE_LIMITED";
       return json(
@@ -974,7 +1402,8 @@ Deno.serve(async (req) => {
             ...(appErr.resetAt != null ? { reset_at: appErr.resetAt } : {}),
           },
         },
-        rateLimited ? 429 : 502,
+        upstreamFailureStatus(upstreamRes, appErr),
+        req,
       );
     }
     const http429 = upstreamRes.status === 429;
@@ -985,7 +1414,8 @@ Deno.serve(async (req) => {
           message: rawText.slice(0, 500) || "Bát Tự từ chối yêu cầu.",
         },
       },
-      http429 ? 429 : 502,
+      upstreamFailureStatus(upstreamRes, null),
+      req,
     );
   }
 
@@ -999,17 +1429,36 @@ Deno.serve(async (req) => {
       data,
     );
     if (persistMsg) {
-      if (featureKey) {
-        await refundCredits(admin, userId, featureKey, chargedAmount, op);
-      }
       return json(
-        { error: { code: "DB_ERROR", message: persistMsg } },
-        500,
-      );
+        { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
     }
   }
 
-  if (isUpstreamCacheable(op, upstreamInit) && redisRestConfigured()) {
+  if (op === "recompute-la-so" && userId) {
+    const persistMsg = await persistRecomputeLaSo(
+      admin,
+      userId,
+      body,
+      data,
+    );
+    if (persistMsg) {
+      await admin
+        .from("profiles")
+        .update({
+          la_so_recompute_status: "failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId);
+      return json(
+        { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
+    }
+  }
+
+  if (
+    ANONYMOUS_OPS.has(op) &&
+    isUpstreamCacheable(op, upstreamInit) &&
+    redisRestConfigured()
+  ) {
     try {
       const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
       await redisSetExString(ck, JSON.stringify({ data }), cacheTtl);
@@ -1018,5 +1467,33 @@ Deno.serve(async (req) => {
     }
   }
 
-  return json({ data });
+  const outData =
+    op === "phong-thuy" &&
+    phongThuyTeaser &&
+    data != null &&
+    typeof data === "object" &&
+    !Array.isArray(data)
+      ? stripPhongThuyTeaserPayload(data)
+      : data;
+
+  if (op === "tieu-van" && userId && outData != null) {
+    const ymStore = tieVanYearMonth(body);
+    if (ymStore) {
+      const ikeyStore = tieVanUnlockIdentityKey(body);
+      const { error: unlockUpsertErr } = await admin.from("tieu_van_unlocks").upsert(
+        {
+          user_id: userId,
+          year_month: ymStore,
+          identity_key: ikeyStore,
+          payload: outData,
+        },
+        { onConflict: "user_id,year_month,identity_key" },
+      );
+      if (unlockUpsertErr) {
+        console.error("tieu_van_unlocks upsert", unlockUpsertErr);
+      }
+    }
+  }
+
+  return json({ data: outData }, 200, req);
 });

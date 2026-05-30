@@ -1,0 +1,82 @@
+/**
+ * Pre-LLM guards for generate-reading: subscription + prior unlock ledger.
+ */
+
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+import { redisGetString, redisSetNxEx } from "./redis-cache.ts";
+
+const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
+const RATE_LIMIT_WINDOW_SEC = 10;
+const FOLLOW_UP_RATE_LIMIT_WINDOW_SEC = 2;
+
+export type GenerateReadingPreflight =
+  | { allowed: true }
+  | {
+    allowed: false;
+    reason: "profile_missing" | "sub_expired" | "not_unlocked";
+  };
+
+export function subscriptionActiveForReading(expires: string | null): boolean {
+  if (!expires) return false;
+  return new Date(expires) > new Date();
+}
+
+/** Subscription active or user already unlocked this scope/day via reading-unlock. */
+export async function preflightAiReadingAccess(
+  admin: SupabaseClient,
+  userId: string,
+  scope: "home" | "day_detail",
+  dayIso: string,
+): Promise<GenerateReadingPreflight> {
+  const { data: profile, error: pErr } = await admin
+    .from("profiles")
+    .select("subscription_expires_at")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (pErr || !profile) {
+    return { allowed: false, reason: "profile_missing" };
+  }
+
+  if (
+    subscriptionActiveForReading(
+      profile.subscription_expires_at as string | null,
+    )
+  ) {
+    return { allowed: true };
+  }
+
+  const idempotencyKey = `ai_reading_unlock:${userId}:${scope}:${dayIso}`;
+  const { data: existing } = await admin
+    .from("credit_ledger")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("idempotency_key", idempotencyKey)
+    .maybeSingle();
+  if (existing) return { allowed: true };
+
+  return { allowed: false, reason: "sub_expired" };
+}
+
+/**
+ * Fixed window: at most one generate-reading LLM path per user per window.
+ * Follow-ups use a separate key so the initial day luận does not block chat 10s.
+ * @returns true when the caller may proceed (slot acquired or Redis unavailable).
+ */
+export async function acquireGenerateReadingRateLimit(
+  userId: string,
+  opts?: { followUp?: boolean },
+): Promise<boolean> {
+  const followUp = opts?.followUp === true;
+  const key = followUp
+    ? `gen_reading_rl_followup:v1:${userId}`
+    : `gen_reading_rl:v1:${userId}`;
+  const windowSec = followUp
+    ? FOLLOW_UP_RATE_LIMIT_WINDOW_SEC
+    : RATE_LIMIT_WINDOW_SEC;
+  const acquired = await redisSetNxEx(key, "1", windowSec);
+  if (acquired) return true;
+  const held = await redisGetString(key);
+  return held == null;
+}

@@ -17,7 +17,6 @@ export interface Profile {
   subscription_expires_at: string | null;
   birth_data_locked_at: string | null;
   onboarding_completed_at: string | null;
-  push_enabled: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -30,8 +29,10 @@ export interface LaSoJson {
   menh?: string;
   dung_than?: string;
   ky_than?: string;
-  /** Chuỗi tóm tắt hoặc object tu-tru-api (`current` / `cycles`). */
+  /** Chuỗi tóm tắt hoặc object tu-tru-api (`current` / `cycles`). POST `/v1/tu-tru`. */
   dai_van?: string | Record<string, unknown>;
+  /** Đại vận hiện tại phẳng (`display`, `age_range`, …). GET `/v1/la-so`. */
+  dai_van_current?: Record<string, unknown>;
   ngu_hanh?: Record<string, number>;
   thien_can?: string[];
   dia_chi?: string[];
@@ -118,6 +119,8 @@ export interface CalendarDay {
   isToday: boolean;
   lunarDay: number;
   lunarMonth: number;
+  /** Engine score when present in `lich-thang` payload. */
+  score?: number | null;
 }
 
 export type ResultGrade = "A" | "B" | "C";
@@ -127,8 +130,12 @@ export interface ResultDay {
   isoDate: string;
   dateLabel: string;
   lunarLabel: string;
+  /** Can Chi ngày (meta row) — không nhầm với Trực. */
+  canChi: string;
   truc: string;
   bestHour: string;
+  /** `gio_tot`-style slots từ API — ưu tiên khi format giờ tốt đọc được. */
+  bestHourSlots?: unknown;
   reasons: string[];
 }
 
@@ -171,6 +178,8 @@ export type TuTruIntent =
   | "NHAP_HOC_THI_CU"
   | "KIEN_TUNG"
   | "TRONG_CAY"
+  | "CAT_TOC"
+  | "XAM_MINH"
   | "MAC_DINH";
 
 // ─── Edge: Bát Tự proxy ───────────────────────────────────────────────────
@@ -182,8 +191,14 @@ export type BatTuOperation =
   | "chon-ngay/detail"
   | "lich-thang"
   | "day-detail"
+  | "day-luan-context"
+  | "day-compare"
   | "convert-date"
+  | "la-so"
+  | "la-so-luu-nien"
   | "tu-tru"
+  | "tu-tru-preview"
+  | "recompute-la-so"
   | "profile"
   | "tieu-van"
   | "hop-tuoi"
@@ -192,7 +207,7 @@ export type BatTuOperation =
 
 /**
  * `body` fields match tu-tru-api where applicable — see https://tu-tru-api.fly.dev/openapi.json
- * Edge-only: `first_la_so_free` (boolean) skips credit charge for `op: "tu-tru"` when the profile has no lá số yet; it is not forwarded upstream.
+ * Lập lá số (`op: "tu-tru"`) không trừ lượng trên Edge; trường thừa trong body không được forward tới Bát Tự API.
  */
 export interface BatTuRequest {
   op: BatTuOperation;
@@ -205,12 +220,35 @@ export interface BatTuResponse<T = unknown> {
 
 // ─── Edge: PayOS ───────────────────────────────────────────────────────────
 
-export type PackageSku = "le" | "goi_6thang" | "goi_12thang";
+export type PackageSku =
+  | "le"
+  | "goi_1thang"
+  | "goi_6thang"
+  | "goi_12thang"
+  | "luan_bat_tu"
+  | "luan_tieu_van";
+
+export type CheckoutDiscountBreakdown = {
+  list_amount_vnd: number;
+  coupon_discount_vnd: number;
+  referral_discount_vnd: number;
+  amount_vnd: number;
+  coupon_code: string | null;
+  checkout_referral_code: string | null;
+};
+
+export type PayosCheckoutQuote = CheckoutDiscountBreakdown & {
+  package_sku: PackageSku;
+  referrer_profile_id: string | null;
+};
 
 export interface CreatePayosCheckoutRequest {
   package_sku: PackageSku;
-  return_url: string;
-  cancel_url: string;
+  return_url?: string;
+  cancel_url?: string;
+  quote_only?: boolean;
+  coupon_code?: string;
+  referral_code?: string;
 }
 
 /** Chi tiết chuyển khoản / VietQR do PayOS trả về khi tạo payment request. */
@@ -229,4 +267,30 @@ export interface CreatePayosCheckoutResponse {
   checkout_url: string;
   /** Có thể null nếu PayOS không gửi đủ trường (fallback: mở checkout_url). */
   transfer: PayosTransferDetails | null;
+  quote?: PayosCheckoutQuote;
 }
+
+// ─── Edge: Referral dashboard ─────────────────────────────────────────────
+
+export type ReferralRewardTier = {
+  package_sku: string;
+  label: string;
+  reward_vnd: number;
+};
+
+export type ReferralRecentReward = {
+  id: string;
+  package_sku: string;
+  package_label: string;
+  reward_vnd: number;
+  created_at: string;
+};
+
+export type ReferralDashboardResponse = {
+  referral_code: string;
+  invite_url: string;
+  total_reward_vnd: number;
+  referees_count: number;
+  reward_tiers: ReferralRewardTier[];
+  recent_rewards: ReferralRecentReward[];
+};

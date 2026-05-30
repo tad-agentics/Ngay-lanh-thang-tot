@@ -5,39 +5,39 @@ alwaysApply: true
 
 ## Project
 
-App: **Ngày Lành Tháng Tốt** (ngaytot / ngaylanhthangtot.vn)  
-Stack: React Router v7 (Vite) · Supabase (DB + Auth + RLS + Edge Functions) · Vercel · Tailwind CSS · Figma Make (source UI in `src/make-import/`)
+App: **Ngày Lành Tháng Tốt** (ngaytot / ngaylanhthangtot.vn)
+Stack: React Router v7 (Vite) · Supabase (DB + Auth + RLS + Edge Functions) · Vercel · Tailwind CSS · Direction C design system (`app/components/brand/` — `CBottomNav`, `CSegmented`, `CTopStrip`)
 
 ## Architecture summary
 
-- **Frontend:** React SPA on Vercel. Pre-render **`/`** for SEO (northstar §7b). Authenticated app routes under **`/app/*`** (align URL strategy during Foundation — Make today uses `/`, `/chon-ngay`, etc.; normalize to RAD guard pattern in plan).
+- **Frontend:** React SPA on Vercel. Pre-render **`/`** for SEO; PWA **`start_url`** → **`/splash`**. Authenticated routes under **`/lich`**, **`/tra-cuu`**, **`/toi`** (layout: `authenticated.tsx`). Legacy **`/app/*`** 302 via `nav-config` during transition.
 - **Backend:** Supabase only. Client via publishable key + JWT; **RLS** is the auth boundary.
-- **Server logic:** Edge Functions — **Bát Tự** proxy (`BAT_TU_*` secrets), **PayOS** checkout + webhook, share resolve/OG, optional cron push. No PayOS or Bát Tự calls from the browser.
-- **Design:** Port Make TSX → `app/` routes; keep layout, Tailwind, **motion** dopamine moments; swap mocks for Supabase + `invoke('bat-tu')`.
+- **Server logic:** Edge Functions — **Bát Tự** proxy (`BAT_TU_*` secrets), **PayOS** checkout + webhook, share resolve/OG, `generate-reading-day` / `generate-reading-la-so` / `generate-reading-tieu-van` (DeepSeek), cron push. No PayOS, Bát Tự or LLM calls from the browser.
+- **Design:** Direction C — lịch-tờ metaphor; forest-deep `#0e1c14` for ceremonial surfaces; 3-tab nav (Lịch · Tra cứu · Tôi). Source: `artifacts/design/ngaylanhthangtot-vn/` + `app/components/brand/`.
 
 ## What this app does
 
-Vietnamese B2C PWA: pick auspicious dates (**chọn ngày**) and related insights using **Bát Tự Tứ Trụ**, **personalized by saved lá số**. **Credits + PayOS** (bundles/packs, no auto-renew). Anonymous users get **hôm nay** + **tuần này** free. Tone: calm, specific, Vietnamese — see `copy-rules.mdc` + EDS.
+Vietnamese B2C PWA: **subscription calendar** (“Lịch ngày lành cho riêng bạn”) using **Bát Tự Tứ Trụ** personalized by saved lá số. **PayOS** subscription + add-on luận (no lượng in UI). Anonymous: landing-only teaser (no public `/lich`). Tone: calm, specific, Vietnamese.
 
 ## Not building (out of scope)
 
-From northstar §8 / tech-spec §17: generative chatbot; raw almanac tables as primary UI; marketplace thầy; community/UGC; AI-personalized push; non-Vi locale; admin dashboard (use Supabase + PayOS portals); credit gifting; full query history v1; offline engine; auto-recurring subscriptions; self-serve birth-data edit; **multi-person stored “family profiles”** (v1 = session-only others per shortcut).
+Generative chatbot; raw almanac tables as primary UI; marketplace thầy; community/UGC; AI-personalized push; non-Vi locale; admin dashboard; credit gifting; offline engine; auto-recurring subscriptions; **self-serve birth-data edit** (birth-data is set once at onboarding — no edit form anywhere in the app); **multi-person stored "family profiles"** (dropped in Direction B — not built at all).
 
-## LLM rules
+## LLM / AI Reading (first-class feature)
 
-**No LLM features.** Deterministic engine + templates only (tech-spec §13–14 omitted).
+AI Reading (Luận Giải) is first-class, powered by **DeepSeek V4 Flash** via `generate-reading-day`, `generate-reading-la-so`, and `generate-reading-tieu-van`. Engine = deterministic Bát Tự + prompt templates. No generative chatbot. No raw LLM access from the browser. Gating: **subscription + entitlement columns** (`bazi_reading_unlocked_at`, `tieu_van_reading_expires_at`).
 
 ## AI module boundary
 
-N/A — no AI SDK in app or Edge for generative UX.
+DeepSeek calls live exclusively in `supabase/functions/generate-reading-{day,la-so,tieu-van}/` (shared handler in `_shared/generate-reading/core/llm.ts`). No AI SDK in the React app. RLS + `subscription_expires_at` / entitlement helpers (`app/lib/entitlements.ts`, `_shared/entitlements.ts`) enforce auth/payment boundary.
 
 ## Key constraints
 
-- **Auth (northstar §9):** Google OAuth + email/password; **anonymous** browse for free calendar/teaser — not Phone OTP (ignore northstar W1 table typo).
+- **Auth:** Google OAuth + email/password; **anonymous** browse for free calendar/teaser.
 - **PayOS only** — no Stripe unless product changes.
-- **Feature credit keys:** DB canonical names in `feature_credit_costs`; map Make mocks (`la_so` → `tu_tru`, etc.) — see tech-spec §4.
-- **PayOS `package_sku`:** `le`, `goi_6thang`, `goi_12thang` only.
-- **`scripts`/screen-specs:** Phase 2 file not generated this run; **screen inventory = `src/make-import/src/app/routes.tsx` + screens/** + tech-spec.
+- **Feature credit keys:** DB canonical names in `feature_credit_costs`.
+- **PayOS `package_sku` (checkout):** `goi_1thang`, `goi_6thang`, `goi_12thang`, `luan_bat_tu`, `luan_tieu_van`. Legacy `le` webhook-only. UI route: **`/dat-lich`**.
+- **Screen inventory:** `app/routes/` + `artifacts/plans/build-plan.md`.
 
 ## Phase reference
 
@@ -45,5 +45,7 @@ N/A — no AI SDK in app or Edge for generative UX.
 |-----|------|
 | Tech spec | `artifacts/docs/tech-spec.md` |
 | Build plan | `artifacts/plans/build-plan.md` |
+| FE Handoff | `artifacts/docs/fe-handoff-direction-c.md` |
 | Northstar | `artifacts/docs/northstar-ngay-lanh.html` |
 | EDS | `artifacts/docs/emotional-design-system.md` |
+| Changelog | `artifacts/docs/changelog.md` |

@@ -20,10 +20,17 @@ export interface Database {
           gioi_tinh: "nam" | "nu" | null;
           la_so: Json | null;
           credits_balance: number;
+          referral_code: string;
+          referred_by: string | null;
           subscription_expires_at: string | null;
+          bazi_reading_unlocked_at: string | null;
+          tieu_van_reading_expires_at: string | null;
+          la_so_recompute_status: "pending" | "ready" | "failed" | null;
+          birth_edit_count: number;
+          birth_edit_window_start: string | null;
+          timezone: string;
           birth_data_locked_at: string | null;
           onboarding_completed_at: string | null;
-          push_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -36,10 +43,17 @@ export interface Database {
           gioi_tinh?: "nam" | "nu" | null;
           la_so?: Json | null;
           credits_balance?: number;
+          referral_code?: string;
+          referred_by?: string | null;
           subscription_expires_at?: string | null;
+          bazi_reading_unlocked_at?: string | null;
+          tieu_van_reading_expires_at?: string | null;
+          la_so_recompute_status?: "pending" | "ready" | "failed" | null;
+          birth_edit_count?: number;
+          birth_edit_window_start?: string | null;
+          timezone?: string;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
-          push_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -52,10 +66,17 @@ export interface Database {
           gioi_tinh?: "nam" | "nu" | null;
           la_so?: Json | null;
           credits_balance?: number;
+          referral_code?: string;
+          referred_by?: string | null;
           subscription_expires_at?: string | null;
+          bazi_reading_unlocked_at?: string | null;
+          tieu_van_reading_expires_at?: string | null;
+          la_so_recompute_status?: "pending" | "ready" | "failed" | null;
+          birth_edit_count?: number;
+          birth_edit_window_start?: string | null;
+          timezone?: string;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
-          push_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -114,6 +135,38 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
+      day_luan_ask_idempotency: {
+        Row: {
+          id: string;
+          thread_id: string;
+          idempotency_key: string;
+          question: string;
+          answer: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      day_luan_threads: {
+        Row: {
+          id: string;
+          user_id: string;
+          day_iso: string;
+          birth_revision: string;
+          luan_context: Json;
+          anchor_reading: string;
+          messages: Json;
+          follow_up_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       payment_orders: {
         Row: {
           id: string;
@@ -126,6 +179,7 @@ export interface Database {
           subscription_months: number | null;
           amount_vnd: number | null;
           checkout_url: string | null;
+          expires_at: string | null;
           raw_request: Json | null;
           raw_webhook: Json | null;
           created_at: string;
@@ -160,33 +214,138 @@ export interface Database {
         Update: never;
         Relationships: [];
       };
-      push_subscriptions: {
+      tieu_van_unlocks: {
         Row: {
           id: string;
           user_id: string;
-          endpoint: string;
-          p256dh: string;
-          auth: string;
-          user_agent: string | null;
+          year_month: string;
+          identity_key: string;
+          payload: Json;
           created_at: string;
         };
         Insert: {
           user_id: string;
-          endpoint: string;
-          p256dh: string;
-          auth: string;
-          user_agent?: string | null;
+          year_month: string;
+          identity_key: string;
+          payload: Json;
+          id?: string;
+          created_at?: string;
         };
         Update: {
-          p256dh?: string;
-          auth?: string;
-          user_agent?: string | null;
+          payload?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      bazi_reading_deliveries: {
+        Row: {
+          id: string;
+          user_id: string;
+          flow_year: number;
+          birth_revision: string;
+          content_version: string;
+          sections: Json;
+          la_so_display: Json | null;
+          luu_nien_facts: Json | null;
+          phong_thuy_facts: Json | null;
+          year_can_chi: string;
+          generated_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          flow_year: number;
+          birth_revision: string;
+          content_version: string;
+          sections: Json;
+          la_so_display?: Json | null;
+          luu_nien_facts?: Json | null;
+          phong_thuy_facts?: Json | null;
+          year_can_chi?: string;
+          generated_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          birth_revision?: string;
+          content_version?: string;
+          sections?: Json;
+          la_so_display?: Json | null;
+          luu_nien_facts?: Json | null;
+          phong_thuy_facts?: Json | null;
+          year_can_chi?: string;
+          generated_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      reading_cache: {
+        Row: {
+          cache_key: string;
+          reading: string;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          cache_key: string;
+          reading: string;
+          created_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          reading?: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+        Relationships: [];
+      };
+      saved_picks: {
+        Row: {
+          id: string;
+          user_id: string;
+          saved_at: string;
+          source_endpoint: string;
+          payload: Json;
+          label: string | null;
+          day_iso: string | null;
+          score: number | null;
+          intent: string | null;
+          note: string | null;
+          source: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          saved_at?: string;
+          source_endpoint: string;
+          payload: Json;
+          label?: string | null;
+          day_iso?: string | null;
+          score?: number | null;
+          intent?: string | null;
+          note?: string | null;
+          source?: string | null;
+        };
+        Update: {
+          source_endpoint?: string;
+          payload?: Json;
+          label?: string | null;
+          day_iso?: string | null;
+          score?: number | null;
+          intent?: string | null;
+          note?: string | null;
+          source?: string | null;
         };
         Relationships: [];
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      apply_referral_pair: {
+        Args: { p_referee_id: string; p_referrer_id: string };
+        Returns: undefined;
+      };
+    };
     Enums: Record<string, never>;
   };
 }

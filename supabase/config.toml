@@ -151,9 +151,15 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "http://127.0.0.1:3000"
+site_url = "http://localhost:5173"
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# Must match app/lib/auth-password-reset.ts + OAuth redirectTo in auth routes.
+additional_redirect_urls = [
+  "http://localhost:5173/auth/callback",
+  "http://localhost:5173/dat-lai-mat-khau/recovery",
+  "http://127.0.0.1:5173/auth/callback",
+  "http://127.0.0.1:5173/dat-lai-mat-khau/recovery",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to the local API URL (http://127.0.0.1:<port>/auth/v1).
@@ -172,7 +178,7 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = false
 # Passwords shorter than this value will be rejected as weak. Minimum 6, recommended 8 or more.
-minimum_password_length = 6
+minimum_password_length = 8
 # Passwords that do not meet the following requirements will be rejected as weak. Supported values
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
 password_requirements = ""
@@ -206,7 +212,7 @@ enable_signup = true
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true
 # If enabled, users need to confirm their email address before signing in.
-enable_confirmations = false
+enable_confirmations = true
 # If enabled, users will need to reauthenticate or have logged in recently to change their password.
 secure_password_change = false
 # Controls the minimum amount of time that must pass before sending another signup confirmation or password reset email.
@@ -402,7 +408,21 @@ verify_jwt = false
 
 # JWT is validated inside the handler via auth.getUser() (Bearer access token).
 # Avoids gateway 401 when the platform JWT check and client invoke headers disagree.
+[functions.referral-claim]
+verify_jwt = false
+
+[functions.referral-dashboard]
+verify_jwt = false
+
+# Bearer + getUser() in handler; optional dry_run (no charge).
+[functions.reading-unlock]
+verify_jwt = false
+
 [functions.payos-create-checkout]
+verify_jwt = false
+
+# Same as payos-create-checkout: Bearer + getUser() inside handler.
+[functions.create-share-token]
 verify_jwt = false
 
 # Free Bát Tự ops are used without login; paid ops validate JWT inside the handler.
@@ -411,9 +431,57 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
+# DeepSeek luận giải (split). Gated: Bearer + entitlement; Upstash 1 req/10s per user (UPSTASH_REDIS_*).
+[functions.generate-reading-day]
+verify_jwt = false
+
+[functions.day-luan-chat]
+verify_jwt = false
+
+[functions.generate-reading-la-so]
+verify_jwt = false
+
+[functions.generate-reading-tieu-van]
+verify_jwt = false
+
+# Persist purchased full Bát Tự luận giải (JWT + bazi entitlement in handler).
+[functions.bazi-reading-delivery]
+verify_jwt = false
+
 # Public share preview + OG HTML (anon `apikey` only).
 [functions.share-resolve]
 verify_jwt = false
 
 [functions.share-og]
+verify_jwt = false
+
+# Validate JWT + ADMIN_EMAILS allowlist inside handler (same pattern as create-share-token).
+[functions.admin-dashboard-stats]
+verify_jwt = false
+
+[functions.admin-site-banner]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false
+
+[functions.admin-user-entitlements]
+verify_jwt = false
+
+[functions.admin-orders]
+verify_jwt = false
+
+[functions.admin-referrals]
+verify_jwt = false
+
+# G3 — expire pending PayOS orders older than 24h (daily cron).
+[functions.cron-payos-expire-orphans]
+verify_jwt = false
+
+# Purge expired reading_cache rows (daily cron).
+[functions.cron-reading-cache-purge]
+verify_jwt = false
+
+# Ops — verify PayOS Edge secrets are configured (no values exposed).
+[functions.payos-config-health]
 verify_jwt = false

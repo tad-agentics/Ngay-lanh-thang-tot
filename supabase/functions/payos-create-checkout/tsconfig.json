@@ -1,5 +1,10 @@
 {
   "extends": "../tsconfig.json",
   "include": [],
-  "files": ["index.ts", "../deno-globals.d.ts", "../_shared/payos.ts"]
+  "files": [
+    "index.ts",
+    "../deno-globals.d.ts",
+    "../_shared/payos.ts",
+    "../_shared/allowed-origin.ts"
+  ]
 }

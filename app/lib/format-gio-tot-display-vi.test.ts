@@ -2,10 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatGioTotArrayDisplayVi,
+  formatGioTotChiCompactDisplayVi,
   formatHourRangeForDayDetailFigmaVi,
   formatHourRangeForDisplayVi,
   formatHourRangeStringDisplayVi,
 } from "~/lib/format-gio-tot-display-vi";
+
+describe("formatGioTotChiCompactDisplayVi", () => {
+  it("prefixes chi with compact hour like maket lịch tờ", () => {
+    const s = formatGioTotChiCompactDisplayVi([
+      { chi_name: "Thìn", range: "07:00-09:00" },
+      { chi_name: "Mùi", range: "13:00-15:00" },
+    ]);
+    expect(s).toBe("Thìn 7–9h, Mùi 13–15h");
+  });
+});
 
 describe("formatGioTotArrayDisplayVi", () => {
   it("formats morning and afternoon like user example", () => {
@@ -13,8 +24,8 @@ describe("formatGioTotArrayDisplayVi", () => {
       { chi_name: "Thìn", range: "07:00-09:00" },
       { chi_name: "Mùi", range: "13:00-15:00" },
     ]);
-    expect(s).toContain("7–9 giờ sáng");
-    expect(s).toContain("13–15 giờ chiều");
+    expect(s).toContain("7 - 9 giờ sáng");
+    expect(s).toContain("13 - 15 giờ chiều");
     expect(s).toContain(" · ");
     expect(s).not.toContain("Thìn");
   });
@@ -43,7 +54,7 @@ describe("formatHourRangeForDisplayVi", () => {
     const s = formatHourRangeForDisplayVi("ignored", [
       { range: "09:00-11:00" },
     ]);
-    expect(s).toContain("9–11 giờ sáng");
+    expect(s).toContain("9 - 11 giờ sáng");
   });
 });
 

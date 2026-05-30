@@ -1,73 +1,122 @@
 import { useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
+import {
+  btnPrimaryGold,
+  C,
+  CForestShell,
+  inputLabel,
+  inputUnderline,
+} from "~/components/auth/c-auth-ui";
+import { BackBar, Mono } from "~/components/brand";
+import { passwordResetRedirectUrl } from "~/lib/auth-password-reset";
 import { supabase } from "~/lib/supabase";
 
 export default function QuenMatKhau() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    );
+    const trimmed = email.trim();
+    const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+      redirectTo: passwordResetRedirectUrl(),
+    });
     setBusy(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    setSent(true);
-    toast.success("Đã gửi liên kết đặt lại mật khẩu.");
+    navigate(
+      `/quen-mat-khau/da-gui?email=${encodeURIComponent(trimmed)}`,
+      { replace: true },
+    );
   }
 
   return (
-    <main className="min-h-svh flex flex-col items-center justify-center bg-background px-4 py-12">
+    <CForestShell>
+      <BackBar dark onBack={() => navigate("/dang-nhap/email")} />
+
       <form
         onSubmit={(e) => void onSubmit(e)}
-        className="w-full max-w-sm space-y-5"
+        style={{
+          flex: 1,
+          padding: "12px 28px 24px",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold font-[family-name:var(--font-lora)]">
-            Quên mật khẩu
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Nhập email — bạn sẽ nhận liên kết đặt lại mật khẩu.
-          </p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
+        <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
+          Quên mật khẩu
+        </Mono>
+        <h1
+          style={{
+            fontFamily: "var(--display)",
+            fontWeight: 800,
+            fontSize: 32.5,
+            color: C.cream,
+            lineHeight: 1.05,
+            textTransform: "uppercase",
+            letterSpacing: "-0.015em",
+            margin: "12px 0 6px",
+          }}
+        >
+          Gửi link đặt lại
+          <br />
+          qua email
+        </h1>
+        <p
+          style={{
+            fontFamily: "var(--serif)",
+            fontSize: 14,
+            color: "rgba(237,231,211,0.65)",
+            lineHeight: 1.55,
+          }}
+        >
+          Lá số của bạn vẫn được lưu — chỉ cần đặt mật khẩu mới là vào lịch lại
+          được.
+        </p>
+
+        <div style={{ marginTop: 28 }}>
+          <div style={inputLabel}>Email đăng ký</div>
+          <input
             type="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={sent}
+            style={inputUnderline(true)}
           />
         </div>
-        <Button type="submit" className="w-full" disabled={busy || sent}>
-          {sent ? "Đã gửi" : "Gửi liên kết"}
-        </Button>
-        <p className="text-center text-sm text-muted-foreground">
+
+        <button
+          type="submit"
+          disabled={busy}
+          style={{ ...btnPrimaryGold, marginTop: 32 }}
+        >
+          Gửi link đặt lại
+        </button>
+        <div
+          style={{
+            marginTop: 14,
+            textAlign: "center",
+            fontFamily: "var(--serif)",
+            fontSize: 13,
+            color: "rgba(237,231,211,0.55)",
+          }}
+        >
+          Nhớ ra rồi?{" "}
           <Link
             to="/dang-nhap/email"
-            className="underline-offset-4 hover:underline"
+            style={{ color: C.gold, textDecoration: "none" }}
           >
             Quay lại đăng nhập
           </Link>
-        </p>
+        </div>
       </form>
-    </main>
+    </CForestShell>
   );
 }

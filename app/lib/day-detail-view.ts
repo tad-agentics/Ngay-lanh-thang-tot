@@ -1,6 +1,14 @@
-import { extractDetailReasonLines } from "~/lib/chon-ngay-detail";
-import { formatHourRangeForDisplayVi } from "~/lib/format-gio-tot-display-vi";
-import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
+import type { ScoreMethodologyView } from "~/lib/score-methodology";
+import { parseScoreMethodology } from "~/lib/score-methodology";
+import {
+  formatGioTotChiCompactDisplayVi,
+  formatHourRangeForDayDetailFigmaVi,
+} from "~/lib/format-gio-tot-display-vi";
+import { pickCanChiLabel } from "~/lib/home-bat-tu";
+import {
+  matchesIntentVietnameseLabel,
+  TU_TRU_INTENT_OPTIONS,
+} from "~/lib/tu-tru-intents";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -28,15 +36,17 @@ function firstNonEmptySlotArray(
   return null;
 }
 
-/** Giờ Hoàng/Hắc đạo — cùng cách đọc như thẻ Hôm nay (vd. `23–1 giờ đêm · 7–9 giờ sáng`). */
+/** Giờ Hoàng/Hắc đạo — maket lịch tờ: `Thìn 7–9h, Mùi 13–15h`. */
 function formatGioSlotsHumanVi(
   nested: Record<string, unknown>,
   keys: string[],
 ): string {
   const arr = firstNonEmptySlotArray(nested, keys);
   if (!arr) return "—";
-  const s = formatHourRangeForDisplayVi("", arr);
-  return s === "—" ? "—" : s;
+  const fromChi = formatGioTotChiCompactDisplayVi(arr);
+  if (fromChi) return fromChi;
+  const compact = formatHourRangeForDayDetailFigmaVi("", arr);
+  return compact === "—" ? "—" : compact;
 }
 
 function labelsFromMixedArray(raw: unknown): string[] {
@@ -72,6 +82,8 @@ export interface DayDetailBreakdownRow {
   points: number;
   reasonVi: string;
   type: string;
+  /** tu-tru-api REQ-P0-02: truc | sao28 | can_chi_laso | gio_vang */
+  id?: string;
 }
 
 export type DayDetailPurposeVerdict = "nen_lam" | "khong_nen" | "trung_lap";
@@ -88,6 +100,8 @@ export interface DayDetailViewModel {
   starLine: string;
   /** Tiêu đề thẻ Trực (vd. `Trực Thành`). */
   trucTitle: string;
+  /** Tên trực/tiết trên lịch tờ (không tiền tố "Trực "). */
+  trucDisplay: string;
   /** Mô tả ngắn dưới tên trực. */
   trucDescription: string;
   score: number | null;
@@ -106,6 +120,8 @@ export interface DayDetailViewModel {
    */
   purposeRows: DayDetailPurposeRow[];
   breakdown: DayDetailBreakdownRow[];
+  scoreMethodology: ScoreMethodologyView | null;
+  sourceLabels: string[];
 }
 
 function pickNumber(obj: Record<string, unknown>, keys: string[]): number | null {
@@ -134,10 +150,10 @@ function verdictFromApiObject(
   const explicit = pickStr(o, ["verdict", "recommendation", "suitability", "ket_luan"]);
   if (explicit) {
     const e = explicit.toLowerCase();
-    if (/không nên|tránh|hạn chế|kém|xấu|bad|avoid|no\b/.test(e)) {
+    if (/không nên|tránh|hạn chế|kém|xấu|ngày dữ|bad|avoid|no\b/.test(e)) {
       return "khong_nen";
     }
-    if (/nên|tốt|phù hợp|good|ok|recommended|yes/.test(e)) {
+    if (/nên|ngày lành|tốt|phù hợp|good|ok|recommended|yes/.test(e)) {
       return "nen_lam";
     }
   }
@@ -206,18 +222,18 @@ function buildPurposeListFromApi(
   return null;
 }
 
-/** 26 mục chuẩn: khớp nhãn với `good_for` / `avoid_for`. */
+/** 28 mục chuẩn: khớp OpenAPI `IntentEnum` (trừ MAC_DINH) và `good_for` / `avoid_for`. */
 function buildPurposeListFromGoodAvoid(
   goodFor: string[],
   avoidFor: string[],
 ): DayDetailPurposeRow[] {
-  const good = new Set(goodFor.map((s) => s.trim().toLowerCase()));
-  const avoid = new Set(avoidFor.map((s) => s.trim().toLowerCase()));
   return TU_TRU_INTENT_OPTIONS.filter((o) => o.value !== "MAC_DINH").map((o) => {
-    const lc = o.label.toLowerCase();
     let verdict: DayDetailPurposeVerdict = "trung_lap";
-    if (good.has(lc)) verdict = "nen_lam";
-    else if (avoid.has(lc)) verdict = "khong_nen";
+    if (goodFor.some((g) => matchesIntentVietnameseLabel(o.value, g))) {
+      verdict = "nen_lam";
+    } else if (avoidFor.some((g) => matchesIntentVietnameseLabel(o.value, g))) {
+      verdict = "khong_nen";
+    }
     return { label: o.label, verdict };
   });
 }
@@ -290,6 +306,72 @@ function pickTrucDescription(
   return "";
 }
 
+/** Human-readable lines from day-detail / chon-ngay/detail JSON. */
+export function extractDetailReasonLines(data: unknown): string[] {
+  const root = asRecord(data);
+  if (!root) return [];
+
+  const breakdownCandidates = [
+    root.breakdown,
+    asRecord(root.layer3)?.breakdown,
+  ];
+  for (const br of breakdownCandidates) {
+    if (!Array.isArray(br)) continue;
+    const lines: string[] = [];
+    for (const item of br) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const rv = o.reason_vi ?? o.reasonVi;
+      if (typeof rv === "string" && rv.trim()) lines.push(rv.trim());
+    }
+    if (lines.length) return lines;
+  }
+
+  const text =
+    root.reason_vi ??
+    root.summary_vi ??
+    root.verdict_vi ??
+    root.detail ??
+    root.explanation ??
+    root.summary;
+  if (typeof text === "string" && text.trim()) {
+    return text
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  const directKeys = [
+    "reasons",
+    "ly_do",
+    "lyDo",
+    "details",
+    "explanations",
+    "messages",
+    "notes",
+    "highlights",
+  ];
+  for (const k of directKeys) {
+    const v = root[k];
+    if (Array.isArray(v)) {
+      const lines = v.filter((x) => typeof x === "string") as string[];
+      if (lines.length) return lines;
+    }
+  }
+
+  const lines: string[] = [];
+  for (const [k, v] of Object.entries(root)) {
+    if (
+      typeof v === "string" &&
+      v.length > 2 &&
+      /^(why|note|hint|luu_y)/i.test(k)
+    ) {
+      lines.push(v);
+    }
+  }
+  return lines;
+}
+
 /** Map GET /v1/day-detail JSON → màn chi tiết (ưu tiên shape tu-tru-api). */
 export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
   const root = asRecord(raw);
@@ -311,7 +393,8 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     }
   }
 
-  const canChi = pickStr(nested, ["can_chi", "canChi", "can_chi_day"]);
+  const canChi =
+    pickCanChiLabel(nested, ["can_chi", "canChi", "can_chi_day"]) || "—";
 
   const trucName =
     pickStr(nested, ["truc_name", "truc"]) ||
@@ -331,6 +414,8 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
       : trucPlain
         ? `Trực ${trucPlain.replace(/^trực\s+/i, "").trim()}`
         : "—";
+  const trucDisplay =
+    (trucPlain.replace(/^trực\s+/i, "").trim() || trucPlain) || "—";
 
   const starName = pickStr(nested, ["star_name", "starName"]);
   const sao28 = pickStr(nested, ["sao_28", "sao28"]);
@@ -363,7 +448,8 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
         pickStr(o, ["reason_vi", "reasonVi", "reason", "note"]) || "—";
       const reasonVi = softenBreakdownReasonVi(reasonRaw);
       const type = pickStr(o, ["type", "kind"]) || "";
-      breakdown.push({ source, points: pts, reasonVi, type });
+      const id = pickStr(o, ["id"]) || undefined;
+      breakdown.push({ source, points: pts, reasonVi, type, id });
     }
   }
 
@@ -400,6 +486,21 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     ? mergePurposeRowsByLabel(basePurposes, purposeFromApi)
     : basePurposes;
 
+  const scoreMethodology = parseScoreMethodology(
+    nested.score_methodology ?? root.score_methodology,
+  );
+
+  const sourceLabels: string[] = [];
+  const sourcesRaw = nested.sources ?? root.sources;
+  if (Array.isArray(sourcesRaw)) {
+    for (const item of sourcesRaw) {
+      const o = asRecord(item);
+      if (!o) continue;
+      const label = pickStr(o, ["label_vi", "labelVi", "label", "description_vi"]);
+      if (label) sourceLabels.push(label);
+    }
+  }
+
   if (
     !lunarOut &&
     !canChi &&
@@ -418,6 +519,7 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     trucLine: trucLine || "—",
     starLine: starLine || "—",
     trucTitle,
+    trucDisplay,
     trucDescription,
     score,
     grade,
@@ -430,5 +532,7 @@ export function parseDayDetailForView(raw: unknown): DayDetailViewModel | null {
     hungSatLabels,
     purposeRows,
     breakdown,
+    scoreMethodology,
+    sourceLabels,
   };
 }

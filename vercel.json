@@ -1,9 +1,40 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
-      "source": "/((?!assets|icons|fonts|screenshots|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml).*)",
+      "source": "/",
       "destination": "/index.html"
+    },
+    {
+      "source": "/((?!assets|icons|fonts|screenshots|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml).*)",
+      "destination": "/__spa-fallback.html"
     }
   ]
 }

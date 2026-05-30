@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 import type { BatTuRequest } from "~/lib/api-types";
+import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
 type EdgeErrorInner = {
@@ -29,32 +30,42 @@ export async function invokeBatTu<T = unknown>(
 
   if (error) {
     if (error instanceof FunctionsHttpError) {
+      let raw = "";
       try {
-        const body = (await error.context.json()) as unknown;
-        if (
-          body &&
-          typeof body === "object" &&
-          "error" in body &&
-          (body as EdgeErrorBody).error != null
-        ) {
-          const e = (body as EdgeErrorBody).error!;
-          const resetAt =
-            typeof e.reset_at === "number" && Number.isFinite(e.reset_at)
-              ? e.reset_at
-              : undefined;
-          return {
-            ok: false,
-            code: typeof e.code === "string" ? e.code : "BAT_TU",
-            message:
-              typeof e.message === "string" && e.message.length
-                ? e.message
-                : (error.message ??
-                  "Edge Function trả lỗi (không có chi tiết)."),
-            ...(resetAt != null ? { reset_at: resetAt } : {}),
-          };
-        }
+        raw = await error.context.text();
       } catch {
-        // ignore parse errors
+        // ignore read errors
+      }
+      if (raw) {
+        try {
+          const body = JSON.parse(raw) as unknown;
+          if (
+            body &&
+            typeof body === "object" &&
+            "error" in body &&
+            (body as EdgeErrorBody).error != null
+          ) {
+            const e = (body as EdgeErrorBody).error!;
+            const resetAt =
+              typeof e.reset_at === "number" && Number.isFinite(e.reset_at)
+                ? e.reset_at
+                : undefined;
+            const code = typeof e.code === "string" ? e.code : "BAT_TU";
+            if (isSubExpiredCode(code)) notifySubExpired();
+            return {
+              ok: false,
+              code,
+              message:
+                typeof e.message === "string" && e.message.length
+                  ? e.message
+                  : (error.message ??
+                    "Edge Function trả lỗi (không có chi tiết)."),
+              ...(resetAt != null ? { reset_at: resetAt } : {}),
+            };
+          }
+        } catch {
+          // not JSON — fall through
+        }
       }
     }
     return {
@@ -75,9 +86,11 @@ export async function invokeBatTu<T = unknown>(
       typeof e.reset_at === "number" && Number.isFinite(e.reset_at)
         ? e.reset_at
         : undefined;
+    const code = e.code ?? "BAT_TU";
+    if (isSubExpiredCode(code)) notifySubExpired();
     return {
       ok: false,
-      code: e.code ?? "BAT_TU",
+      code,
       message: e.message ?? "Lỗi Bát Tự.",
       ...(resetAt != null ? { reset_at: resetAt } : {}),
     };

@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildCalendarDaysForMonth,
+  buildHomeInlineFallback,
+  formatLichThangMonthKey,
+  mergeDayDetailScoreIntoHome,
+  parseLichThangLunarMonthLabel,
   parseNgayHomNayForHome,
   parseWeeklyGoodDayCount,
   parseWeeklySummaryForScreen,
 } from "~/lib/home-bat-tu";
+import { ngayHomNayToLichCard } from "~/lib/lich-format";
 
 describe("parseNgayHomNayForHome", () => {
   it("reads hoang_dao and hours from a typical-shaped payload", () => {
@@ -17,7 +22,7 @@ describe("parseNgayHomNayForHome", () => {
     });
     expect(v).not.toBeNull();
     expect(v!.dayType).toBe("hoang-dao");
-    expect(v!.hourRange).toBe("7–9 giờ sáng");
+    expect(v!.hourRange).toBe("7 - 9 giờ sáng");
     expect(v!.lunarLabel).toBe("6 tháng 2");
     expect(v!.solarDateVi).toMatch(/2026/);
   });
@@ -36,9 +41,180 @@ describe("parseNgayHomNayForHome", () => {
     expect(v).not.toBeNull();
     expect(v!.dayType).toBe("hoang-dao");
     expect(v!.lunarLabel).toContain("Bính Ngọ");
+    expect(v!.yearCanChi).toBe("Bính Ngọ");
     expect(v!.hourRange).toContain("giờ");
     expect(v!.hourRange).toMatch(/23|đêm/);
     expect(v!.hourRange).not.toContain("Tý");
+    expect(v!.gioTotChis).toEqual(["Tý", "Sửu"]);
+    expect(v!.gioTotDisplay).toContain("Tý");
+    expect(v!.gioTotDisplay).toContain("h");
+    expect(v!.headerSubline).toContain("2026");
+  });
+
+  it("reads can_chi object and year from lunar.display (tu-tru-api shape)", () => {
+    const v = parseNgayHomNayForHome({
+      date: "2026-05-12",
+      can_chi: {
+        name: "Nhâm Tuất",
+        can_name: "Nhâm",
+        chi_name: "Tuất",
+      },
+      lunar: { display: "Ngày 12 tháng Tư năm Bính Ngọ", day: 12, month: 4 },
+      truc: { name: "Thu" },
+    });
+    expect(v).not.toBeNull();
+    expect(v!.canChi).toBe("Nhâm Tuất");
+    expect(v!.yearCanChi).toBe("Bính Ngọ");
+    expect(v!.trucDisplay).toBe("Thu");
+  });
+
+  it("parses maket-style trực, sao, việc nên làm, giờ xấu", () => {
+    const v = parseNgayHomNayForHome({
+      solar_date: "2026-05-11",
+      can_chi: "Bính Tuất",
+      lunar_label: "Mùng 10 tháng Tư năm Bính Ngọ",
+      truc_name: "Trực Định",
+      cat_than: [{ name: "Thiên Đức" }, "Nguyệt Đức"],
+      good_for: ["Khai trương", "Ký kết", "Đính hôn"],
+      gio_tot: [
+        { chi_name: "Tý", range: "23:00-01:00" },
+        { chi_name: "Sửu", range: "01:00-03:00" },
+      ],
+      gio_xau: [
+        { chi_name: "Dần", range: "03:00-05:00" },
+        { chi_name: "Ngọ", range: "11:00-13:00" },
+      ],
+    });
+    expect(v).not.toBeNull();
+    expect(v!.trucDisplay).toBe("Định");
+    expect(v!.yearCanChi).toBe("Bính Ngọ");
+    expect(v!.saoTotCsv).toContain("Thiên Đức");
+    expect(v!.goodForChips[0]).toBe("Khai trương");
+    expect(v!.gioXauChis).toEqual(["Dần", "Ngọ"]);
+    expect(v!.headerSubline).toContain("Bính Tuất");
+  });
+
+  it("reads engine score when present", () => {
+    const v = parseNgayHomNayForHome({
+      solar_date: "2026-05-11",
+      score: 87,
+    });
+    expect(v?.score).toBe(87);
+  });
+
+  it("parses avoid_for and daily_advice strings (tu-tru-api ngay-hom-nay)", () => {
+    const v = parseNgayHomNayForHome({
+      date: "2026-05-12",
+      gio_tot: [{ chi_name: "Tý", range: "23:00-01:00" }],
+      good_for: ["Khai trương", "Ký kết hợp đồng"],
+      avoid_for: ["Phẫu thuật"],
+      daily_advice: {
+        nen_lam: "Hoàng Đạo (Kim Quỹ) — thuận lợi. Phù hợp: Nhập trạch.",
+        nen_tranh: "Không có gì đặc biệt.",
+      },
+    });
+    expect(v).not.toBeNull();
+    expect(v!.goodForChips).toEqual(["Khai trương", "Ký kết hợp đồng", "Nhập trạch"]);
+    expect(v!.avoidForChips).toEqual(["Phẫu thuật"]);
+  });
+
+  it("falls back to summary.tot/xau and hoang_dao.star_name when no good_for", () => {
+    const v = parseNgayHomNayForHome({
+      date: "2026-05-01",
+      hoang_dao: { is_hoang_dao: false, star_name: "Bạch Hổ" },
+      summary: {
+        tot: ["Sao Giác"],
+        xau: ["Hắc Đạo (Bạch Hổ)", "Nguyệt Kỵ"],
+      },
+      gio_tot: [{ chi_name: "Tý", range: "23:00-01:00" }],
+    });
+    expect(v).not.toBeNull();
+    expect(v!.saoTotCsv).toContain("Sao Giác");
+    expect(v!.saoXauCsv).toContain("Nguyệt Kỵ");
+    const card = ngayHomNayToLichCard(v!, null, "2026-05-01");
+    expect(card.rows.find((r) => r.key === "Nên")?.value).toContain("Sao Giác");
+    expect(card.rows.find((r) => r.key === "Tránh")?.value).toContain("Nguyệt Kỵ");
+  });
+});
+
+describe("ngayHomNayToLichCard", () => {
+  it("uses iso for day numeral and full weekday (not DD/MM regex on vi solar string)", () => {
+    const parsed = parseNgayHomNayForHome({
+      date: "2026-05-12",
+      can_chi: { name: "Nhâm Tuất" },
+      lunar: { display: "Ngày 12 tháng Tư năm Bính Ngọ" },
+      truc: { name: "Thu" },
+      score: 68,
+    });
+    expect(parsed).not.toBeNull();
+    const card = ngayHomNayToLichCard(parsed!, "Lộ Bàng Thổ", "2026-05-12");
+    expect(card.dayNumber).toBe("12");
+    expect(card.weekday).toBe("Thứ Ba");
+    expect(card.masthead).toBe("Tháng 5 · 2026  ·  Bính Ngọ");
+  });
+
+  it("does not show fallback 68 when ngay-hom-nay omits score", () => {
+    const parsed = parseNgayHomNayForHome({
+      date: "2026-05-28",
+      day_type: "neutral",
+    });
+    expect(parsed).not.toBeNull();
+    const card = ngayHomNayToLichCard(parsed!, null, "2026-05-28");
+    expect(card.score).toBeNull();
+    expect(card.verdictLabel).toBe("Ngày bình");
+  });
+});
+
+describe("mergeDayDetailScoreIntoHome", () => {
+  it("overrides home score with day-detail personalized score", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-28",
+      day_type: "neutral",
+    });
+    expect(home).not.toBeNull();
+    const merged = mergeDayDetailScoreIntoHome(home!, { score: 35 });
+    expect(merged.score).toBe(35);
+    const card = ngayHomNayToLichCard(merged, "Lộ Bàng Thổ", "2026-05-28");
+    expect(card.score).toBe(35);
+    expect(card.verdictLabel).toBe("Ngày tránh");
+  });
+
+  it("fills homeSummaryLine from day-detail reason_vi when ngay-hom-nay omits it", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-29",
+      day_type: "hoang-dao",
+      good_for: ["Khai trương"],
+    });
+    expect(home).not.toBeNull();
+    expect(home!.homeSummaryLine).toBe("");
+    const merged = mergeDayDetailScoreIntoHome(home!, {
+      score: 85,
+      reason_vi: "Can Quý hòa Dụng Thần Thổ — thuận ký kết và khai trương.",
+    });
+    expect(merged.score).toBe(85);
+    expect(merged.homeSummaryLine).toContain("Dụng Thần");
+  });
+});
+
+describe("buildHomeInlineFallback", () => {
+  it("builds teaser from good/avoid chips when prose missing", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-29",
+      day_type: "hoang-dao",
+      good_for: ["Khai trương", "Ký hợp đồng"],
+      avoid_for: ["Động thổ"],
+    });
+    expect(home).not.toBeNull();
+    const line = buildHomeInlineFallback(home!);
+    expect(line).toContain("Khai trương");
+    expect(line).toContain("Động thổ");
+  });
+});
+
+describe("formatLichThangMonthKey", () => {
+  it("formats month as YYYY-MM", () => {
+    expect(formatLichThangMonthKey(2026, 6)).toBe("2026-06");
+    expect(formatLichThangMonthKey(2026, 12)).toBe("2026-12");
   });
 });
 
@@ -95,6 +271,15 @@ describe("parseWeeklySummaryForScreen", () => {
   });
 });
 
+describe("parseLichThangLunarMonthLabel", () => {
+  it("reads lunar_month from first day row", () => {
+    const label = parseLichThangLunarMonthLabel({
+      days: [{ date: "2026-05-01", lunar_month: 4, lunar_day: 14 }],
+    });
+    expect(label).toBe("Tháng Tư âm");
+  });
+});
+
 describe("buildCalendarDaysForMonth", () => {
   it("merges lich-thang day rows with neutral fill", () => {
     const days = buildCalendarDaysForMonth(3, 2026, {
@@ -118,5 +303,16 @@ describe("buildCalendarDaysForMonth", () => {
     });
     expect(days[0]?.dayType).toBe("hac-dao");
     expect(days[1]?.dayType).toBe("hoang-dao");
+    expect(days[0]?.lunarDay).toBe(13);
+    expect(days[1]?.lunarDay).toBe(14);
+  });
+
+  it("reads score from month day rows", () => {
+    const days = buildCalendarDaysForMonth(6, 2026, {
+      days: [{ date: "2026-06-17", score: 91, lunar_day: 3 }],
+    });
+    expect(days[16]?.isoDate).toBe("2026-06-17");
+    expect(days[16]?.score).toBe(91);
+    expect(days[16]?.lunarDay).toBe(3);
   });
 });

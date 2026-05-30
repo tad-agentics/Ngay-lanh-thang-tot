@@ -34,7 +34,7 @@ echo ""
 echo "[ ] Hardcoded secrets scan..."
 SECRETS=$(grep -rn \
   --include="*.ts" --include="*.tsx" \
-  -E "(sk_live_|sk_test_|ANTHROPIC_API_KEY\s*=\s*['\"][^'\"]+|OPENAI_API_KEY\s*=\s*['\"][^'\"]+|service_role)" \
+  -E "(sk_live_|sk_test_|GEMINI_API_KEY\s*=\s*['\"][^'\"]+|ANTHROPIC_API_KEY\s*=\s*['\"][^'\"]+|OPENAI_API_KEY\s*=\s*['\"][^'\"]+|service_role)" \
   src/ 2>/dev/null)
 if [ -n "$SECRETS" ]; then
   echo "BLOCKING: Possible hardcoded secrets found:"
