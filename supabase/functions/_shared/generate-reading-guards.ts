@@ -1,13 +1,9 @@
 /**
- * Pre-LLM guards for generate-reading: credit preflight + Upstash rate limit.
+ * Pre-LLM guards for generate-reading: subscription + prior unlock ledger.
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-import {
-  inPivotCreditTransition,
-  readPivotTransitionUntil,
-} from "./entitlements.ts";
 import { redisGetString, redisSetNxEx } from "./redis-cache.ts";
 
 const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
@@ -18,7 +14,7 @@ export type GenerateReadingPreflight =
   | { allowed: true }
   | {
     allowed: false;
-    reason: "profile_missing" | "sub_expired" | "insufficient_credits" | "not_unlocked";
+    reason: "profile_missing" | "sub_expired" | "not_unlocked";
   };
 
 export function subscriptionActiveForReading(expires: string | null): boolean {
@@ -26,7 +22,7 @@ export function subscriptionActiveForReading(expires: string | null): boolean {
   return new Date(expires) > new Date();
 }
 
-/** Mirrors reading-unlock + balance check before spending on LLM. */
+/** Subscription active or user already unlocked this scope/day via reading-unlock. */
 export async function preflightAiReadingAccess(
   admin: SupabaseClient,
   userId: string,
@@ -35,7 +31,7 @@ export async function preflightAiReadingAccess(
 ): Promise<GenerateReadingPreflight> {
   const { data: profile, error: pErr } = await admin
     .from("profiles")
-    .select("credits_balance, subscription_expires_at")
+    .select("subscription_expires_at")
     .eq("id", userId)
     .maybeSingle();
 
@@ -51,11 +47,6 @@ export async function preflightAiReadingAccess(
     return { allowed: true };
   }
 
-  const pivotUntil = await readPivotTransitionUntil(admin);
-  if (!inPivotCreditTransition(pivotUntil)) {
-    return { allowed: false, reason: "sub_expired" };
-  }
-
   const idempotencyKey = `ai_reading_unlock:${userId}:${scope}:${dayIso}`;
   const { data: existing } = await admin
     .from("credit_ledger")
@@ -65,25 +56,7 @@ export async function preflightAiReadingAccess(
     .maybeSingle();
   if (existing) return { allowed: true };
 
-  const { data: costRow } = await admin
-    .from("feature_credit_costs")
-    .select("credit_cost, is_free")
-    .eq("feature_key", AI_READING_UNLOCK_FEATURE_KEY)
-    .maybeSingle();
-
-  const cost =
-    costRow && !costRow.is_free && (costRow.credit_cost as number) > 0
-      ? (costRow.credit_cost as number)
-      : 0;
-
-  if (cost <= 0) return { allowed: true };
-
-  const balance = profile.credits_balance as number;
-  if (balance < cost) {
-    return { allowed: false, reason: "insufficient_credits" };
-  }
-
-  return { allowed: false, reason: "not_unlocked" };
+  return { allowed: false, reason: "sub_expired" };
 }
 
 /**

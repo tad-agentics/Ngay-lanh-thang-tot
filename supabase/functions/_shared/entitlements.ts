@@ -7,7 +7,6 @@ export type ProfileEntitlements = {
   subscription_expires_at: string | null;
   bazi_reading_unlocked_at: string | null;
   tieu_van_reading_expires_at: string | null;
-  credits_balance?: number;
 };
 
 export function subscriptionActive(
@@ -78,35 +77,6 @@ export function extendSubscriptionMonths(
   const next = new Date(base);
   next.setMonth(next.getMonth() + months);
   return next.toISOString();
-}
-
-/** Legacy credit window after Direction C pivot (app_config.pivot_transition_until). */
-export function inPivotCreditTransition(
-  pivotUntilIso: string | null | undefined,
-): boolean {
-  if (!pivotUntilIso) return false;
-  const d = new Date(pivotUntilIso);
-  return !Number.isNaN(d.getTime()) && d > new Date();
-}
-
-export async function readPivotTransitionUntil(
-  admin: {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: string,
-        ) => { maybeSingle: () => Promise<{ data: { value?: unknown } | null }> };
-      };
-    };
-  },
-): Promise<string | null> {
-  const { data } = await admin
-    .from("app_config")
-    .select("value")
-    .eq("config_key", "pivot_transition_until")
-    .maybeSingle();
-  return typeof data?.value === "string" ? data.value : null;
 }
 
 export function applyYearlyBundleLuận(profile: ProfileEntitlements): {

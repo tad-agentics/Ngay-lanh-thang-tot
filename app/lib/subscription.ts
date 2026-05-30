@@ -1,4 +1,4 @@
-/** Gói không giới hạn lượng còn hiệu lực (theo `subscription_expires_at`). */
+/** Gói lịch còn hiệu lực (theo `subscription_expires_at`). */
 export function subscriptionActive(
   expires: string | null | undefined,
 ): boolean {

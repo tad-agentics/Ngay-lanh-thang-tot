@@ -5,7 +5,6 @@ import { isReadingUnlockGranted, type ReadingUnlockOk } from "~/lib/reading-unlo
 function ok(partial: Partial<ReadingUnlockOk>): ReadingUnlockOk {
   return {
     ok: true,
-    credits_balance: 0,
     charged: false,
     already_unlocked: false,
     ...partial,
@@ -13,10 +12,10 @@ function ok(partial: Partial<ReadingUnlockOk>): ReadingUnlockOk {
 }
 
 describe("isReadingUnlockGranted", () => {
-  it("accepts subscription_free without ledger", () => {
+  it("accepts subscription_free", () => {
     expect(
       isReadingUnlockGranted(
-        ok({ subscription_free: true, unlocked: true, dry_run: true }),
+        ok({ subscription_free: true, unlocked: true }),
       ),
     ).toBe(true);
   });
@@ -24,24 +23,12 @@ describe("isReadingUnlockGranted", () => {
   it("accepts already_unlocked ledger entry", () => {
     expect(
       isReadingUnlockGranted(
-        ok({ already_unlocked: true, unlocked: true, dry_run: true }),
+        ok({ already_unlocked: true, unlocked: true }),
       ),
     ).toBe(true);
   });
 
-  it("rejects dry_run that still needs payment", () => {
-    expect(
-      isReadingUnlockGranted(
-        ok({ unlocked: false, dry_run: true, credits_balance: 3 }),
-      ),
-    ).toBe(false);
-  });
-
-  it("accepts fresh paid unlock", () => {
-    expect(
-      isReadingUnlockGranted(
-        ok({ unlocked: true, charged: true, credits_balance: 2 }),
-      ),
-    ).toBe(true);
+  it("rejects when not unlocked", () => {
+    expect(isReadingUnlockGranted(ok({ unlocked: false }))).toBe(false);
   });
 });

@@ -1,13 +1,11 @@
 /**
- * Create a shareable link token: validates JWT, deducts `share_card` credits (unless subscribed),
- * inserts `share_tokens` via service role (server-trusted deduction).
+ * Create a shareable link token: validates JWT, requires active subscription,
+ * inserts `share_tokens` via service role.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import { subscriptionActive } from "../_shared/subscription.ts";
-
-const FEATURE_KEY = "share_card";
 
 const PAYLOAD_STRING_KEYS = [
   "headline",
@@ -148,83 +146,40 @@ Deno.serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  // Generate the token first so it can anchor the idempotency key for credit
-  // deduction. This prevents double-charging when a client retries on timeout.
-  const token = randomToken();
-  const idempotencyKey = `share_token:${user.id}:${token}`;
-  const expiresAt = new Date(Date.now() + 90 * 864e5).toISOString();
-
-  let chargedAmount = 0;
-  let previousBalance = 0;
-
-  const { data: costRow } = await admin
-    .from("feature_credit_costs")
-    .select("credit_cost, is_free")
-    .eq("feature_key", FEATURE_KEY)
+  const { data: profile, error: pErr } = await admin
+    .from("profiles")
+    .select("subscription_expires_at")
+    .eq("id", user.id)
     .maybeSingle();
 
-  if (costRow && !costRow.is_free && (costRow.credit_cost as number) > 0) {
-    const cost = costRow.credit_cost as number;
-    const { data: profile, error: pErr } = await admin
-      .from("profiles")
-      .select("credits_balance, subscription_expires_at")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (pErr || !profile) {
-      return json(
-        {
-          error: {
-            code: "PROFILE_MISSING",
-            message: "Chưa có hồ sơ.",
-          },
-        }, 400, req);
-    }
-
-    if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
-      // Check idempotency: if a ledger entry already exists for this token,
-      // the deduction already happened (client retry after network timeout).
-      const { data: existingLedger } = await admin
-        .from("credit_ledger")
-        .select("id")
-        .eq("idempotency_key", idempotencyKey)
-        .maybeSingle();
-
-      if (!existingLedger) {
-        const { data: deductResult, error: deductErr } = await admin.rpc(
-          "deduct_credits_atomic",
-          {
-            p_user_id: user.id,
-            p_cost: cost,
-            p_reason: "share_token",
-            p_feature_key: FEATURE_KEY,
-            p_idempotency_key: idempotencyKey,
-            p_metadata: { result_type: resultType },
-          },
-        );
-
-        if (deductErr) {
-          console.error("create-share-token deduct_credits_atomic", deductErr);
-          return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } }, 500, req);
-        }
-
-        const result = deductResult as { ok: boolean; error_code?: string; credits_balance: number };
-
-        if (!result.ok) {
-          if (result.error_code === "INSUFFICIENT_CREDITS") {
-            return json(
-              { error: { code: "INSUFFICIENT_CREDITS", message: "Không đủ lượng để tạo thẻ chia sẻ." } }, 402, req);
-          }
-          return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } }, 500, req);
-        }
-
-        chargedAmount = cost;
-        previousBalance = result.credits_balance + cost;
-      }
-    }
+  if (pErr || !profile) {
+    return json(
+      {
+        error: {
+          code: "PROFILE_MISSING",
+          message: "Chưa có hồ sơ.",
+        },
+      },
+      400,
+      req,
+    );
   }
+
+  if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
+    return json(
+      {
+        error: {
+          code: "SUB_EXPIRED",
+          message: "Gia hạn lịch để tạo thẻ chia sẻ.",
+        },
+      },
+      402,
+      req,
+    );
+  }
+
+  const token = randomToken();
+  const expiresAt = new Date(Date.now() + 90 * 864e5).toISOString();
 
   const { error: insErr } = await admin.from("share_tokens").insert({
     token,
@@ -236,29 +191,11 @@ Deno.serve(async (req) => {
 
   if (insErr) {
     console.error("create-share-token insert", insErr);
-    if (chargedAmount > 0) {
-      const { data: p2 } = await admin
-        .from("profiles")
-        .select("credits_balance")
-        .eq("id", user.id)
-        .maybeSingle();
-      const bal = (p2?.credits_balance as number) ?? 0;
-      const refund = bal + chargedAmount;
-      await admin
-        .from("profiles")
-        .update({ credits_balance: refund })
-        .eq("id", user.id);
-      await admin.from("credit_ledger").insert({
-        user_id: user.id,
-        delta: chargedAmount,
-        balance_after: refund,
-        reason: "share_token_refund",
-        feature_key: FEATURE_KEY,
-        metadata: { note: "insert_failed" },
-      });
-    }
     return json(
-      { error: { code: "DB_ERROR", message: "Không tạo liên kết được." } }, 500, req);
+      { error: { code: "DB_ERROR", message: "Không tạo liên kết được." } },
+      500,
+      req,
+    );
   }
 
   return json({

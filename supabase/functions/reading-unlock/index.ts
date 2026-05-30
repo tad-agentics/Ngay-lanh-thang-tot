@@ -1,14 +1,10 @@
 /**
- * Trừ lượng (hoặc ghi nhận đã mở khóa) cho luận giải AI — Home / chi tiết ngày.
- * Idempotent theo user + scope + day_iso (credit_ledger.idempotency_key).
+ * Unlock gate for inline/full day luận — subscription only (Direction C).
+ * Idempotent per user + scope + day_iso via credit_ledger idempotency_key (historical rows only).
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
-import {
-  inPivotCreditTransition,
-  readPivotTransitionUntil,
-} from "../_shared/entitlements.ts";
 import { subscriptionActive } from "../_shared/subscription.ts";
 
 const SINGLE_FEATURE_KEY = "ai_reading_unlock";
@@ -18,7 +14,6 @@ const BULK_FEATURE_KEY = "ai_reading_bulk_unlock";
 const SINGLE_SCOPES = ["home", "day_detail"] as const;
 /** Bulk scope: unlocks all sections of la_so_chi_tiet at bundle price */
 const BULK_SCOPE = "la_so_chi_tiet_bulk";
-
 
 function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
@@ -64,14 +59,16 @@ Deno.serve(async (req) => {
     return json({ ok: false, error_code: "UNAUTHORIZED" }, 401, req);
   }
 
-  let body: { scope?: unknown; day_iso?: unknown; dry_run?: unknown };
+  let body: { scope?: unknown; day_iso?: unknown };
   try {
     body = await req.json();
   } catch {
-    return json({ ok: false, error_code: "BAD_REQUEST", message: "JSON không hợp lệ." }, 400, req);
+    return json(
+      { ok: false, error_code: "BAD_REQUEST", message: "JSON không hợp lệ." },
+      400,
+      req,
+    );
   }
-
-  const dryRun = body.dry_run === true;
 
   const scope = typeof body.scope === "string" ? body.scope.trim() : "";
   const isBulk = scope === BULK_SCOPE;
@@ -98,7 +95,10 @@ Deno.serve(async (req) => {
         ok: false,
         error_code: "BAD_REQUEST",
         message: "day_iso cần dạng YYYY-MM-DD.",
-      }, 400, req);
+      },
+      400,
+      req,
+    );
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
@@ -114,35 +114,21 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (existing) {
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("credits_balance")
-      .eq("id", user.id)
-      .maybeSingle();
-    return json({
-      ok: true,
-      unlocked: true,
-      credits_balance: (profile?.credits_balance as number) ?? 0,
-      charged: false,
-      already_unlocked: true,
-      dry_run: dryRun,
-    }, 200, req);
+    return json(
+      {
+        ok: true,
+        unlocked: true,
+        charged: false,
+        already_unlocked: true,
+      },
+      200,
+      req,
+    );
   }
-
-  const { data: costRow } = await admin
-    .from("feature_credit_costs")
-    .select("credit_cost, is_free")
-    .eq("feature_key", FEATURE_KEY)
-    .maybeSingle();
-
-  const cost =
-    costRow && !costRow.is_free && (costRow.credit_cost as number) > 0
-      ? (costRow.credit_cost as number)
-      : 0;
 
   const { data: profile, error: pErr } = await admin
     .from("profiles")
-    .select("credits_balance, subscription_expires_at")
+    .select("subscription_expires_at")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -152,94 +138,44 @@ Deno.serve(async (req) => {
         ok: false,
         error_code: "PROFILE_MISSING",
         message: "Chưa có hồ sơ.",
-      }, 400, req);
+      },
+      400,
+      req,
+    );
   }
 
   if (subscriptionActive(profile.subscription_expires_at as string | null)) {
-    return json({
-      ok: true,
-      unlocked: true,
-      credits_balance: profile.credits_balance as number,
-      charged: false,
-      already_unlocked: false,
-      subscription_free: true,
-      dry_run: dryRun,
-    }, 200, req);
-  }
+    await admin.from("credit_ledger").insert({
+      user_id: user.id,
+      delta: 0,
+      balance_after: 0,
+      reason: FEATURE_KEY,
+      feature_key: FEATURE_KEY,
+      idempotency_key: idempotencyKey,
+      metadata: { scope, day_iso: dayIso, bulk: isBulk, subscription_free: true },
+    });
 
-  const pivotUntil = await readPivotTransitionUntil(admin);
-  if (!inPivotCreditTransition(pivotUntil)) {
     return json(
       {
-        ok: false,
-        error_code: "SUB_EXPIRED",
-        message: "Lịch đã hết hạn. Gia hạn để mở luận giải.",
-        unlocked: false,
-      }, 403, req);
+        ok: true,
+        unlocked: true,
+        charged: false,
+        already_unlocked: false,
+        subscription_free: true,
+      },
+      200,
+      req,
+    );
   }
 
-  if (cost <= 0) {
-    return json({
-      ok: true,
-      unlocked: true,
-      credits_balance: profile.credits_balance as number,
-      charged: false,
-      already_unlocked: false,
-      dry_run: dryRun,
-    }, 200, req);
-  }
-
-  if (dryRun) {
-    return json({
-      ok: true,
-      unlocked: false,
-      credits_balance: profile.credits_balance as number,
-      charged: false,
-      already_unlocked: false,
-      dry_run: true,
-    }, 200, req);
-  }
-
-  const { data: deductResult, error: deductErr } = await admin.rpc(
-    "deduct_credits_atomic",
+  return json(
     {
-      p_user_id: user.id,
-      p_cost: cost,
-      p_reason: FEATURE_KEY,
-      p_feature_key: FEATURE_KEY,
-      p_idempotency_key: idempotencyKey,
-      p_metadata: { scope, day_iso: dayIso, bulk: isBulk },
+      ok: false,
+      error_code: "SUB_EXPIRED",
+      message: "Lịch đã hết hạn. Gia hạn để mở luận giải.",
+      unlocked: false,
     },
+    403,
+    req,
   );
-
-  if (deductErr) {
-    console.error("reading-unlock deduct_credits_atomic", deductErr);
-    return json(
-      { ok: false, error_code: "DB_ERROR", message: "Không trừ lượng được." }, 500, req);
-  }
-
-  const result = deductResult as { ok: boolean; error_code?: string; credits_balance: number };
-
-  if (!result.ok) {
-    if (result.error_code === "INSUFFICIENT_CREDITS") {
-      return json(
-        {
-          ok: false,
-          error_code: "INSUFFICIENT_CREDITS",
-          message: "Không đủ lượng để mở khóa luận giải.",
-          credits_balance: result.credits_balance,
-          unlocked: false,
-        }, 402, req);
-    }
-    return json(
-      { ok: false, error_code: result.error_code ?? "DB_ERROR", message: "Không trừ lượng được." }, 500, req);
-  }
-
-  return json({
-    ok: true,
-    unlocked: true,
-    credits_balance: result.credits_balance,
-    charged: true,
-    already_unlocked: false,
-  }, 200, req);
 });

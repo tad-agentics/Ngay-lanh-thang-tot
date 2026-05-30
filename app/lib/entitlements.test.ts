@@ -27,7 +27,6 @@ describe("isNewUserDayLuanTeaser", () => {
         subscription_expires_at: null,
         bazi_reading_unlocked_at: null,
         tieu_van_reading_expires_at: null,
-        credits_balance: 0,
       }),
     ).toBe(true);
   });
@@ -38,7 +37,6 @@ describe("isNewUserDayLuanTeaser", () => {
         subscription_expires_at: "2020-01-01T00:00:00Z",
         bazi_reading_unlocked_at: null,
         tieu_van_reading_expires_at: null,
-        credits_balance: 0,
       }),
     ).toBe(false);
   });
@@ -51,7 +49,6 @@ describe("isNewUserDayLuanTeaser", () => {
         subscription_expires_at: future,
         bazi_reading_unlocked_at: null,
         tieu_van_reading_expires_at: null,
-        credits_balance: 0,
       }),
     ).toBe(false);
   });

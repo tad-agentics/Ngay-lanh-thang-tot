@@ -25,7 +25,7 @@ export type GenerateReadingInput = {
   anchor_reading?: string;
   /** Prior Q/A turns, max 8 messages (4 pairs). */
   thread_history?: LuanThreadTurn[];
-  /** `inline` = lịch tờ ngắn; `teaser` = chưa gói — auth only, không trừ lượng. */
+  /** `inline` = lịch tờ ngắn; `teaser` = chưa gói — auth only, subscription gate on server. */
   variant?: "inline" | "teaser";
   /** `la-so-chi-tiet` paywall — chỉ trả `menh_tong_quan` cho user chưa mở khóa. */
   preview?: boolean;

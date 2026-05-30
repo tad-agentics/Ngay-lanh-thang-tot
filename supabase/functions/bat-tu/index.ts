@@ -1045,52 +1045,6 @@ async function readBatTuCache(
   }
 }
 
-type DeductCreditsResult = {
-  ok: boolean;
-  error_code?: string;
-  credits_balance?: number;
-};
-
-async function batTuDeductIdempotencyKey(
-  userId: string,
-  featureKey: string,
-  op: string,
-  body: Record<string, unknown>,
-): Promise<string> {
-  const bodyHash = await sha256Hex(JSON.stringify(body));
-  return `bat_tu:${userId}:${featureKey}:${op}:${bodyHash}`;
-}
-
-async function refundCredits(
-  admin: SupabaseAdmin,
-  userId: string,
-  featureKey: string,
-  charged: number,
-  op: string,
-): Promise<void> {
-  if (charged <= 0) return;
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("credits_balance")
-    .eq("id", userId)
-    .maybeSingle();
-  if (!profile) return;
-  const bal = profile.credits_balance as number;
-  const newBal = bal + charged;
-  await admin
-    .from("profiles")
-    .update({ credits_balance: newBal })
-    .eq("id", userId);
-  await admin.from("credit_ledger").insert({
-    user_id: userId,
-    delta: charged,
-    balance_after: newBal,
-    reason: "bat_tu_refund",
-    feature_key: featureKey,
-    metadata: { op, note: "upstream_failure" },
-  });
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeadersForRequest(req) });
@@ -1340,38 +1294,33 @@ Deno.serve(async (req) => {
   }
 
   /**
-   * Never return Redis cache for authenticated ops before billing — a cache hit would skip
-   * credit deduction and ledger insert (`resolveFeatureKey` + charge block below).
-   * Anonymous ops use the cache path above (lines 768–770) only.
-   * `tu-tru` (lập lá số) luôn miễn phí — `featureKeyForBilling` null cho op đó.
-   * `la-so` (luận giải chi tiết lá số) không trừ lượng.
-   * Tra cứu tab `/tra-cuu` (REQ-NLTT-01): `source=tra_cuu` on `chon-ngay` + `hop-tuoi` — sub gate only, no credit.
+   * Paid authenticated ops require active subscription (Direction C — no credit/lượng).
+   * Calendar/sub gates above cover most routes; this catches paid feature_credit_costs rows
+   * for ops that skip the calendar block (e.g. tieu-van before unlock cache).
    */
   const featureKey = resolveFeatureKey(op, body);
   const phongThuyTeaser =
     op === "phong-thuy" &&
     String(body.detail ?? "").toLowerCase() === "teaser";
-  let featureKeyForBilling: string | null = featureKey;
+  let requiresSub: string | null = featureKey;
   if (op === "tu-tru" || op === "tu-tru-preview" || op === "recompute-la-so") {
-    featureKeyForBilling = null;
+    requiresSub = null;
   }
-  if (op === "la-so") featureKeyForBilling = null;
-  if (op === "la-so-luu-nien") featureKeyForBilling = null;
-  if (phongThuyTeaser) featureKeyForBilling = null;
-  if (traCuuPick) featureKeyForBilling = null;
-  let chargedAmount = 0;
+  if (op === "la-so") requiresSub = null;
+  if (op === "la-so-luu-nien") requiresSub = null;
+  if (phongThuyTeaser) requiresSub = null;
+  if (traCuuPick) requiresSub = null;
 
-  if (featureKeyForBilling && userId) {
+  if (requiresSub && userId) {
     const { data: costRow } = await admin
       .from("feature_credit_costs")
       .select("credit_cost, is_free")
-      .eq("feature_key", featureKeyForBilling)
+      .eq("feature_key", requiresSub)
       .maybeSingle();
 
     if (
       costRow && !costRow.is_free && (costRow.credit_cost as number) > 0
     ) {
-      const cost = costRow.credit_cost as number;
       const { data: profile, error: pErr } = await admin
         .from("profiles")
         .select("subscription_expires_at")
@@ -1385,97 +1334,24 @@ Deno.serve(async (req) => {
               code: "PROFILE_MISSING",
               message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
             },
-          }, 400, req);
+          },
+          400,
+          req,
+        );
       }
 
       if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
-        const { data: pivotRow } = await admin
-          .from("app_config")
-          .select("value")
-          .eq("config_key", "pivot_transition_until")
-          .maybeSingle();
-        const pivotUntil = pivotRow?.value
-          ? new Date(pivotRow.value as string)
-          : null;
-        const inLegacyWindow =
-          pivotUntil != null && !Number.isNaN(pivotUntil.getTime()) &&
-          pivotUntil > new Date();
-
-        if (!inLegacyWindow) {
-          return json(
-            {
-              error: {
-                code: "SUB_EXPIRED",
-                message:
-                  "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
-              },
-            }, 402, req);
-        }
-
-        const idempotencyKey = await batTuDeductIdempotencyKey(
-          userId,
-          featureKeyForBilling,
-          op,
-          body,
-        );
-
-        const { data: deductResult, error: deductErr } = await admin.rpc(
-          "deduct_credits_atomic",
+        return json(
           {
-            p_user_id: userId,
-            p_cost: cost,
-            p_reason: "bat_tu",
-            p_feature_key: featureKeyForBilling,
-            p_idempotency_key: idempotencyKey,
-            p_metadata: { op },
+            error: {
+              code: "SUB_EXPIRED",
+              message:
+                "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
+            },
           },
+          402,
+          req,
         );
-
-        if (deductErr) {
-          console.error("bat-tu deduct_credits_atomic", deductErr);
-          return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-            500,
-            req,
-          );
-        }
-
-        const result = deductResult as DeductCreditsResult;
-
-        if (!result.ok) {
-          if (result.error_code === "INSUFFICIENT_CREDITS") {
-            return json(
-              {
-                error: {
-                  code: "SUB_EXPIRED",
-                  message:
-                    "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục dùng tính năng này.",
-                },
-              },
-              402,
-              req,
-            );
-          }
-          if (result.error_code === "PROFILE_MISSING") {
-            return json(
-              {
-                error: {
-                  code: "PROFILE_MISSING",
-                  message: "Chưa có hồ sơ. Đăng xuất và đăng nhập lại.",
-                },
-              },
-              400,
-              req,
-            );
-          }
-          return json(
-            { error: { code: "DB_ERROR", message: "Không trừ lượng được." } },
-            500,
-            req,
-          );
-        }
-
-        chargedAmount = cost;
       }
     }
   }
@@ -1486,9 +1362,6 @@ Deno.serve(async (req) => {
     upstreamRes = await fetch(upstreamUrl, upstreamInit);
   } catch (e) {
     console.error("bat-tu fetch", e);
-    if (userId && featureKey) {
-      await refundCredits(admin, userId, featureKey, chargedAmount, op);
-    }
     return json(
       {
         error: {
@@ -1519,9 +1392,6 @@ Deno.serve(async (req) => {
       appErr?.code ?? "",
       rawText.slice(0, 400),
     );
-    if (userId && featureKey) {
-      await refundCredits(admin, userId, featureKey, chargedAmount, op);
-    }
     if (appErr) {
       const rateLimited = appErr.code === "RATE_LIMITED";
       return json(
@@ -1559,9 +1429,6 @@ Deno.serve(async (req) => {
       data,
     );
     if (persistMsg) {
-      if (featureKey) {
-        await refundCredits(admin, userId, featureKey, chargedAmount, op);
-      }
       return json(
         { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
     }

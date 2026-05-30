@@ -7,21 +7,11 @@ export function subscriptionActive(
   return new Date(expires) > new Date();
 }
 
-/** Legacy credit window after Direction C pivot (`app_config.pivot_transition_until`). */
-export function inPivotCreditTransition(
-  pivotUntilIso: string | null | undefined,
-): boolean {
-  if (!pivotUntilIso) return false;
-  const d = new Date(pivotUntilIso);
-  return !Number.isNaN(d.getTime()) && d > new Date();
-}
-
 export type EntitlementProfile = Pick<
   Profile,
   | "subscription_expires_at"
   | "bazi_reading_unlocked_at"
   | "tieu_van_reading_expires_at"
-  | "credits_balance"
 >;
 
 export function canUseCalendar(

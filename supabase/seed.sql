@@ -6,13 +6,14 @@
 
 -- App config
 insert into public.app_config (config_key, value) values
-  ('starter_credits', '20'),
+  ('starter_credits', '0'),
   ('referral_bonus_credits', '10'),
   ('credit_expiry_months', '12'),
+  ('pivot_transition_until', '1970-01-01T00:00:00Z'),
   ('site_banner', '{"enabled":true,"message":"Đây là vị trí thông báo sticky — sửa trong bảng app_config (site_banner) hoặc admin Edge Function.","href":null}')
 on conflict (config_key) do update set value = excluded.value, updated_at = now();
 
--- Feature costs — align with Make `FEATURE_COSTS` + northstar §11 (single DB source; UI loads via query)
+-- Legacy feature_credit_costs (Direction C gates on subscription; rows kept for bat-tu SUB_EXPIRED checks)
 insert into public.feature_credit_costs (feature_key, credit_cost, is_free) values
   ('ngay_hom_nay', 0, true),
   ('weekly_summary', 0, true),

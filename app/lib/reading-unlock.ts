@@ -7,20 +7,17 @@ export type ReadingUnlockScope = "home" | "day_detail";
 
 export type ReadingUnlockOk = {
   ok: true;
-  credits_balance: number;
   charged: boolean;
   already_unlocked: boolean;
   subscription_free?: boolean;
-  /** Server: true when unlock is valid (paid, subscription, free cost, or ledger). */
+  /** Server: true when unlock is valid (subscription or prior ledger). */
   unlocked?: boolean;
-  dry_run?: boolean;
 };
 
 export type ReadingUnlockErr = {
   ok: false;
   error_code: string;
   message: string;
-  credits_balance?: number;
 };
 
 export type ReadingUnlockResult = ReadingUnlockOk | ReadingUnlockErr;
@@ -34,30 +31,17 @@ export function isReadingUnlockGranted(result: ReadingUnlockOk): boolean {
   );
 }
 
-/**
- * Idempotent unlock for inline/full day luận.
- * Dry-run first; if pivot credit is required, performs the real unlock (deduct ledger).
- */
+/** Idempotent unlock for inline/full day luận (active subscription required). */
 export async function ensureReadingUnlocked(params: {
   scope: ReadingUnlockScope;
   day_iso: string;
 }): Promise<ReadingUnlockResult> {
-  const dry = await invokeReadingUnlock({ ...params, dry_run: true });
-  if (!dry.ok) return dry;
-  if (isReadingUnlockGranted(dry)) return dry;
-
-  if (dry.dry_run && dry.unlocked === false) {
-    return invokeReadingUnlock(params);
-  }
-
-  return dry;
+  return invokeReadingUnlock(params);
 }
 
 export async function invokeReadingUnlock(params: {
   scope: ReadingUnlockScope;
   day_iso: string;
-  /** Chỉ kiểm tra đã mở khóa (ledger / gói / giá 0) — không trừ lượng. */
-  dry_run?: boolean;
 }): Promise<ReadingUnlockResult> {
   const {
     data: { session },
@@ -71,11 +55,11 @@ export async function invokeReadingUnlock(params: {
   }
 
   try {
-    const { scope, day_iso, dry_run } = params;
+    const { scope, day_iso } = params;
     const { data, error } = await supabase.functions.invoke<unknown>(
       "reading-unlock",
       {
-        body: { scope, day_iso, ...(dry_run ? { dry_run: true } : {}) },
+        body: { scope, day_iso },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -87,7 +71,6 @@ export async function invokeReadingUnlock(params: {
       if (d.ok === true) {
         return {
           ok: true,
-          credits_balance: Number(d.credits_balance) || 0,
           charged: Boolean(d.charged),
           already_unlocked: Boolean(d.already_unlocked),
           subscription_free: Boolean(d.subscription_free),
@@ -97,7 +80,6 @@ export async function invokeReadingUnlock(params: {
               : Boolean(d.already_unlocked) ||
                 Boolean(d.subscription_free) ||
                 Boolean(d.charged),
-          dry_run: Boolean(d.dry_run),
         };
       }
       if (d.ok === false) {
@@ -107,10 +89,6 @@ export async function invokeReadingUnlock(params: {
           ok: false,
           error_code,
           message: String(d.message ?? "Không mở khóa được."),
-          credits_balance:
-            typeof d.credits_balance === "number"
-              ? d.credits_balance
-              : undefined,
         };
       }
     }
@@ -126,10 +104,6 @@ export async function invokeReadingUnlock(params: {
               ok: false,
               error_code,
               message: String(body.message ?? error.message),
-              credits_balance:
-                typeof body.credits_balance === "number"
-                  ? body.credits_balance
-                  : undefined,
             };
           }
         } catch {
