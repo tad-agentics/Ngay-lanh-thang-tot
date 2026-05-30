@@ -64,6 +64,8 @@ function resolveYearCanChi(
 export type BaziPaywallBundle = {
   laSoDisplay: LaSoJson | null;
   menhOverview: string;
+  /** `la-so` OK nhưng preview luận rỗng (Edge/DeepSeek/rate limit). */
+  menhGenFailed: boolean;
 };
 
 /** Rút đoạn `menh_tong_quan` từ sections generate-reading. */
@@ -85,12 +87,12 @@ export async function loadBaziPaywallBundle(
   const cachedLaSo = (profile.la_so as LaSoJson) ?? null;
   const body = profileToBatTuPersonQuery(profile);
   if (!body.birth_date) {
-    return { laSoDisplay: cachedLaSo, menhOverview: "" };
+    return { laSoDisplay: cachedLaSo, menhOverview: "", menhGenFailed: false };
   }
 
   const lasoRes = await invokeBatTu<unknown>({ op: "la-so", body });
   if (!lasoRes.ok) {
-    return { laSoDisplay: cachedLaSo, menhOverview: "" };
+    return { laSoDisplay: cachedLaSo, menhOverview: "", menhGenFailed: false };
   }
 
   const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
@@ -103,10 +105,12 @@ export async function loadBaziPaywallBundle(
     preview: true,
   });
   const sections = laSoSectionsFromGenerateReading(gen.sections, gen.reading);
+  const menhOverview = menhOverviewFromLaSoSections(sections);
 
   return {
     laSoDisplay,
-    menhOverview: menhOverviewFromLaSoSections(sections),
+    menhOverview,
+    menhGenFailed: !menhOverview,
   };
 }
 

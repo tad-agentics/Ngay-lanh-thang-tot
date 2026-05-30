@@ -121,6 +121,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
   );
   const [menhProse, setMenhProse] = useState<string | null>(null);
   const [menhLoading, setMenhLoading] = useState(true);
+  const [menhGenFailed, setMenhGenFailed] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkoutPayload, setCheckoutPayload] =
@@ -134,26 +135,33 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
   const menhTitle = outline.find((o) => o.key === "menh_tong_quan")?.title ?? "Mệnh tổng quan";
 
   const menhEmptyReason =
-    !menhLoading && !menhProse?.trim() && laSoDisplay
+    menhGenFailed && laSoDisplay
       ? "Chưa tải được luận tổng quan lá số. Bốn chương dưới đã sẵn sàng sau khi mở khóa."
       : null;
 
-  useEffect(() => {
-    let cancelled = false;
+  function loadMenhPreview() {
     const gen = ++genRef.current;
     setMenhLoading(true);
+    setMenhGenFailed(false);
     void (async () => {
-      // Paywall must not call `la-so-luu-nien` — Edge returns 403 BAZI_READING_LOCKED.
       const paywall = await loadBaziPaywallBundle(profile);
-      if (cancelled || gen !== genRef.current) return;
+      if (gen !== genRef.current) return;
       const label = fallbackFlowYearCanChiLabel(year);
       if (label) setYearCanChi(label);
       if (paywall.laSoDisplay) setLaSoDisplay(paywall.laSoDisplay);
       setMenhProse(paywall.menhOverview || null);
+      setMenhGenFailed(paywall.menhGenFailed);
+      if (paywall.menhGenFailed) {
+        toast.error("Chưa tạo được luận tổng quan. Thử tải lại sau vài giây.");
+      }
       setMenhLoading(false);
     })();
+  }
+
+  useEffect(() => {
+    loadMenhPreview();
     return () => {
-      cancelled = true;
+      genRef.current += 1;
     };
   }, [profile, year]);
 
@@ -195,16 +203,14 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
 
           <section className="mt-6">
             <BaziSectionHeading index={1} title={menhTitle} />
-            {menhLoading ? (
-              <p className="mt-3 font-serif text-sm" style={{ color: CT.muted }}>
-                Đang luận tổng quan lá số…
-              </p>
-            ) : null}
             <CBaziMenhTongQuanBlock
               profile={profile}
               laSo={laSoDisplay}
               prose={menhProse}
+              proseLoading={menhLoading}
+              proseFailed={menhGenFailed}
               emptyReason={menhEmptyReason}
+              onRetryProse={loadMenhPreview}
             />
           </section>
 

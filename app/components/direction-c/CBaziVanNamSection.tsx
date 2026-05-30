@@ -1,8 +1,6 @@
 import { Mono } from "~/components/brand";
-import {
-  BaziChapterEmpty,
-  BaziChapterProse,
-} from "~/components/direction-c/BaziSectionHeading";
+import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT, DISPLAY } from "~/lib/c-tokens";
 import type { LuuNienFactsView } from "~/lib/luu-nien-facts-ui";
 
@@ -143,7 +141,7 @@ export function CBaziVanNamSection({
         </div>
       ) : null}
 
-      {prose ? <BaziChapterProse text={prose} /> : null}
+      {prose ? <CBaziNlttLuanProse text={prose} compact /> : null}
       {!prose && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}

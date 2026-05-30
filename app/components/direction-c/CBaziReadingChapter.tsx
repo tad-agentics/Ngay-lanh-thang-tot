@@ -10,9 +10,14 @@ import type { Profile } from "~/lib/profile-context";
 type CBaziReadingChapterProps = {
   chapter: BaziDisplayChapter;
   profile: Profile;
+  onRetryMenh?: () => void;
 };
 
-export function CBaziReadingChapter({ chapter, profile }: CBaziReadingChapterProps) {
+export function CBaziReadingChapter({
+  chapter,
+  profile,
+  onRetryMenh,
+}: CBaziReadingChapterProps) {
   return (
     <section className="mt-8 first:mt-6">
       <BaziSectionHeading index={chapter.index} title={chapter.title} />
@@ -22,6 +27,7 @@ export function CBaziReadingChapter({ chapter, profile }: CBaziReadingChapterPro
           laSo={chapter.laSo}
           prose={chapter.prose}
           emptyReason={chapter.emptyReason}
+          onRetryProse={onRetryMenh}
         />
       ) : null}
       {chapter.kind === "tinh_cach" ? (

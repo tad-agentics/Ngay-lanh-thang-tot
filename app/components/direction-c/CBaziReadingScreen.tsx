@@ -219,7 +219,12 @@ export function CBaziReadingScreen() {
         ) : (
           chapters?.map((ch) =>
             profile ? (
-              <CBaziReadingChapter key={ch.key} chapter={ch} profile={profile} />
+              <CBaziReadingChapter
+                key={ch.key}
+                chapter={ch}
+                profile={profile}
+                onRetryMenh={ch.kind === "menh" ? retryLoad : undefined}
+              />
             ) : null,
           )
         )}

@@ -1,8 +1,6 @@
 import { Mono } from "~/components/brand";
-import {
-  BaziChapterEmpty,
-  BaziChapterProse,
-} from "~/components/direction-c/BaziSectionHeading";
+import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT } from "~/lib/c-tokens";
 import type { PersonalityTraitView } from "~/lib/personality-traits-ui";
 
@@ -59,7 +57,7 @@ export function CBaziTinhCachSection({
           ))}
         </div>
       ) : hasFallback ? (
-        <BaziChapterProse text={prose} />
+        <CBaziNlttLuanProse text={prose} compact />
       ) : null}
 
       {!hasTraits && !hasIntro && !hasFallback && emptyReason ? (

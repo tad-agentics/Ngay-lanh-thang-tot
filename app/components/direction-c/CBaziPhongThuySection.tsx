@@ -1,8 +1,6 @@
 import { Mono } from "~/components/brand";
-import {
-  BaziChapterEmpty,
-  BaziChapterProse,
-} from "~/components/direction-c/BaziSectionHeading";
+import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT } from "~/lib/c-tokens";
 import type { PhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
 
@@ -139,7 +137,7 @@ export function CBaziPhongThuySection({
         </div>
       ) : null}
 
-      {prose ? <BaziChapterProse text={prose} /> : null}
+      {prose ? <CBaziNlttLuanProse text={prose} compact /> : null}
       {!prose && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}

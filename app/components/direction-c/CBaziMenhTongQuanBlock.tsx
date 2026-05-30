@@ -1,8 +1,6 @@
 import { Mono } from "~/components/brand";
-import {
-  BaziChapterEmpty,
-  BaziChapterProse,
-} from "~/components/direction-c/BaziSectionHeading";
+import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import type { LaSoJson } from "~/lib/api-types";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import {
@@ -34,7 +32,12 @@ type CBaziMenhTongQuanBlockProps = {
   laSo?: LaSoJson | null;
   /** Gemini `menh_tong_quan` — tổng quan lá số (§01). */
   prose?: string | null;
+  /** Show below §01 `h2` while luận giải is generating. */
+  proseLoading?: boolean;
+  /** Lá số có nhưng luận preview/full trống. */
+  proseFailed?: boolean;
   emptyReason?: string | null;
+  onRetryProse?: () => void;
 };
 
 /** §01 Mệnh tổng quan — facts lá số (Direction C màn 18). */
@@ -42,7 +45,10 @@ export function CBaziMenhTongQuanBlock({
   profile,
   laSo: laSoProp,
   prose,
+  proseLoading = false,
+  proseFailed = false,
   emptyReason,
+  onRetryProse,
 }: CBaziMenhTongQuanBlockProps) {
   const laSo = laSoProp ?? (profile.la_so as LaSoJson | null);
   const reveal = laSo ? laSoJsonToRevealProps(laSo) : null;
@@ -88,9 +94,24 @@ export function CBaziMenhTongQuanBlock({
         ) : null}
       </h2>
 
-      {prose?.trim() ? (
-        <BaziChapterProse text={prose.trim()} />
-      ) : tagline ? (
+      <CBaziNlttLuanProse
+        text={prose}
+        loading={proseLoading}
+        loadingMessage="Đang luận tổng quan lá số…"
+        failed={proseFailed || Boolean(emptyReason && !prose?.trim() && !proseLoading)}
+        failedMessage={
+          emptyReason ??
+          "Chưa tải được luận tổng quan lá số. Thử lại sau vài giây."
+        }
+        onRetry={onRetryProse}
+        className="mt-2"
+        compact
+      />
+      {!proseLoading &&
+      !prose?.trim() &&
+      !proseFailed &&
+      !emptyReason &&
+      tagline ? (
         <p
           className="mt-2 font-serif text-[13.5px] italic leading-relaxed"
           style={{ color: CT.ink2 }}
@@ -242,9 +263,6 @@ export function CBaziMenhTongQuanBlock({
         </div>
       ) : null}
 
-      {emptyReason && !prose?.trim() ? (
-        <BaziChapterEmpty message={emptyReason} />
-      ) : null}
     </>
   );
 }
