@@ -14,6 +14,7 @@ import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
   canUseBaziReading,
   canUseCalendar,
+  isNeverSubscribedUser,
   isTraCuuPickChonNgay,
 } from "../_shared/entitlements.ts";
 
@@ -1173,7 +1174,10 @@ Deno.serve(async (req) => {
             },
           }, 400, req);
       }
-      if (!canUseCalendar(subProfile)) {
+      if (
+        !canUseCalendar(subProfile) &&
+        !isNeverSubscribedUser(subProfile)
+      ) {
         return json(
           {
             error: {

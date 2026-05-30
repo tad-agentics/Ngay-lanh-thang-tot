@@ -7,6 +7,7 @@ import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
+import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
@@ -19,6 +20,7 @@ import {
   canUseBaziReading,
   canUseTieuVanReading,
   hasYearlySubscription,
+  isNewUserDayLuanTeaser,
   subscriptionActive,
 } from "~/lib/entitlements";
 import { buildHomeInlineFallback } from "~/lib/home-bat-tu";
@@ -44,12 +46,15 @@ export function CHomeScreen() {
   } = useTodayLichData();
 
   const showRecomputeSkeleton = recomputePending || recomputePendingFromData;
+  const subActive = subscriptionActive(profile?.subscription_expires_at ?? null);
+  const newUserTeaser = isNewUserDayLuanTeaser(profile);
 
   const {
     text: readingText,
     loading: readingLoading,
     instantTyping,
     markTypingSeen,
+    paywallBlurred,
   } = useInlineDayReading({
     iso: todayIso,
     endpoint: "ngay-hom-nay",
@@ -57,6 +62,9 @@ export function CHomeScreen() {
     enabled: Boolean(
       user && today && rawPayload && online && !showRecomputeSkeleton,
     ),
+    subActive,
+    newUserTeaser,
+    mockInlineText: null,
   });
 
   const inlineFallbackText =
@@ -68,7 +76,6 @@ export function CHomeScreen() {
   const offlineMode = !online;
   const baziUnlocked = canUseBaziReading(profile);
   const tieuVanUnlocked = canUseTieuVanReading(profile);
-  const subActive = subscriptionActive(profile?.subscription_expires_at ?? null);
   const yearlySub = hasYearlySubscription(profile);
   const tieuVanYear = currentYearVn();
 
@@ -121,6 +128,17 @@ export function CHomeScreen() {
                 >
                   Luận giải đầy đủ cần kết nối lại.
                 </p>
+              ) : paywallBlurred ? (
+                <DayLuanPaywallBlur minHeight={100}>
+                  <CTodayReasoning
+                    text={readingText}
+                    fallbackText={inlineFallbackText || null}
+                    loading={readingLoading}
+                    instant={instantTyping}
+                    onTypingComplete={markTypingSeen}
+                    showCta={false}
+                  />
+                </DayLuanPaywallBlur>
               ) : (
                 <CTodayReasoning
                   text={readingText}

@@ -15,8 +15,8 @@ export type GenerateReadingInput = {
   data: unknown;
   /** Optional follow-up question for day-detail anchor extensions. */
   question?: string;
-  /** Teaser on lịch tờ — short prompt for day-detail (full luận omits this). */
-  variant?: "inline";
+  /** `inline` = lịch tờ ngắn; `teaser` = chưa gói — auth only, không trừ lượng. */
+  variant?: "inline" | "teaser";
   /** `la-so-chi-tiet` paywall — chỉ trả `menh_tong_quan` cho user chưa mở khóa. */
   preview?: boolean;
 };

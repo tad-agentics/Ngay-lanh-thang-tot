@@ -3,15 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { canUseCalendar } from "~/lib/entitlements";
+import { canUseCalendar, isNewUserDayLuanTeaser } from "~/lib/entitlements";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { parseDayDetailForView, type DayDetailViewModel } from "~/lib/day-detail-view";
 import { parseDayCompareResponse } from "~/lib/luan-context";
-import {
-  ensureReadingUnlocked,
-  invokeReadingUnlock,
-  isReadingUnlockGranted,
-} from "~/lib/reading-unlock";
+import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
 
 export function useDayLuanReading(iso: string) {
@@ -28,16 +24,21 @@ export function useDayLuanReading(iso: string) {
   const [unlockBusy, setUnlockBusy] = useState(false);
 
   const subActive = canUseCalendar(profile);
+  const paywallTeaser = isNewUserDayLuanTeaser(profile);
 
-  const loadReading = useCallback(async (contextPayload: unknown) => {
-    setReadingLoading(true);
-    const r = await invokeGenerateReading({
-      endpoint: "day-detail",
-      data: contextPayload,
-    });
-    setReading(r.reading);
-    setReadingLoading(false);
-  }, []);
+  const loadReading = useCallback(
+    async (contextPayload: unknown, mode: "full" | "teaser") => {
+      setReadingLoading(true);
+      const r = await invokeGenerateReading({
+        endpoint: "day-detail",
+        data: contextPayload,
+        ...(mode === "teaser" ? { variant: "teaser" } : {}),
+      });
+      setReading(r.reading);
+      setReadingLoading(false);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (profileLoading || !profile || !iso) return;
@@ -74,20 +75,12 @@ export function useDayLuanReading(iso: string) {
 
       if (subActive) {
         setUnlocked(true);
-        await loadReading(contextPayload);
+        await loadReading(contextPayload, "full");
         return;
       }
 
-      const unlock = await ensureReadingUnlocked({
-        scope: "day_detail",
-        day_iso: iso,
-      });
-      if (cancelled) return;
-      const allowed = unlock.ok && isReadingUnlockGranted(unlock);
-      setUnlocked(allowed);
-      if (allowed) {
-        await loadReading(contextPayload);
-      }
+      setUnlocked(false);
+      await loadReading(contextPayload, "teaser");
     })();
     return () => {
       cancelled = true;
@@ -95,29 +88,27 @@ export function useDayLuanReading(iso: string) {
   }, [iso, profile, profileLoading, subActive, loadReading]);
 
   const unlockAndLoad = useCallback(async () => {
-    if (!luanContext || unlockBusy) return;
+    if (!luanContext || unlockBusy || paywallTeaser) return;
     setUnlockBusy(true);
     setReadingLoading(true);
-    if (!subActive) {
-      const unlock = await invokeReadingUnlock({
-        scope: "day_detail",
-        day_iso: iso,
-      });
-      if (!unlock.ok) {
-        setReadingLoading(false);
-        setUnlockBusy(false);
-        return { ok: false as const, message: unlock.message };
-      }
-      setUnlocked(true);
+    const unlock = await invokeReadingUnlock({
+      scope: "day_detail",
+      day_iso: iso,
+    });
+    if (!unlock.ok) {
+      setReadingLoading(false);
+      setUnlockBusy(false);
+      return { ok: false as const, message: unlock.message };
     }
-    await loadReading(luanContext);
+    setUnlocked(true);
+    await loadReading(luanContext, "full");
     setUnlockBusy(false);
     return { ok: true as const };
-  }, [luanContext, unlockBusy, subActive, iso, loadReading]);
+  }, [luanContext, unlockBusy, paywallTeaser, iso, loadReading]);
 
   const askFollowUp = useCallback(
     async (question: string) => {
-      if (!luanContext || !unlocked) {
+      if (!luanContext || !unlocked || paywallTeaser) {
         return {
           ok: false as const,
           reading: null as string | null,
@@ -143,12 +134,12 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [luanContext, unlocked],
+    [luanContext, unlocked, paywallTeaser],
   );
 
   const compareWithIso = useCallback(
     async (otherIso: string) => {
-      if (!profile || !unlocked) {
+      if (!profile || !unlocked || paywallTeaser) {
         return {
           ok: false as const,
           reading: null as string | null,
@@ -186,7 +177,7 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [profile, unlocked, iso],
+    [profile, unlocked, paywallTeaser, iso],
   );
 
   const compareWithTomorrow = useCallback(async () => {
@@ -195,9 +186,14 @@ export function useDayLuanReading(iso: string) {
   }, [compareWithIso, iso]);
 
   const retryReading = useCallback(async () => {
-    if (!luanContext || !unlocked) return;
-    await loadReading(luanContext);
-  }, [luanContext, unlocked, loadReading]);
+    if (!luanContext) return;
+    if (paywallTeaser) {
+      await loadReading(luanContext, "teaser");
+      return;
+    }
+    if (!unlocked) return;
+    await loadReading(luanContext, "full");
+  }, [luanContext, unlocked, paywallTeaser, loadReading]);
 
   return {
     profile,
@@ -212,6 +208,7 @@ export function useDayLuanReading(iso: string) {
     unlocked,
     unlockBusy,
     subActive,
+    paywallTeaser,
     unlockAndLoad,
     retryReading,
     askFollowUp,

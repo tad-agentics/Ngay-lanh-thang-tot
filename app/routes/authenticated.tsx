@@ -7,10 +7,12 @@ import { CSubExpired } from "~/components/CSubExpired";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { useEntitlements } from "~/hooks/useEntitlements";
+import { isNewUserDayLuanTeaser } from "~/lib/entitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { consumeAuthRedirectReason } from "~/lib/auth-session-redirect";
 import {
+  isCalendarBrowsePath,
   isOnboardingExemptPath,
   isSubscriptionExemptPath,
   legacyAppRedirect,
@@ -136,9 +138,14 @@ function AuthenticatedShellWithProfile({
     return <Navigate to="/lich" replace />;
   }
 
+  const newUserCalendarTeaser =
+    isNewUserDayLuanTeaser(profile) &&
+    isCalendarBrowsePath(location.pathname);
+
   const subscriptionBlocked =
     (!canUseCalendar || isSubExpiredBlocked()) &&
-    !isSubscriptionExemptPath(location.pathname);
+    !isSubscriptionExemptPath(location.pathname) &&
+    !newUserCalendarTeaser;
 
   if (subscriptionBlocked) {
     return (

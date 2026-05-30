@@ -1138,7 +1138,11 @@ export function createGenerateReadingHandler(
   const question =
     typeof body.question === "string" ? body.question.trim().slice(0, 500) : "";
   const variant =
-    body.variant === "inline" ? "inline" : "";
+    body.variant === "inline"
+      ? "inline"
+      : body.variant === "teaser"
+        ? "teaser"
+        : "";
   const preview = body.preview === true;
 
   if (!endpoint || data === undefined) {
@@ -1171,31 +1175,60 @@ export function createGenerateReadingHandler(
     if (userErr || !uid) {
       return ok(null, null, req);
     }
-    const dayIso =
-      endpoint === "ngay-hom-nay"
-        ? todayIsoVietnam()
-        : dayIsoFromDayDetailData(data);
-    if (!dayIso) {
-      return ok(null, null, req);
-    }
-    const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
-    const adminGate = createClient(gateUrl, gateService);
-    const preflight = await preflightAiReadingAccess(
-      adminGate,
-      uid,
-      scope,
-      dayIso,
-    );
-    if (!preflight.allowed) {
-      console.warn(
-        "generate-reading preflight denied",
-        endpoint,
-        preflight.reason,
+    if (variant === "teaser") {
+      const adminGate = createClient(gateUrl, gateService);
+      const { data: teaserProfile, error: teaserProfErr } = await adminGate
+        .from("profiles")
+        .select("subscription_expires_at")
+        .eq("id", uid)
+        .maybeSingle();
+      if (
+        teaserProfErr ||
+        !teaserProfile ||
+        teaserProfile.subscription_expires_at != null
+      ) {
+        console.warn(
+          "generate-reading teaser denied",
+          endpoint,
+          uid,
+          teaserProfErr?.message ?? "not_never_subscribed",
+        );
+        return ok(null, null, req);
+      }
+      if (endpoint === "day-detail") {
+        const dayIso = dayIsoFromDayDetailData(data);
+        if (!dayIso) {
+          return ok(null, null, req);
+        }
+      }
+      rateLimitUserId = uid;
+    } else {
+      const dayIso =
+        endpoint === "ngay-hom-nay"
+          ? todayIsoVietnam()
+          : dayIsoFromDayDetailData(data);
+      if (!dayIso) {
+        return ok(null, null, req);
+      }
+      const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
+      const adminGate = createClient(gateUrl, gateService);
+      const preflight = await preflightAiReadingAccess(
+        adminGate,
         uid,
+        scope,
+        dayIso,
       );
-      return ok(null, null, req);
+      if (!preflight.allowed) {
+        console.warn(
+          "generate-reading preflight denied",
+          endpoint,
+          preflight.reason,
+          uid,
+        );
+        return ok(null, null, req);
+      }
+      rateLimitUserId = uid;
     }
-    rateLimitUserId = uid;
   }
 
   if (
@@ -1246,7 +1279,9 @@ export function createGenerateReadingHandler(
               ? DAY_DETAIL_FOLLOW_UP_VER
               : variant === "inline"
                 ? INLINE_LICH_TO_PROMPT_VER
-                : DAY_DETAIL_PROMPT_VER
+                : variant === "teaser"
+                  ? `${DAY_DETAIL_PROMPT_VER}:teaser`
+                  : DAY_DETAIL_PROMPT_VER
             : endpoint === "chon-ngay"
               ? CHON_NGAY_PROMPT_VER
               : endpoint === "chon-ngay-cards"

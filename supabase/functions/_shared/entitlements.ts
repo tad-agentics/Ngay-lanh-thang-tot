@@ -21,6 +21,13 @@ export function canUseCalendar(profile: ProfileEntitlements): boolean {
   return subscriptionActive(profile.subscription_expires_at);
 }
 
+/** Chưa từng đăng ký gói — cho phép đọc lịch teaser (không chặn 402 như hết hạn). */
+export function isNeverSubscribedUser(
+  profile: ProfileEntitlements,
+): boolean {
+  return profile.subscription_expires_at == null;
+}
+
 export function isTraCuuPickChonNgay(
   op: string,
   body: Record<string, unknown>,

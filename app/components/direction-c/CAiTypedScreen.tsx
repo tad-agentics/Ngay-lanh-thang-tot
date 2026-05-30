@@ -3,6 +3,7 @@ import { Link } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, LogoMark, Mono } from "~/components/brand";
+import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
@@ -19,6 +20,7 @@ import {
   formatDayIsoShort,
 } from "~/lib/day-luan-sectioned";
 import { paragraphSpansInText } from "~/lib/prose-paragraphs";
+import { splitReadingAtHalf } from "~/lib/reading-teaser";
 
 const TYPED_MS = 18;
 
@@ -236,6 +238,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     unlocked,
     unlockBusy,
     subActive,
+    paywallTeaser,
     unlockAndLoad,
     retryReading,
     askFollowUp,
@@ -262,11 +265,21 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const quotaRemaining = Math.max(0, DAY_LUAN_MAX_FOLLOW_UPS - quotaUsed);
   const quotaExhausted = quotaRemaining <= 0;
 
-  const showAnchorTyped = Boolean(reading && unlocked && !readingLoading);
-  const anchorDone = showAnchorTyped && anchorTypingDone;
-  const locked = !unlocked && !readingLoading && !detailLoading && !profileLoading;
+  const readingSplit = useMemo(
+    () => (reading ? splitReadingAtHalf(reading) : { visible: "", locked: "" }),
+    [reading],
+  );
+  const showAnchorHead = Boolean(
+    reading && !readingLoading && (unlocked || paywallTeaser),
+  );
+  const anchorDone = showAnchorHead && anchorTypingDone;
+  const locked =
+    !paywallTeaser &&
+    !unlocked &&
+    !readingLoading &&
+    !detailLoading &&
+    !profileLoading;
   const readingMissing =
-    unlocked &&
     !reading &&
     !readingLoading &&
     !detailLoading &&
@@ -295,7 +308,9 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const submitFollowUp = useCallback(
     async (rawQuestion: string) => {
       const question = rawQuestion.trim();
-      if (!question || submitBusy || quotaExhausted || !unlocked) return;
+      if (!question || submitBusy || quotaExhausted || !unlocked || paywallTeaser) {
+        return;
+      }
 
       const turnId = `${Date.now()}`;
       setFollowUps((prev) => [
@@ -402,7 +417,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   );
 
   const anchorKicker =
-    anchorDone || !showAnchorTyped ? "NLTT luận" : "NLTT đang luận…";
+    anchorDone || !showAnchorHead ? "NLTT luận" : "NLTT đang luận…";
 
   return (
     <main
@@ -468,7 +483,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </div>
             ) : null}
 
-            {(readingLoading || showAnchorTyped) && (
+            {(readingLoading || showAnchorHead) && (
               <AiAnswerRow
                 kicker={
                   readingLoading && !reading
@@ -480,15 +495,76 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   <AnchorLoadingSkeleton />
                 ) : (
                   <TypedBody
-                    text={reading ?? ""}
-                    active={showAnchorTyped && !anchorTypingDone}
+                    text={
+                      paywallTeaser ? readingSplit.visible : (reading ?? "")
+                    }
+                    active={showAnchorHead && !anchorTypingDone}
                     onComplete={() => setAnchorTypingDone(true)}
                   />
                 )}
               </AiAnswerRow>
             )}
 
-            {anchorDone ? (
+            {paywallTeaser && anchorDone ? (
+              <DayLuanPaywallBlur className="mt-4" minHeight={280}>
+                {readingSplit.locked ? (
+                  <AiAnswerRow kicker="NLTT luận" compact>
+                    <TypedBody
+                      text={readingSplit.locked}
+                      active={false}
+                      fontSize={14}
+                      marginTop={6}
+                    />
+                  </AiAnswerRow>
+                ) : null}
+                <DayLuanSectionedPanel
+                  rows={sectionBundle.rows}
+                  baseScore={sectionBundle.baseScore}
+                  totalScore={detail?.score ?? null}
+                  iso={iso}
+                  canChi={detail?.canChi ?? "—"}
+                  sourceLabels={resolveLuanSourceLabels(detail)}
+                />
+                <div
+                  className="mt-[22px] pt-4"
+                  style={{ borderTop: `1px solid ${CT.hairline}` }}
+                >
+                  <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Hỏi tiếp gợi ý</Mono>
+                  <div className="mt-2 flex flex-col gap-1.5">
+                    {DAY_LUAN_SUGGESTED_CHIPS.slice(0, 3).map((chip) => (
+                      <div
+                        key={chip}
+                        className="py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
+                        style={{
+                          background: "#fff",
+                          border: `1px solid ${CT.hairline}`,
+                          color: CT.ink2,
+                        }}
+                      >
+                        {chip}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div
+                  className="mt-4 flex items-center gap-2.5 py-2.5 px-3.5"
+                  style={{
+                    background: "#fff",
+                    border: `1px solid ${CT.hairline}`,
+                    borderRadius: 999,
+                  }}
+                >
+                  <span
+                    className="flex-1 font-serif text-[13.5px] italic"
+                    style={{ color: CT.muted }}
+                  >
+                    Hỏi tiếp về ngày {dayShort}…
+                  </span>
+                </div>
+              </DayLuanPaywallBlur>
+            ) : null}
+
+            {!paywallTeaser && anchorDone ? (
               <DayLuanSectionedPanel
                 rows={sectionBundle.rows}
                 baseScore={sectionBundle.baseScore}
@@ -499,7 +575,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               />
             ) : null}
 
-            {followUps.map((turn) => (
+            {!paywallTeaser
+              ? followUps.map((turn) => (
               <div
                 key={turn.id}
                 className="mt-[22px] pt-[18px]"
@@ -551,9 +628,13 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   </AiAnswerRow>
                 ) : null}
               </div>
-            ))}
+              ))
+              : null}
 
-            {anchorDone && remainingChips.length > 0 && !quotaExhausted ? (
+            {!paywallTeaser &&
+            anchorDone &&
+            remainingChips.length > 0 &&
+            !quotaExhausted ? (
               <div
                 className="mt-[22px] pt-4"
                 style={{ borderTop: `1px solid ${CT.hairline}` }}
@@ -586,7 +667,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ) : null}
       </div>
 
-      {unlocked && !detailLoading && !detailError ? (
+      {!paywallTeaser && unlocked && !detailLoading && !detailError ? (
         <div
           className="px-5 pt-2 pb-[18px]"
           style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}

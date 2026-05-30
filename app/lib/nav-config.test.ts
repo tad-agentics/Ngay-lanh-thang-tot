@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   getActiveTab,
+  isCalendarBrowsePath,
   isSubscriptionExemptPath,
   sanitizeReturnTo,
   shouldShowNav,
@@ -38,6 +39,14 @@ describe("nav-config (Direction C)", () => {
     expect(sanitizeReturnTo("//evil.com")).toBeNull();
     expect(sanitizeReturnTo("/toi")).toBeNull();
     expect(sanitizeReturnTo("https://evil")).toBeNull();
+  });
+
+  it("marks calendar browse paths for new-user teaser routing", () => {
+    expect(isCalendarBrowsePath("/lich")).toBe(true);
+    expect(isCalendarBrowsePath("/lich/thang")).toBe(true);
+    expect(isCalendarBrowsePath("/ngay/2026-05-30")).toBe(true);
+    expect(isCalendarBrowsePath("/luan-ai/day-2026-05-30")).toBe(true);
+    expect(isCalendarBrowsePath("/tra-cuu")).toBe(false);
   });
 
   it("exempts renew and addon checkout when subscription expired", () => {

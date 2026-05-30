@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
-import { CSubExpired } from "~/components/CSubExpired";
 import { BackBar } from "~/components/brand";
+import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
@@ -16,7 +16,9 @@ import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
-import { canUseCalendar } from "~/lib/entitlements";
+import { canUseCalendar, isNewUserDayLuanTeaser } from "~/lib/entitlements";
+import { dayLuanOtherDayInlineMock } from "~/lib/day-luan-inline-mock";
+import { todayIsoInVn } from "~/lib/today-reading-cache";
 import { CT } from "~/lib/c-tokens";
 import {
   dayNumberFromIso,
@@ -65,7 +67,19 @@ export function CDayDetailScreen() {
     [profile],
   );
   const personalized = Boolean(birthQuery?.birth_date);
-  const calendarBlocked = Boolean(user && profile && personalized && !canUseCalendar(profile));
+  const subActive = profile ? canUseCalendar(profile) : false;
+  const newUserTeaser = profile ? isNewUserDayLuanTeaser(profile) : false;
+  const subscriptionExpired = Boolean(
+    user &&
+      profile &&
+      personalized &&
+      profile.subscription_expires_at != null &&
+      !subActive,
+  );
+  const inlineMockText =
+    newUserTeaser && iso && iso !== todayIsoInVn()
+      ? dayLuanOtherDayInlineMock(detail ?? undefined)
+      : null;
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
   const birthDate = birthQuery?.birth_date ?? null;
 
@@ -74,15 +88,19 @@ export function CDayDetailScreen() {
     loading: readingLoading,
     instantTyping,
     markTypingSeen,
+    paywallBlurred,
   } = useInlineDayReading({
     iso,
     endpoint: "day-detail",
     batTuPayload: rawPayload,
     enabled: Boolean(detail && rawPayload && personalized && user),
+    subActive,
+    newUserTeaser,
+    mockInlineText: inlineMockText,
   });
 
   useEffect(() => {
-    if (profileLoading || !iso || calendarBlocked) return;
+    if (profileLoading || !iso) return;
 
     let cancelled = false;
     setLoading(true);
@@ -113,7 +131,7 @@ export function CDayDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [profileLoading, iso, personalized, birthDate, birthQuery, calendarBlocked]);
+  }, [profileLoading, iso, personalized, birthDate, birthQuery]);
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
   const nextIso = iso ? addDaysToIso(iso, 1) : "";
@@ -183,7 +201,7 @@ export function CDayDetailScreen() {
     }
   }
 
-  if (!profileLoading && calendarBlocked) {
+  if (!profileLoading && subscriptionExpired) {
     return <CSubExpired />;
   }
 
@@ -237,15 +255,28 @@ export function CDayDetailScreen() {
               score={score}
               reasoning={
                 personalized ? (
-                  <CTodayReasoning
-                    text={readingText}
-                    fallbackText={detail.reasonLines[0] ?? null}
-                    loading={readingLoading}
-                    instant={instantTyping}
-                    onTypingComplete={markTypingSeen}
-                    onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
-                    showCta={Boolean(user)}
-                  />
+                  paywallBlurred ? (
+                    <DayLuanPaywallBlur minHeight={100}>
+                      <CTodayReasoning
+                        text={readingText}
+                        fallbackText={detail.reasonLines[0] ?? null}
+                        loading={readingLoading}
+                        instant={instantTyping}
+                        onTypingComplete={markTypingSeen}
+                        showCta={false}
+                      />
+                    </DayLuanPaywallBlur>
+                  ) : (
+                    <CTodayReasoning
+                      text={readingText}
+                      fallbackText={detail.reasonLines[0] ?? null}
+                      loading={readingLoading}
+                      instant={instantTyping}
+                      onTypingComplete={markTypingSeen}
+                      onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
+                      showCta={Boolean(user)}
+                    />
+                  )
                 ) : null
               }
               rows={[

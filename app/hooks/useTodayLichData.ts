@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { useOfflineCalendar } from "~/hooks/useOfflineCalendar";
-import { useEntitlements } from "~/hooks/useEntitlements";
 import { useProfile } from "~/hooks/useProfile";
+import { canUseCalendar, isNeverSubscribedUser } from "~/lib/entitlements";
 import { useAuth } from "~/lib/auth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -17,7 +17,6 @@ import { todayIsoInVn } from "~/lib/today-reading-cache";
 export function useTodayLichData() {
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  const { canUseCalendar } = useEntitlements();
   const todayIso = todayIsoInVn();
   const { online, readCached, writeCached } = useOfflineCalendar(
     user?.id,
@@ -34,7 +33,11 @@ export function useTodayLichData() {
 
   useEffect(() => {
     if (profileLoading) return;
-    if (!canUseCalendar) {
+    if (
+      profile &&
+      !canUseCalendar(profile) &&
+      !isNeverSubscribedUser(profile)
+    ) {
       setLoading(false);
       setToday(null);
       setRawPayload(null);
@@ -106,7 +109,6 @@ export function useTodayLichData() {
     profile,
     profileLoading,
     canBatTu,
-    canUseCalendar,
     online,
     readCached,
     writeCached,

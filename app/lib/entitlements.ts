@@ -31,6 +31,25 @@ export function canUseCalendar(
   return subscriptionActive(profile.subscription_expires_at);
 }
 
+/** Chưa từng có `subscription_expires_at` — khác user đã mua gói rồi hết hạn. */
+export function isNeverSubscribedUser(
+  profile: EntitlementProfile | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return profile.subscription_expires_at == null;
+}
+
+/**
+ * Teaser lịch + luận blur: chỉ user mới chưa đăng ký gói.
+ * User hết hạn (`subscription_expires_at` quá khứ) → không áp dụng.
+ */
+export function isNewUserDayLuanTeaser(
+  profile: EntitlementProfile | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return isNeverSubscribedUser(profile) && !canUseCalendar(profile);
+}
+
 function hasYearlySub(profile: EntitlementProfile): boolean {
   if (!subscriptionActive(profile.subscription_expires_at)) return false;
   const exp = new Date(profile.subscription_expires_at!);
