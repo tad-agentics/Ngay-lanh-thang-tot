@@ -1,5 +1,5 @@
 /**
- * Pre-Gemini guards for generate-reading: credit preflight + Upstash rate limit.
+ * Pre-LLM guards for generate-reading: credit preflight + Upstash rate limit.
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -8,7 +8,7 @@ import {
   inPivotCreditTransition,
   readPivotTransitionUntil,
 } from "./entitlements.ts";
-import { redisSetNxEx } from "./redis-cache.ts";
+import { redisGetString, redisSetNxEx } from "./redis-cache.ts";
 
 const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
 const RATE_LIMIT_WINDOW_SEC = 10;
@@ -25,7 +25,7 @@ export function subscriptionActiveForReading(expires: string | null): boolean {
   return new Date(expires) > new Date();
 }
 
-/** Mirrors reading-unlock + balance check before spending on Gemini. */
+/** Mirrors reading-unlock + balance check before spending on LLM. */
 export async function preflightAiReadingAccess(
   admin: SupabaseClient,
   userId: string,
@@ -85,10 +85,16 @@ export async function preflightAiReadingAccess(
   return { allowed: false, reason: "not_unlocked" };
 }
 
-/** Fixed window: at most one generate-reading Gemini path per user per 10s. */
+/**
+ * Fixed window: at most one generate-reading LLM path per user per 10s.
+ * @returns true when the caller may proceed (slot acquired or Redis unavailable).
+ */
 export async function acquireGenerateReadingRateLimit(
   userId: string,
 ): Promise<boolean> {
   const key = `gen_reading_rl:v1:${userId}`;
-  return redisSetNxEx(key, "1", RATE_LIMIT_WINDOW_SEC);
+  const acquired = await redisSetNxEx(key, "1", RATE_LIMIT_WINDOW_SEC);
+  if (acquired) return true;
+  const held = await redisGetString(key);
+  return held == null;
 }

@@ -30,4 +30,10 @@ describe("generateReadingFunctionName", () => {
       "generate-reading-tieu-van",
     );
   });
+
+  it("throws for unknown endpoints", () => {
+    expect(() => generateReadingFunctionName("unknown")).toThrow(
+      "Unknown generate-reading endpoint",
+    );
+  });
 });

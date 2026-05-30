@@ -3,6 +3,7 @@ import { Link } from "react-router";
 
 import { CTopStrip, Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+import { captureClientException } from "~/lib/sentry";
 
 type Props = {
   children: ReactNode;
@@ -98,12 +99,15 @@ export class DirectionCScreenBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error(
-      "[DirectionCScreenBoundary]",
-      this.props.screen ?? "screen",
-      error,
-      info.componentStack,
-    );
+    captureClientException(error, {
+      tags: {
+        boundary: "DirectionCScreenBoundary",
+        ...(this.props.screen ? { screen: this.props.screen } : {}),
+      },
+      extra: info.componentStack
+        ? { componentStack: info.componentStack }
+        : undefined,
+    });
   }
 
   private retry = (): void => {

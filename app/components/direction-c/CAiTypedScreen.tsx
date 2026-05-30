@@ -6,6 +6,7 @@ import { BackBar, LogoMark, Mono } from "~/components/brand";
 import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
+import type { LuanThreadTurn } from "~/lib/generate-reading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import {
   DAY_LUAN_MAX_FOLLOW_UPS,
@@ -32,6 +33,24 @@ type FollowUpTurn = {
   error: string | null;
   typingDone: boolean;
 };
+
+function buildDayLuanThreadHistory(
+  followUps: FollowUpTurn[],
+  beforeTurnId?: string,
+): LuanThreadTurn[] {
+  const end =
+    beforeTurnId != null
+      ? followUps.findIndex((t) => t.id === beforeTurnId)
+      : followUps.length;
+  const slice = end < 0 ? followUps : followUps.slice(0, end);
+  const turns = slice
+    .filter((t) => t.answer && !t.loading)
+    .flatMap((t) => [
+      { role: "user" as const, content: t.question },
+      { role: "assistant" as const, content: t.answer! },
+    ]);
+  return turns.length > 8 ? turns.slice(-8) : turns;
+}
 
 function TypedBody({
   text,
@@ -326,7 +345,10 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         question.toLowerCase().includes("so sánh với ngày mai");
       const res = isCompareTomorrow
         ? await compareWithTomorrow()
-        : await askFollowUp(question);
+        : await askFollowUp(question, {
+            anchorReading: reading ?? undefined,
+            threadHistory: buildDayLuanThreadHistory(followUps),
+          });
       setSubmitBusy(false);
 
       if (!res.ok || !res.reading) {
@@ -362,6 +384,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       compareWithTomorrow,
       iso,
       quotaExhausted,
+      reading,
       scrollToLatest,
       submitBusy,
       unlocked,
@@ -377,7 +400,10 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
       setSubmitBusy(true);
-      const res = await askFollowUp(question);
+      const res = await askFollowUp(question, {
+        anchorReading: reading ?? undefined,
+        threadHistory: buildDayLuanThreadHistory(followUps, turnId),
+      });
       setSubmitBusy(false);
       if (!res.ok || !res.reading) {
         setFollowUps((prev) =>
@@ -405,7 +431,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
     },
-    [askFollowUp, iso, userId],
+    [askFollowUp, followUps, iso, reading, userId],
   );
 
   const askedQuestions = [

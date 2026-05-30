@@ -1,5 +1,5 @@
 /**
- * Compact facts bundle for Gemini day-luan prompts.
+ * Compact facts bundle for day-luan LLM prompts.
  * Mirrors REQ-P1-01 `luan-context` until tu-tru-api ships the endpoint.
  * Keep in sync with `app/lib/day-luan-prompt-context.ts` (tests).
  */

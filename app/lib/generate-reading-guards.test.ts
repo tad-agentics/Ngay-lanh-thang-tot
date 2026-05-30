@@ -1,6 +1,53 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { subscriptionActiveForReading } from "../../supabase/functions/_shared/generate-reading-guards.ts";
+const { redisGetString, redisSetNxEx } = vi.hoisted(() => ({
+  redisGetString: vi.fn(),
+  redisSetNxEx: vi.fn(),
+}));
+
+vi.mock("../../supabase/functions/_shared/redis-cache.ts", () => ({
+  redisGetString,
+  redisSetNxEx,
+  redisRestConfigured: vi.fn(() => true),
+}));
+
+import {
+  acquireGenerateReadingRateLimit,
+  subscriptionActiveForReading,
+} from "../../supabase/functions/_shared/generate-reading-guards.ts";
+
+describe("acquireGenerateReadingRateLimit", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("allows when NX acquires the slot (no GET follow-up)", async () => {
+    redisSetNxEx.mockResolvedValue(true);
+
+    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(true);
+    expect(redisSetNxEx).toHaveBeenCalledWith(
+      "gen_reading_rl:v1:user-1",
+      "1",
+      10,
+    );
+    expect(redisGetString).not.toHaveBeenCalled();
+  });
+
+  it("blocks when NX misses and the rate-limit key is held", async () => {
+    redisSetNxEx.mockResolvedValue(false);
+    redisGetString.mockResolvedValue("1");
+
+    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(false);
+    expect(redisGetString).toHaveBeenCalledWith("gen_reading_rl:v1:user-1");
+  });
+
+  it("fails open when NX returns false but GET finds no key (Redis error)", async () => {
+    redisSetNxEx.mockResolvedValue(false);
+    redisGetString.mockResolvedValue(null);
+
+    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(true);
+  });
+});
 
 describe("subscriptionActiveForReading", () => {
   it("returns false for null or past expiry", () => {

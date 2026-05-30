@@ -37,7 +37,7 @@ Work groups in order. Mark each item ✅ (pass), ❌ (fail — issue filed), or 
 |--------|----------|-------|
 | `BAT_TU_BASE_URL`, `BAT_TU_API_KEY` | `bat-tu` | Bát Tự upstream |
 | `PAYOS_CLIENT_ID`, `PAYOS_API_KEY`, `PAYOS_CHECKSUM_KEY` | `payos-create-checkout`, `payos-webhook` | Payment |
-| `GEMINI_API_KEY` | `generate-reading` | AI reading |
+| `DEEPSEEK_API_KEY` | `generate-reading-day` / `-la-so` / `-tieu-van` | AI reading |
 | `SUPABASE_SERVICE_ROLE_KEY` | most Edge functions | DB mutations |
 | `SUPABASE_URL` | most Edge functions | auto-set by Supabase |
 | `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | `cron-push-habit` | Web Push |

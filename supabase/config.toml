@@ -428,10 +428,7 @@ verify_jwt = false
 [functions.bat-tu]
 verify_jwt = false
 
-# Gemini + DB cache. Gated endpoints: Bearer + credit preflight; Upstash 1 req/10s per user (UPSTASH_REDIS_*).
-[functions.generate-reading]
-verify_jwt = false
-
+# DeepSeek luận giải (split). Gated: Bearer + entitlement; Upstash 1 req/10s per user (UPSTASH_REDIS_*).
 [functions.generate-reading-day]
 verify_jwt = false
 

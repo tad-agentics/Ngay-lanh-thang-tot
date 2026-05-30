@@ -12,9 +12,12 @@ import { SavedPicksGate } from "~/components/SavedPicksGate";
 import { SiteBanner } from "~/components/SiteBanner";
 import { Toaster } from "~/components/ui/sonner";
 import { AuthProvider } from "~/lib/auth";
+import { captureClientException, initSentry } from "~/lib/sentry";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+
+initSentry();
 
 export const links: Route.LinksFunction = () => [
   {
@@ -82,9 +85,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       error.status === 404
         ? "Không tìm thấy trang bạn yêu cầu."
         : error.statusText || "Máy chủ trả về lỗi. Thử lại sau.";
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+  } else if (error && error instanceof Error) {
+    captureClientException(error, { tags: { boundary: "root" } });
+    if (import.meta.env.DEV) {
+      details = error.message;
+      stack = error.stack;
+    }
   }
 
   return (

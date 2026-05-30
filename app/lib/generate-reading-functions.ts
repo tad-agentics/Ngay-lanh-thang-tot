@@ -23,8 +23,7 @@ const GENERATE_READING_TIEU_VAN_ENDPOINTS = new Set([
 export type GenerateReadingEdgeFunction =
   | "generate-reading-day"
   | "generate-reading-la-so"
-  | "generate-reading-tieu-van"
-  | "generate-reading";
+  | "generate-reading-tieu-van";
 
 /** Route `endpoint` to the domain-specific Edge Function. */
 export function generateReadingFunctionName(
@@ -39,5 +38,5 @@ export function generateReadingFunctionName(
   if (GENERATE_READING_TIEU_VAN_ENDPOINTS.has(endpoint)) {
     return "generate-reading-tieu-van";
   }
-  return "generate-reading";
+  throw new Error(`Unknown generate-reading endpoint: ${endpoint}`);
 }

@@ -10,11 +10,20 @@ export type LaSoChiTietSection = {
   text: string;
 };
 
+export type LuanThreadTurn = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export type GenerateReadingInput = {
   endpoint: string;
   data: unknown;
   /** Optional follow-up question for day-detail anchor extensions. */
   question?: string;
+  /** Anchor luận giải (day-detail follow-up multi-turn). */
+  anchor_reading?: string;
+  /** Prior Q/A turns, max 8 messages (4 pairs). */
+  thread_history?: LuanThreadTurn[];
   /** `inline` = lịch tờ ngắn; `teaser` = chưa gói — auth only, không trừ lượng. */
   variant?: "inline" | "teaser";
   /** `la-so-chi-tiet` paywall — chỉ trả `menh_tong_quan` cho user chưa mở khóa. */

@@ -4,7 +4,10 @@ import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { canUseCalendar, isNewUserDayLuanTeaser } from "~/lib/entitlements";
-import { invokeGenerateReading } from "~/lib/generate-reading";
+import {
+  invokeGenerateReading,
+  type LuanThreadTurn,
+} from "~/lib/generate-reading";
 import { parseDayDetailForView, type DayDetailViewModel } from "~/lib/day-detail-view";
 import { parseDayCompareResponse } from "~/lib/luan-context";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
@@ -107,7 +110,10 @@ export function useDayLuanReading(iso: string) {
   }, [luanContext, unlockBusy, paywallTeaser, iso, loadReading]);
 
   const askFollowUp = useCallback(
-    async (question: string) => {
+    async (
+      question: string,
+      opts?: { threadHistory?: LuanThreadTurn[]; anchorReading?: string },
+    ) => {
       if (!luanContext || !unlocked || paywallTeaser) {
         return {
           ok: false as const,
@@ -127,6 +133,8 @@ export function useDayLuanReading(iso: string) {
         endpoint: "day-detail",
         data: luanContext,
         question: q,
+        anchor_reading: opts?.anchorReading ?? reading ?? undefined,
+        thread_history: opts?.threadHistory,
       });
       return {
         ok: true as const,
@@ -134,7 +142,7 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [luanContext, unlocked, paywallTeaser],
+    [luanContext, unlocked, paywallTeaser, reading],
   );
 
   const compareWithIso = useCallback(

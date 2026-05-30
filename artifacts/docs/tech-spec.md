@@ -300,16 +300,17 @@ Update **`/.env.example`** to mirror (no values).
 
 ### 13. AI Reading (Luận Giải) — first-class feature
 
-**AI Reading is in scope and first-class** (Direction B, FE-HANDOFF §8). Powered by **Gemini Flash** via the `generate-reading` Edge Function.
+**AI Reading is in scope and first-class** (Direction B, FE-HANDOFF §8). Powered by **DeepSeek V4 Flash** via split Edge Functions `generate-reading-day`, `generate-reading-la-so`, `generate-reading-tieu-van`.
 
 | Item | Detail |
 |---|---|
-| Provider | Google Gemini Flash (via `generativelanguage.googleapis.com`) |
-| Edge Function | `supabase/functions/generate-reading/` |
-| Secrets | `GEMINI_API_KEY`, `GEMINI_MODEL` |
+| Provider | [DeepSeek](https://api-docs.deepseek.com/) `deepseek-v4-flash` (OpenAI-compatible `https://api.deepseek.com/chat/completions`) |
+| Edge Functions | `supabase/functions/generate-reading-day/`, `-la-so/`, `-tieu-van/` |
+| Secrets | `DEEPSEEK_API_KEY`, optional `DEEPSEEK_MODEL`, `DEEPSEEK_THINKING=disabled` (default) |
+| Integration doc | `artifacts/integrations/deepseek-generate-reading.md` |
 | Credit gating | `feature_credit_costs` rows: `la_so_chi_tiet`, `tieu_van`, `hop_tuoi`, `chon_ngay`, `ai_reading_bulk_unlock` |
-| Cache | `reading_cache` table keyed on `(user_id, scope, cache_input_hash)` |
-| Browser boundary | Zero Gemini calls from the React app — all go through Edge proxy |
+| Cache | `reading_cache` keyed by hash incl. `GLOBAL_LLM_VER` |
+| Browser boundary | Zero LLM calls from the React app — all go through Edge proxy |
 | Chatbot | Not built. Not a free-form LLM. Deterministic prompts + structured JSON output only. |
 
 ### 14. AI Boundary

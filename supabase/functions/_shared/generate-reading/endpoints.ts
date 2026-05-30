@@ -7,7 +7,7 @@ export const GENERATE_READING_DAY_ENDPOINTS = new Set([
   "hop-tuoi",
 ]);
 
-/** Endpoints handled by `generate-reading-la-so`. */
+/** Edge `generate-reading-la-so` — only `la-so-chi-tiet` uses v4-pro; rest flash. */
 export const GENERATE_READING_LA_SO_ENDPOINTS = new Set([
   "la-so-chi-tiet",
   "phong-thuy",

@@ -3,7 +3,8 @@
  *
  * Set ALLOWED_ORIGIN in Supabase secrets (comma-separated), e.g.
  * `https://ngaylanhthangtot.vn` — www apex is paired automatically.
- * Falls back to "*" when unset (local dev). PayOS redirects need a concrete
+ * When unset, static corsHeaders use "" (reject); set ALLOWED_ORIGIN in prod.
+ * PayOS redirects need a concrete
  * allowlist (see allowed-origin.ts).
  *
  * Public endpoints (share-og, share-resolve) use publicCorsHeaders ("*").
@@ -35,7 +36,7 @@ export function corsHeadersForRequest(req: Request): Record<string, string> {
  * corsHeadersForRequest(req) for any endpoint called from the browser.
  */
 export const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": ALLOWLIST[0] ?? "*",
+  "Access-Control-Allow-Origin": ALLOWLIST[0] ?? "",
   "Access-Control-Allow-Headers": CORS_ALLOW_HEADERS,
 };
 

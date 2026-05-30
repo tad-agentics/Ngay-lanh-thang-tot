@@ -66,12 +66,12 @@ export async function redisSetNxEx(
   );
   if (!res.ok) {
     console.error("redisSetNxEx", res.status, await res.text());
-    return true;
+    return false;
   }
   const j = (await res.json()) as { result?: string | null; error?: string };
   if (j.error) {
     console.error("redisSetNxEx", j.error);
-    return true;
+    return false;
   }
   return j.result === "OK";
 }
