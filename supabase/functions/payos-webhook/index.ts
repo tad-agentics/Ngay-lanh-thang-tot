@@ -119,41 +119,61 @@ Deno.serve(async (req) => {
 
   const { sku, pkg } = skuValidation;
 
-  // Single winner: pending|expired → paid (late webhook after cron expire is OK)
-  const { data: claimed, error: claimErr } = await admin
-    .from("payment_orders")
-    .update({
-      status: "paid",
-      raw_webhook: payload as unknown as Record<string, unknown>,
-    })
-    .eq("id", order.id)
-    .in("status", ["pending", "expired"])
-    .select("*")
-    .maybeSingle();
+  const { data: claimRaw, error: claimErr } = await admin.rpc(
+    "claim_payment_order_paid",
+    {
+      p_order_id: order.id,
+      p_raw_webhook: payload as unknown as Record<string, unknown>,
+    },
+  );
 
   if (claimErr) {
-    console.error("claim", claimErr);
+    console.error("claim_payment_order_paid", claimErr);
     return new Response("DB error", { status: 500 });
   }
 
-  if (!claimed) {
+  const claim = claimRaw as {
+    ok?: boolean;
+    reason?: string;
+    order?: Record<string, unknown>;
+  } | null;
+
+  if (!claim?.ok) {
+    if (
+      claim?.reason === "coupon_already_used" ||
+      claim?.reason === "coupon_invalid_at_payment" ||
+      claim?.reason === "coupon_missing_at_payment" ||
+      claim?.reason === "amount_mismatch"
+    ) {
+      console.error(
+        "payos-webhook: discount rejected at fulfillment",
+        claim.reason,
+        order.id,
+        order.user_id,
+        order.coupon_code,
+        order.amount_vnd,
+      );
+      return ok({ rejected: true, reason: claim.reason });
+    }
+    if (claim?.reason === "not_claimable") {
+      return ok({ already_processed: true });
+    }
     return ok({ already_processed: true });
   }
 
-  const paidCoupon =
-    typeof claimed.coupon_code === "string" ? claimed.coupon_code.trim() : "";
-  if (paidCoupon.length > 0) {
-    const { error: couponIncErr } = await admin.rpc("increment_coupon_redemption", {
-      p_code: paidCoupon.toUpperCase(),
-    });
-    if (couponIncErr) {
-      console.error("increment_coupon_redemption", couponIncErr);
-    }
+  if (claim.reason === "already_processed") {
+    return ok({ already_processed: true });
+  }
+
+  const claimed = claim.order;
+  if (!claimed || typeof claimed.id !== "string") {
+    console.error("claim_payment_order_paid missing order row", order.id);
+    return new Response("DB error", { status: 500 });
   }
 
   const { data: referralGrant, error: referralErr } = await admin.rpc(
     "grant_referral_subscription_reward",
-    { p_order_id: claimed.id },
+    { p_order_id: claimed.id as string },
   );
   if (referralErr) {
     console.error("grant_referral_subscription_reward", referralErr);
@@ -173,7 +193,7 @@ Deno.serve(async (req) => {
     .select(
       "credits_balance, subscription_expires_at, bazi_reading_unlocked_at, tieu_van_reading_expires_at",
     )
-    .eq("id", order.user_id)
+    .eq("id", claimed.user_id as string)
     .single();
 
   if (profErr || !profile) {
@@ -186,10 +206,10 @@ Deno.serve(async (req) => {
     const { data: creditResult, error: creditErr } = await admin.rpc(
       "add_credits_atomic",
       {
-        p_user_id: order.user_id,
+        p_user_id: claimed.user_id as string,
         p_credits_to_add: pkg.creditsToAdd,
         p_idempotency_key: `payos:${eventId}:credits`,
-        p_order_id: order.id,
+        p_order_id: claimed.id as string,
         p_package_sku: sku,
       },
     );
@@ -217,7 +237,7 @@ Deno.serve(async (req) => {
     const { error: u2 } = await admin
       .from("profiles")
       .update(entitlementPatch)
-      .eq("id", order.user_id);
+      .eq("id", claimed.user_id as string);
 
     if (u2) {
       console.error("entitlement update", u2);
@@ -225,13 +245,13 @@ Deno.serve(async (req) => {
     }
 
     const { error: l2 } = await admin.from("credit_ledger").insert({
-      user_id: order.user_id,
+      user_id: claimed.user_id as string,
       delta: 0,
       balance_after: profile.credits_balance,
       reason: "payos_entitlement",
       idempotency_key: `payos:${eventId}:ent`,
       metadata: {
-        order_id: order.id,
+        order_id: claimed.id as string,
         package_sku: sku,
         ...entitlementPatch,
       },

@@ -36,6 +36,26 @@ describe("resolveCheckoutPricing", () => {
     expect(result.breakdown.checkout_referral_code).toBe("FRIEND1");
   });
 
+  it("rejects coupon already used by buyer", () => {
+    const result = resolveCheckoutPricing({
+      packageSku: "goi_1thang",
+      listAmountVnd: 299_000,
+      couponCode: "SAVE10",
+      referralCode: null,
+      buyerUserId: "buyer",
+      buyerReferralCode: "MYCODE",
+      coupon: baseCoupon,
+      referrerProfileId: null,
+      referralDiscountPercent: 0,
+      couponAlreadyUsedByBuyer: true,
+    });
+    expect(result).toEqual({
+      ok: false,
+      code: "COUPON_ALREADY_USED",
+      message: "Bạn đã dùng mã giảm giá này rồi.",
+    });
+  });
+
   it("rejects self referral", () => {
     const result = resolveCheckoutPricing({
       packageSku: "goi_1thang",

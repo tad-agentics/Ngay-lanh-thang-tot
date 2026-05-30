@@ -5,6 +5,7 @@ import {
   payCheckoutExpiresAtIso,
 } from "../_shared/pay-checkout-timeout.ts";
 import { acquireCheckoutQuoteRateLimit } from "../_shared/checkout-quote-rate-limit.ts";
+import type { CheckoutDiscountBreakdown } from "../_shared/checkout-pricing.ts";
 import { resolveCheckoutPricingForUser } from "../_shared/checkout-pricing-resolve.ts";
 import {
   CHECKOUT_PACKAGE_SKUS,
@@ -180,26 +181,23 @@ Deno.serve(async (req) => {
         req,
       );
     }
-  }
 
-  const pricing = await resolveCheckoutPricingForUser(admin, {
-    userId: user.id,
-    packageSku: package_sku,
-    couponCode: coupon_code ?? null,
-    referralCode: referral_code ?? null,
-  });
+    const pricing = await resolveCheckoutPricingForUser(admin, {
+      userId: user.id,
+      packageSku: package_sku,
+      couponCode: coupon_code ?? null,
+      referralCode: referral_code ?? null,
+    });
 
-  if (!pricing.ok) {
-    return json(
-      { error: { code: pricing.code, message: pricing.message } },
-      422,
-      req,
-    );
-  }
+    if (!pricing.ok) {
+      return json(
+        { error: { code: pricing.code, message: pricing.message } },
+        422,
+        req,
+      );
+    }
 
-  const { breakdown, referrerProfileId } = pricing;
-
-  if (quote_only) {
+    const { breakdown, referrerProfileId } = pricing;
     return json(
       {
         quote: {
@@ -213,46 +211,79 @@ Deno.serve(async (req) => {
     );
   }
 
-  const chargeVnd = breakdown.amount_vnd;
   const orderCode = generateOrderCode();
   const checkoutStartedAt = Date.now();
   const expiresAtIso = payCheckoutExpiresAtIso(checkoutStartedAt);
   const expiredAtUnix = payCheckoutExpiredAtUnix(checkoutStartedAt);
 
-  const { data: orderRow, error: insErr } = await admin
+  const { data: createRaw, error: createErr } = await admin.rpc(
+    "create_checkout_payment_order",
+    {
+      p_user_id: user.id,
+      p_package_sku: pkg.sku,
+      p_list_amount_vnd: pkg.amountVnd,
+      p_credits_to_add: pkg.creditsToAdd,
+      p_subscription_months: pkg.subscriptionMonths,
+      p_coupon_code: coupon_code ?? null,
+      p_referral_code: referral_code ?? null,
+      p_provider_order_code: String(orderCode),
+      p_expires_at: expiresAtIso,
+      p_raw_request: {
+        orderCode,
+        list_amount_vnd: pkg.amountVnd,
+        description: pkg.description,
+        expiredAt: expiredAtUnix,
+        quoted_at: new Date().toISOString(),
+      },
+    },
+  );
+
+  if (createErr) {
+    console.error("create_checkout_payment_order", createErr);
+    return json(
+      { error: { code: "DB_ERROR", message: "Could not create order." } },
+      500,
+      req,
+    );
+  }
+
+  const created = createRaw as {
+    ok?: boolean;
+    code?: string;
+    message?: string;
+    order_id?: string;
+    amount_vnd?: number;
+    breakdown?: CheckoutDiscountBreakdown;
+    referrer_profile_id?: string | null;
+  } | null;
+
+  if (!created?.ok || !created.order_id) {
+    const code = typeof created?.code === "string" ? created.code : "DB_ERROR";
+    const message =
+      typeof created?.message === "string" && created.message.length
+        ? created.message
+        : "Không tạo được đơn thanh toán.";
+    return json({ error: { code, message } }, 422, req);
+  }
+
+  const orderRow = { id: created.order_id };
+  const chargeVnd = created.amount_vnd as number;
+  const orderBreakdown = created.breakdown as Record<string, unknown>;
+  const orderReferrerId = created.referrer_profile_id ?? null;
+
+  await admin
     .from("payment_orders")
-    .insert({
-      user_id: user.id,
-      provider: "payos",
-      provider_order_code: String(orderCode),
-      status: "pending",
-      package_sku: pkg.sku,
-      credits_to_add: pkg.creditsToAdd,
-      subscription_months: pkg.subscriptionMonths,
-      list_amount_vnd: breakdown.list_amount_vnd,
-      amount_vnd: chargeVnd,
-      coupon_code: breakdown.coupon_code,
-      checkout_referral_code: breakdown.checkout_referral_code,
-      referrer_profile_id: referrerProfileId,
-      discount_breakdown: breakdown,
-      expires_at: expiresAtIso,
+    .update({
       raw_request: {
         orderCode,
         amount: chargeVnd,
-        list_amount_vnd: breakdown.list_amount_vnd,
+        list_amount_vnd: orderBreakdown.list_amount_vnd as number,
         description: pkg.description,
         expiredAt: expiredAtUnix,
-        discount_breakdown: breakdown,
+        discount_breakdown: orderBreakdown,
       },
     })
-    .select("id")
-    .single();
-
-  if (insErr || !orderRow) {
-    console.error("payment_orders insert", insErr);
-    return json(
-      { error: { code: "DB_ERROR", message: "Could not create order." } }, 500, req);
-  }
+    .eq("id", orderRow.id);
 
   const returnWithOrder = appendOrderIdToUrl(return_url, orderRow.id);
 
@@ -372,8 +403,8 @@ Deno.serve(async (req) => {
     transfer,
     quote: {
       package_sku,
-      ...breakdown,
-      referrer_profile_id: referrerProfileId,
+      ...orderBreakdown,
+      referrer_profile_id: orderReferrerId,
     },
   }, 200, req);
 });

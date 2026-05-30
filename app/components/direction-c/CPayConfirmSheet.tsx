@@ -267,12 +267,29 @@ export function CPayConfirmSheet({
     navigate(retryTo, { replace: true });
   }
 
-  function handlePrimaryAction() {
+  async function handlePrimaryAction() {
     if (payload) {
       confirmTransfer();
       return;
     }
-    onStartCheckout?.({
+    if (!onStartCheckout) return;
+
+    setQuoting(true);
+    const fresh = await quotePayosCheckout({
+      package_sku: pkg.sku,
+      coupon_code: couponInput.trim() || undefined,
+      referral_code: referralInput.trim() || undefined,
+    });
+    setQuoting(false);
+
+    if (!fresh.ok) {
+      setQuote(null);
+      toast.error(fresh.message);
+      return;
+    }
+
+    setQuote(fresh.quote);
+    onStartCheckout({
       couponCode: couponInput.trim() || undefined,
       referralCode: referralInput.trim() || undefined,
     });
@@ -285,7 +302,7 @@ export function CPayConfirmSheet({
       : "Hoàn tiền 7 ngày · giao dịch một lần";
   const primaryLabel = payload
     ? `Tôi đã chuyển khoản ${displayFinal}đ`
-    : busy
+    : busy || quoting
       ? "Đang tạo lệnh thanh toán…"
       : `Xác nhận · thanh toán ${displayFinal}đ`;
 

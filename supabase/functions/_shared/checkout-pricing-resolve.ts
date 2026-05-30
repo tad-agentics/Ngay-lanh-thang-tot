@@ -62,12 +62,13 @@ export async function resolveCheckoutPricingForUser(
       coupon = row as DiscountCouponRow;
     }
 
+    const nowIso = new Date().toISOString();
     const { count, error: usedErr } = await admin
       .from("payment_orders")
       .select("id", { count: "exact", head: true })
       .eq("user_id", input.userId)
       .eq("coupon_code", couponNorm)
-      .eq("status", "paid");
+      .or(`status.eq.paid,and(status.eq.pending,expires_at.gt.${nowIso})`);
 
     if (usedErr) {
       console.error("coupon usage check", usedErr);
