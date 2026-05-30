@@ -38,9 +38,16 @@ export type PostLoginProfile = {
   onboarding_completed_at: string | null;
   ngay_sinh: string | null;
   gio_sinh?: string | null;
+  gioi_tinh?: string | null;
 };
 
-/** Ngày sinh + canh giờ đủ để dựng lá số (một màn `/dang-ky`). */
+export function profileHasGioiTinh(
+  prof: Pick<PostLoginProfile, "gioi_tinh"> | null | undefined,
+): boolean {
+  return prof?.gioi_tinh === "nam" || prof?.gioi_tinh === "nu";
+}
+
+/** Ngày sinh + canh giờ + giới tính đủ để dựng lá số (một màn `/dang-ky`). */
 export function profileHasBirthChartInput(
   prof: PostLoginProfile | null | undefined,
 ): boolean {
@@ -48,7 +55,7 @@ export function profileHasBirthChartInput(
     prof?.ngay_sinh != null && String(prof.ngay_sinh).trim() !== "";
   const hasGioSinh =
     prof?.gio_sinh != null && String(prof.gio_sinh).trim() !== "";
-  return hasBirthDate && hasGioSinh;
+  return hasBirthDate && hasGioSinh && profileHasGioiTinh(prof);
 }
 
 /** Route for users still in first-run (before `onboarding_completed_at`). */
@@ -63,10 +70,8 @@ export function destinationAfterAuth(
   onboardingComplete: boolean,
   hasBirthChartInput = true,
 ): string {
-  if (!onboardingComplete) {
-    if (!hasBirthChartInput) return "/dang-ky";
-    return "/dang-dung-lich";
-  }
+  if (!hasBirthChartInput) return "/dang-ky";
+  if (!onboardingComplete) return "/dang-dung-lich";
   return consumePendingReturnTo() ?? "/lich";
 }
 

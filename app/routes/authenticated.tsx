@@ -20,6 +20,7 @@ import {
 } from "~/lib/nav-config";
 import {
   onboardingInProgressPath,
+  profileHasBirthChartInput,
   stashPendingReturnTo,
 } from "~/lib/pending-return-to";
 import { ProfileProvider } from "~/lib/profile-context";
@@ -127,22 +128,24 @@ function AuthenticatedShellWithProfile({
     );
   }
 
-  const needsOnboarding = profile.onboarding_completed_at == null;
-  if (needsOnboarding && !isOnboardingExemptPath(location.pathname)) {
+  const birthProfile = {
+    onboarding_completed_at: profile.onboarding_completed_at,
+    ngay_sinh: profile.ngay_sinh,
+    gio_sinh: profile.gio_sinh,
+    gioi_tinh: profile.gioi_tinh,
+  };
+  if (
+    !profileHasBirthChartInput(birthProfile) &&
+    !isOnboardingExemptPath(location.pathname)
+  ) {
     return (
-      <Navigate
-        to={onboardingInProgressPath({
-          onboarding_completed_at: profile.onboarding_completed_at,
-          ngay_sinh: profile.ngay_sinh,
-          gio_sinh: profile.gio_sinh,
-        })}
-        replace
-      />
+      <Navigate to={onboardingInProgressPath(birthProfile)} replace />
     );
   }
 
   if (
     profile.onboarding_completed_at != null &&
+    profileHasBirthChartInput(birthProfile) &&
     (location.pathname === "/gio-sinh" ||
       location.pathname === "/dang-dung-lich" ||
       location.pathname === "/lich-da-mo")

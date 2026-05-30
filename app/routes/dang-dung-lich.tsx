@@ -12,7 +12,10 @@ import {
   extractMenhTagline,
   extractTuTruPillarLabels,
 } from "~/lib/la-so-ui";
-import { onboardingInProgressPath } from "~/lib/pending-return-to";
+import {
+  onboardingInProgressPath,
+  profileHasBirthChartInput,
+} from "~/lib/pending-return-to";
 
 const PILLARS = ["Niên", "Nguyệt", "Nhật", "Thời"] as const;
 
@@ -50,18 +53,18 @@ export default function DangDungLichRoute() {
   useEffect(() => {
     if (profileLoading || !profile) return;
 
-    const body = profileToBatTuPersonQuery(profile);
-    if (!body.birth_date || body.birth_time === undefined) {
-      navigate(
-        onboardingInProgressPath({
-          onboarding_completed_at: profile.onboarding_completed_at,
-          ngay_sinh: profile.ngay_sinh,
-          gio_sinh: profile.gio_sinh,
-        }),
-        { replace: true },
-      );
+    const birthProfile = {
+      onboarding_completed_at: profile.onboarding_completed_at,
+      ngay_sinh: profile.ngay_sinh,
+      gio_sinh: profile.gio_sinh,
+      gioi_tinh: profile.gioi_tinh,
+    };
+    if (!profileHasBirthChartInput(birthProfile)) {
+      navigate(onboardingInProgressPath(birthProfile), { replace: true });
       return;
     }
+
+    const body = profileToBatTuPersonQuery(profile);
 
     if (ranRef.current) return;
     ranRef.current = true;

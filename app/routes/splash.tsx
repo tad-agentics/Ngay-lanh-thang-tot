@@ -8,6 +8,10 @@ import { useNavigate } from "react-router";
 import { Logo, Mono } from "~/components/brand";
 import { useAuth } from "~/lib/auth";
 import { CT } from "~/lib/c-tokens";
+import {
+  onboardingInProgressPath,
+  profileHasBirthChartInput,
+} from "~/lib/pending-return-to";
 import { supabase } from "~/lib/supabase";
 
 export default function SplashRoute() {
@@ -26,20 +30,17 @@ export default function SplashRoute() {
     void (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("onboarding_completed_at, ngay_sinh, gio_sinh")
+        .select("onboarding_completed_at, ngay_sinh, gio_sinh, gioi_tinh")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      if (data?.onboarding_completed_at) {
+      if (data?.onboarding_completed_at && profileHasBirthChartInput(data)) {
         navigate("/lich", { replace: true });
       } else {
-        const hasDate =
-          data?.ngay_sinh != null && String(data.ngay_sinh).trim() !== "";
-        const hasGio =
-          data?.gio_sinh != null && String(data.gio_sinh).trim() !== "";
-        navigate(hasDate && hasGio ? "/dang-dung-lich" : "/dang-ky", {
-          replace: true,
-        });
+        navigate(
+          onboardingInProgressPath(data ?? null),
+          { replace: true },
+        );
       }
     })();
 

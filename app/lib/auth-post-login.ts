@@ -19,7 +19,7 @@ export async function resolvePostLoginPath(): Promise<string> {
 
   const { data: prof } = await supabase
     .from("profiles")
-    .select("onboarding_completed_at, ngay_sinh, gio_sinh")
+    .select("onboarding_completed_at, ngay_sinh, gio_sinh, gioi_tinh")
     .eq("id", uid)
     .maybeSingle();
 

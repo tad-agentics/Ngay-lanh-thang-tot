@@ -63,8 +63,21 @@ describe("pending-return-to", () => {
         onboarding_completed_at: null,
         ngay_sinh: "1990-01-01",
         gio_sinh: "05:00:00",
+        gioi_tinh: null,
+      }),
+    ).toBe("/dang-ky");
+    expect(
+      onboardingInProgressPath({
+        onboarding_completed_at: null,
+        ngay_sinh: "1990-01-01",
+        gio_sinh: "05:00:00",
+        gioi_tinh: "nam",
       }),
     ).toBe("/dang-dung-lich");
+  });
+
+  it("destinationAfterAuth sends legacy completed users missing gender to dang-ky", () => {
+    expect(destinationAfterAuth(true, false)).toBe("/dang-ky");
   });
 
   it("appends return_to to hrefs", () => {

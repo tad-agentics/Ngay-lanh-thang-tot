@@ -25,6 +25,7 @@ function mockProfileRow(row: {
   onboarding_completed_at: string | null;
   ngay_sinh: string | null;
   gio_sinh?: string | null;
+  gioi_tinh?: string | null;
 }) {
   const maybeSingle = vi.fn().mockResolvedValue({ data: row, error: null });
   const eq = vi.fn().mockReturnValue({ maybeSingle });
@@ -61,11 +62,28 @@ describe("resolvePostLoginPath", () => {
       onboarding_completed_at: null,
       ngay_sinh: "1990-01-01",
       gio_sinh: "05:00:00",
+      gioi_tinh: "nam",
     });
 
     const dest = await resolvePostLoginPath();
 
     expect(dest).toBe("/dang-dung-lich");
+  });
+
+  it("routes OAuth legacy users missing gender back to dang-ky", async () => {
+    const session = { access_token: "tok", user: { id: "u1" } };
+    getSession.mockResolvedValue({ data: { session }, error: null });
+    tryConsumePendingReferralClaim.mockResolvedValue(undefined);
+    mockProfileRow({
+      onboarding_completed_at: "2025-01-01T00:00:00Z",
+      ngay_sinh: "1990-01-01",
+      gio_sinh: "05:00:00",
+      gioi_tinh: null,
+    });
+
+    const dest = await resolvePostLoginPath();
+
+    expect(dest).toBe("/dang-ky");
   });
 
   it("skips referral when there is no session", async () => {
