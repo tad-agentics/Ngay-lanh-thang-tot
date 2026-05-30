@@ -69,6 +69,28 @@ function clampLimit(raw: string | null, fallback = DEFAULT_LIMIT): number {
   return Math.min(Math.max(1, n), MAX_LIMIT);
 }
 
+async function loadDayLuanAskCounts(
+  admin: ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.49.1").createClient>,
+  userIds: string[],
+): Promise<Map<string, number>> {
+  const map = new Map<string, number>();
+  if (userIds.length === 0) return map;
+
+  const { data, error } = await admin.rpc("admin_day_luan_ask_counts", {
+    p_user_ids: userIds,
+  });
+  if (error) throw error;
+
+  for (const row of data ?? []) {
+    const r = row as { user_id: string; ask_count: number | string };
+    const n = typeof r.ask_count === "number"
+      ? r.ask_count
+      : Number.parseInt(String(r.ask_count), 10);
+    map.set(r.user_id, Number.isFinite(n) ? n : 0);
+  }
+  return map;
+}
+
 async function searchUsers(
   admin: ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.49.1").createClient>,
   q: string,
@@ -94,9 +116,16 @@ async function searchUsers(
   const { data, error } = await query;
   if (error) throw error;
 
-  const users = ((data ?? []) as ProfileRow[]).map((row) => ({
+  const rows = (data ?? []) as ProfileRow[];
+  const askCounts = await loadDayLuanAskCounts(
+    admin,
+    rows.map((r) => r.id),
+  );
+
+  const users = rows.map((row) => ({
     ...row,
     flags: computeFlags(row),
+    day_luan_ai_ask_count: askCounts.get(row.id) ?? 0,
   }));
 
   return { users };
@@ -161,10 +190,13 @@ async function userDetail(
   if (rErr) throw rErr;
   if (lErr) throw lErr;
 
+  const askCounts = await loadDayLuanAskCounts(admin, [userId]);
+
   return {
     profile: row,
     flags: computeFlags(row),
     referrer: referredByProfile ?? null,
+    day_luan_ai_ask_count: askCounts.get(userId) ?? 0,
     paymentOrders: paymentOrders ?? [],
     referralRewards: referralRewards ?? [],
     creditLedger: creditLedger ?? [],
