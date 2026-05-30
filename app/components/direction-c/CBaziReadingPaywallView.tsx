@@ -20,11 +20,9 @@ import { loadBaziPaywallBundle } from "~/lib/bazi-reading-load";
 import {
   baziOutlineSections,
   fallbackFlowYearCanChiLabel,
-  flowYearCanChiFromFacts,
 } from "~/lib/bazi-reading-outline";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
-import { fetchLuuNienYearFacts } from "~/lib/luu-nien-facts";
 import { createPayosCheckout } from "~/lib/payos";
 import { addonSubscriptionUpsell, priceDisplay } from "~/lib/pay-confirm-ui";
 import type { Profile } from "~/lib/profile-context";
@@ -145,16 +143,11 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     const gen = ++genRef.current;
     setMenhLoading(true);
     void (async () => {
-      const [luuRes, paywall] = await Promise.all([
-        fetchLuuNienYearFacts(profile, year),
-        loadBaziPaywallBundle(profile),
-      ]);
+      // Paywall must not call `la-so-luu-nien` — Edge returns 403 BAZI_READING_LOCKED.
+      const paywall = await loadBaziPaywallBundle(profile);
       if (cancelled || gen !== genRef.current) return;
-      if (luuRes.ok) {
-        const label =
-          flowYearCanChiFromFacts(luuRes.data) || fallbackFlowYearCanChiLabel(year);
-        if (label) setYearCanChi(label);
-      }
+      const label = fallbackFlowYearCanChiLabel(year);
+      if (label) setYearCanChi(label);
       if (paywall.laSoDisplay) setLaSoDisplay(paywall.laSoDisplay);
       setMenhProse(paywall.menhOverview || null);
       setMenhLoading(false);
