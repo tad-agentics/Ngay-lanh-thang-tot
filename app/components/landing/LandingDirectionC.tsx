@@ -564,15 +564,15 @@ export function LandingDirectionC() {
             style={{
               background: T.forest,
               color: T.cream,
-              padding: "48px 56px",
+              padding: "52px 56px",
               border: `1.5px solid ${T.gold}`,
               boxShadow: "0 24px 48px rgba(29,49,41,0.25)",
             }}
           >
             <div className="absolute -top-3 left-8 px-3.5 py-1 font-mono text-[10.5px] font-extrabold" style={{ background: T.gold, color: T.forest, letterSpacing: "0.22em" }}>
-              ★ KHUYẾN NGHỊ
+              ★ KHUYẾN NGHỊ - TRỌN VẸN NHẤT
             </div>
-            <div className="ldc-pricing-tier-grid grid items-center gap-12" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
+            <div className="ldc-pricing-tier-grid grid items-start gap-12" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
               <div>
                 <Mono style={{ color: T.gold, fontSize: 11.5, letterSpacing: "0.22em" }}>LỊCH ĐINH MÙI 2027 · TRỌN NĂM</Mono>
                 <h3 className="ldc-pricing-h3 font-display font-extrabold uppercase leading-[0.96] mt-2.5" style={{ fontSize: 56.5, letterSpacing: "-0.02em" }}>
@@ -582,56 +582,145 @@ export function LandingDirectionC() {
                     cho cả năm
                   </span>
                 </h3>
+                
+                {/* Feature List for Yearly Tier */}
+                <div className="mt-8 space-y-3.5 font-serif text-[14.5px] leading-relaxed" style={{ color: "rgba(237,231,211,0.9)" }}>
+                  <div className="flex items-start gap-3">
+                    <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
+                    <span><strong>365 ngày Lịch bản mệnh Tứ Trụ:</strong> Điểm số cát hung và thời khắc hành sự đại sự được cá nhân hóa trọn vẹn hằng ngày theo chuẩn cổ thư Đông Phương.</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
+                    <span><strong>Bản Luận giải Bát tự chuyên sâu (Xem trọn đời):</strong> Giải mã chi tiết ngũ hành bản mệnh, hỷ dụng thần, và chỉ dẫn phương án bổ khuyết cải vận toàn diện.</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
+                    <span><strong>Luận giải Tiểu vận hằng năm:</strong> Tỏ tường vận hạn cát hung của từng tháng trong 12 tháng kế tiếp để chủ động đón lành tránh dữ.</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
+                    <span><strong>Hỏi đáp AI Không giới hạn (Đặc quyền hôm nay):</strong> Độc quyền gửi tới 10 câu hỏi đáp chuyên sâu trực tiếp mỗi ngày về lá số bản mệnh hằng ngày của bản thân.</span>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
+                    <span><strong>An tâm đồng hành:</strong> Đồng bộ liền mạch mọi thiết bị (PWA), tuyệt đối không tự động gia hạn trừ tiền thẻ, hoàn trả 100% chi phí trong vòng 7 ngày nếu không hài lòng.</span>
+                  </div>
+                </div>
+
                 <Link
-                  to="/dat-lich"
-                  className="mt-7 inline-block w-full max-w-md py-[18px] text-center font-display font-extrabold text-sm uppercase no-underline"
-                  style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em" }}
+                  to="/dat-lich?plan=goi_12thang"
+                  className="mt-8 inline-block w-full max-w-md py-[18px] text-center font-display font-extrabold text-sm uppercase no-underline transition-all duration-200 hover:scale-[1.01]"
+                  style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em", boxShadow: "0 12px 24px rgba(197,165,90,0.15)" }}
                 >
                   Đăng ký lịch năm
                 </Link>
               </div>
-              <div>
-                <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.18em" }}>CHI PHÍ ĐỒNG HÀNH</Mono>
-                <div className="flex items-baseline gap-1.5 mt-2">
-                  <span className="ldc-hero-price font-display font-extrabold leading-[0.9] tabular-nums" style={{ fontSize: 72.5, color: T.gold, letterSpacing: "-0.03em" }}>
-                    799.000
-                  </span>
-                  <span className="font-display font-bold text-[24.5px]" style={{ color: T.gold }}>
-                    đ
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.14em" }}>
+              <div className="flex flex-col h-full justify-between">
+                <div>
+                  <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.18em" }}>CHI PHÍ ĐỒNG HÀNH</Mono>
+                  <div className="flex items-baseline gap-1.5 mt-2">
+                    <span className="ldc-hero-price font-display font-extrabold leading-[0.85] tabular-nums" style={{ fontSize: 72.5, color: T.gold, letterSpacing: "-0.03em" }}>
+                      799.000
+                    </span>
+                    <span className="font-display font-bold text-[24.5px]" style={{ color: T.gold }}>
+                      đ
+                    </span>
+                  </div>
+                  <div className="mt-3 inline-block px-3 py-1 font-mono text-[10.5px] font-bold uppercase tracking-wider rounded-[2px]" style={{ background: "rgba(197,165,90,0.12)", color: T.gold }}>
                     TIẾT KIỆM 298.000Đ · TỐI ƯU TRỌN VẸN
-                  </Mono>
+                  </div>
+                </div>
+
+                <div className="mt-8 p-4 font-serif text-[13px] leading-relaxed rounded-[3px]" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(197,165,90,0.25)" }}>
+                  <p className="m-0" style={{ color: "rgba(237,231,211,0.7)" }}>
+                    Gói dịch vụ được nhiều quý anh chị trên 30 tuổi tin dùng nhất. Đã bao gồm trọn gói dịch vụ Luận giải Bát tự và Luận giải Tiểu vận (tiết kiệm hơn 40% so với mua lẻ từng bản luận giải).
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="ldc-other-tiers mt-9 grid gap-4" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+
+          <div className="ldc-other-tiers mt-8 grid gap-6" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             {[
-              { name: "3 tháng", sub: "Trải nghiệm lịch bản mệnh · Dùng thử", price: "299.000", per: "3 tháng" },
-              { name: "6 tháng", sub: "Lịch bản mệnh + Luận giải Tiểu vận", price: "499.000", per: "6 tháng", save: "tiết kiệm 298.000đ" },
+              {
+                sku: "goi_1thang",
+                name: "Gói Trải Nghiệm",
+                duration: "3 tháng",
+                price: "299.000",
+                per: "3 tháng",
+                desc: "Phù hợp cho quý anh chị bước đầu trải nghiệm sự xoay vần của năng lượng hằng ngày ứng với bản mệnh Tứ Trụ.",
+                features: [
+                  { text: "90 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
+                  { text: "Điểm số cát hung & Luận giải chi tiết", ok: true },
+                  { text: "Hỏi đáp AI chi tiết về ngày hôm nay", ok: true },
+                  { text: "Luận giải Tiểu vận hạn 12 tháng sắp tới", ok: false },
+                  { text: "Bản Luận giải Bát tự chuyên sâu trọn đời", ok: false },
+                ]
+              },
+              {
+                sku: "goi_6thang",
+                name: "Gói Bán Niên",
+                duration: "6 tháng",
+                price: "499.000",
+                per: "6 tháng",
+                save: "Tiết kiệm 100.000đ",
+                desc: "Đầy đủ lịch bản mệnh nửa năm, kết hợp luận giải vận hạn chi tiết để chủ động mưu sự đại sự hanh thông.",
+                features: [
+                  { text: "180 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
+                  { text: "Điểm số cát hung & Luận giải chi tiết", ok: true },
+                  { text: "Hỏi đáp AI chi tiết về ngày hôm nay", ok: true },
+                  { text: "Luận giải Tiểu vận hạn 12 tháng hằng năm", ok: true },
+                  { text: "Bản Luận giải Bát tự chuyên sâu trọn đời", ok: false },
+                ]
+              },
             ].map((t) => (
               <Link
-                key={t.name}
-                to="/dat-lich"
-                className="flex justify-between items-center gap-4 p-5 bg-white no-underline"
+                key={t.sku}
+                to={`/dat-lich?plan=${t.sku}`}
+                className="flex flex-col justify-between p-6 bg-white no-underline transition-all duration-200 hover:shadow-[0_12px_24px_rgba(0,0,0,0.05)] hover:border-solid hover:border-[rgba(154,124,34,0.3)]"
                 style={{ border: `1px solid ${T.hairline}`, color: T.ink }}
               >
                 <div>
-                  <div className="font-display font-extrabold text-[22.5px] uppercase">{t.name}</div>
-                  <div className="font-serif text-xs mt-1" style={{ color: T.muted }}>
-                    {t.sub}
-                    {"save" in t && t.save ? ` · ${t.save}` : ""}
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-display font-extrabold text-[22.5px] uppercase" style={{ color: T.ink }}>{t.name}</span>
+                    <span className="font-mono text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-[2px]" style={{ background: T.paperWarm, color: T.muted }}>{t.duration}</span>
+                  </div>
+                  
+                  {t.save ? (
+                    <div className="mt-2 inline-block px-2.5 py-0.5 font-mono text-[9px] font-black uppercase tracking-wider rounded-[2px]" style={{ background: "rgba(163,32,31,0.06)", color: T.red }}>
+                      ★ {t.save}
+                    </div>
+                  ) : null}
+
+                  <p className="font-serif text-[13.5px] leading-relaxed mt-3" style={{ color: T.ink2 }}>
+                    {t.desc}
+                  </p>
+
+                  <div className="mt-5 pt-4 space-y-2.5 font-serif text-[13.5px]" style={{ borderTop: `1px solid ${T.hairline2}` }}>
+                    {t.features.map((f, idx) => (
+                      <div key={idx} className="flex items-start gap-2.5" style={{ opacity: f.ok ? 1 : 0.45 }}>
+                        {f.ok ? (
+                          <span className="font-bold text-xs" style={{ color: T.goldDeep, marginTop: "1px" }}>✓</span>
+                        ) : (
+                          <span className="font-bold text-xs" style={{ color: T.muted, marginTop: "1px" }}>×</span>
+                        )}
+                        <span style={f.ok ? {} : { textDecoration: "line-through", color: T.muted }}>{f.text}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-display font-extrabold text-[26.5px] tabular-nums" style={{ color: T.goldDeep }}>
-                    {t.price}
+
+                <div className="mt-6 pt-4 flex justify-between items-baseline" style={{ borderTop: `1px solid ${T.hairline2}` }}>
+                  <div>
+                    <span className="font-serif text-xs" style={{ color: T.muted }}>Chi phí đăng ký:</span>
                   </div>
-                  <div className="font-serif text-[11.5px]" style={{ color: T.muted }}>
-                    đ · {t.per}
+                  <div className="text-right">
+                    <div className="font-display font-extrabold text-[26.5px] tabular-nums" style={{ color: T.goldDeep }}>
+                      {t.price}
+                    </div>
+                    <div className="font-serif text-[11.5px]" style={{ color: T.muted }}>
+                      đ · sử dụng trong {t.per}
+                    </div>
                   </div>
                 </div>
               </Link>
