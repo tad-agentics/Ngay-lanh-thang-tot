@@ -164,7 +164,7 @@ async function userDetail(
   return {
     profile: row,
     flags: computeFlags(row),
-    referrer: referredByProfile.data ?? null,
+    referrer: referredByProfile ?? null,
     paymentOrders: paymentOrders ?? [],
     referralRewards: referralRewards ?? [],
     creditLedger: creditLedger ?? [],
