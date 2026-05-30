@@ -4,6 +4,8 @@ import {
   payCheckoutExpiredAtUnix,
   payCheckoutExpiresAtIso,
 } from "../_shared/pay-checkout-timeout.ts";
+import { acquireCheckoutQuoteRateLimit } from "../_shared/checkout-quote-rate-limit.ts";
+import { resolveCheckoutPricingForUser } from "../_shared/checkout-pricing-resolve.ts";
 import {
   CHECKOUT_PACKAGE_SKUS,
   generateOrderCode,
@@ -82,24 +84,31 @@ Deno.serve(async (req) => {
     package_sku?: string;
     return_url?: string;
     cancel_url?: string;
+    quote_only?: boolean;
+    coupon_code?: string;
+    referral_code?: string;
   };
   try {
-    body = (await req.json()) as {
-      package_sku?: string;
-      return_url?: string;
-      cancel_url?: string;
-    };
+    body = (await req.json()) as typeof body;
   } catch {
     return json({ error: { code: "BAD_REQUEST", message: "Invalid JSON." } }, 400, req);
   }
 
-  const { package_sku, return_url, cancel_url } = body;
-  if (!package_sku || !return_url || !cancel_url) {
+  const {
+    package_sku,
+    return_url,
+    cancel_url,
+    quote_only = false,
+    coupon_code,
+    referral_code,
+  } = body;
+
+  if (!package_sku) {
     return json(
       {
         error: {
           code: "BAD_REQUEST",
-          message: "package_sku, return_url, cancel_url required.",
+          message: "package_sku required.",
         },
       },
       400,
@@ -107,7 +116,23 @@ Deno.serve(async (req) => {
     );
   }
 
-  if (!isValidRedirectUrl(return_url) || !isValidRedirectUrl(cancel_url)) {
+  if (!quote_only && (!return_url || !cancel_url)) {
+    return json(
+      {
+        error: {
+          code: "BAD_REQUEST",
+          message: "return_url and cancel_url required for checkout.",
+        },
+      },
+      400,
+      req,
+    );
+  }
+
+  if (
+    !quote_only &&
+    (!isValidRedirectUrl(return_url!) || !isValidRedirectUrl(cancel_url!))
+  ) {
     return json(
       {
         error: {
@@ -139,12 +164,61 @@ Deno.serve(async (req) => {
   }
 
   const pkg = PACKAGES[package_sku];
+  const admin = createClient(supabaseUrl, serviceKey);
+
+  if (quote_only) {
+    const allowed = await acquireCheckoutQuoteRateLimit(user.id);
+    if (!allowed) {
+      return json(
+        {
+          error: {
+            code: "RATE_LIMITED",
+            message: "Vui lòng đợi vài giây rồi thử lại.",
+          },
+        },
+        429,
+        req,
+      );
+    }
+  }
+
+  const pricing = await resolveCheckoutPricingForUser(admin, {
+    userId: user.id,
+    packageSku: package_sku,
+    couponCode: coupon_code ?? null,
+    referralCode: referral_code ?? null,
+  });
+
+  if (!pricing.ok) {
+    return json(
+      { error: { code: pricing.code, message: pricing.message } },
+      422,
+      req,
+    );
+  }
+
+  const { breakdown, referrerProfileId } = pricing;
+
+  if (quote_only) {
+    return json(
+      {
+        quote: {
+          package_sku,
+          ...breakdown,
+          referrer_profile_id: referrerProfileId,
+        },
+      },
+      200,
+      req,
+    );
+  }
+
+  const chargeVnd = breakdown.amount_vnd;
   const orderCode = generateOrderCode();
   const checkoutStartedAt = Date.now();
   const expiresAtIso = payCheckoutExpiresAtIso(checkoutStartedAt);
   const expiredAtUnix = payCheckoutExpiredAtUnix(checkoutStartedAt);
 
-  const admin = createClient(supabaseUrl, serviceKey);
   const { data: orderRow, error: insErr } = await admin
     .from("payment_orders")
     .insert({
@@ -155,13 +229,20 @@ Deno.serve(async (req) => {
       package_sku: pkg.sku,
       credits_to_add: pkg.creditsToAdd,
       subscription_months: pkg.subscriptionMonths,
-      amount_vnd: pkg.amountVnd,
+      list_amount_vnd: breakdown.list_amount_vnd,
+      amount_vnd: chargeVnd,
+      coupon_code: breakdown.coupon_code,
+      checkout_referral_code: breakdown.checkout_referral_code,
+      referrer_profile_id: referrerProfileId,
+      discount_breakdown: breakdown,
       expires_at: expiresAtIso,
       raw_request: {
         orderCode,
-        amount: pkg.amountVnd,
+        amount: chargeVnd,
+        list_amount_vnd: breakdown.list_amount_vnd,
         description: pkg.description,
         expiredAt: expiredAtUnix,
+        discount_breakdown: breakdown,
       },
     })
     .select("id")
@@ -176,8 +257,8 @@ Deno.serve(async (req) => {
   const returnWithOrder = appendOrderIdToUrl(return_url, orderRow.id);
 
   const signature = await signPaymentRequest({
-    amount: pkg.amountVnd,
-    cancelUrl: cancel_url,
+    amount: chargeVnd,
+    cancelUrl: cancel_url!,
     description: pkg.description,
     orderCode,
     returnUrl: returnWithOrder,
@@ -186,7 +267,7 @@ Deno.serve(async (req) => {
 
   const payosBody = {
     orderCode,
-    amount: pkg.amountVnd,
+    amount: chargeVnd,
     description: pkg.description,
     cancelUrl: cancel_url,
     returnUrl: returnWithOrder,
@@ -254,7 +335,7 @@ Deno.serve(async (req) => {
   const amountVnd =
     typeof pdata.amount === "number" && Number.isFinite(pdata.amount)
       ? pdata.amount
-      : pkg.amountVnd;
+      : chargeVnd;
 
   const hasTransfer =
     (typeof pdata.qrCode === "string" && pdata.qrCode.length > 0) ||
@@ -289,5 +370,10 @@ Deno.serve(async (req) => {
     order_id: orderRow.id,
     checkout_url: pdata.checkoutUrl,
     transfer,
+    quote: {
+      package_sku,
+      ...breakdown,
+      referrer_profile_id: referrerProfileId,
+    },
   }, 200, req);
 });

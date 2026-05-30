@@ -33,6 +33,7 @@ export default [
     route("tra-cuu/hop-tuoi", "routes/tra-cuu.hop-tuoi.tsx"),
     route("tra-cuu/hop-tuoi/ket-qua", "routes/tra-cuu.hop-tuoi.ket-qua.tsx"),
     route("toi", "routes/toi.tsx"),
+    route("toi/gioi-thieu", "routes/toi.gioi-thieu.tsx"),
     route("toi/sua-ho-so", "routes/toi.sua-ho-so.tsx"),
     route("toi/cai-dat", "routes/toi.cai-dat.tsx"),
     route("toi/la-so", "routes/toi.la-so.tsx"),

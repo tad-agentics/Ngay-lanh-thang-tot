@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { toast } from "sonner";
-
 import { Mono } from "~/components/brand";
 import type { PackageSku } from "~/lib/api-types";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { subscriptionStatusLine } from "~/lib/entitlements";
-import { createPayosCheckout } from "~/lib/payos";
 import {
   PAY_CONFIRM_ADDON_META,
   PAY_CONFIRM_TIER_META,
@@ -31,8 +28,6 @@ export default function DatLichRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { profile } = useProfile();
-  const [busySku, setBusySku] = useState<PackageSku | null>(null);
-  const [failedSku, setFailedSku] = useState<PackageSku | null>(null);
   const tierRefs = useRef<Partial<Record<PackageSku, HTMLDivElement | null>>>({});
 
   const planParam = searchParams.get("plan");
@@ -57,23 +52,7 @@ export default function DatLichRoute() {
       return;
     }
 
-    setFailedSku(null);
-    setBusySku(sku);
-    const origin = window.location.origin;
-    const result = await createPayosCheckout({
-      package_sku: sku,
-      return_url: `${origin}/thanh-cong`,
-      cancel_url: `${origin}/dat-lich/that-bai`,
-    });
-    setBusySku(null);
-    if (!result.ok) {
-      setFailedSku(sku);
-      toast.error(result.message);
-      return;
-    }
-    navigate("/dat-lich/xac-nhan", {
-      state: { sku, checkout: result.data },
-    });
+    navigate("/dat-lich/xac-nhan", { state: { sku } });
   }
 
   return (
@@ -142,8 +121,6 @@ export default function DatLichRoute() {
           {SUBSCRIPTION_TIERS.map((pkg) => {
             const meta = TIER_META[pkg.sku];
             const hero = pkg.featured;
-            const isBusy = busySku === pkg.sku;
-            const isFailed = failedSku === pkg.sku;
             const isPreselected = preselectedSku === pkg.sku;
             const price = priceDisplay(pkg.priceLabel);
 
@@ -262,33 +239,10 @@ export default function DatLichRoute() {
                   </div>
                 ) : null}
 
-                {isFailed ? (
-                  <div
-                    className="mt-3 flex items-center justify-between gap-2 px-3 py-2"
-                    style={{
-                      background: "rgba(139,26,26,0.08)",
-                      border: "1px solid rgba(139,26,26,0.25)",
-                    }}
-                  >
-                    <Mono style={{ color: CT.red, fontSize: 10.5 }}>
-                      Đơn tạm thời — PayOS chưa phản hồi
-                    </Mono>
-                    <button
-                      type="button"
-                      onClick={() => void checkout(pkg.sku)}
-                      className="cursor-pointer border-none px-3.5 py-1.5 text-[11.5px] font-bold uppercase tracking-[0.08em]"
-                      style={{ ...DISPLAY2, background: CT.red, color: "#fff" }}
-                    >
-                      Thử lại
-                    </button>
-                  </div>
-                ) : null}
-
                 <button
                   type="button"
-                  disabled={busySku !== null}
                   onClick={() => void checkout(pkg.sku)}
-                  className="mt-3 w-full cursor-pointer py-[11px] text-[12px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
+                  className="mt-3 w-full cursor-pointer py-[11px] text-[12px] font-extrabold uppercase tracking-[0.08em]"
                   style={{
                     ...DISPLAY2,
                     background: hero ? CT.gold : "transparent",
@@ -296,11 +250,9 @@ export default function DatLichRoute() {
                     border: hero ? "none" : `1px solid ${CT.goldDeep}`,
                   }}
                 >
-                  {isBusy
-                    ? "Đang tạo đơn…"
-                    : hero
-                      ? `Đăng ký lịch năm — ${priceDisplay(pkg.priceLabel)}đ`
-                      : "Đăng ký gói này"}
+                  {hero
+                    ? `Đăng ký lịch năm — ${priceDisplay(pkg.priceLabel)}đ`
+                    : "Đăng ký gói này"}
                 </button>
               </div>
             );
@@ -336,7 +288,6 @@ export default function DatLichRoute() {
         <div className="mt-3.5 flex flex-col gap-2">
           {ADDON_PACKAGES.map((pkg) => {
             const meta = ADDON_META[pkg.sku];
-            const isBusy = busySku === pkg.sku;
             const price = priceDisplay(pkg.priceLabel);
 
             return (
@@ -357,12 +308,11 @@ export default function DatLichRoute() {
                   </div>
                   <button
                     type="button"
-                    disabled={busySku !== null}
                     onClick={() => void checkout(pkg.sku)}
-                    className="mt-2.5 cursor-pointer border-none bg-transparent p-0 text-[11.5px] font-bold uppercase tracking-[0.06em] disabled:opacity-60"
+                    className="mt-2.5 cursor-pointer border-none bg-transparent p-0 text-[11.5px] font-bold uppercase tracking-[0.06em]"
                     style={{ ...DISPLAY2, color: CT.goldDeep }}
                   >
-                    {isBusy ? "Đang tạo đơn…" : "Khai mở →"}
+                    Khai mở →
                   </button>
                 </div>
                 <div className="text-right">

@@ -57,6 +57,7 @@ export function isOnboardingExemptPath(pathname: string): boolean {
 export const SUBSCRIPTION_EXEMPT_PATHS = new Set([
   ...ONBOARDING_EXEMPT_PATHS,
   "/toi/cai-dat",
+  "/toi/gioi-thieu",
   "/toi/sua-ho-so",
   "/offline",
 ]);

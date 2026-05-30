@@ -140,6 +140,34 @@ Deno.serve(async (req) => {
     return ok({ already_processed: true });
   }
 
+  const paidCoupon =
+    typeof claimed.coupon_code === "string" ? claimed.coupon_code.trim() : "";
+  if (paidCoupon.length > 0) {
+    const { error: couponIncErr } = await admin.rpc("increment_coupon_redemption", {
+      p_code: paidCoupon.toUpperCase(),
+    });
+    if (couponIncErr) {
+      console.error("increment_coupon_redemption", couponIncErr);
+    }
+  }
+
+  const { data: referralGrant, error: referralErr } = await admin.rpc(
+    "grant_referral_subscription_reward",
+    { p_order_id: claimed.id },
+  );
+  if (referralErr) {
+    console.error("grant_referral_subscription_reward", referralErr);
+  } else if (
+    referralGrant &&
+    typeof referralGrant === "object" &&
+    (referralGrant as { ok?: boolean }).ok === false &&
+    (referralGrant as { reason?: string }).reason !== "no_referrer" &&
+    (referralGrant as { reason?: string }).reason !== "package_not_eligible" &&
+    (referralGrant as { reason?: string }).reason !== "already_granted"
+  ) {
+    console.error("grant_referral_subscription_reward result", referralGrant);
+  }
+
   const { data: profile, error: profErr } = await admin
     .from("profiles")
     .select(

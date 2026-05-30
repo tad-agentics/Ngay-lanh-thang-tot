@@ -115,8 +115,8 @@ function MonthGrid({
             >
               <div
                 style={{
-                  width: 26,
-                  height: 26,
+                  width: 28,
+                  height: 28,
                   borderRadius: "50%",
                   background: isToday ? CT.forest : "transparent",
                   display: "flex",
@@ -128,7 +128,7 @@ function MonthGrid({
                   style={{
                     fontFamily: "var(--display-2)",
                     fontWeight: isToday ? 800 : 600,
-                    fontSize: 14.5,
+                    fontSize: 15.5,
                     color: isToday
                       ? CT.cream
                       : c.otherMonth
@@ -147,7 +147,7 @@ function MonthGrid({
                   height: 11,
                   lineHeight: 1,
                   fontFamily: "var(--serif)",
-                  fontSize: 9.5,
+                  fontSize: 10.5,
                   color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
                 }}
               >

@@ -1,6 +1,7 @@
 import type { LaSoChiTietSection } from "../core/types.ts";
 import {
   MIN_MENH_PREVIEW_CHARS,
+  MIN_MENH_PREVIEW_PARAGRAPHS,
   MIN_MENH_PREVIEW_SENTENCE_ENDS,
 } from "../core/config.ts";
 import { tryParseLaSoChiTietRecord } from "./json.ts";
@@ -187,10 +188,21 @@ export function countViSentenceEndings(text: string): number {
   return (text.match(/[.!?…]/g) ?? []).length;
 }
 
+export function countMenhPreviewParagraphs(text: string): number {
+  return text
+    .trim()
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean).length;
+}
+
 export function menhTongQuanProseTooShort(text: string): boolean {
   const t = text.trim();
   if (t.length < MIN_MENH_PREVIEW_CHARS) return true;
   if (countViSentenceEndings(t) < MIN_MENH_PREVIEW_SENTENCE_ENDS) {
+    return true;
+  }
+  if (countMenhPreviewParagraphs(t) < MIN_MENH_PREVIEW_PARAGRAPHS) {
     return true;
   }
   return false;

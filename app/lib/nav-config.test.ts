@@ -56,6 +56,7 @@ describe("nav-config (Direction C)", () => {
     expect(isSubscriptionExemptPath("/luan/mua/thanh-cong")).toBe(true);
     expect(isSubscriptionExemptPath("/toi/cai-dat")).toBe(true);
     expect(isSubscriptionExemptPath("/toi/sua-ho-so")).toBe(true);
+    expect(isSubscriptionExemptPath("/toi/gioi-thieu")).toBe(true);
     expect(isSubscriptionExemptPath("/lich")).toBe(false);
     expect(isSubscriptionExemptPath("/tra-cuu")).toBe(false);
   });

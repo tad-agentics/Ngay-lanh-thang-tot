@@ -52,6 +52,33 @@ type CBaziNlttLuanProseProps = {
   compact?: boolean;
 };
 
+function CBaziNlttLuanParagraphs({ text }: { text: string }) {
+  const paragraphs = text.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
+  if (paragraphs.length <= 1) {
+    return (
+      <p
+        className="mt-1 text-[14px] leading-relaxed whitespace-pre-wrap"
+        style={{ color: CT.ink2 }}
+      >
+        {text}
+      </p>
+    );
+  }
+  return (
+    <div className="mt-1 space-y-3">
+      {paragraphs.map((para) => (
+        <p
+          key={para.slice(0, 48)}
+          className="text-[14px] leading-relaxed"
+          style={{ color: CT.ink2 }}
+        >
+          {para}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 /** DeepSeek luận giải trong màn Bát Tự — logo NLTT + kicker + nội dung. */
 export function CBaziNlttLuanProse({
   text,
@@ -97,12 +124,7 @@ export function CBaziNlttLuanProse({
           ) : null}
         </>
       ) : (
-        <p
-          className="mt-1 text-[14px] leading-relaxed whitespace-pre-wrap"
-          style={{ color: CT.ink2 }}
-        >
-          {text!.trim()}
-        </p>
+        <CBaziNlttLuanParagraphs text={text!.trim()} />
       )}
     </CBaziNlttLuanRow>
   );

@@ -132,9 +132,11 @@ function nullableIntMatch(
   return o === p;
 }
 
+const MIN_PAID_AMOUNT_VND = 1_000;
+
 /**
- * Strict SKU ↔ amount gate: webhook amount, stored order amount, and PACKAGES
- * canonical price must all match; order fulfillment columns must match the SKU.
+ * SKU ↔ amount gate: webhook must match order.amount_vnd (final charge, may be
+ * discounted). Catalog cap = PACKAGES[sku].amountVnd; fulfillment columns match SKU.
  */
 export function validateWebhookSkuAmount(
   order: PaymentOrderFulfillmentRow,
@@ -152,12 +154,16 @@ export function validateWebhookSkuAmount(
   const pkg = PACKAGES[skuRaw];
   const canonical = pkg.amountVnd;
 
-  if (webhookAmountVnd !== canonical) {
-    return { ok: false, reason: "webhook_amount_not_canonical" };
+  if (order.amount_vnd == null || order.amount_vnd !== webhookAmountVnd) {
+    return { ok: false, reason: "order_amount_mismatch" };
   }
 
-  if (order.amount_vnd == null || order.amount_vnd !== canonical) {
-    return { ok: false, reason: "order_amount_mismatch" };
+  if (order.amount_vnd > canonical) {
+    return { ok: false, reason: "order_amount_above_catalog" };
+  }
+
+  if (order.amount_vnd < MIN_PAID_AMOUNT_VND) {
+    return { ok: false, reason: "order_amount_too_low" };
   }
 
   if (!nullableIntMatch(order.credits_to_add, pkg.creditsToAdd)) {

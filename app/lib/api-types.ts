@@ -228,10 +228,27 @@ export type PackageSku =
   | "luan_bat_tu"
   | "luan_tieu_van";
 
+export type CheckoutDiscountBreakdown = {
+  list_amount_vnd: number;
+  coupon_discount_vnd: number;
+  referral_discount_vnd: number;
+  amount_vnd: number;
+  coupon_code: string | null;
+  checkout_referral_code: string | null;
+};
+
+export type PayosCheckoutQuote = CheckoutDiscountBreakdown & {
+  package_sku: PackageSku;
+  referrer_profile_id: string | null;
+};
+
 export interface CreatePayosCheckoutRequest {
   package_sku: PackageSku;
-  return_url: string;
-  cancel_url: string;
+  return_url?: string;
+  cancel_url?: string;
+  quote_only?: boolean;
+  coupon_code?: string;
+  referral_code?: string;
 }
 
 /** Chi tiết chuyển khoản / VietQR do PayOS trả về khi tạo payment request. */
@@ -250,4 +267,30 @@ export interface CreatePayosCheckoutResponse {
   checkout_url: string;
   /** Có thể null nếu PayOS không gửi đủ trường (fallback: mở checkout_url). */
   transfer: PayosTransferDetails | null;
+  quote?: PayosCheckoutQuote;
 }
+
+// ─── Edge: Referral dashboard ─────────────────────────────────────────────
+
+export type ReferralRewardTier = {
+  package_sku: string;
+  label: string;
+  reward_vnd: number;
+};
+
+export type ReferralRecentReward = {
+  id: string;
+  package_sku: string;
+  package_label: string;
+  reward_vnd: number;
+  created_at: string;
+};
+
+export type ReferralDashboardResponse = {
+  referral_code: string;
+  invite_url: string;
+  total_reward_vnd: number;
+  referees_count: number;
+  reward_tiers: ReferralRewardTier[];
+  recent_rewards: ReferralRecentReward[];
+};

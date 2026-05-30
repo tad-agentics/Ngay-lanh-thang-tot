@@ -29,8 +29,9 @@ export const READING_MAX_TOKENS_LA_SO_PREVIEW = 4_096;
 export const MIN_TIEU_VAN_SECTION_CHARS = 320;
 export const MIN_TIEU_VAN_SECTION_SENTENCE_ENDS = 5;
 
-export const MIN_MENH_PREVIEW_CHARS = 400;
-export const MIN_MENH_PREVIEW_SENTENCE_ENDS = 5;
+export const MIN_MENH_PREVIEW_CHARS = 800;
+export const MIN_MENH_PREVIEW_SENTENCE_ENDS = 12;
+export const MIN_MENH_PREVIEW_PARAGRAPHS = 3;
 
 export const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,

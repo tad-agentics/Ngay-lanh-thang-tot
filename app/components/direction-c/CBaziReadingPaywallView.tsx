@@ -24,6 +24,7 @@ import {
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
 import { createPayosCheckout } from "~/lib/payos";
+import { readPendingReferralCode } from "~/lib/pending-referral";
 import { addonSubscriptionUpsell, priceDisplay } from "~/lib/pay-confirm-ui";
 import type { Profile } from "~/lib/profile-context";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
@@ -165,13 +166,18 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     };
   }, [profile, year]);
 
-  async function startAddonCheckout() {
+  async function startAddonCheckout(codes: {
+    couponCode?: string;
+    referralCode?: string;
+  }) {
     setBusy(true);
     const origin = window.location.origin;
     const result = await createPayosCheckout({
       package_sku: "luan_bat_tu",
       return_url: `${origin}/luan/mua/thanh-cong?sku=luan_bat_tu`,
       cancel_url: `${origin}/toi/luan-bat-tu`,
+      coupon_code: codes.couponCode,
+      referral_code: codes.referralCode,
     });
     setBusy(false);
     if (!result.ok) {
@@ -299,7 +305,8 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
           pkg={addonPkg}
           payload={checkoutPayload}
           busy={busy}
-          onStartCheckout={() => void startAddonCheckout()}
+          initialReferralCode={readPendingReferralCode()}
+          onStartCheckout={(codes) => void startAddonCheckout(codes)}
           successPath={(orderId) =>
             `/luan/mua/thanh-cong?sku=luan_bat_tu&order_id=${encodeURIComponent(orderId)}`
           }
@@ -307,7 +314,6 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
           backTo="/toi/luan-bat-tu"
           onRetry={() => {
             setCheckoutPayload(null);
-            void startAddonCheckout();
           }}
           cancelLink={{ to: "/toi", label: "Quay lại" }}
         />

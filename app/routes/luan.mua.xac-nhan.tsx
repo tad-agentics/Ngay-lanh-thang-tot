@@ -1,13 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
-import { CPayConfirmSheet } from "~/components/direction-c/CPayConfirmSheet";
+import {
+  CPayConfirmSheet,
+  type PayCheckoutCodes,
+} from "~/components/direction-c/CPayConfirmSheet";
 import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
 import { createPayosCheckout } from "~/lib/payos";
+import { readPendingReferralCode } from "~/lib/pending-referral";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
 
@@ -21,8 +25,6 @@ export default function LuanMuaXacNhanRoute() {
   const [searchParams] = useSearchParams();
   const restoredCheckout = (location.state as ConfirmState | null)?.checkout;
   const skuParam = searchParams.get("sku");
-  const autoStart = searchParams.get("start") === "1";
-  const autoStartedRef = useRef(false);
   const sku: PackageSku | null =
     skuParam && VALID_SKUS.has(skuParam as PackageSku)
       ? (skuParam as PackageSku)
@@ -46,13 +48,7 @@ export default function LuanMuaXacNhanRoute() {
     }
   }, [restoredCheckout]);
 
-  useEffect(() => {
-    if (!sku || !autoStart || autoStartedRef.current || checkoutPayload) return;
-    autoStartedRef.current = true;
-    void startCheckout();
-  }, [autoStart, checkoutPayload, sku]);
-
-  async function startCheckout() {
+  async function startCheckout(codes: PayCheckoutCodes) {
     if (!sku) return;
     setBusy(true);
     const origin = window.location.origin;
@@ -60,6 +56,8 @@ export default function LuanMuaXacNhanRoute() {
       package_sku: sku,
       return_url: `${origin}/luan/mua/thanh-cong?sku=${sku}`,
       cancel_url: `${origin}/luan/mua/that-bai?sku=${sku}`,
+      coupon_code: codes.couponCode,
+      referral_code: codes.referralCode,
     });
     setBusy(false);
     if (!result.ok) {
@@ -91,7 +89,8 @@ export default function LuanMuaXacNhanRoute() {
         pkg={pkg}
         payload={checkoutPayload}
         busy={busy}
-        onStartCheckout={() => void startCheckout()}
+        initialReferralCode={readPendingReferralCode()}
+        onStartCheckout={(codes) => void startCheckout(codes)}
         successPath={(orderId) =>
           `/luan/mua/thanh-cong?sku=${sku}&order_id=${encodeURIComponent(orderId)}`
         }
@@ -99,8 +98,6 @@ export default function LuanMuaXacNhanRoute() {
         backTo="/toi"
         onRetry={() => {
           setCheckoutPayload(null);
-          autoStartedRef.current = false;
-          void startCheckout();
         }}
         cancelLink={{ to: "/toi", label: "Quay lại" }}
       />

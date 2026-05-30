@@ -411,6 +411,9 @@ verify_jwt = false
 [functions.referral-claim]
 verify_jwt = false
 
+[functions.referral-dashboard]
+verify_jwt = false
+
 # Bearer + getUser() in handler; optional dry_run (no charge).
 [functions.reading-unlock]
 verify_jwt = false

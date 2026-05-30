@@ -2,7 +2,7 @@
 
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
 export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-29-menh-tong-quan";
-export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-29-preview-no-thinking-4k";
+export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-29-preview-3para-800";
 export const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-05-10-v1";
 export const HOP_TUOI_PROMPT_VER = "2026-05-10-v1";
 export const CHON_NGAY_PROMPT_VER = "2026-05-10-v1";

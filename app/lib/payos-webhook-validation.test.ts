@@ -38,7 +38,7 @@ describe("validateWebhookSkuAmount", () => {
     }
   });
 
-  it("rejects webhook amount below canonical price", () => {
+  it("rejects webhook amount mismatch with order", () => {
     const pkg = PACKAGES.goi_6thang;
     const result = validateWebhookSkuAmount(
       {
@@ -49,7 +49,22 @@ describe("validateWebhookSkuAmount", () => {
       },
       1,
     );
-    expect(result).toEqual({ ok: false, reason: "webhook_amount_not_canonical" });
+    expect(result).toEqual({ ok: false, reason: "order_amount_mismatch" });
+  });
+
+  it("accepts discounted paid amount matching webhook", () => {
+    const pkg = PACKAGES.goi_1thang;
+    const discounted = 242_190;
+    const result = validateWebhookSkuAmount(
+      {
+        package_sku: pkg.sku,
+        amount_vnd: discounted,
+        credits_to_add: pkg.creditsToAdd,
+        subscription_months: pkg.subscriptionMonths,
+      },
+      discounted,
+    );
+    expect(result.ok).toBe(true);
   });
 
   it("rejects tampered order credits_to_add", () => {

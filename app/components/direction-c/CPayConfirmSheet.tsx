@@ -6,7 +6,12 @@ import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import { CPayFailureSheet } from "~/components/direction-c/CPayFailureSheet";
-import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
+import type {
+  CreatePayosCheckoutResponse,
+  PayosCheckoutQuote,
+} from "~/lib/api-types";
+import { readPendingReferralCode } from "~/lib/pending-referral";
+import { quotePayosCheckout } from "~/lib/payos";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { useProfile } from "~/hooks/useProfile";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
@@ -71,6 +76,15 @@ function PayosQrImage({ value }: { value: string }) {
   );
 }
 
+export type PayCheckoutCodes = {
+  couponCode?: string;
+  referralCode?: string;
+};
+
+function formatPriceDigits(vnd: number): string {
+  return new Intl.NumberFormat("vi-VN").format(vnd);
+}
+
 function copyText(label: string, text: string) {
   void navigator.clipboard.writeText(text).then(
     () => toast.success(`Đã sao chép ${label}`),
@@ -86,7 +100,9 @@ export type CPayConfirmSheetProps = {
   pkg: UiPackage;
   payload: CreatePayosCheckoutResponse | null;
   busy?: boolean;
-  onStartCheckout?: () => void;
+  onStartCheckout?: (codes: PayCheckoutCodes) => void;
+  /** Prefill mã giới thiệu (vd. từ ?ref= hoặc sessionStorage). */
+  initialReferralCode?: string | null;
   successPath?: (orderId: string) => string;
   retryTo?: string;
   backTo?: string;
@@ -102,6 +118,7 @@ export function CPayConfirmSheet({
   payload,
   busy = false,
   onStartCheckout,
+  initialReferralCode,
   successPath,
   retryTo = "/dat-lich",
   backTo = "/lich",
@@ -112,10 +129,34 @@ export function CPayConfirmSheet({
   const { profile, reload } = useProfile();
   const transfer = payload?.transfer ?? null;
   const orderId = payload?.order_id;
+  const phase = payload ? "payment" : "review";
   const [failureOpen, setFailureOpen] = useState(false);
   const [countdownMs, setCountdownMs] = useState(PAY_CHECKOUT_TIMEOUT_MS);
   const openedAtRef = useRef<number | null>(null);
-  const price = priceDisplay(pkg.priceLabel);
+  const [couponInput, setCouponInput] = useState("");
+  const [referralInput, setReferralInput] = useState(
+    () => initialReferralCode?.trim() ?? readPendingReferralCode() ?? "",
+  );
+  const [quote, setQuote] = useState<PayosCheckoutQuote | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const catalogPrice = priceDisplay(pkg.priceLabel);
+  const listAmountVnd =
+    quote?.list_amount_vnd ??
+    payload?.quote?.list_amount_vnd ??
+    null;
+  const finalAmountVnd =
+    transfer?.amount_vnd ??
+    quote?.amount_vnd ??
+    payload?.quote?.amount_vnd ??
+    null;
+  const displayList =
+    listAmountVnd != null ? formatPriceDigits(listAmountVnd) : catalogPrice;
+  const displayFinal =
+    finalAmountVnd != null ? formatPriceDigits(finalAmountVnd) : catalogPrice;
+  const hasDiscount =
+    listAmountVnd != null &&
+    finalAmountVnd != null &&
+    finalAmountVnd < listAmountVnd;
   const tierMeta = PAY_CONFIRM_TIER_META[pkg.sku];
   const addonMeta = PAY_CONFIRM_ADDON_META[pkg.sku];
   const expiryHint = previewSubscriptionExpiry(pkg.sku);
@@ -132,6 +173,22 @@ export function CPayConfirmSheet({
     setFailureOpen(true);
   }
 
+  async function refreshQuote() {
+    setQuoting(true);
+    const result = await quotePayosCheckout({
+      package_sku: pkg.sku,
+      coupon_code: couponInput.trim() || undefined,
+      referral_code: referralInput.trim() || undefined,
+    });
+    setQuoting(false);
+    if (!result.ok) {
+      setQuote(null);
+      toast.error(result.message);
+      return;
+    }
+    setQuote(result.quote);
+  }
+
   useEffect(() => {
     if (open) {
       openedAtRef.current = Date.now();
@@ -141,6 +198,12 @@ export function CPayConfirmSheet({
       openedAtRef.current = null;
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || phase !== "review") return;
+    void refreshQuote();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- quote once when review opens
+  }, [open, phase, pkg.sku]);
 
   useEffect(() => {
     if (!open || !payload) return;
@@ -209,7 +272,10 @@ export function CPayConfirmSheet({
       confirmTransfer();
       return;
     }
-    onStartCheckout?.();
+    onStartCheckout?.({
+      couponCode: couponInput.trim() || undefined,
+      referralCode: referralInput.trim() || undefined,
+    });
   }
 
   const eyebrow = variant === "subscription" ? "Đăng ký Lịch cát tường" : "Khai mở luận giải";
@@ -218,10 +284,10 @@ export function CPayConfirmSheet({
       ? "Hoàn tiền 7 ngày · không tự gia hạn"
       : "Hoàn tiền 7 ngày · giao dịch một lần";
   const primaryLabel = payload
-    ? `Tôi đã chuyển khoản ${price}đ`
+    ? `Tôi đã chuyển khoản ${displayFinal}đ`
     : busy
-      ? "Đang tạo lệnh…"
-      : `Thanh toán ${price}đ`;
+      ? "Đang tạo lệnh thanh toán…"
+      : `Xác nhận · thanh toán ${displayFinal}đ`;
 
   if (!open && !failureOpen) return null;
 
@@ -269,6 +335,83 @@ export function CPayConfirmSheet({
                 : (addonMeta?.sub ?? pkg.subtitle)}
             </p>
 
+            {phase === "review" ? (
+              <div className="mt-5 space-y-3">
+                <Mono
+                  className="block text-[10.5px] tracking-[0.12em]"
+                  style={{ color: CT.muted }}
+                >
+                  Xác nhận đơn hàng
+                </Mono>
+                <label className="block">
+                  <span className="text-[12px]" style={{ color: CT.muted }}>
+                    Mã giảm giá
+                  </span>
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    placeholder="Nhập mã (nếu có)"
+                    autoComplete="off"
+                    className="mt-1 w-full border bg-white px-3 py-2.5 font-serif text-[14px] outline-none"
+                    style={{ borderColor: CT.hairline, color: CT.ink }}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[12px]" style={{ color: CT.muted }}>
+                    Mã giới thiệu
+                  </span>
+                  <input
+                    type="text"
+                    value={referralInput}
+                    onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
+                    placeholder="Mã của người giới thiệu (không giảm giá)"
+                    autoComplete="off"
+                    className="mt-1 w-full border bg-white px-3 py-2.5 font-serif text-[14px] outline-none"
+                    style={{ borderColor: CT.hairline, color: CT.ink }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  disabled={quoting}
+                  onClick={() => void refreshQuote()}
+                  className="w-full cursor-pointer border py-2 text-[11.5px] font-bold uppercase tracking-[0.06em] disabled:opacity-60"
+                  style={{ ...DISPLAY2, borderColor: CT.goldDeep, color: CT.ink }}
+                >
+                  {quoting ? "Đang tính lại…" : "Áp dụng mã"}
+                </button>
+                {quote &&
+                (quote.coupon_discount_vnd > 0 ||
+                  quote.referral_discount_vnd > 0) ? (
+                  <ul
+                    className="space-y-1 border-l-2 py-1 pl-3 text-[12.5px]"
+                    style={{ borderColor: CT.goldDeep, color: CT.ink2 }}
+                  >
+                    {quote.coupon_discount_vnd > 0 ? (
+                      <li>
+                        Giảm giá mã{" "}
+                        <strong style={{ color: CT.ink }}>
+                          {quote.coupon_code}
+                        </strong>
+                        : −{formatPriceDigits(quote.coupon_discount_vnd)}đ
+                      </li>
+                    ) : null}
+                    {quote.checkout_referral_code ? (
+                      <li>
+                        Đã ghi nhận mã giới thiệu{" "}
+                        <strong style={{ color: CT.ink }}>
+                          {quote.checkout_referral_code}
+                        </strong>
+                        {quote.referral_discount_vnd > 0
+                          ? ` (−${formatPriceDigits(quote.referral_discount_vnd)}đ)`
+                          : " — người mời nhận thưởng khi thanh toán thành công"}
+                      </li>
+                    ) : null}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
+
             <div
               className="mt-5 flex items-baseline justify-between border-y py-3.5"
               style={{ borderColor: CT.hairline }}
@@ -290,7 +433,7 @@ export function CPayConfirmSheet({
                 ) : null}
               </div>
               <div className="text-right">
-                {tierMeta?.baseline ? (
+                {tierMeta?.baseline && !hasDiscount ? (
                   <div
                     className="text-[12px] line-through"
                     style={{ color: CT.muted, textDecorationThickness: 1 }}
@@ -298,11 +441,19 @@ export function CPayConfirmSheet({
                     {tierMeta.baseline}đ
                   </div>
                 ) : null}
+                {hasDiscount ? (
+                  <div
+                    className="text-[12px] line-through tabular-nums"
+                    style={{ color: CT.muted, textDecorationThickness: 1 }}
+                  >
+                    {displayList}đ
+                  </div>
+                ) : null}
                 <div
                   className="text-[22.5px] font-extrabold tabular-nums tracking-[-0.015em]"
                   style={{ ...DISPLAY2, color: CT.goldDeep }}
                 >
-                  {price}đ
+                  {displayFinal}đ
                 </div>
               </div>
             </div>
@@ -497,13 +648,24 @@ export function CPayConfirmSheet({
               </div>
             ) : null}
 
-            <div className="mt-4 text-[13px]" style={{ color: CT.muted }}>
-              Thanh toán qua PayOS · VietQR
-            </div>
+            {phase === "payment" ? (
+              <div className="mt-4 text-[13px]" style={{ color: CT.muted }}>
+                Thanh toán qua PayOS · VietQR
+              </div>
+            ) : (
+              <p className="mt-4 text-[12.5px] leading-relaxed" style={{ color: CT.muted }}>
+                Bước tiếp theo: tạo mã QR chuyển khoản với số tiền đã xác nhận ở trên.
+              </p>
+            )}
 
             <button
               type="button"
-              disabled={busy || (!payload && !onStartCheckout)}
+              disabled={
+                busy ||
+                quoting ||
+                (!payload && !onStartCheckout) ||
+                (phase === "review" && finalAmountVnd == null)
+              }
               onClick={handlePrimaryAction}
               className="mt-6 w-full cursor-pointer border-none py-3.5 text-[13.5px] font-extrabold uppercase tracking-[0.08em] disabled:opacity-60"
               style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}

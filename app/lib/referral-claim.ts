@@ -19,7 +19,7 @@ function toastReferralResult(body: ReferralClaimResponse | null): void {
   }
   if (body.ok && body.error_code === "success") {
     toast.success(
-      "Đã áp dụng mã giới thiệu — bạn và người mời nhận thưởng lượng.",
+      "Đã ghi nhận mã giới thiệu. Người mời sẽ nhận thưởng khi bạn mua gói lịch.",
     );
     return;
   }

@@ -519,6 +519,11 @@ export default function ToiRoute() {
           </Mono>
           {[
             {
+              t: "Giới thiệu bạn bè",
+              sub: "mã mời · theo dõi thưởng",
+              to: "/toi/gioi-thieu",
+            },
+            {
               t: "Sửa hồ sơ",
               sub: "tên · ngày sinh · giờ sinh",
               to: "/toi/sua-ho-so",
