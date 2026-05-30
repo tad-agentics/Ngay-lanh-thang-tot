@@ -32,8 +32,23 @@ export function adminJson(
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
+/** Per-isolate soft limit — reduces scrape abuse from allowlisted admins. */
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX_REQUESTS = 60;
+const rateBuckets = new Map<string, number[]>();
+
 export function isUuid(value: string): boolean {
   return UUID_RE.test(value.trim());
+}
+
+function allowAdminRate(email: string): boolean {
+  const now = Date.now();
+  const prev = rateBuckets.get(email) ?? [];
+  const recent = prev.filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= RATE_MAX_REQUESTS) return false;
+  recent.push(now);
+  rateBuckets.set(email, recent);
+  return true;
 }
 
 export async function requireAdmin(
@@ -102,6 +117,19 @@ export async function requireAdmin(
         },
       },
       403,
+    );
+  }
+
+  if (!allowAdminRate(email)) {
+    return adminJson(
+      cors,
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "Too many admin requests — try again in a minute.",
+        },
+      },
+      429,
     );
   }
 

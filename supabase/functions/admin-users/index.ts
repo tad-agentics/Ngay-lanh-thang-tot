@@ -23,7 +23,15 @@ const MAX_LIMIT = 50;
 const PROFILE_LIST_COLS =
   "id, email, display_name, subscription_expires_at, bazi_reading_unlocked_at, tieu_van_reading_expires_at, referral_code, referred_by, referral_reward_total_vnd, credits_balance, la_so_recompute_status, birth_edit_count, birth_edit_window_start, onboarding_completed_at, ngay_sinh, gio_sinh, gioi_tinh, created_at, updated_at";
 
-const PROFILE_DETAIL_COLS = `${PROFILE_LIST_COLS}, la_so`;
+function detailColumns(includeLaSo: boolean): string {
+  return includeLaSo ? `${PROFILE_LIST_COLS}, la_so` : PROFILE_LIST_COLS;
+}
+
+function parseIncludeLaSo(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  const v = raw.trim().toLowerCase();
+  return v === "1" || v === "true" || v === "yes";
+}
 
 type ProfileRow = ProfileEntitlements & {
   id: string;
@@ -97,10 +105,11 @@ async function searchUsers(
 async function userDetail(
   admin: ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.49.1").createClient>,
   userId: string,
+  includeLaSo: boolean,
 ) {
   const { data: profile, error: pErr } = await admin
     .from("profiles")
-    .select(PROFILE_DETAIL_COLS)
+    .select(detailColumns(includeLaSo))
     .eq("id", userId)
     .maybeSingle();
 
@@ -188,7 +197,10 @@ Deno.serve(async (req) => {
             400,
           );
         }
-        const detail = await userDetail(admin, id);
+        const includeLaSo = parseIncludeLaSo(
+          url.searchParams.get("includeLaSo"),
+        );
+        const detail = await userDetail(admin, id, includeLaSo);
         if (!detail) {
           return adminJson(
             cors,
@@ -205,9 +217,19 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === "POST") {
-      let body: { id?: string; q?: string; limit?: number };
+      let body: {
+        id?: string;
+        q?: string;
+        limit?: number;
+        includeLaSo?: boolean;
+      };
       try {
-        body = (await req.json()) as { id?: string; q?: string; limit?: number };
+        body = (await req.json()) as {
+          id?: string;
+          q?: string;
+          limit?: number;
+          includeLaSo?: boolean;
+        };
       } catch {
         return adminJson(
           cors,
@@ -224,7 +246,11 @@ Deno.serve(async (req) => {
             400,
           );
         }
-        const detail = await userDetail(admin, body.id);
+        const detail = await userDetail(
+          admin,
+          body.id,
+          body.includeLaSo === true,
+        );
         if (!detail) {
           return adminJson(
             cors,

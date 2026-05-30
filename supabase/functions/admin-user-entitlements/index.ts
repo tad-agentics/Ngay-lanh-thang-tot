@@ -208,8 +208,33 @@ Deno.serve(async (req) => {
       },
     });
 
-    if (ledgerErr && (ledgerErr as { code?: string }).code !== "23505") {
-      console.error("admin-user-entitlements ledger", ledgerErr);
+    if (ledgerErr) {
+      const code = (ledgerErr as { code?: string }).code;
+      if (code !== "23505") {
+        console.error("admin-user-entitlements ledger", ledgerErr);
+        const { error: rollbackErr } = await admin
+          .from("profiles")
+          .update({
+            subscription_expires_at: before.subscription_expires_at,
+            bazi_reading_unlocked_at: before.bazi_reading_unlocked_at,
+            tieu_van_reading_expires_at: before.tieu_van_reading_expires_at,
+          })
+          .eq("id", targetId);
+        if (rollbackErr) {
+          console.error("admin-user-entitlements rollback", rollbackErr);
+        }
+        return adminJson(
+          cors,
+          {
+            error: {
+              code: "AUDIT_FAILED",
+              message:
+                "Entitlement updated but audit log failed — change was reverted. Retry or fix credit_ledger.",
+            },
+          },
+          500,
+        );
+      }
     }
 
     return adminJson(cors, {
