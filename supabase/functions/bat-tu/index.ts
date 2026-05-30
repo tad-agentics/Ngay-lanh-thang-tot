@@ -1284,13 +1284,8 @@ Deno.serve(async (req) => {
         { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } }, 500, req);
     }
     if (profileHasStoredLaso(lasoRow?.la_so)) {
-      return json(
-        {
-          error: {
-            code: "LASO_ALREADY_EXISTS",
-            message: "Bạn đã có lá số. Mở Lá số tứ trụ để xem.",
-          },
-        }, 409, req);
+      // Idempotent onboarding retry — return cached lá số, skip upstream recompute.
+      return json({ data: lasoRow!.la_so }, 200, req);
     }
   }
 

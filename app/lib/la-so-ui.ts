@@ -5,6 +5,14 @@ import {
 } from "~/lib/bat-tu-birth";
 import { normalizeLaSoPayload } from "~/lib/la-so-normalize";
 
+/** True when `profiles.la_so` already has a persisted payload (matches Edge `bat-tu`). */
+export function profileHasStoredLaso(laSo: unknown): boolean {
+  if (laSo == null || typeof laSo !== "object" || Array.isArray(laSo)) {
+    return false;
+  }
+  return Object.keys(laSo as Record<string, unknown>).length > 0;
+}
+
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
     return x as Record<string, unknown>;

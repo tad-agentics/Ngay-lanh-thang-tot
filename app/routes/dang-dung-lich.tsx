@@ -11,6 +11,7 @@ import { buildingCalendarQuote } from "~/lib/first-run-ui";
 import {
   extractMenhTagline,
   extractTuTruPillarLabels,
+  profileHasStoredLaso,
 } from "~/lib/la-so-ui";
 import {
   onboardingInProgressPath,
@@ -75,17 +76,25 @@ export default function DangDungLichRoute() {
     void (async () => {
       await invokeBatTu<unknown>({ op: "profile", body });
 
-      const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
-      if (cancelled) return;
-      if (!res.ok) {
-        ranRef.current = false;
-        setBuildError(res.message ?? "Không lập được lá số. Thử lại sau vài giây.");
-        toast.error("Không lập được lá số.");
-        return;
+      let tuTruPayload: unknown;
+      if (profileHasStoredLaso(profile.la_so)) {
+        tuTruPayload = profile.la_so;
+      } else {
+        const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
+        if (cancelled) return;
+        if (!res.ok) {
+          ranRef.current = false;
+          setBuildError(
+            res.message ?? "Không lập được lá số. Thử lại sau vài giây.",
+          );
+          toast.error("Không lập được lá số.");
+          return;
+        }
+        tuTruPayload = res.data;
       }
 
-      const labels = extractTuTruPillarLabels(res.data);
-      const tagline = extractMenhTagline(res.data);
+      const labels = extractTuTruPillarLabels(tuTruPayload);
+      const tagline = extractMenhTagline(tuTruPayload);
       setQuote(buildingCalendarQuote(tagline));
       window.dispatchEvent(new Event("ngaytot:profile-refresh"));
 
