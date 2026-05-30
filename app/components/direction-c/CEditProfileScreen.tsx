@@ -35,6 +35,7 @@ import {
   formatEditProfileBirthTime,
 } from "~/lib/edit-profile-ui";
 import { downloadUserDataJson } from "~/lib/export-user-data";
+import { validateProfileNgaySinhIso } from "~/lib/ngay-sinh-range";
 import { clearUserReadingSessionCaches } from "~/lib/la-so-recompute-invalidate";
 import type { Profile } from "~/lib/profile-context";
 import { supabase } from "~/lib/supabase";
@@ -150,6 +151,12 @@ export function CEditProfileScreen() {
       const birth_date = ddMmYyyyInputToBatTuBirthDate(ngaySinh.trim());
       if (!birth_date) {
         toast.error("Ngày sinh cần đúng DD/MM/YYYY.");
+        return;
+      }
+      const ngayIso = ddMmYyyyInputToIsoDate(ngaySinh.trim());
+      const ngayRange = ngayIso ? validateProfileNgaySinhIso(ngayIso) : null;
+      if (ngayRange && !ngayRange.ok) {
+        toast.error(ngayRange.message);
         return;
       }
       if (!gioiTinh) {

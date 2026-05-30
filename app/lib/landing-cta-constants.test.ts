@@ -32,6 +32,12 @@ describe("parseLandingDobDdMmYyyy", () => {
     const r = parseLandingDobDdMmYyyy("31/02/2020");
     expect(r.ok).toBe(false);
   });
+
+  it("rejects future dob", () => {
+    const r = parseLandingDobDdMmYyyy("31/12/2099");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toContain("hôm nay");
+  });
 });
 
 describe("parseLandingSignupPrefill", () => {

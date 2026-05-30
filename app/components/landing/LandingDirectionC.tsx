@@ -38,28 +38,28 @@ const NAV = [
 
 const FAQS = [
   [
-    "Lịch dùng thế nào?",
-    "Sau 30 giây nhập ngày giờ sinh, lá số tứ trụ của bạn được lập. Mỗi sáng mở app, trang hôm nay đã chấm điểm theo mệnh bạn. Mục Lịch tháng cho cả tháng. Mục Tra cứu khi cần ngày tốt cho một việc cụ thể.",
+    "Ứng dụng hoạt động như thế nào?",
+    "Chỉ mất 30 giây để nhập ngày giờ sinh, hệ thống sẽ tự động lập lá số Tứ Trụ (Bát Tự) của riêng bạn. Mỗi sáng mở ứng dụng, trang lịch hôm nay đã chấm điểm cát hung và chỉ ra những thời điểm phù hợp nhất dựa trên bản mệnh của bạn. Ngoài ra, mục Lịch tháng sẽ giúp bạn có cái nhìn tổng quan cả tháng, và mục Tra cứu sẽ hỗ trợ đắc lực khi cần chọn ngày lành cho các việc đại sự cụ thể.",
   ],
   [
-    "Có chính xác không?",
-    "Hệ thống đối chiếu 4 nguồn cổ: Hiệp Kỷ Biện Phương, Ngọc Hạp Thông Thư, Tử Bình Chân Thuyên, Tam Mệnh Thông Hội. Mỗi điểm số đều có thể bấm xem câu nguyên văn trích từ sách nào.",
+    "Nguồn gốc thông tin có đáng tin cậy không?",
+    "Hệ thống đối chiếu chặt chẽ từ 4 nguồn trước tác kinh điển của nền cổ học Đông Phương: Hiệp Kỷ Biện Phương Thư, Ngọc Hạp Thông Thư, Tử Bình Chân Thuyên, và Tam Mệnh Thông Hội. Mỗi điểm số cát hung đều được lập luận khoa học và minh bạch — bạn có thể bấm vào điểm số để xem câu nguyên văn trích dẫn từ sách gốc.",
   ],
   [
-    "Mua gói nào hợp lý nhất?",
-    "Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + Luận giải Tiểu Vận. Tiết kiệm hơn mua riêng từng phần.",
+    "Nên chọn gói dịch vụ nào phù hợp nhất?",
+    "Gói năm 799.000đ là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + Luận giải Tiểu Vận hằng năm. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.",
   ],
   [
-    "Có cần biết tử vi không?",
-    "Không. Bạn chỉ nhập ngày giờ sinh, app tự tính. Luận giải viết tiếng Việt thường ngày — không Hán Việt nặng.",
+    "Tôi không am hiểu về tử vi, phong thủy có dùng được không?",
+    "Hoàn toàn được. Bạn chỉ cần nhập giờ ngày tháng năm sinh, hệ thống tự động tính toán và an sao lập bản mệnh. Toàn bộ luận giải đều được diễn dịch sang tiếng Việt dung dị, đời thường, dễ hiểu, không lạm dụng các thuật ngữ Hán Việt nặng nề hay mang tính hù dọa.",
   ],
   [
-    "Cài app thế nào?",
-    "Cài 1 chạm trên iPhone và Android — không qua App Store. Đây là PWA. Lịch đồng bộ với tài khoản web.",
+    "Cách cài đặt ứng dụng lên điện thoại?",
+    "Ứng dụng Ngày Lành Tháng Tốt sử dụng công nghệ hiện đại, cho phép bạn cài đặt trực tiếp lên màn hình chính của iPhone hoặc Android chỉ với một chạm mà không cần qua App Store hay Google Play. Cuốn lịch bản mệnh của bạn sẽ luôn được đồng bộ tức thì mọi lúc, mọi nơi.",
   ],
   [
-    "App tự gia hạn không?",
-    "Không bao giờ. Hết hạn thì bạn chủ động gia hạn — không tự trừ tiền thẻ. Hoàn tiền trong 7 ngày nếu không hài lòng.",
+    "Ứng dụng có tự động gia hạn và trừ tiền không?",
+    "Tuyệt đối không. Khi hết hạn, bạn sẽ chủ động quyết định việc tiếp tục đồng hành hay không. Chúng tôi không bao giờ tự động lưu hay trừ tiền trong thẻ của bạn. Ngoài ra, cam kết hoàn tiền 100% trong vòng 7 ngày nếu trải nghiệm không làm bạn hài lòng.",
   ],
 ] as const;
 
@@ -351,7 +351,7 @@ export function LandingDirectionC() {
         <div className="ldc-hero-grid max-w-[1200px] mx-auto grid items-center gap-14" style={{ gridTemplateColumns: "1.05fr 1fr" }}>
           <div>
             <Mono style={{ color: T.goldDeep, fontSize: 11.5, letterSpacing: "0.22em" }}>
-              LỊCH ĐIỆN TỬ CÁ NHÂN · 2026
+              LỊCH BẢN MỆNH CÁ NHÂN · 2026
             </Mono>
             <h1 className="ldc-hero-h1 font-display font-extrabold uppercase leading-[0.9] my-5" style={{ fontSize: 96.5, letterSpacing: "-0.03em", color: T.ink }}>
               Đây là
@@ -364,14 +364,14 @@ export function LandingDirectionC() {
               .
             </h1>
             <p className="font-serif text-[19.5px] leading-relaxed m-0 max-w-[460px]" style={{ color: T.ink2 }}>
-              Không để dùng khi cần mới tra. Không phải công cụ.
+              Không chỉ để tra cứu những khi có sự vụ. Không mang tính công cụ sáo mòn.
               <br />
-              <strong style={{ color: T.ink, fontWeight: 600 }}>365 trang lịch tờ điện tử</strong> — mỗi trang chấm sẵn theo lá số tứ trụ của bạn.
+              <strong style={{ color: T.ink, fontWeight: 600 }}>365 trang lịch tờ truyền thống</strong> — mỗi tờ mở ra đều đã được chấm sẵn cát hung dựa trên lá số Tứ Trụ bản mệnh của riêng bạn.
             </p>
             <div className="mt-7 px-[18px] py-4" style={{ background: "rgba(154,124,34,0.06)", borderLeft: `3px solid ${T.goldDeep}` }}>
-              <Mono style={{ color: T.goldDeep, fontSize: 10.5, letterSpacing: "0.18em" }}>MỖI SÁNG</Mono>
+              <Mono style={{ color: T.goldDeep, fontSize: 10.5, letterSpacing: "0.18em" }}>MỖI SỚM MAI</Mono>
               <p className="font-serif italic text-sm mt-1 mb-0 leading-snug" style={{ color: T.ink }}>
-                &ldquo;Lật trang hôm nay. Xem hôm nay mệnh mình thế nào.&rdquo;
+                &ldquo;Nhẹ nhàng lật tờ lịch mới. Thấu suốt năng lượng ngày hôm nay để làm chủ nhân duyên, đón lành tránh dữ.&rdquo;
               </p>
             </div>
             <div className="mt-7 flex flex-wrap gap-3.5 items-center">
@@ -380,10 +380,10 @@ export function LandingDirectionC() {
                 className="px-8 py-[18px] font-display font-bold text-[15.5px] uppercase no-underline"
                 style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em", boxShadow: "0 12px 24px rgba(29,49,41,0.18)" }}
               >
-                Lập lịch của tôi
+                Khởi tạo lịch bản mệnh
               </Link>
               <div className="font-serif text-[13.5px] leading-snug" style={{ color: T.muted }}>
-                30 giây · không cần thẻ
+                Khởi tạo trong 30 giây · Trải nghiệm ngay miễn phí
               </div>
             </div>
           </div>
@@ -394,7 +394,7 @@ export function LandingDirectionC() {
       {/* Ritual */}
       <section id="lich" style={{ background: T.forest, color: T.cream, padding: "88px 6vw", borderTop: "1px solid rgba(197,165,90,0.15)" }}>
         <div className="max-w-[1200px] mx-auto">
-          <SectionKicker dark>Mỗi sáng một trang</SectionKicker>
+          <SectionKicker dark>Nếp lịch tờ truyền thống</SectionKicker>
           <h2 className="ldc-ritual-h2 font-display font-extrabold uppercase leading-none max-w-[800px]" style={{ fontSize: 64.5, letterSpacing: "-0.02em" }}>
             Như lật{" "}
             <span className="font-serif italic font-bold normal-case" style={{ color: T.gold }}>
@@ -408,8 +408,8 @@ export function LandingDirectionC() {
             .
           </h2>
           <p className="font-serif text-[17.5px] leading-relaxed mt-5 max-w-[640px]" style={{ color: "rgba(237,231,211,0.72)" }}>
-            Sáng mở ra thấy trang hôm nay đã chấm sẵn theo mệnh bạn.{" "}
-            <strong style={{ color: T.cream, fontWeight: 600 }}>Không phải tra cứu — là thói quen hằng ngày</strong>.
+            Thói quen lật tờ lịch mới mỗi sớm mai — nay được viết riêng cho bản mệnh của bạn.{" "}
+            <strong style={{ color: T.cream, fontWeight: 600 }}>Không còn mò mẫm sách cổ, không cần tự bấm đốt ngón tay, cát hung ngày mới hiển thị tỏ tường hằng ngày.</strong>
           </p>
           <div className="ldc-ritual-pages mt-14 grid gap-6" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
             {[
@@ -461,12 +461,12 @@ export function LandingDirectionC() {
       {/* Personalization */}
       <section id="ca-nhan-hoa" style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[1200px] mx-auto">
-          <SectionKicker>Cá nhân hoá</SectionKicker>
+          <SectionKicker>Cá nhân hoá bản mệnh</SectionKicker>
           <h2 className="ldc-personal-h2 font-display font-extrabold uppercase leading-none max-w-[920px]" style={{ fontSize: 64.5, letterSpacing: "-0.02em" }}>
-            Cùng <span style={{ color: T.red }}>ngày 26.05</span> —<br />
-            khác mệnh,{" "}
+            Cùng <span style={{ color: T.red }}>một sớm mai</span> —<br />
+            khác bản mệnh,{" "}
             <em className="font-serif font-bold not-italic" style={{ color: T.goldDeep }}>
-              khác lành dữ
+              khác hanh thông lành dữ
             </em>
             .
           </h2>
@@ -511,11 +511,11 @@ export function LandingDirectionC() {
       {/* Year spread */}
       <section style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[1200px] mx-auto">
-          <SectionKicker>Cả năm trong tay</SectionKicker>
+          <SectionKicker>Tỏ tường bốn mùa</SectionKicker>
           <h2 className="ldc-year-h2 font-display font-extrabold uppercase leading-[1.02] max-w-[880px]" style={{ fontSize: 56.5, letterSpacing: "-0.02em" }}>
-            365 ngày ·{" "}
+            365 ngày cát hung ·{" "}
             <span className="font-serif italic font-bold normal-case" style={{ color: T.goldDeep }}>
-              đã chấm sẵn
+              định vị tỏ tường
             </span>{" "}
             cho riêng bạn.
           </h2>
@@ -558,7 +558,7 @@ export function LandingDirectionC() {
       {/* Pricing */}
       <section id="bang-gia" style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[1200px] mx-auto">
-          <SectionKicker>Bảng giá</SectionKicker>
+          <SectionKicker>Gói đồng hành bản mệnh</SectionKicker>
           <div
             className="relative ldc-pricing-hero"
             style={{
@@ -574,9 +574,9 @@ export function LandingDirectionC() {
             </div>
             <div className="ldc-pricing-tier-grid grid items-center gap-12" style={{ gridTemplateColumns: "1.4fr 1fr" }}>
               <div>
-                <Mono style={{ color: T.gold, fontSize: 11.5, letterSpacing: "0.22em" }}>LỊCH ĐINH MÙI 2027 · 1 NĂM</Mono>
+                <Mono style={{ color: T.gold, fontSize: 11.5, letterSpacing: "0.22em" }}>LỊCH ĐINH MÙI 2027 · TRỌN NĂM</Mono>
                 <h3 className="ldc-pricing-h3 font-display font-extrabold uppercase leading-[0.96] mt-2.5" style={{ fontSize: 56.5, letterSpacing: "-0.02em" }}>
-                  Lịch của bạn
+                  Lịch bản mệnh
                   <br />
                   <span className="font-serif italic font-bold normal-case" style={{ color: T.gold }}>
                     cho cả năm
@@ -587,22 +587,22 @@ export function LandingDirectionC() {
                   className="mt-7 inline-block w-full max-w-md py-[18px] text-center font-display font-extrabold text-sm uppercase no-underline"
                   style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em" }}
                 >
-                  Đặt lịch năm
+                  Đăng ký lịch năm
                 </Link>
               </div>
               <div>
-                <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.18em" }}>BẠN TRẢ</Mono>
+                <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.18em" }}>CHI PHÍ ĐỒNG HÀNH</Mono>
                 <div className="flex items-baseline gap-1.5 mt-2">
-                  <span className="ldc-hero-price font-display font-extrabold leading-[0.9] tabular-nums" style={{ fontSize: 104.5, color: T.gold, letterSpacing: "-0.03em" }}>
-                    799
+                  <span className="ldc-hero-price font-display font-extrabold leading-[0.9] tabular-nums" style={{ fontSize: 72.5, color: T.gold, letterSpacing: "-0.03em" }}>
+                    799.000
                   </span>
-                  <span className="font-display font-bold text-[32.5px]" style={{ color: T.gold }}>
-                    k
+                  <span className="font-display font-bold text-[24.5px]" style={{ color: T.gold }}>
+                    đ
                   </span>
                 </div>
                 <div className="mt-2">
                   <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.14em" }}>
-                    TIẾT KIỆM 298.000Đ · ≈ 27% RẺ HƠN
+                    TIẾT KIỆM 298.000Đ · TỐI ƯU TRỌN VẸN
                   </Mono>
                 </div>
               </div>
@@ -610,8 +610,8 @@ export function LandingDirectionC() {
           </div>
           <div className="ldc-other-tiers mt-9 grid gap-4" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             {[
-              { name: "3 tháng", sub: "Chỉ lịch · dùng thử", price: "299.000", per: "3 tháng" },
-              { name: "6 tháng", sub: "Lịch + luận Tiểu vận", price: "499.000", per: "6 tháng", save: "tiết kiệm 298.000đ" },
+              { name: "3 tháng", sub: "Trải nghiệm lịch bản mệnh · Dùng thử", price: "299.000", per: "3 tháng" },
+              { name: "6 tháng", sub: "Lịch bản mệnh + Luận giải Tiểu vận", price: "499.000", per: "6 tháng", save: "tiết kiệm 298.000đ" },
             ].map((t) => (
               <Link
                 key={t.name}
@@ -643,11 +643,11 @@ export function LandingDirectionC() {
       {/* FAQ */}
       <section id="hoi-dap" style={{ background: T.paper, padding: "88px 6vw", borderTop: `1px solid ${T.hairline}` }}>
         <div className="max-w-[800px] mx-auto">
-          <SectionKicker>Hỏi đáp</SectionKicker>
+          <SectionKicker>Giải đáp thắc mắc</SectionKicker>
           <h2 className="font-display font-extrabold uppercase leading-tight mb-8" style={{ fontSize: 48.5, letterSpacing: "-0.015em" }}>
-            6 câu{" "}
+            Vài điều{" "}
             <span className="font-serif italic font-bold normal-case" style={{ color: T.goldDeep }}>
-              hay gặp nhất
+              tỏ tường thắc mắc
             </span>
           </h2>
           {FAQS.map(([q, a], i) => (
@@ -685,10 +685,10 @@ export function LandingDirectionC() {
         <div className="relative max-w-[800px] mx-auto">
           <Mono style={{ color: T.gold, fontSize: 11.5, letterSpacing: "0.24em" }}>BẮT ĐẦU</Mono>
           <h2 className="ldc-cta-h2 font-display font-extrabold uppercase leading-[0.94] mt-4" style={{ fontSize: 88.5, letterSpacing: "-0.02em" }}>
-            Trang đầu tiên
+            Trải nghiệm miễn phí
             <br />
             <span className="font-serif italic font-bold normal-case" style={{ color: T.gold }}>
-              miễn phí — 30 giây
+              khởi tạo trong 30 giây
             </span>
             .
           </h2>
@@ -697,7 +697,7 @@ export function LandingDirectionC() {
             className="inline-block mt-8 px-10 py-5 font-display font-bold text-base uppercase no-underline"
             style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em", boxShadow: "0 16px 32px rgba(197,165,90,0.25)" }}
           >
-            Lập lịch của tôi →
+            Khởi tạo lịch bản mệnh →
           </Link>
         </div>
       </section>
@@ -732,8 +732,8 @@ export function LandingDirectionC() {
         style={{ display: "none", background: "rgba(240,236,226,0.96)", borderTop: `1px solid ${T.hairline}`, padding: "12px 18px" }}
       >
         <div className="flex-1 min-w-0">
-          <Mono style={{ color: T.muted, fontSize: 9.5 }}>30 giây · không cần thẻ</Mono>
-          <div className="font-display font-bold text-[13.5px] uppercase">Lập lịch của tôi</div>
+          <Mono style={{ color: T.muted, fontSize: 9.5 }}>Khởi tạo nhanh chóng · Trải nghiệm ngay</Mono>
+          <div className="font-display font-bold text-[13.5px] uppercase">Lịch bản mệnh Tứ Trụ</div>
         </div>
         <Link to="/dang-ky" className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
           Bắt đầu →

@@ -1,3 +1,5 @@
+import { validateProfileNgaySinhIso } from "~/lib/ngay-sinh-range";
+
 /**
  * Landing CTA form options — shared by `landing.tsx` and signup prefill (`dang-ky`).
  * Labels must match the marketing `<select>` values exactly.
@@ -81,12 +83,6 @@ export function parseLandingDobDdMmYyyy(input: string): LandingDobParseResult {
   const dd = Number(m[1]);
   const mm = Number(m[2]);
   const yyyy = Number(m[3]);
-  if (yyyy < 1900 || yyyy > 2100) {
-    return {
-      ok: false,
-      message: "Năm sinh nên từ 1900 đến 2100.",
-    };
-  }
   if (mm < 1 || mm > 12) {
     return { ok: false, message: "Tháng phải từ 01 đến 12." };
   }
@@ -105,6 +101,8 @@ export function parseLandingDobDdMmYyyy(input: string): LandingDobParseResult {
     };
   }
   const iso = `${yyyy}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`;
+  const range = validateProfileNgaySinhIso(iso);
+  if (!range.ok) return range;
   return { ok: true, iso };
 }
 
@@ -122,7 +120,12 @@ export function parseLandingSignupPrefill(
   let ngaySinh: string | null = null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(dobRaw)) {
     const d = new Date(`${dobRaw}T12:00:00`);
-    if (!Number.isNaN(d.getTime())) ngaySinh = dobRaw;
+    if (
+      !Number.isNaN(d.getTime()) &&
+      validateProfileNgaySinhIso(dobRaw).ok
+    ) {
+      ngaySinh = dobRaw;
+    }
   }
 
   const gioRaw = sp.get("gio")?.trim() ?? "";

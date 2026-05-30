@@ -33,6 +33,7 @@ import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
+import { validateProfileNgaySinhIso } from "~/lib/ngay-sinh-range";
 import {
   returnToFromSearchParams,
   stashPendingReturnTo,
@@ -196,6 +197,11 @@ export default function DangKy() {
       toast.error("Nhập ngày sinh theo định dạng DD/MM/YYYY.");
       return;
     }
+    const ngayRange = validateProfileNgaySinhIso(ngayIso);
+    if (!ngayRange.ok) {
+      toast.error(ngayRange.message);
+      return;
+    }
     if (!gioiTinh) {
       toast.error("Chọn giới tính.");
       return;
@@ -333,9 +339,9 @@ export default function DangKy() {
         >
           {completingProfile
             ? oauthLabel
-              ? `Đã đăng nhập bằng ${oauthLabel}. Nhập giới tính, ngày sinh và canh giờ để lập lá số — không cần mật khẩu mới.`
-              : "Nhập giới tính, ngày sinh và canh giờ để lập lá số — tài khoản của bạn đã được tạo."
-            : "Lá số Bát Tự Tứ Trụ cần chính xác giới tính, ngày tháng năm sinh và canh giờ. Sai lệch một canh giờ, toàn bộ luận đoán cát hung sẽ thay đổi."}
+              ? `Đã liên kết tài khoản qua ${oauthLabel}. Xin vui lòng cung cấp giới tính, ngày sinh và canh giờ để thiết lập lá số Tứ Trụ bản mệnh riêng biệt.`
+              : "Tài khoản của bạn đã được khởi tạo thành công. Xin vui lòng cung cấp giới tính, ngày sinh và canh giờ để lập lá số bản mệnh."
+            : "Lá số Tứ Trụ (Bát Tự) được thiết lập dựa trên giới tính, ngày tháng năm sinh và canh giờ sinh chính xác của bạn. Sai lệch dù chỉ một khắc, toàn bộ quỹ đạo vận số và các phương án định điểm cát hung hằng ngày sẽ thay đổi."}
         </p>
 
         <div
@@ -446,7 +452,7 @@ export default function DangKy() {
                   lineHeight: 1.45,
                 }}
               >
-                Tính năng nhập ngày sinh Âm lịch đang được cập nhật. Vui lòng nhập ngày Dương lịch tương ứng để lập lá số Tứ Trụ.
+                Hệ thống đang hoàn thiện tính năng quy đổi trực tiếp từ ngày sinh Âm lịch. Để không gián đoạn quá trình lập lá số Tứ Trụ, xin vui lòng quy đổi và nhập ngày Dương lịch tương ứng.
               </p>
             ) : null}
           </div>
@@ -478,7 +484,7 @@ export default function DangKy() {
                   color: "rgba(237,231,211,0.45)",
                 }}
               >
-                Tối thiểu 8 ký tự · hoặc dùng Google ở màn trước
+                Mật khẩu cần tối thiểu 8 ký tự để bảo mật tài khoản.
               </div>
             </div>
           ) : null}
@@ -500,7 +506,7 @@ export default function DangKy() {
             color: "rgba(237,231,211,0.45)",
           }}
         >
-          Bảo mật thông tin bản mệnh · Không chia sẻ dữ liệu
+          Cam kết bảo mật tuyệt đối thông tin bản mệnh · Không chia sẻ cho bên thứ ba.
         </div>
       </form>
     </CForestShell>
