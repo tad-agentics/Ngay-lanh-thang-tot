@@ -462,6 +462,15 @@ verify_jwt = false
 [functions.admin-site-banner]
 verify_jwt = false
 
+[functions.admin-users]
+verify_jwt = false
+
+[functions.admin-user-entitlements]
+verify_jwt = false
+
+[functions.admin-orders]
+verify_jwt = false
+
 # G3 — expire pending PayOS orders older than 24h (daily cron).
 [functions.cron-payos-expire-orphans]
 verify_jwt = false
