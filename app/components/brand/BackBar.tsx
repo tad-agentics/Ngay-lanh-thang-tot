@@ -19,6 +19,8 @@ interface BackBarProps {
   accent?: string;
   /** Right-side slot — e.g. actions or badges. */
   endAdornment?: ReactNode;
+  /** Hide chevron back control (e.g. OAuth onboarding must complete). */
+  showBack?: boolean;
 }
 
 export function BackBar({
@@ -29,6 +31,7 @@ export function BackBar({
   dark = false,
   accent,
   endAdornment,
+  showBack = true,
 }: BackBarProps) {
   const navigate = useNavigate();
   const handleBack = onBack ?? (() => void navigate(-1));
@@ -48,30 +51,34 @@ export function BackBar({
         zIndex: 5,
       }}
     >
-      <button
-        type="button"
-        onClick={handleBack}
-        aria-label="Quay lại"
-        style={{
-          minWidth: 44,
-          minHeight: 44,
-          margin: "-8px 0",
-          padding: "0 4px 0 0",
-          background: "transparent",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: ac,
-          cursor: "pointer",
-          flexShrink: 0,
-          fontFamily: "var(--serif)",
-          fontSize: 20.5,
-          lineHeight: 1,
-        }}
-      >
-        ‹
-      </button>
+      {showBack ? (
+        <button
+          type="button"
+          onClick={handleBack}
+          aria-label="Quay lại"
+          style={{
+            minWidth: 44,
+            minHeight: 44,
+            margin: "-8px 0",
+            padding: "0 4px 0 0",
+            background: "transparent",
+            border: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: ac,
+            cursor: "pointer",
+            flexShrink: 0,
+            fontFamily: "var(--serif)",
+            fontSize: 20.5,
+            lineHeight: 1,
+          }}
+        >
+          ‹
+        </button>
+      ) : (
+        <div style={{ width: 44, flexShrink: 0 }} aria-hidden />
+      )}
 
       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.2 }}>
         {subtitle ? (

@@ -5,7 +5,7 @@ import { useProfile } from "~/hooks/useProfile";
 import { canUseCalendar, isNeverSubscribedUser } from "~/lib/entitlements";
 import { useAuth } from "~/lib/auth";
 import { invokeBatTu } from "~/lib/bat-tu";
-import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
+import { profileCanUseBatTu, profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
   mergeDayDetailScoreIntoHome,
   parseNgayHomNayForHome,
@@ -29,7 +29,7 @@ export function useTodayLichData() {
 
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
   const menh = laso?.menh ?? null;
-  const canBatTu = Boolean(profileToBatTuPersonQuery(profile).birth_date);
+  const canBatTu = profileCanUseBatTu(profile);
 
   useEffect(() => {
     if (profileLoading) return;
@@ -48,7 +48,11 @@ export function useTodayLichData() {
       setLoading(false);
       setToday(null);
       setRawPayload(null);
-      setError(profile && !canBatTu ? "Cần ngày sinh trên hồ sơ để mở lịch." : null);
+      setError(
+        profile && !canBatTu
+          ? "Hoàn tất lập lá số (ngày sinh và canh giờ) để mở lịch."
+          : null,
+      );
       return;
     }
 

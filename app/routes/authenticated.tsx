@@ -18,7 +18,10 @@ import {
   legacyAppRedirect,
   sanitizeReturnTo,
 } from "~/lib/nav-config";
-import { stashPendingReturnTo } from "~/lib/pending-return-to";
+import {
+  onboardingInProgressPath,
+  stashPendingReturnTo,
+} from "~/lib/pending-return-to";
 import { ProfileProvider } from "~/lib/profile-context";
 import {
   isSubExpiredBlocked,
@@ -126,7 +129,16 @@ function AuthenticatedShellWithProfile({
 
   const needsOnboarding = profile.onboarding_completed_at == null;
   if (needsOnboarding && !isOnboardingExemptPath(location.pathname)) {
-    return <Navigate to="/dang-ky" replace />;
+    return (
+      <Navigate
+        to={onboardingInProgressPath({
+          onboarding_completed_at: profile.onboarding_completed_at,
+          ngay_sinh: profile.ngay_sinh,
+          gio_sinh: profile.gio_sinh,
+        })}
+        replace
+      />
+    );
   }
 
   if (

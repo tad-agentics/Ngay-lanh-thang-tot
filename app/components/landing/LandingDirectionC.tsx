@@ -376,7 +376,7 @@ export function LandingDirectionC() {
             </div>
             <div className="mt-7 flex flex-wrap gap-3.5 items-center">
               <Link
-                to="/gio-sinh"
+                to="/dang-ky"
                 className="px-8 py-[18px] font-display font-bold text-[15.5px] uppercase no-underline"
                 style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em", boxShadow: "0 12px 24px rgba(29,49,41,0.18)" }}
               >
@@ -693,7 +693,7 @@ export function LandingDirectionC() {
             .
           </h2>
           <Link
-            to="/gio-sinh"
+            to="/dang-ky"
             className="inline-block mt-8 px-10 py-5 font-display font-bold text-base uppercase no-underline"
             style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em", boxShadow: "0 16px 32px rgba(197,165,90,0.25)" }}
           >
@@ -735,7 +735,7 @@ export function LandingDirectionC() {
           <Mono style={{ color: T.muted, fontSize: 9.5 }}>30 giây · không cần thẻ</Mono>
           <div className="font-display font-bold text-[13.5px] uppercase">Lập lịch của tôi</div>
         </div>
-        <Link to="/gio-sinh" className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
+        <Link to="/dang-ky" className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
           Bắt đầu →
         </Link>
       </div>

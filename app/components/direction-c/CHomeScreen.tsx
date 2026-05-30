@@ -95,7 +95,7 @@ export function CHomeScreen() {
             style={{ color: CT.muted, lineHeight: 1.55 }}
           >
             Hoàn thành{" "}
-            <Link to="/gio-sinh" className="underline" style={{ color: CT.goldDeep }}>
+            <Link to="/dang-ky" className="underline" style={{ color: CT.goldDeep }}>
               lập lịch
             </Link>{" "}
             để xem trang hôm nay.

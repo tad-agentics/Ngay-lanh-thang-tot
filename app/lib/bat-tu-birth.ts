@@ -196,7 +196,12 @@ export function timeInputToBatTuBirthTime(value: string): number | undefined {
   return clockHourToBatTuBirthTime(h);
 }
 
-/** Query fields shared by many GET endpoints in https://tu-tru-api.fly.dev/openapi.json */
+/** Profile has ngày sinh + giờ sinh for tu-tru / lịch cá nhân. */
+export function profileCanUseBatTu(profile: ProfileRow | null): boolean {
+  const q = profileToBatTuPersonQuery(profile);
+  return Boolean(q.birth_date && q.birth_time !== undefined);
+}
+
 export function profileToBatTuPersonQuery(profile: ProfileRow | null): {
   birth_date?: string;
   birth_time?: number;

@@ -51,6 +51,13 @@ export function profileHasBirthChartInput(
   return hasBirthDate && hasGioSinh;
 }
 
+/** Route for users still in first-run (before `onboarding_completed_at`). */
+export function onboardingInProgressPath(
+  prof: PostLoginProfile | null | undefined,
+): "/dang-ky" | "/dang-dung-lich" {
+  return profileHasBirthChartInput(prof) ? "/dang-dung-lich" : "/dang-ky";
+}
+
 /** After login — keep pending return_to through first-run if onboarding incomplete. */
 export function destinationAfterAuth(
   onboardingComplete: boolean,

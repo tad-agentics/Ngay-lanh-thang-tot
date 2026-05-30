@@ -110,7 +110,7 @@ export function CLaSoFullScreen() {
             Chưa có dữ liệu lá số. Hoàn thành nhập giờ sinh để lập lá số Tứ Trụ riêng biệt của bạn.
           </p>
           <Link
-            to="/gio-sinh"
+            to="/dang-ky"
             className="mt-4 inline-block py-3 px-6 font-[family-name:var(--display-2)] text-xs font-extrabold uppercase tracking-wider no-underline"
             style={{ ...DISPLAY2, background: CT.forest, color: CT.cream }}
           >

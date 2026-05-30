@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { BirthHourCanhPicker } from "~/components/auth/BirthHourCanhPicker";
+import { GioiTinhPick } from "~/components/auth/GioiTinhPick";
 import {
   btnPrimaryGold,
   C,
@@ -74,6 +75,9 @@ export default function DangKy() {
     prefill.ngaySinh ? isoYmdToDdMmYyyyInput(prefill.ngaySinh) : "",
   );
   const [password, setPassword] = useState("");
+  const [gioiTinh, setGioiTinh] = useState<"nam" | "nu" | null>(
+    prefill.gioiTinh ?? null,
+  );
   const [selectedCanh, setSelectedCanh] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [lunarNote, setLunarNote] = useState(false);
@@ -83,10 +87,7 @@ export default function DangKy() {
     [ngaySinh],
   );
 
-  const gioiTinhForPicker =
-    profile?.gioi_tinh === "nam" || profile?.gioi_tinh === "nu"
-      ? profile.gioi_tinh
-      : prefill.gioiTinh;
+  const gioiTinhForPicker = gioiTinh;
 
   useEffect(() => {
     if (!user) return;
@@ -105,6 +106,9 @@ export default function DangKy() {
       setNgaySinh((prev) =>
         prev.trim() ? prev : isoYmdToDdMmYyyyInput(profile.ngay_sinh!),
       );
+    }
+    if (profile.gioi_tinh === "nam" || profile.gioi_tinh === "nu") {
+      setGioiTinh((prev) => prev ?? profile.gioi_tinh);
     }
     const idx = canhPickerIndexFromGioSinh(profile.gio_sinh);
     if (idx != null) {
@@ -128,11 +132,17 @@ export default function DangKy() {
     });
   }, [authLoading, user, navigate]);
 
-  async function persistBirthProfile(uid: string, ngayIso: string, gioSinh: string) {
+  async function persistBirthProfile(
+    uid: string,
+    ngayIso: string,
+    gioSinh: string,
+    gioiTinhValue: "nam" | "nu",
+  ) {
     const patch = {
       display_name: fullName.trim() || undefined,
       ngay_sinh: ngayIso,
       gio_sinh: gioSinh,
+      gioi_tinh: gioiTinhValue,
     };
     const { error: profileError } = await supabase
       .from("profiles")
@@ -141,7 +151,10 @@ export default function DangKy() {
     if (profileError) return profileError.message;
 
     if (landingSignupPrefillHasAny(prefill)) {
-      const pe = await applyLandingPrefillToProfile(uid, prefill);
+      const pe = await applyLandingPrefillToProfile(uid, prefill, {
+        skipBirthFields: true,
+        skipDisplayName: Boolean(fullName.trim()),
+      });
       if (pe) {
         return "Đã lưu lá số nhưng chưa áp dụng được thông tin từ trang chủ.";
       }
@@ -157,6 +170,10 @@ export default function DangKy() {
       toast.error("Nhập ngày sinh theo định dạng DD/MM/YYYY.");
       return;
     }
+    if (!gioiTinh) {
+      toast.error("Chọn giới tính.");
+      return;
+    }
     if (selectedCanh == null) {
       toast.error("Chọn canh giờ sinh.");
       return;
@@ -170,7 +187,12 @@ export default function DangKy() {
     if (completingProfile && user) {
       setBusy(true);
       stashPendingReferralCode(referralFromUrl);
-      const err = await persistBirthProfile(user.id, ngayIso, gioSinh);
+      const err = await persistBirthProfile(
+        user.id,
+        ngayIso,
+        gioSinh,
+        gioiTinh,
+      );
       if (err) {
         toast.error(err);
         setBusy(false);
@@ -212,7 +234,7 @@ export default function DangKy() {
     const uid = data.user?.id;
 
     if (session && uid) {
-      const err = await persistBirthProfile(uid, ngayIso, gioSinh);
+      const err = await persistBirthProfile(uid, ngayIso, gioSinh, gioiTinh);
       if (err) {
         toast.error(
           err.startsWith("Đã lưu")
@@ -237,6 +259,7 @@ export default function DangKy() {
     <CForestShell>
       <BackBar
         dark
+        showBack={!completingProfile}
         onBack={() =>
           navigate(
             referralFromUrl
@@ -284,9 +307,9 @@ export default function DangKy() {
         >
           {completingProfile
             ? oauthLabel
-              ? `Đã đăng nhập bằng ${oauthLabel}. Nhập ngày sinh và canh giờ để lập lá số — không cần mật khẩu mới.`
-              : "Nhập ngày sinh và canh giờ để lập lá số — tài khoản của bạn đã được tạo."
-            : "Lá số Bát Tự Tứ Trụ cần chính xác ngày, tháng, năm và giờ sinh. Sai lệch một canh giờ, toàn bộ luận đoán cát hung sẽ thay đổi."}
+              ? `Đã đăng nhập bằng ${oauthLabel}. Nhập giới tính, ngày sinh và canh giờ để lập lá số — không cần mật khẩu mới.`
+              : "Nhập giới tính, ngày sinh và canh giờ để lập lá số — tài khoản của bạn đã được tạo."
+            : "Lá số Bát Tự Tứ Trụ cần chính xác giới tính, ngày tháng năm sinh và canh giờ. Sai lệch một canh giờ, toàn bộ luận đoán cát hung sẽ thay đổi."}
         </p>
 
         <div
@@ -339,6 +362,9 @@ export default function DangKy() {
               />
             </div>
           ) : null}
+
+          <GioiTinhPick value={gioiTinh} onChange={setGioiTinh} />
+
           <div>
             <div
               style={{
@@ -398,6 +424,14 @@ export default function DangKy() {
               </p>
             ) : null}
           </div>
+
+          <BirthHourCanhPicker
+            birthDateIso={ngayIsoForPicker}
+            gioiTinh={gioiTinhForPicker}
+            selected={selectedCanh}
+            onSelect={setSelectedCanh}
+          />
+
           {!completingProfile ? (
             <div>
               <div style={inputLabel}>Mật khẩu</div>
@@ -422,13 +456,6 @@ export default function DangKy() {
               </div>
             </div>
           ) : null}
-
-          <BirthHourCanhPicker
-            birthDateIso={ngayIsoForPicker}
-            gioiTinh={gioiTinhForPicker}
-            selected={selectedCanh}
-            onSelect={setSelectedCanh}
-          />
         </div>
 
         <button

@@ -5,6 +5,7 @@ import {
   consumePendingReturnTo,
   destinationAfterAuth,
   destinationAfterOnboarding,
+  onboardingInProgressPath,
   readPendingReturnTo,
   returnToFromSearchParams,
   stashPendingReturnTo,
@@ -47,6 +48,23 @@ describe("pending-return-to", () => {
 
   it("sends incomplete birth chart input to dang-ky", () => {
     expect(destinationAfterAuth(false, false)).toBe("/dang-ky");
+  });
+
+  it("onboardingInProgressPath respects saved birth fields", () => {
+    expect(
+      onboardingInProgressPath({
+        onboarding_completed_at: null,
+        ngay_sinh: "1990-01-01",
+        gio_sinh: null,
+      }),
+    ).toBe("/dang-ky");
+    expect(
+      onboardingInProgressPath({
+        onboarding_completed_at: null,
+        ngay_sinh: "1990-01-01",
+        gio_sinh: "05:00:00",
+      }),
+    ).toBe("/dang-dung-lich");
   });
 
   it("appends return_to to hrefs", () => {
