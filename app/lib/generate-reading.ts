@@ -1,6 +1,7 @@
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 import { generateReadingFunctionName } from "~/lib/generate-reading-functions";
+import { sanitizeNlttLuanProse } from "~/lib/nltt-luan-prose";
 import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
@@ -110,7 +111,9 @@ function normalizeLaSoSections(
         ? r.title.trim().slice(0, MAX_LUAN_TITLE_CHARS)
         : "";
     let text =
-      typeof r.text === "string" ? r.text.trim() : "";
+      typeof r.text === "string"
+        ? sanitizeNlttLuanProse(r.text.trim())
+        : "";
     if (text.length > MAX_LUAN_TEXT_CHARS) {
       text = text.slice(0, MAX_LUAN_TEXT_CHARS);
     }

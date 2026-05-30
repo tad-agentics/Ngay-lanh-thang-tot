@@ -1,3 +1,4 @@
+import { sanitizeNlttLuanProse } from "../../nltt-luan-prose.ts";
 import type { LaSoChiTietSection } from "../core/types.ts";
 import {
   MIN_MENH_PREVIEW_CHARS,
@@ -68,7 +69,9 @@ function normalizeLaSoAspectKey(key: string): string | null {
 
 function coerceLaSoSectionText(v: unknown): string | null {
   if (typeof v === "string") {
-    const t = v.trim().replace(/^\s*[-*•]\s+/gm, "").trim();
+    const t = sanitizeNlttLuanProse(
+      v.trim().replace(/^\s*[-*•]\s+/gm, "").trim(),
+    );
     return t.length > 0 ? t : null;
   }
   if (Array.isArray(v)) {

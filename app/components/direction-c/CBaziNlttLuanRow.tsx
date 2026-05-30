@@ -1,7 +1,13 @@
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { LogoMark, Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+import {
+  sanitizeNlttLuanProse,
+  splitNlttLuanParagraphs,
+} from "~/lib/nltt-luan-prose";
+
+const TYPING_MS_PER_CHAR = 18;
 
 /** Logo + 「NLTT luận」 kicker — cùng pattern `CTodayReasoning` / `CAiTypedScreen`. */
 export function CBaziNlttLuanRow({
@@ -40,10 +46,104 @@ export function CBaziNlttLuanRow({
   );
 }
 
+function NlttLuanTypingCursor() {
+  return (
+    <>
+      <span
+        aria-hidden
+        className="inline-block align-[-2px] ml-px"
+        style={{
+          width: 6,
+          height: 13,
+          background: CT.ink,
+          animation: "b-cursor-blink 1s steps(2) infinite",
+        }}
+      />
+      <style>{`@keyframes b-cursor-blink { 50% { opacity: 0; } }`}</style>
+    </>
+  );
+}
+
+function CBaziNlttLuanTypingBody({
+  fullText,
+  loading,
+  instant,
+  onTypingDoneChange,
+}: {
+  fullText: string;
+  loading: boolean;
+  instant: boolean;
+  onTypingDoneChange?: (done: boolean) => void;
+}) {
+  const [n, setN] = useState(0);
+
+  useEffect(() => {
+    if (instant || loading) {
+      setN(fullText.length);
+      return;
+    }
+    setN(0);
+  }, [fullText, instant, loading]);
+
+  useEffect(() => {
+    if (loading || instant || !fullText || n >= fullText.length) return;
+    const id = window.setTimeout(() => setN((prev) => prev + 1), TYPING_MS_PER_CHAR);
+    return () => window.clearTimeout(id);
+  }, [n, fullText, loading, instant]);
+
+  const done = !loading && fullText.length > 0 && n >= fullText.length;
+
+  useEffect(() => {
+    onTypingDoneChange?.(done || instant || !fullText);
+  }, [done, instant, fullText, onTypingDoneChange]);
+
+  if (loading && !fullText) {
+    return (
+      <p
+        className="mt-1 font-serif text-sm italic leading-relaxed"
+        style={{ color: CT.ink2 }}
+      >
+        Đang luận giải…
+      </p>
+    );
+  }
+
+  const visible = fullText.slice(0, Math.min(n, fullText.length));
+  const paragraphs = done ? splitNlttLuanParagraphs(fullText) : null;
+
+  if (done && paragraphs && paragraphs.length > 1) {
+    return (
+      <div className="mt-1 space-y-3">
+        {paragraphs.map((para) => (
+          <p
+            key={para.slice(0, 48)}
+            className="font-serif text-[14px] italic leading-[1.6]"
+            style={{ color: CT.ink2 }}
+          >
+            {para}
+          </p>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <p
+      className="mt-1 font-serif text-[14px] italic leading-[1.6] whitespace-pre-wrap"
+      style={{ color: CT.ink2 }}
+    >
+      {visible}
+      {!loading && fullText && !done ? <NlttLuanTypingCursor /> : null}
+    </p>
+  );
+}
+
 type CBaziNlttLuanProseProps = {
   text?: string | null;
   loading?: boolean;
   loadingMessage?: string;
+  /** Skip typewriter when prose was restored from cache / already shown. */
+  instant?: boolean;
   /** Lá số đã có nhưng luận giải trống (Edge/LLM lỗi hoặc rate limit). */
   failed?: boolean;
   failedMessage?: string;
@@ -52,48 +152,34 @@ type CBaziNlttLuanProseProps = {
   compact?: boolean;
 };
 
-function CBaziNlttLuanParagraphs({ text }: { text: string }) {
-  const paragraphs = text.split(/\n\n+/).map((p) => p.trim()).filter(Boolean);
-  if (paragraphs.length <= 1) {
-    return (
-      <p
-        className="mt-1 text-[14px] leading-relaxed whitespace-pre-wrap"
-        style={{ color: CT.ink2 }}
-      >
-        {text}
-      </p>
-    );
-  }
-  return (
-    <div className="mt-1 space-y-3">
-      {paragraphs.map((para) => (
-        <p
-          key={para.slice(0, 48)}
-          className="text-[14px] leading-relaxed"
-          style={{ color: CT.ink2 }}
-        >
-          {para}
-        </p>
-      ))}
-    </div>
-  );
-}
-
-/** DeepSeek luận giải trong màn Bát Tự — logo NLTT + kicker + nội dung. */
+/** DeepSeek luận giải trong màn Bát Tự — logo NLTT + kicker + typewriter. */
 export function CBaziNlttLuanProse({
   text,
   loading = false,
   loadingMessage = "Đang luận giải…",
+  instant = false,
   failed = false,
   failedMessage = "Chưa tải được luận giải. Thử lại sau vài giây.",
   onRetry,
   className = "mt-3",
   compact = false,
 }: CBaziNlttLuanProseProps) {
-  const hasText = Boolean(text?.trim());
+  const fullText = useMemo(
+    () => sanitizeNlttLuanProse(text?.trim() ?? ""),
+    [text],
+  );
+  const hasText = fullText.length > 0;
+  const [typingDone, setTypingDone] = useState(instant);
+
+  useEffect(() => {
+    if (instant || !hasText) setTypingDone(true);
+    else setTypingDone(false);
+  }, [fullText, instant, hasText]);
+
   if (!loading && !hasText && !failed) return null;
 
-  const kicker = loading ? "NLTT đang luận…" : "NLTT luận";
+  const kicker =
+    loading || (hasText && !typingDone) ? "NLTT đang luận…" : "NLTT luận";
 
   return (
     <CBaziNlttLuanRow kicker={kicker} className={className} compact={compact}>
@@ -124,7 +210,12 @@ export function CBaziNlttLuanProse({
           ) : null}
         </>
       ) : (
-        <CBaziNlttLuanParagraphs text={text!.trim()} />
+        <CBaziNlttLuanTypingBody
+          fullText={fullText}
+          loading={loading}
+          instant={instant}
+          onTypingDoneChange={setTypingDone}
+        />
       )}
     </CBaziNlttLuanRow>
   );
