@@ -26,8 +26,9 @@ describe("baziReadingBirthRevision", () => {
 });
 
 describe("BAZI_READING_DELIVERY_CONTENT_VERSION", () => {
-  it("matches generate-reading GLOBAL_LLM_VER slug", () => {
-    expect(BAZI_READING_DELIVERY_CONTENT_VERSION).toContain("deepseek");
+  it("tracks menh length / prompt generation", () => {
+    expect(BAZI_READING_DELIVERY_CONTENT_VERSION).toContain("menh");
+    expect(BAZI_READING_DELIVERY_CONTENT_VERSION).toContain("1000");
   });
 });
 

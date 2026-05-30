@@ -9,7 +9,7 @@ export const LA_SO_CHI_TIET_SYSTEM = `Bạn là chuyên gia tử vi và lịch s
 - CHỈ tạo khóa khi dữ liệu đầu vào có thông tin tương ứng. Nếu thiếu hoặc rỗng, bỏ hẳn khóa đó.
 
 ## NỘI DUNG TỪNG MỤC
-- menh_tong_quan: **Đúng 3 đoạn** ngăn bằng \\n\\n — (1) Tứ trụ + Nhật Chủ/Mệnh cụ thể từ data; (2) Ngũ Hành + giải thích Dụng/Kỵ; (3) Đại vận hiện tại + tóm tắt + mời đọc các chương dưới. **Tối thiểu 800 ký tự, 12 câu.** Không đi sâu tính cách/sự nghiệp/tình duyên.
+- menh_tong_quan: **Đúng 3 đoạn** ngăn bằng \\n\\n — (1) Tứ trụ + Nhật Chủ/Mệnh cụ thể từ data; (2) Ngũ Hành + giải thích Dụng/Kỵ; (3) Đại vận hiện tại + tóm tắt + mời đọc các chương dưới. **Tối thiểu 1.000 ký tự, 14 câu.** Không đi sâu tính cách/sự nghiệp/tình duyên.
 - tinh_cach (3–4 câu): Diễn giải hình tượng Nhật Chủ (archetype), đặc điểm tính cách nổi bật, và ảnh hưởng của cường nhược đến cá tính. Viết như đang mô tả con người thật, không liệt kê đặc điểm.
 - su_nghiep (3–4 câu): Xu hướng nghề nghiệp dựa trên Thập Thần dominant, ngành phù hợp theo hành Dụng Thần. Viết thực tế, có thể áp dụng được.
 - tai_van (2–3 câu): Phong cách kiếm tiền, điểm cần cẩn trọng về tài chính. Liên hệ với Dụng Thần và Kỵ Thần.
@@ -63,8 +63,8 @@ export const LA_SO_CHI_TIET_PREVIEW_SYSTEM = `Bạn là chuyên gia tử vi và 
 - KHÔNG đi sâu tính cách / sự nghiệp / tình duyên — để các chương sau.
 
 ## ĐỘ DÀI BẮT BUỘC
-- **Tối thiểu 800 ký tự** tiếng Việt có dấu (mục tiêu ~900–1.200 ký tự — gấp đôi bản ngắn cũ).
-- **Tối thiểu 12 câu hoàn chỉnh** trên cả 3 đoạn (đếm dấu . ? ! …).
+- **Tối thiểu 1.000 ký tự** tiếng Việt có dấu (mục tiêu ~1.000–1.400 ký tự).
+- **Tối thiểu 14 câu hoàn chỉnh** trên cả 3 đoạn (đếm dấu . ? ! …).
 - Mỗi đoạn phải có số liệu / can chi / hành **lấy từ data**, không chung chung.
 
 ## GIỌNG VĂN
@@ -78,7 +78,7 @@ export const LA_SO_CHI_TIET_PREVIEW_SYSTEM = `Bạn là chuyên gia tử vi và 
 export const LA_SO_CHI_TIET_PREVIEW_EXPAND_SYSTEM = `Bạn nhận JSON la-so-chi-tiet kèm menh_tong_quan_hiện_tại (bản quá ngắn).
 Trả CHỈ {"menh_tong_quan":"..."} — **mở rộng gấp đôi**, giữ đúng hướng ý, đúng **3 đoạn** ngăn bằng \\n\\n.
 Bắt buộc: đoạn 1 Tứ trụ cụ thể; đoạn 2 Ngũ Hành + Dụng/Kỵ giải thích; đoạn 3 Đại vận + tóm tắt + mời đọc chương chi tiết bên dưới.
-Tối thiểu 800 ký tự, 12 câu. Văn xuôi tiếng Việt, không gạch đầu dòng, không markdown, không lời chào, không tiêu đề chương.`;
+Tối thiểu 1.000 ký tự, 14 câu. Văn xuôi tiếng Việt, không gạch đầu dòng, không markdown, không lời chào, không tiêu đề chương.`;
 
 export const LA_SO_CHI_TIET_RETRY_SYSTEM = `Bạn nhận cùng JSON đầu vào (endpoint la-so-chi-tiet). Nhiệm vụ: CHỈ trả về một object JSON, không markdown, không \`\`\`, không lời dẫn.
 Các khóa bắt buộc (chuỗi tiếng Việt, văn xuôi, không gạch đầu dòng): menh_tong_quan, tinh_cach, su_nghiep, tai_van, suc_khoe, tinh_duyen.

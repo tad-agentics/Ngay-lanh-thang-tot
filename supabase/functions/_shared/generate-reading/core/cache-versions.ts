@@ -1,8 +1,8 @@
 /** Cache invalidation versions per endpoint/prompt. */
 
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
-export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-no-greeting-md";
-export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-no-greeting-md";
+export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-menh-1000";
+export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
 export const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-05-10-v1";
 export const HOP_TUOI_PROMPT_VER = "2026-05-10-v1";
 export const CHON_NGAY_PROMPT_VER = "2026-05-10-v1";
