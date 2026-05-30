@@ -1,4 +1,7 @@
-import { LA_SO_CHI_TIET_TIMEOUT_MS } from "../core/config.ts";
+import {
+  LA_SO_CHI_TIET_TIMEOUT_MS,
+  READING_MAX_TOKENS_LA_SO_PREVIEW,
+} from "../core/config.ts";
 import { llmCompletion, llmLaSoChiTietJson } from "../core/llm.ts";
 import { llmProfileForEndpoint } from "../core/llm-profiles.ts";
 import type { LaSoChiTietSection } from "../core/types.ts";
@@ -18,6 +21,7 @@ import {
 } from "../parsers/la-so.ts";
 
 const LA_SO_CHI_TIET_PROFILE = llmProfileForEndpoint("la-so-chi-tiet");
+const LA_SO_PREVIEW_LLM_OPTS = { disableThinking: true } as const;
 
 export async function generateLaSoChiTietPreviewSections(
   payload: string,
@@ -25,7 +29,8 @@ export async function generateLaSoChiTietPreviewSections(
   const raw = await llmLaSoChiTietJson(
     LA_SO_CHI_TIET_PREVIEW_SYSTEM,
     payload,
-    1024,
+    READING_MAX_TOKENS_LA_SO_PREVIEW,
+    LA_SO_PREVIEW_LLM_OPTS,
   );
   if (!raw) return null;
   let sections = parseLaSoChiTietSections(raw);
@@ -33,7 +38,8 @@ export async function generateLaSoChiTietPreviewSections(
     const retry = await llmLaSoChiTietJson(
       LA_SO_CHI_TIET_PREVIEW_SYSTEM,
       payload,
-      1024,
+      READING_MAX_TOKENS_LA_SO_PREVIEW,
+      LA_SO_PREVIEW_LLM_OPTS,
     );
     if (retry) sections = parseLaSoChiTietSections(retry);
   }
@@ -41,9 +47,9 @@ export async function generateLaSoChiTietPreviewSections(
     const plain = await llmCompletion(
       SYSTEM_PROMPT,
       payload,
-      1024,
+      READING_MAX_TOKENS_LA_SO_PREVIEW,
       LA_SO_CHI_TIET_TIMEOUT_MS,
-      { profile: LA_SO_CHI_TIET_PROFILE },
+      { profile: LA_SO_CHI_TIET_PROFILE, disableThinking: true },
     );
     const t = plain?.trim() ?? "";
     if (!t) return null;
@@ -66,9 +72,13 @@ export async function generateLaSoChiTietPreviewSections(
           }
         })(),
       }),
-      1024,
+      READING_MAX_TOKENS_LA_SO_PREVIEW,
       LA_SO_CHI_TIET_TIMEOUT_MS,
-      { jsonMode: true, profile: LA_SO_CHI_TIET_PROFILE },
+      {
+        jsonMode: true,
+        profile: LA_SO_CHI_TIET_PROFILE,
+        disableThinking: true,
+      },
     );
     if (expandRaw) {
       const expanded = menhSectionFromParsed(

@@ -23,6 +23,8 @@ export const READING_MAX_TOKENS_CHON_NGAY_CARDS = 2_048;
 export const READING_MAX_TOKENS_DAY_DETAIL = 2_560;
 export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = 2048;
 export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON = 4096;
+/** Paywall preview `menh_tong_quan` — pro model; cần đủ token cho JSON (không bị thinking ăn hết). */
+export const READING_MAX_TOKENS_LA_SO_PREVIEW = 4_096;
 
 export const MIN_TIEU_VAN_SECTION_CHARS = 320;
 export const MIN_TIEU_VAN_SECTION_SENTENCE_ENDS = 5;

@@ -36,6 +36,8 @@ export type LlmProfile = "flash" | "pro";
 export type LlmCompletionOptions = {
   jsonMode?: boolean;
   profile?: LlmProfile;
+  /** Paywall preview — tránh thinking ăn hết `max_tokens`, để `content` còn chỗ cho JSON. */
+  disableThinking?: boolean;
 };
 
 function resolveModel(profile: LlmProfile): string {
@@ -45,7 +47,11 @@ function resolveModel(profile: LlmProfile): string {
   return Deno.env.get("DEEPSEEK_MODEL")?.trim() || DEFAULT_LLM_MODEL;
 }
 
-function thinkingEnabled(profile: LlmProfile): boolean {
+function thinkingEnabled(
+  profile: LlmProfile,
+  options: LlmCompletionOptions,
+): boolean {
+  if (options.disableThinking) return false;
   if (profile === "pro") return true;
   const v = Deno.env.get("DEEPSEEK_THINKING")?.trim().toLowerCase();
   if (v === "disabled" || v === "0" || v === "false") return false;
@@ -66,7 +72,7 @@ export async function llmChat(
 
   const profile = options.profile ?? "flash";
   const model = resolveModel(profile);
-  const thinkingOn = thinkingEnabled(profile);
+  const thinkingOn = thinkingEnabled(profile, options);
 
   const body: Record<string, unknown> = {
     model,
@@ -134,12 +140,21 @@ export async function llmChat(
     }
 
     const choice = data.choices?.[0];
-    const text = choice?.message?.content?.trim() ?? "";
+    const msg = choice?.message;
+    const text = msg?.content?.trim() ?? "";
     if (!text) {
+      const reasoningLen = msg?.reasoning_content?.trim().length ?? 0;
       console.warn(
         "[luận-giải] DeepSeek content rỗng",
         model,
+        "finish=",
         choice?.finish_reason ?? "n/a",
+        "reasoning_chars=",
+        reasoningLen,
+        "max_tokens=",
+        maxTokens,
+        "thinking=",
+        thinkingOn,
       );
       return null;
     }
@@ -186,12 +201,17 @@ export async function llmLaSoChiTietJson(
   system: string,
   userJson: string,
   maxTokens = 2048,
+  options: Pick<LlmCompletionOptions, "disableThinking"> = {},
 ): Promise<string | null> {
   return await llmCompletion(
     system,
     userJson,
     maxTokens,
     LA_SO_CHI_TIET_TIMEOUT_MS,
-    { jsonMode: true, profile: llmProfileForEndpoint("la-so-chi-tiet") },
+    {
+      jsonMode: true,
+      profile: llmProfileForEndpoint("la-so-chi-tiet"),
+      ...options,
+    },
   );
 }
