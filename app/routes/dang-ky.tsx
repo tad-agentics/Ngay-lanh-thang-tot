@@ -20,6 +20,13 @@ import {
   landingSignupPrefillHasAny,
   parseLandingSignupPrefill,
 } from "~/lib/landing-cta-constants";
+import { useAuth } from "~/lib/auth";
+import {
+  displayNameFromAuthUser,
+  emailFromAuthUser,
+  isCompletingAuthOnboarding,
+  oauthProviderLabel,
+} from "~/lib/auth-onboarding";
 import { resolvePostLoginPath } from "~/lib/auth-post-login";
 import {
   returnToFromSearchParams,
@@ -33,7 +40,11 @@ import { supabase } from "~/lib/supabase";
 
 export default function DangKy() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
+  const completingProfile = isCompletingAuthOnboarding(user);
+  const oauthLabel = oauthProviderLabel(user);
+  const accountEmail = emailFromAuthUser(user);
   const prefill = useMemo(
     () => parseLandingSignupPrefill(searchParams),
     [searchParams],
@@ -60,15 +71,65 @@ export default function DangKy() {
   const [busy, setBusy] = useState(false);
   const [lunarNote, setLunarNote] = useState(false);
 
+  useEffect(() => {
+    if (!user) return;
+    const fromAuth = displayNameFromAuthUser(user);
+    if (fromAuth) {
+      setFullName((prev) => (prev.trim() ? prev : fromAuth));
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    void resolvePostLoginPath().then((dest) => {
+      if (dest !== "/dang-ky" && dest !== "/gio-sinh") {
+        navigate(dest, { replace: true });
+      }
+    });
+  }, [authLoading, user, navigate]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (password.length < 8) {
-      toast.error("Mật khẩu cần ít nhất 8 ký tự.");
-      return;
-    }
     const ngayIso = ddMmYyyyInputToIsoDate(ngaySinh.trim());
     if (!ngayIso) {
       toast.error("Nhập ngày sinh theo định dạng DD/MM/YYYY.");
+      return;
+    }
+
+    if (completingProfile && user) {
+      setBusy(true);
+      stashPendingReferralCode(referralFromUrl);
+      const patch = {
+        display_name: fullName.trim() || undefined,
+        ngay_sinh: ngayIso,
+      };
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update(patch)
+        .eq("id", user.id);
+      if (profileError) {
+        toast.error("Chưa lưu được hồ sơ — thử lại.");
+        setBusy(false);
+        return;
+      }
+      if (landingSignupPrefillHasAny(prefill)) {
+        const pe = await applyLandingPrefillToProfile(user.id, prefill);
+        if (pe) {
+          toast.error(
+            "Đã lưu ngày sinh nhưng chưa áp dụng được thông tin từ trang chủ.",
+          );
+        }
+      }
+      window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+      toast.success("Đã lưu thông tin bản mệnh.");
+      const dest = await resolvePostLoginPath();
+      navigate(dest, { replace: true });
+      setBusy(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("Mật khẩu cần ít nhất 8 ký tự.");
       return;
     }
 
@@ -153,7 +214,7 @@ export default function DangKy() {
         }}
       >
         <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
-          Lập lá số · bước 1
+          {completingProfile ? "Hoàn tất lá số · bước 1" : "Lập lá số · bước 1"}
         </Mono>
         <h1
           style={{
@@ -178,7 +239,11 @@ export default function DangKy() {
             maxWidth: 280,
           }}
         >
-          Lá số Bát Tự Tứ Trụ cần chính xác ngày, tháng, năm và giờ sinh. Sai lệch một giờ sinh, toàn bộ luận đoán cát hung sẽ thay đổi.
+          {completingProfile
+            ? oauthLabel
+              ? `Đã đăng nhập bằng ${oauthLabel}. Thêm họ tên và ngày sinh để lập lá số — không cần tạo mật khẩu mới.`
+              : "Thêm họ tên và ngày sinh để lập lá số — tài khoản của bạn đã được tạo."
+            : "Lá số Bát Tự Tứ Trụ cần chính xác ngày, tháng, năm và giờ sinh. Sai lệch một giờ sinh, toàn bộ luận đoán cát hung sẽ thay đổi."}
         </p>
 
         <div
@@ -200,17 +265,37 @@ export default function DangKy() {
               style={inputUnderline(true)}
             />
           </div>
-          <div>
-            <div style={inputLabel}>Email</div>
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={inputUnderline()}
-            />
-          </div>
+          {completingProfile && accountEmail ? (
+            <div>
+              <div style={inputLabel}>
+                Email{oauthLabel ? ` · ${oauthLabel}` : ""}
+              </div>
+              <input
+                type="email"
+                readOnly
+                tabIndex={-1}
+                value={accountEmail}
+                aria-readonly
+                style={{
+                  ...inputUnderline(),
+                  color: "rgba(237,231,211,0.55)",
+                  cursor: "default",
+                }}
+              />
+            </div>
+          ) : !completingProfile ? (
+            <div>
+              <div style={inputLabel}>Email</div>
+              <input
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                style={inputUnderline()}
+              />
+            </div>
+          ) : null}
           <div>
             <div
               style={{
@@ -270,28 +355,30 @@ export default function DangKy() {
               </p>
             ) : null}
           </div>
-          <div>
-            <div style={inputLabel}>Mật khẩu</div>
-            <input
-              type="password"
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-              style={inputUnderline()}
-            />
-            <div
-              style={{
-                marginTop: 4,
-                fontFamily: "var(--serif)",
-                fontSize: 11.5,
-                color: "rgba(237,231,211,0.45)",
-              }}
-            >
-              Tối thiểu 8 ký tự · hoặc dùng Google ở màn trước
+          {!completingProfile ? (
+            <div>
+              <div style={inputLabel}>Mật khẩu</div>
+              <input
+                type="password"
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                style={inputUnderline()}
+              />
+              <div
+                style={{
+                  marginTop: 4,
+                  fontFamily: "var(--serif)",
+                  fontSize: 11.5,
+                  color: "rgba(237,231,211,0.45)",
+                }}
+              >
+                Tối thiểu 8 ký tự · hoặc dùng Google ở màn trước
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
 
         <button
