@@ -119,16 +119,12 @@ async function loadProfileMinis(
 async function fetchSummary(
   admin: ReturnType<typeof import("https://esm.sh/@supabase/supabase-js@2.49.1").createClient>,
 ) {
-  const since = new Date();
-  since.setDate(since.getDate() - 30);
-  const sinceIso = since.toISOString();
-
   const [
-    { data: allEvents, error: e1 },
+    { data: agg, error: e1 },
     { count: referredProfiles, error: e2 },
     { data: discountRow, error: e3 },
   ] = await Promise.all([
-    admin.from("referral_reward_events").select("reward_vnd, created_at"),
+    admin.rpc("admin_referral_summary_snapshot"),
     admin
       .from("profiles")
       .select("id", { count: "exact", head: true })
@@ -144,33 +140,23 @@ async function fetchSummary(
   if (e2) throw e2;
   if (e3) throw e3;
 
-  let totalRewardVnd = 0;
-  let last30DaysRewardVnd = 0;
-  const referrerIds = new Set<string>();
-  for (const row of allEvents ?? []) {
-    const v = (row as { reward_vnd: number }).reward_vnd;
-    const created = (row as { created_at: string }).created_at;
-    totalRewardVnd += v;
-    if (created >= sinceIso) last30DaysRewardVnd += v;
-  }
+  const snap = (agg && typeof agg === "object"
+    ? agg
+    : {}) as Record<string, unknown>;
+  const num = (v: unknown) => {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
 
-  const { data: eventRows } = await admin
-    .from("referral_reward_events")
-    .select("referrer_profile_id");
-  for (const r of eventRows ?? []) {
-    referrerIds.add((r as { referrer_profile_id: string }).referrer_profile_id);
-  }
-
-  const eventCount = (allEvents ?? []).length;
   const checkoutReferralDiscountPercent = discountRow?.value != null
     ? Number.parseInt(String(discountRow.value), 10)
     : 0;
 
   return {
-    totalRewardVnd,
-    last30DaysRewardVnd,
-    eventCount,
-    activeReferrersCount: referrerIds.size,
+    totalRewardVnd: num(snap.totalRewardVnd),
+    last30DaysRewardVnd: num(snap.last30DaysRewardVnd),
+    eventCount: num(snap.eventCount),
+    activeReferrersCount: num(snap.activeReferrersCount),
     referredProfilesCount: referredProfiles ?? 0,
     checkoutReferralDiscountPercent: Number.isFinite(
         checkoutReferralDiscountPercent,
