@@ -1308,6 +1308,8 @@ Deno.serve(async (req) => {
   }
   if (op === "la-so") requiresSub = null;
   if (op === "la-so-luu-nien") requiresSub = null;
+  /** §04 màn 18 — cùng entitlement Luận Bát Tự (`canUseBaziReading` ở trên), không thêm gate lịch. */
+  if (phongThuyFull) requiresSub = null;
   if (phongThuyTeaser) requiresSub = null;
   if (traCuuPick) requiresSub = null;
 

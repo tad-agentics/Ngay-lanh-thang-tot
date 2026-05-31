@@ -193,6 +193,7 @@ export function buildBaziDisplayChapters(input: {
   luuNienFactsRaw: unknown | null;
   phongThuyFactsRaw: unknown | null;
   yearCanChi: string;
+  phongThuyFetchError?: string | null;
 }): BaziDisplayChapter[] {
   const outline = baziOutlineSections(input.yearCanChi);
   const luuParsed = input.luuNienFactsRaw
@@ -276,7 +277,12 @@ export function buildBaziDisplayChapters(input: {
             ? null
             : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",
         };
-      case "phong_thuy":
+      case "phong_thuy": {
+        const ptEmpty =
+          input.phongThuyFetchError?.trim() ||
+          (ptParsed || ptProse
+            ? null
+            : "API chưa trả hướng/màu/phi tinh — thử Tải lại luận sau.");
         return {
           key: meta.key,
           index: meta.index,
@@ -284,11 +290,9 @@ export function buildBaziDisplayChapters(input: {
           kind: "phong_thuy",
           facts: ptParsed,
           prose: ptProse,
-          emptyReason:
-            ptParsed || ptProse
-              ? null
-              : "Chưa có dữ liệu phong thủy năm. Thử tải lại sau.",
+          emptyReason: ptParsed || ptProse ? null : ptEmpty,
         };
+      }
       case "quy_nhan":
         return {
           key: meta.key,

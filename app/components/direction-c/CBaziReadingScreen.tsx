@@ -134,6 +134,7 @@ export function CBaziReadingScreen() {
         luuNienFactsRaw: full.luuNienFactsRaw,
         phongThuyFactsRaw: full.phongThuyFactsRaw,
         yearCanChi: full.yearCanChi,
+        phongThuyFetchError: full.phongThuyFetchError,
       });
       setChapters(built);
       if (full.sections.length > 0) {
@@ -170,6 +171,7 @@ export function CBaziReadingScreen() {
           luuNienFactsRaw: full.luuNienFactsRaw,
           phongThuyFactsRaw: full.phongThuyFactsRaw,
           yearCanChi: full.yearCanChi,
+          phongThuyFetchError: full.phongThuyFetchError,
         }),
       );
       if (full.sections.length > 0) {

@@ -43,6 +43,8 @@ export type BaziReadingLoadResult = {
   luuNienFactsRaw: unknown | null;
   phongThuyFactsRaw: unknown | null;
   yearCanChi: string;
+  /** `bat-tu` op `phong-thuy` failed — §04 may be empty despite other chapters OK. */
+  phongThuyFetchError: string | null;
 };
 
 function laSoSectionsFromGenerateReading(
@@ -198,6 +200,7 @@ export async function loadBaziReadingFull(
     luuNienFactsRaw: null,
     phongThuyFactsRaw: null,
     yearCanChi: fallbackFlowYearCanChiLabel(year) || "",
+    phongThuyFetchError: null,
   };
 
   if (!options?.forceRegenerate) {
@@ -233,6 +236,12 @@ export async function loadBaziReadingFull(
 
   const luuNienFactsRaw = luuNienRes.ok ? luuNienRes.data : null;
   const phongThuyFactsRaw = phongThuyRes.ok ? phongThuyRes.data : null;
+  const phongThuyFetchError = phongThuyRes.ok
+    ? null
+    : (phongThuyRes.message ?? "Không tải phong thủy năm.");
+  if (!phongThuyRes.ok) {
+    toast.error(phongThuyFetchError);
+  }
   const yearCanChi = resolveYearCanChi(year, luuNienFactsRaw);
 
   const [lasoGen, luuNienGen, phongThuyGen] = await Promise.all([
@@ -282,6 +291,7 @@ export async function loadBaziReadingFull(
     luuNienFactsRaw,
     phongThuyFactsRaw,
     yearCanChi,
+    phongThuyFetchError,
   };
 
   if (

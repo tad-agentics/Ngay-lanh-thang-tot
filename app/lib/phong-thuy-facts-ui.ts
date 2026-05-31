@@ -164,15 +164,28 @@ export function parsePhongThuyFactsView(data: unknown): PhongThuyFactsView | nul
   if (!root) return null;
 
   const huongTot = parseDirectionCards(
-    root.huong_tot_nam_nay ?? root.huong_tot ?? root.huongTot,
+    root.huong_tot_nam_nay ??
+      root.huongTotNamNay ??
+      root.huong_tot ??
+      root.huongTot,
     true,
   );
   const huongXau = stringList(
-    root.huong_xau_nam_nay ?? root.huong_xau ?? root.huongXau,
+    root.huong_xau_nam_nay ??
+      root.huongXauNamNay ??
+      root.huong_xau ??
+      root.huongXau,
   );
-  const mauMay = parseColorSwatches(root.mau_may_man ?? root.mauMayMan);
+  const mauMay = parseColorSwatches(
+    root.mau_may_man ?? root.mauMayMan ?? root.mau_hop ?? root.mauHop,
+  );
   const mauKy = stringList(root.mau_ky ?? root.mauKy);
-  const phiTinh = parsePhiTinh(root.phi_tinh ?? root.phiTinh);
+  const phiTinhRaw =
+    root.phi_tinh ??
+    root.phiTinh ??
+    (asRecord(root.phi_tinh_year) ?? asRecord(root.phiTinhYear))?.grid ??
+    (asRecord(root.phi_tinh_year) ?? asRecord(root.phiTinhYear))?.cells;
+  const phiTinh = parsePhiTinh(phiTinhRaw);
   const phiTinhNote =
     pickStr(root, ["phi_tinh_note_vi", "phiTinhNoteVi", "note_vi"]) || null;
 
