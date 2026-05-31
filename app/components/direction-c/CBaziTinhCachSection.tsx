@@ -46,11 +46,13 @@ export function CBaziTinhCachSection({
           {introProse}
         </p>
       ) : luanLoading && !hasIntro ? (
-        <CBaziNlttLuanInkLoading
-          message="Đang luận mở đầu tính cách"
-          compact
-          className={traits.length > 0 ? "mb-3" : undefined}
-        />
+        <div role="status" aria-live="polite">
+          <CBaziNlttLuanInkLoading
+            message="Đang luận mở đầu tính cách"
+            compact
+            className={traits.length > 0 ? "mb-3" : undefined}
+          />
+        </div>
       ) : null}
 
       {showTraitShells ? (
@@ -104,14 +106,16 @@ export function CBaziTinhCachSection({
       ) : hasFallback ? (
         <CBaziNlttLuanProse text={prose} compact />
       ) : luanLoading ? (
-        <CBaziNlttLuanInkLoading message="Đang luận tính cách" compact />
+        <div role="status" aria-live="polite">
+          <CBaziNlttLuanInkLoading message="Đang luận tính cách" compact />
+        </div>
       ) : null}
 
       {luanFailed && !luanLoading ? (
         <CBaziNlttLuanProse
           loading={false}
           failed
-          failedMessage="Chưa tạo được luận giải tính cách. Thử tải lại luận."
+          failedMessage="Tính cách chưa luận được lần này — nhấn để thử lại."
           onRetry={onRetryLuan}
           compact
           className="mt-3"

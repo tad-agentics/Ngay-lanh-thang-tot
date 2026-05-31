@@ -20,9 +20,10 @@ export function CBaziReadingChapter({
   onRetryMenh,
   onRetryLuan,
 }: CBaziReadingChapterProps) {
+  const headingId = `bazi-chapter-${chapter.index}`;
   return (
-    <section className="mt-8 first:mt-6">
-      <BaziSectionHeading index={chapter.index} title={chapter.title} />
+    <section className="mt-8 first:mt-6" aria-labelledby={headingId}>
+      <BaziSectionHeading index={chapter.index} title={chapter.title} id={headingId} />
       {chapter.kind === "menh" ? (
         <CBaziMenhTongQuanBlock
           profile={profile}

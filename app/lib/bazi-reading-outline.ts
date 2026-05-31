@@ -192,8 +192,8 @@ export function menhTongQuanProseFromSections(
   return "";
 }
 
-/** Tối thiểu ký tự §01 full — khớp chuẩn preview Edge (`MIN_MENH_PREVIEW_CHARS` ≈ 1000); FE dùng ngưỡng thấp hơn một chút cho gate lưu. */
-export const MIN_MENH_TONG_QUAN_LUAN_CHARS = 400;
+/** Tối thiểu ký tự §01 full — Edge yêu cầu ≥1000; FE gate ở 600 để loại bản prose fallback quá ngắn khỏi delivery cache. */
+export const MIN_MENH_TONG_QUAN_LUAN_CHARS = 600;
 
 export function hasMenhTongQuanLuanFromSections(
   sections: LaSoChiTietSection[],
@@ -298,7 +298,7 @@ export function buildBaziDisplayChapters(input: {
           emptyReason: hasLaSo
             ? menhProse || luanPending
               ? null
-              : "Chưa tạo được luận tổng quan lá số. Thử tải lại luận."
+              : "§01 Mệnh tổng quan chưa tạo được — DeepSeek có thể đang tải chậm. Nhấn 'Tải lại luận' bên dưới."
             : "Chưa có lá số trên hồ sơ.",
         };
       case "tinh_cach": {

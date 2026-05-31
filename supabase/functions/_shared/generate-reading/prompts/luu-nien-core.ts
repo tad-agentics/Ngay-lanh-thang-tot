@@ -10,7 +10,7 @@ CHỈ một object JSON hợp lệ; không markdown; không bọc \`\`\`; không
 
 ## ĐỘ DÀI BẮT BUỘC
 - **nhin_chung**, **thuc_tien**: mỗi string **6–7 câu**, tối thiểu **~350–450 ký tự**, chia 2–3 đoạn bằng \\n\\n.
-- **ung_xu** (§05 Quý nhân · lưu ý): **~800 chữ** (~720–950 ký tự), chia **4–5 đoạn** bằng \\n\\n — đây là phần quan trọng nhất trong 3 khóa.
+- **ung_xu** (§05 Quý nhân · lưu ý): **~800 ký tự** (tối thiểu 720, mục tiêu 800–950 ký tự có dấu), chia **4–5 đoạn** bằng \\n\\n — đây là phần quan trọng nhất trong 3 khóa.
 
 ## nhin_chung
 Nhịp cả năm (can chi năm, đánh giá năm); neo element_relation; không lặp chi tiết từng life_area.
@@ -21,11 +21,11 @@ Công việc, tài chính, quan hệ **trong năm**; bám life_areas / month_sco
 ## ung_xu (§05 — Quý nhân · lưu ý)
 Luận **một mạch văn xuôi**, lồng ghép **tự nhiên** mọi fact có trong data — **không** liệt kê khô kiểu gạch đầu dòng hay 3 câu tách rời.
 
-Bắt buộc có trong nội dung (nếu data có field tương ứng):
-1. **Tuổi hợp** (quy_nhan.tuoi_hop / tuoiHop): hợp để làm gì — đối tác, hợp tác, tin cậy, khi nào nên chủ động kết nối.
-2. **Tuổi xung** (tuoi_xung / tuoiXung): xung nghĩa là gì trong năm — va chạm, hiểu lầm, tránh gì.
-3. **Làm việc cùng tuổi xung**: cách khắc chế, ranh giới, nhịp giao tiếp — thực tế, không đạo lý chung chung.
-4. **Hướng quý nhân** (huong_quy_nhan), **ghi chú** quy_nhan.note — xen vào đoạn, không tách câu riêng “Quý nhân đến từ phương …”.
+Bắt buộc có trong nội dung (chỉ khi data có field tương ứng — bỏ qua hoàn toàn nếu thiếu):
+1. **Tuổi hợp** — dùng `quy_nhan.tuoi_hop` hoặc `quy_nhan.tuoiHop` (cùng một field, ưu tiên snake_case): hợp để làm gì — đối tác, hợp tác, tin cậy, khi nào nên chủ động kết nối.
+2. **Tuổi xung** — dùng `quy_nhan.tuoi_xung` hoặc `quy_nhan.tuoiXung`: xung nghĩa là gì trong năm — va chạm, hiểu lầm, tránh gì.
+3. **Làm việc cùng tuổi xung**: cách khắc chế, ranh giới, nhịp giao tiếp — thực tế, không đạo lý chung chung. Bỏ nếu không có tuổi xung.
+4. **Hướng quý nhân** (`quy_nhan.huong_quy_nhan` hoặc `huong_quy_nhan`), **ghi chú** `quy_nhan.note` — xen vào đoạn, không tách câu riêng “Quý nhân đến từ phương …”. Bỏ nếu không có field.
 5. **Đại vận năm tới** (dai_van_next): can chi, hành, khoảng tuổi/năm — ý nghĩa chuyển tiếp, không copy nguyên chuỗi label API.
 
 Không lặp 4 lĩnh vực life_area (đã có life_area_readings). Không lặp nhin_chung/thuc_tien.
@@ -42,6 +42,6 @@ Không lặp 4 lĩnh vực life_area (đã có life_area_readings). Không lặp
 
 Giọng ấm, xưng "bạn"; không phán tuyệt đối; không bịa ngoài data.`;
 
-export const LUU_NIEN_CORE_JSON_RETRY = `endpoint luu-nien. JSON {"nhin_chung","thuc_tien","ung_xu"} — nhin_chung/thuc_tien ~350+ ký tự; **ung_xu ~800 chữ, 4–5 đoạn**, lồng quy_nhan + dai_van_next tự nhiên. Không markdown.`;
+export const LUU_NIEN_CORE_JSON_RETRY = `endpoint luu-nien. JSON {"nhin_chung","thuc_tien","ung_xu"} — nhin_chung/thuc_tien ~350+ ký tự; **ung_xu ~800 ký tự, 4–5 đoạn**, lồng quy_nhan + dai_van_next tự nhiên. Không markdown.`;
 
-export const LUU_NIEN_CORE_JSON_LENGTH_RETRY = `Bản trước quá ngắn. Trả lại JSON 3 khóa. **ung_xu** phải ~800 chữ, 4–5 đoạn, đủ tuổi hợp/xung/khắc chế/hướng quý nhân/đại vận từ data. nhin_chung/thuc_tien giữ 6–7 câu.`;
+export const LUU_NIEN_CORE_JSON_LENGTH_RETRY = `Bản trước quá ngắn. Trả lại JSON 3 khóa. **ung_xu** phải ~800 ký tự, 4–5 đoạn, đủ tuổi hợp/xung/khắc chế/hướng quý nhân/đại vận từ data. nhin_chung/thuc_tien giữ 6–7 câu.`;

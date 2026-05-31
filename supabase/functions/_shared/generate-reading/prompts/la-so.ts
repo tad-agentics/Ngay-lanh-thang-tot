@@ -17,7 +17,8 @@ export const LA_SO_MENH_TONG_QUAN_PROMPT_BLOCK = `## CẤU TRÚC menh_tong_quan 
 - Nối ý sang đoạn 3: hành và thần ấy tác động thế nào tới **nhịp vận** hiện tại.
 
 ### Đoạn 3 — Đại vận · tổng kết · mời đọc tiếp
-- Luận **đại vận đang chạy** (display, khoảng tuổi) từ dai_van / dai_van_current / dai_van_list — ý chính của 10 năm này.
+- Luận **đại vận đang chạy** từ `dai_van_current` (nếu có), nếu không thì `dai_van_list[0]`, nếu không thì `dai_van` — dùng trường `display` và khoảng tuổi để luận ý chính của 10 năm này. Nếu không có trường nào, bỏ qua chi tiết đại vận.
+- Nếu data không có `pillars`, mô tả Nhật Chủ và Ngũ Hành từ `nhat_chu` và `element_counts` thay thế — không bịa can chi trụ.
 - **Tóm tắt bức tranh toàn cảnh** 2–3 câu (Nhật Chủ + Ngũ Hành + đại vận).
 - Kết bằng 1–2 câu **ấm, cụ thể**, gợi người đọc tiếp tục các chương luận giải chi tiết phía dưới: tính cách, vận năm, phong thủy, quý nhân (không hứa hẹn tuyệt đối; không nhắc giá hay "mua").
 - KHÔNG đi sâu tính cách / sự nghiệp / tình duyên — để các chương sau.
@@ -88,7 +89,7 @@ export const LA_SO_TINH_CACH_TRAITS_SYSTEM = `Bạn là chuyên gia tử vi và 
   2. "ca_tinh" · Cá tính nổi bật
   3. "can_luu" · Điểm cần lưu ý
   4. "tinh_cam" · Tình cảm & quan hệ
-- Với **mỗi** mục, "text" là luận giải **khoảng 500 chữ** (~450–600 ký tự), chia **2–3 đoạn văn** ngăn bằng \\n\\n.
+- Với **mỗi** mục, "text" là luận giải **~500 ký tự** (tối thiểu 450, mục tiêu 500–600 ký tự có dấu), chia **2–3 đoạn văn** ngăn bằng \\n\\n.
 - Mỗi đoạn 3–6 câu hoàn chỉnh; câu cuối đoạn nối mạch sang đoạn sau.
 - Diễn giải **sâu, cụ thể** theo lá số (Nhật Chủ, Thập Thần, cường nhược, Dụng/Kỵ, archetype trong data) — **không** chỉ nhắc lại nhãn ngắn từ API (vd. không dừng ở "Linh hoạt, khéo léo").
 - Viết như mô tả một con người thật: ví dụ đời sống, công việc, quan hệ — có thể áp dụng.
@@ -97,11 +98,12 @@ export const LA_SO_TINH_CACH_TRAITS_SYSTEM = `Bạn là chuyên gia tử vi và 
 ## ĐIỀU CẤM
 - KHÔNG gạch đầu dòng, KHÔNG markdown, KHÔNG tiêu đề chương trong "text".
 - KHÔNG lời chào / meta. KHÔNG bịa ngoài data. KHÔNG phán tuyệt đối.
+- KHÔNG giải thích lại Tứ Trụ, Ngũ Hành hay Đại Vận — §01 đã có; chương này chỉ nói về tính cách, cá tính.
 
 ${LA_SO_VOICE_AND_BANS}`;
 
 export const LA_SO_TINH_CACH_TRAITS_RETRY_SYSTEM = `Cùng JSON la-so-chi-tiet. Trả CHỈ {"tinh_cach_intro":"...","personality_readings":[{"id","title","text"},...]}.
-Mỗi personality_readings[].text: **~500 chữ**, **2–3 đoạn** (\\n\\n), văn xuôi sâu — không nhãn ngắn. Đủ 4 mục nếu data cho phép.`;
+Mỗi personality_readings[].text: **~500 ký tự (tối thiểu 450)**, **2–3 đoạn** (\\n\\n), văn xuôi sâu — không nhãn ngắn. Đúng 4 mục; không bỏ mục dù data ít.`;
 
 /** Fallback một lần gọi — khi tách §01 / §02–06 thất bại. */
 export const LA_SO_CHI_TIET_SYSTEM = `Bạn là chuyên gia tử vi và lịch số Việt Nam, viết luận giải lá số cho ứng dụng.

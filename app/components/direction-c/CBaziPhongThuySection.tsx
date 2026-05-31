@@ -56,7 +56,7 @@ function PhongThuyLuanBlock({
   }
   if (loading) {
     return (
-      <div className="mt-3">
+      <div className="mt-3" role="status" aria-live="polite">
         <CBaziNlttLuanInkLoading message={loadingMessage} compact />
       </div>
     );
@@ -66,7 +66,7 @@ function PhongThuyLuanBlock({
       <div className="mt-3">
         <CBaziNlttLuanProse
           failed
-          failedMessage="Chưa tạo được luận cho mục này. Thử tải lại luận."
+          failedMessage="Mục này chưa luận được lần này — nhấn để thử lại."
           onRetry={onRetry}
           compact
         />
@@ -251,11 +251,13 @@ export function CBaziPhongThuySection({
       {legacyProse ? (
         <CBaziNlttLuanProse text={legacyProse} compact />
       ) : !hasStructuredLuan && proseLoading ? (
-        <CBaziNlttLuanProse loading loadingMessage="Đang luận phong thủy năm" compact />
+        <div role="status" aria-live="polite">
+          <CBaziNlttLuanProse loading loadingMessage="Đang luận phong thủy năm" compact />
+        </div>
       ) : !hasStructuredLuan && proseFailed ? (
         <CBaziNlttLuanProse
           failed
-          failedMessage="Chưa tạo được luận phong thủy. Thử tải lại luận."
+          failedMessage="Phong thủy chưa luận được lần này — nhấn để thử lại."
           onRetry={onRetryLuan}
           compact
         />
