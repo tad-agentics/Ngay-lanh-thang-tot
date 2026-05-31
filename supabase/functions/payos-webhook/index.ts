@@ -244,6 +244,18 @@ Deno.serve(async (req) => {
       return new Response("DB error", { status: 500 });
     }
 
+    if (pkg.baziUnlock && entitlementPatch.bazi_reading_unlocked_at) {
+      const prewarmUrl = `${supabaseUrl}/functions/v1/bazi-reading-prewarm`;
+      void fetch(prewarmUrl, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: claimed.user_id }),
+      }).catch((e) => console.warn("[payos] bazi prewarm", e));
+    }
+
     const { error: l2 } = await admin.from("credit_ledger").insert({
       user_id: claimed.user_id as string,
       delta: 0,

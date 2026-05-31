@@ -36,6 +36,7 @@ type CBaziVanNamSectionProps = {
   luanLoading?: boolean;
   /** Bundle xong — mục không có `luan` có thể retry. */
   chapterVanFailed?: boolean;
+  instantProse?: boolean;
   emptyReason: string | null;
   onRetryLuan?: () => void;
 };
@@ -48,6 +49,7 @@ export function CBaziVanNamSection({
   lifeLuanLoading,
   luanLoading = false,
   chapterVanFailed = false,
+  instantProse = false,
   emptyReason,
   onRetryLuan,
 }: CBaziVanNamSectionProps) {
@@ -163,7 +165,7 @@ export function CBaziVanNamSection({
       ) : null}
 
       {prose ? (
-        <CBaziNlttLuanProse text={prose} compact />
+        <CBaziNlttLuanProse text={prose} instant={instantProse} compact />
       ) : luanLoading ? (
         <div role="status" aria-live="polite">
           <CBaziNlttLuanInkLoading message="Đang luận thực tiễn năm" compact />

@@ -208,8 +208,13 @@ export function createGenerateReadingHandler(
       endpoint === "luu-nien" ||
       endpoint === "phong-thuy"
     ) {
+      const prewarmUserId =
+        typeof body.prewarm_user_id === "string"
+          ? body.prewarm_user_id.trim()
+          : "";
       const auth = await requireBaziReadingAuth(req, {
         allowWithoutEntitlement: endpoint === "la-so-chi-tiet" && preview,
+        prewarmUserId: prewarmUserId || undefined,
       });
       if (!auth) {
         console.warn("generate-reading bazi auth denied", endpoint);

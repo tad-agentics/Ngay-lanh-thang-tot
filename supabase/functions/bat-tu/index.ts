@@ -1078,7 +1078,7 @@ Deno.serve(async (req) => {
       }, 500, req);
   }
 
-  let payload: { op?: string; body?: unknown };
+  let payload: { op?: string; body?: unknown; prewarm_user_id?: string };
   try {
     payload = await req.json();
   } catch {
@@ -1138,16 +1138,28 @@ Deno.serve(async (req) => {
         req,
       );
     }
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: userData, error: userErr } = await userClient.auth.getUser();
-    const u = userData?.user;
-    if (userErr || !u) {
-      return json(
-        { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } }, 401, req);
+    const prewarmId =
+      authHeader === `Bearer ${serviceKey}` &&
+        typeof payload.prewarm_user_id === "string"
+        ? payload.prewarm_user_id.trim()
+        : "";
+    if (prewarmId) {
+      userId = prewarmId;
+    } else {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const { data: userData, error: userErr } = await userClient.auth.getUser();
+      const u = userData?.user;
+      if (userErr || !u) {
+        return json(
+          { error: { code: "UNAUTHORIZED", message: "Phiên không hợp lệ." } },
+          401,
+          req,
+        );
+      }
+      userId = u.id;
     }
-    userId = u.id;
   }
 
   if (CALENDAR_GATE_OPS.has(op)) {

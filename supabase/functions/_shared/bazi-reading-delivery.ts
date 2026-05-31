@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+/** Khớp `app/lib/bazi-reading-content-version.ts`. */
+export const BAZI_READING_DELIVERY_CONTENT_VERSION =
+  "2026-05-31-tinh-cach-500c-v1";
+
 export type BaziDeliverySection = {
   id: string;
   title: string;

@@ -10,6 +10,8 @@ import type { Profile } from "~/lib/profile-context";
 type CBaziReadingChapterProps = {
   chapter: BaziDisplayChapter;
   profile: Profile;
+  /** Cache/DB — không typewriter. */
+  instantProse?: boolean;
   onRetryMenh?: () => void;
   onRetryLuan?: () => void;
 };
@@ -17,6 +19,7 @@ type CBaziReadingChapterProps = {
 export function CBaziReadingChapter({
   chapter,
   profile,
+  instantProse = false,
   onRetryMenh,
   onRetryLuan,
 }: CBaziReadingChapterProps) {
@@ -32,6 +35,7 @@ export function CBaziReadingChapter({
           proseLoading={chapter.proseLoading}
           proseFailed={chapter.proseFailed}
           emptyReason={chapter.emptyReason}
+          instantProse={instantProse}
           onRetryProse={onRetryMenh}
         />
       ) : null}
@@ -56,6 +60,7 @@ export function CBaziReadingChapter({
           luanLoading={chapter.luanLoading}
           chapterVanFailed={chapter.chapterVanFailed}
           emptyReason={chapter.emptyReason}
+          instantProse={instantProse}
           onRetryLuan={onRetryLuan}
         />
       ) : null}
@@ -69,6 +74,7 @@ export function CBaziReadingChapter({
           proseLoading={chapter.proseLoading}
           proseFailed={chapter.proseFailed}
           emptyReason={chapter.emptyReason}
+          instantProse={instantProse}
           onRetryLuan={onRetryLuan}
         />
       ) : null}

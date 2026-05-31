@@ -22,6 +22,7 @@ type CBaziPhongThuySectionProps = {
   prose: string;
   proseLoading?: boolean;
   proseFailed?: boolean;
+  instantProse?: boolean;
   emptyReason: string | null;
   onRetryLuan?: () => void;
 };
@@ -84,6 +85,7 @@ export function CBaziPhongThuySection({
   prose,
   proseLoading = false,
   proseFailed = false,
+  instantProse = false,
   emptyReason,
   onRetryLuan,
 }: CBaziPhongThuySectionProps) {
@@ -249,7 +251,7 @@ export function CBaziPhongThuySection({
       ) : null}
 
       {legacyProse ? (
-        <CBaziNlttLuanProse text={legacyProse} compact />
+        <CBaziNlttLuanProse text={legacyProse} instant={instantProse} compact />
       ) : !hasStructuredLuan && proseLoading ? (
         <div role="status" aria-live="polite">
           <CBaziNlttLuanProse loading loadingMessage="Đang luận phong thủy năm" compact />

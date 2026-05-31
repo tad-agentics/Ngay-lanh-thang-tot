@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { BackBar, Mono } from "~/components/brand";
 import { CBaziReadingChapter } from "~/components/direction-c/CBaziReadingChapter";
+import { CBaziReadingLoadProgress } from "~/components/direction-c/CBaziReadingLoadProgress";
 import { CBaziReadingPaywallView } from "~/components/direction-c/CBaziReadingPaywallView";
 import type { LaSoJson } from "~/lib/api-types";
 import { useProfile } from "~/hooks/useProfile";
@@ -19,9 +20,11 @@ import {
   type BaziReadingLoadResult,
 } from "~/lib/bazi-reading-load";
 import {
+  createInitialChapterLoadState,
   deriveChapterLoadState,
   type BaziChapterLoadState,
 } from "~/lib/bazi-chapter-load";
+import { deriveBaziLoadProgress } from "~/lib/bazi-reading-progress";
 import {
   buildBaziDisplayChapters,
   type BaziDisplayChapter,
@@ -41,7 +44,10 @@ import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 function buildChaptersFromLoadResult(
   partial: BaziReadingLoadResult,
   profileLaSo: LaSoJson | null,
-  options?: { chapterLoad?: BaziChapterLoadState },
+  options?: {
+    chapterLoad?: BaziChapterLoadState;
+    instantProse?: boolean;
+  },
 ): BaziDisplayChapter[] {
   return buildBaziDisplayChapters({
     sections: partial.sections,
@@ -69,10 +75,11 @@ function chaptersFromSession(
   cached: NonNullable<ReturnType<typeof readBaziReadingSession>>,
   profileLaSo: LaSoJson | null,
 ): BaziDisplayChapter[] {
-  return buildChaptersFromLoadResult(cached, profileLaSo);
+  return buildChaptersFromLoadResult(cached, profileLaSo, {
+    instantProse: true,
+  });
 }
 
-/** SessionStorage partial — sau mỗi wave generate, reload không mất § đã xong. */
 function persistPartialBaziSession(
   profileId: string,
   revision: string,
@@ -88,11 +95,31 @@ function persistPartialBaziSession(
   });
 }
 
+function applyCachedChapters(
+  fromCache: BaziReadingLoadResult,
+  profileLaSo: LaSoJson | null,
+): BaziDisplayChapter[] {
+  return buildChaptersFromLoadResult(fromCache, profileLaSo, {
+    chapterLoad: deriveChapterLoadState(fromCache.sections, {
+      luuNienFactsRaw: fromCache.luuNienFactsRaw,
+      phongThuyFactsRaw: fromCache.phongThuyFactsRaw,
+      phongThuyFetchError: fromCache.phongThuyFetchError,
+      bundleFinished: true,
+    }),
+    instantProse: true,
+  });
+}
+
 export function CBaziReadingScreen() {
   const { profile, loading: profileLoading } = useProfile();
   const [chapters, setChapters] = useState<BaziDisplayChapter[] | null>(null);
-  /** DeepSeek bundle đang chạy — skeleton facts vẫn hiển thị. */
   const [generating, setGenerating] = useState(true);
+  /** DB/session cache — hiện luận ngay, không typewriter. */
+  const [instantProse, setInstantProse] = useState(false);
+  const [chapterLoad, setChapterLoad] = useState<BaziChapterLoadState>(
+    createInitialChapterLoadState(),
+  );
+  const [yearCanChiLabel, setYearCanChiLabel] = useState("");
   const genRef = useRef(0);
   const factsRef = useRef<BaziReadingFactsBundle | null>(null);
   const partialLoadRef = useRef<BaziReadingLoadResult | null>(null);
@@ -113,6 +140,7 @@ export function CBaziReadingScreen() {
     if (profileLoading || !profile) return;
     if (!unlocked || !profileHasLaso(profile.la_so)) {
       setGenerating(false);
+      setInstantProse(false);
       return;
     }
 
@@ -123,14 +151,21 @@ export function CBaziReadingScreen() {
     }
 
     let cancelled = false;
+    const profileLaSo = (profile.la_so as LaSoJson) ?? null;
+    const sessionRevision = baziReadingCacheRevision(profile, year);
 
     const factsPromise = fetchBaziReadingFactsBundle(profile, year, {
       silentPhongThuyToast: true,
     });
+    const dbPromise = fetchBaziReadingDelivery(profile, year);
 
     void (async () => {
-      const dbDelivery = await fetchBaziReadingDelivery(profile, year);
+      const [dbDelivery, factsEarly] = await Promise.all([
+        dbPromise,
+        factsPromise,
+      ]);
       if (cancelled) return;
+
       if (dbDelivery) {
         const fromDb = deliveryToLoadResult(dbDelivery);
         if (
@@ -140,20 +175,15 @@ export function CBaziReadingScreen() {
             fromDb.phongThuyFactsRaw,
           )
         ) {
-          setChapters(
-            buildChaptersFromLoadResult(
-              fromDb,
-              (profile.la_so as LaSoJson) ?? null,
-            ),
-          );
+          setYearCanChiLabel(fromDb.yearCanChi);
+          setInstantProse(true);
           setGenerating(false);
+          setChapters(applyCachedChapters(fromDb, profileLaSo));
           return;
         }
       }
 
-      const revision = baziReadingCacheRevision(profile, year);
-      const cached = readBaziReadingSession(profile.id, revision);
-      if (cancelled) return;
+      const cached = readBaziReadingSession(profile.id, sessionRevision);
       if (
         cached &&
         cachedDeliveryIsComplete(
@@ -162,25 +192,25 @@ export function CBaziReadingScreen() {
           cached.phongThuyFactsRaw,
         )
       ) {
-        setChapters(
-          chaptersFromSession(cached, (profile.la_so as LaSoJson) ?? null),
-        );
+        setYearCanChiLabel(cached.yearCanChi);
+        setInstantProse(true);
         setGenerating(false);
+        setChapters(chaptersFromSession(cached, profileLaSo));
         return;
       }
 
-      const facts = await factsPromise;
-      if (cancelled) return;
+      const facts = factsEarly;
       if (facts) {
         factsRef.current = facts;
+        setYearCanChiLabel(facts.yearCanChi);
+        setInstantProse(false);
+        setChapterLoad(createInitialChapterLoadState());
         setChapters(buildBaziSkeletonChapters(facts));
+        setGenerating(true);
       }
 
       await runFullLoad(facts ?? undefined);
     })();
-
-    const profileLaSo = (profile.la_so as LaSoJson) ?? null;
-    const sessionRevision = baziReadingCacheRevision(profile, year);
 
     async function runFullLoad(
       preloadedFacts?: BaziReadingFactsBundle,
@@ -193,18 +223,24 @@ export function CBaziReadingScreen() {
         fullLoadInFlightRef.current = false;
         return;
       }
+      setInstantProse(false);
       setGenerating(true);
       let full: BaziReadingLoadResult;
       try {
         full = await loadBaziReadingFull(profile, year, {
           forceRegenerate: opts?.force === true,
           preloadedFacts: preloadedFacts ?? factsRef.current ?? undefined,
-          onProgress: (partial, chapterLoad) => {
+          onProgress: (partial, nextChapterLoad) => {
             if (cancelled || gen !== genRef.current) return;
             partialLoadRef.current = partial;
+            setYearCanChiLabel(partial.yearCanChi);
+            setChapterLoad(nextChapterLoad);
             persistPartialBaziSession(profile.id, sessionRevision, partial);
             setChapters(
-              buildChaptersFromLoadResult(partial, profileLaSo, { chapterLoad }),
+              buildChaptersFromLoadResult(partial, profileLaSo, {
+                chapterLoad: nextChapterLoad,
+                instantProse: false,
+              }),
             );
           },
         });
@@ -213,14 +249,18 @@ export function CBaziReadingScreen() {
       }
       if (cancelled || gen !== genRef.current) return;
       partialLoadRef.current = full;
+      const finishedLoad = deriveChapterLoadState(full.sections, {
+        luuNienFactsRaw: full.luuNienFactsRaw,
+        phongThuyFactsRaw: full.phongThuyFactsRaw,
+        phongThuyFetchError: full.phongThuyFetchError,
+        bundleFinished: true,
+      });
+      setYearCanChiLabel(full.yearCanChi);
+      setChapterLoad(finishedLoad);
       setChapters(
         buildChaptersFromLoadResult(full, profileLaSo, {
-          chapterLoad: deriveChapterLoadState(full.sections, {
-            luuNienFactsRaw: full.luuNienFactsRaw,
-            phongThuyFactsRaw: full.phongThuyFactsRaw,
-            phongThuyFetchError: full.phongThuyFetchError,
-            bundleFinished: true,
-          }),
+          chapterLoad: finishedLoad,
+          instantProse: false,
         }),
       );
       if (full.sections.length > 0) {
@@ -269,31 +309,25 @@ export function CBaziReadingScreen() {
 
   const retryLoad = () => {
     if (!profile || !unlocked) return;
+    setInstantProse(false);
     void (async () => {
       const facts =
         factsRef.current ??
         (await fetchBaziReadingFactsBundle(profile, year));
       if (facts) {
         factsRef.current = facts;
+        setYearCanChiLabel(facts.yearCanChi);
+        setChapterLoad(createInitialChapterLoadState());
         setChapters(buildBaziSkeletonChapters(facts));
       }
       await runFullLoadRef.current?.(facts ?? undefined, { force: true });
     })();
   };
 
-  const pendingLuanCount = useMemo(() => {
-    if (!chapters || !generating) return 0;
-    return chapters.filter((ch) => {
-      if (ch.kind === "menh") return ch.proseLoading;
-      if (ch.kind === "tinh_cach") return ch.luanLoading;
-      if (ch.kind === "van_nam") {
-        return ch.lifeLuanLoading ?? ch.luanLoading;
-      }
-      if (ch.kind === "phong_thuy") return ch.proseLoading;
-      if (ch.kind === "quy_nhan") return ch.proseLoading;
-      return false;
-    }).length;
-  }, [chapters, generating]);
+  const loadProgress = useMemo(() => {
+    if (!generating || instantProse) return null;
+    return deriveBaziLoadProgress(chapterLoad, yearCanChiLabel);
+  }, [generating, instantProse, chapterLoad, yearCanChiLabel]);
 
   const hasContent = useMemo(
     () =>
@@ -335,7 +369,7 @@ export function CBaziReadingScreen() {
       <main className="min-h-[100svh]" style={{ background: CT.paper }}>
         <BackBar title="Luận giải Bát Tự" />
         <p className="px-6 font-serif text-sm" style={{ color: CT.muted }}>
-          Đang luận giải bản mệnh…
+          Đang mở lá số…
         </p>
       </main>
     );
@@ -374,6 +408,8 @@ export function CBaziReadingScreen() {
           </p>
         ) : null}
 
+        {loadProgress ? <CBaziReadingLoadProgress progress={loadProgress} /> : null}
+
         {!hasContent && !generating && chapters ? (
           <div className="mt-8 text-center">
             <p className="font-serif text-sm" style={{ color: CT.muted }}>
@@ -396,26 +432,16 @@ export function CBaziReadingScreen() {
                   key={ch.key}
                   chapter={ch}
                   profile={profile}
+                  instantProse={instantProse}
                   onRetryMenh={ch.kind === "menh" ? retryLoad : undefined}
                   onRetryLuan={retryLoad}
                 />
               ) : null,
             )}
-            {generating && pendingLuanCount > 0 ? (
-              <p
-                className="mt-6 text-center font-serif text-[12px] italic"
-                style={{ color: CT.muted }}
-                aria-live="polite"
-              >
-                {pendingLuanCount >= 5
-                  ? "NLTT đang soạn luận giải — bạn có thể đọc từng phần bên trên khi sẵn sàng."
-                  : `Đang soạn thêm ${pendingLuanCount} phần luận…`}
-              </p>
-            ) : null}
           </>
         ) : generating ? (
           <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
-            Đang mở lá số…
+            Đang tải bảng lá số và dữ liệu năm…
           </p>
         ) : null}
       </div>

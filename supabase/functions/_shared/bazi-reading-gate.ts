@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { isServiceRoleBearer } from "./internal-service-auth.ts";
 import { canUseBaziReading } from "./entitlements.ts";
 
 type ServiceClient = SupabaseClient;
@@ -25,15 +26,30 @@ export type BaziReadingAuth = {
 /** Returns null when denied (caller returns empty 200). */
 export async function requireBaziReadingAuth(
   req: Request,
-  options?: { allowWithoutEntitlement?: boolean },
+  options?: {
+    allowWithoutEntitlement?: boolean;
+    /** Internal prewarm — `Authorization: Bearer` service role + body field. */
+    prewarmUserId?: string;
+  },
 ): Promise<BaziReadingAuth | null> {
   const gateUrl = Deno.env.get("SUPABASE_URL");
   const gateAnon = Deno.env.get("SUPABASE_ANON_KEY");
   const gateService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const authHeader = req.headers.get("Authorization");
-  if (!gateUrl || !gateAnon || !gateService || !authHeader?.startsWith("Bearer ")) {
-    return null;
+  if (!gateUrl || !gateAnon || !gateService) return null;
+
+  const admin = createClient(gateUrl, gateService);
+
+  if (options?.prewarmUserId && isServiceRoleBearer(req)) {
+    const uid = options.prewarmUserId;
+    if (!options.allowWithoutEntitlement) {
+      const allowed = await userHasBaziReadingAccess(admin, uid);
+      if (!allowed) return null;
+    }
+    return { uid, admin };
   }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
   const userClient = createClient(gateUrl, gateAnon, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -41,7 +57,6 @@ export async function requireBaziReadingAuth(
   const uid = userData?.user?.id;
   if (userErr || !uid) return null;
 
-  const admin = createClient(gateUrl, gateService);
   if (!options?.allowWithoutEntitlement) {
     const allowed = await userHasBaziReadingAccess(admin, uid);
     if (!allowed) return null;

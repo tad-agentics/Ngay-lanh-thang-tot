@@ -36,6 +36,7 @@ type CBaziMenhTongQuanBlockProps = {
   proseLoading?: boolean;
   /** Lá số có nhưng luận preview/full trống. */
   proseFailed?: boolean;
+  instantProse?: boolean;
   emptyReason?: string | null;
   onRetryProse?: () => void;
 };
@@ -47,6 +48,7 @@ export function CBaziMenhTongQuanBlock({
   prose,
   proseLoading = false,
   proseFailed = false,
+  instantProse = false,
   emptyReason,
   onRetryProse,
 }: CBaziMenhTongQuanBlockProps) {
@@ -97,6 +99,7 @@ export function CBaziMenhTongQuanBlock({
       <CBaziNlttLuanProse
         text={prose}
         loading={proseLoading}
+        instant={instantProse}
         loadingMessage="Đang luận tổng quan lá số…"
         failed={proseFailed || Boolean(emptyReason && !prose?.trim() && !proseLoading)}
         failedMessage={
