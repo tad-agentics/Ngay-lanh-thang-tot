@@ -5,7 +5,10 @@ import {
   laSoChiTietPreviewSections,
   menhTongQuanProseTooShort,
 } from "./parsers/la-so.ts";
-import { phongThuyCachedSectionsValid } from "./parsers/phong-thuy.ts";
+import {
+  phongThuyAllBlocksCachedValid,
+  phongThuyCachedSectionsValid,
+} from "./parsers/phong-thuy.ts";
 import type { LaSoChiTietSection } from "./core/types.ts";
 
 /** Full `la-so-chi-tiet` cache — chỉ cần §01; §02 có cache key `only-tinh-cach` riêng. */
@@ -25,6 +28,7 @@ export function createLaSoGenerateReadingHandler() {
         preview ? laSoChiTietPreviewSections(sections) : sections,
       laSoChiTietCachedSectionsValid: laSoChiTietFullCacheIsValid,
       phongThuyCachedSectionsValid,
+      phongThuyAllBlocksCachedValid,
     },
   );
 }

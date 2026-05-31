@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { deriveChapterLoadState } from "./bazi-chapter-load";
 import type { PhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
 import {
   hasPhongThuyLuanFromSections,
@@ -71,6 +72,80 @@ describe("hasPhongThuyLuanFromSections", () => {
       },
     ];
     expect(hasPhongThuyLuanFromSections(sections, facts)).toBe(false);
+  });
+});
+
+function fullPhongThuySections(): {
+  id: string;
+  title: string;
+  text: string;
+}[] {
+  return [
+    {
+      id: PHONG_THUY_HUONG_SECTION_ID,
+      title: "H",
+      text: "h".repeat(420),
+    },
+    {
+      id: PHONG_THUY_MAU_SECTION_ID,
+      title: "M",
+      text: "m".repeat(420),
+    },
+    {
+      id: PHONG_THUY_PHI_TINH_SECTION_ID,
+      title: "P",
+      text: `a\n\nb\n\nc\n\n${"p".repeat(560)}`,
+    },
+  ];
+}
+
+describe("deriveChapterLoadState (phong_thuy)", () => {
+  it("keeps §04 loading while only one block has LLM prose", () => {
+    const load = deriveChapterLoadState(
+      [
+        {
+          id: PHONG_THUY_HUONG_SECTION_ID,
+          title: "H",
+          text: "h".repeat(420),
+        },
+      ],
+      {
+        phongThuyFactsRaw: facts,
+        bundleFinished: false,
+      },
+    );
+    expect(load.phong_thuy).toBe("loading");
+    expect(hasPhongThuyLuanFromSections(
+      [{ id: PHONG_THUY_HUONG_SECTION_ID, title: "H", text: "h".repeat(420) }],
+      facts,
+    )).toBe(false);
+  });
+
+  it("marks §04 failed when bundle ends without all blocks", () => {
+    const load = deriveChapterLoadState(
+      [
+        {
+          id: PHONG_THUY_HUONG_SECTION_ID,
+          title: "H",
+          text: "h".repeat(420),
+        },
+      ],
+      {
+        phongThuyFactsRaw: facts,
+        bundleFinished: true,
+      },
+    );
+    expect(load.phong_thuy).toBe("failed");
+  });
+
+  it("marks §04 done when all three blocks meet length gates", () => {
+    const sections = fullPhongThuySections();
+    const load = deriveChapterLoadState(sections, {
+      phongThuyFactsRaw: facts,
+      bundleFinished: true,
+    });
+    expect(load.phong_thuy).toBe("done");
+    expect(hasPhongThuyLuanFromSections(sections, facts)).toBe(true);
   });
 });
 

@@ -26,6 +26,8 @@ export type GenerateContext = {
   anchorReading: string;
   /** day-detail follow-up: prior user/assistant turns (max 8 messages). */
   threadHistory: ThreadTurn[];
+  /** `phong-thuy` — blocks hợp lệ từ reading_cache; chỉ regen id thiếu. */
+  phongThuySeedSections?: LaSoChiTietSection[];
 };
 
 export type GenerateResult = {

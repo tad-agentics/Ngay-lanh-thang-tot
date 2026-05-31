@@ -100,12 +100,37 @@ export function parsePhongThuyBlockResponse(
   };
 }
 
+export function phongThuyBlockFromSections(
+  sections: LaSoChiTietSection[],
+  sectionId: (typeof PHONG_THUY_SECTION_IDS)[number],
+): LaSoChiTietSection | null {
+  const s = sections.find((x) => x.id === sectionId);
+  if (!s || phongThuyBlockProseTooShort(s.text, sectionId)) return null;
+  return s;
+}
+
 /** Cache read — partial OK (≥1 block hợp lệ); FE/generator bổ sung block thiếu. */
 export function phongThuyCachedSectionsValid(
   sections: LaSoChiTietSection[],
 ): boolean {
-  return PHONG_THUY_SECTION_IDS.some((id) => {
-    const s = sections.find((x) => x.id === id);
-    return Boolean(s && !phongThuyBlockProseTooShort(s.text, id));
-  });
+  return PHONG_THUY_SECTION_IDS.some(
+    (id) => phongThuyBlockFromSections(sections, id) != null,
+  );
+}
+
+/** Cache hit đủ 3 khối — trả thẳng, không gọi LLM. */
+export function phongThuyAllBlocksCachedValid(
+  sections: LaSoChiTietSection[],
+): boolean {
+  return PHONG_THUY_SECTION_IDS.every(
+    (id) => phongThuyBlockFromSections(sections, id) != null,
+  );
+}
+
+export function phongThuyMissingBlockIds(
+  sections: LaSoChiTietSection[],
+): (typeof PHONG_THUY_SECTION_IDS)[number][] {
+  return PHONG_THUY_SECTION_IDS.filter(
+    (id) => phongThuyBlockFromSections(sections, id) == null,
+  );
 }

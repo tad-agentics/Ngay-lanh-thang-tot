@@ -40,6 +40,8 @@ export type GenerateReadingHandlerOptions = {
   luuNienCoreCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** `phong-thuy` — 3 khối sections. */
   phongThuyCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** `phong-thuy` — đủ 3 khối mới trả cache sớm. */
+  phongThuyAllBlocksCachedValid?: (sections: LaSoChiTietSection[]) => boolean;
 };
 
 export function createGenerateReadingHandler(
@@ -250,6 +252,7 @@ export function createGenerateReadingHandler(
     const now = Date.now();
     const admin =
       supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
+    let phongThuySeedSections: LaSoChiTietSection[] | undefined;
 
     if (admin) {
       const { data: row, error: readErr } = await admin
@@ -290,24 +293,44 @@ export function createGenerateReadingHandler(
             endpoint === "phong-thuy"
           ) {
             if (cached.sections != null && cached.sections.length > 0) {
-              let validate =
-                options.cachedSectionsValid ??
-                options.tieuVanCachedSectionsValid;
-              if (endpoint === "luu-nien" && onlyLuuNienLife) {
-                validate =
-                  options.luuNienLifeCachedSectionsValid ?? validate;
-              } else if (endpoint === "luu-nien" && onlyLuuNienCore) {
-                validate =
-                  options.luuNienCoreCachedSectionsValid ?? validate;
-              } else if (endpoint === "phong-thuy") {
-                validate =
-                  options.phongThuyCachedSectionsValid ?? validate;
+              if (endpoint === "phong-thuy") {
+                const allOk =
+                  options.phongThuyAllBlocksCachedValid?.(cached.sections) ??
+                  false;
+                const partialOk =
+                  options.phongThuyCachedSectionsValid?.(cached.sections) ??
+                  false;
+                if (allOk) {
+                  return ok(null, cached.sections, req);
+                }
+                if (partialOk) {
+                  phongThuySeedSections = cached.sections;
+                } else {
+                  await admin.from("reading_cache").delete().eq(
+                    "cache_key",
+                    cacheKey,
+                  );
+                }
+              } else {
+                let validate =
+                  options.cachedSectionsValid ??
+                  options.tieuVanCachedSectionsValid;
+                if (endpoint === "luu-nien" && onlyLuuNienLife) {
+                  validate =
+                    options.luuNienLifeCachedSectionsValid ?? validate;
+                } else if (endpoint === "luu-nien" && onlyLuuNienCore) {
+                  validate =
+                    options.luuNienCoreCachedSectionsValid ?? validate;
+                }
+                const valid = validate?.(cached.sections) ?? true;
+                if (valid) {
+                  return ok(null, cached.sections, req);
+                }
+                await admin.from("reading_cache").delete().eq(
+                  "cache_key",
+                  cacheKey,
+                );
               }
-              const valid = validate?.(cached.sections) ?? true;
-              if (valid) {
-                return ok(null, cached.sections, req);
-              }
-              await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
             }
             const r = cached.reading?.trim() ?? "";
             if (r.length > 0) return ok(r, null, req);
@@ -368,6 +391,7 @@ export function createGenerateReadingHandler(
       now,
       anchorReading,
       threadHistory,
+      phongThuySeedSections,
     });
 
     return ok(

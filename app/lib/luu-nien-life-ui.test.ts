@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { deriveChapterLoadState } from "./bazi-chapter-load";
 import {
   hasLuuNienLifeLuanFromSections,
   mergeLuuNienLifeAreasWithLuan,
@@ -53,6 +54,62 @@ describe("mergeLuuNienLifeAreasWithLuan", () => {
     );
     expect(merged[0]?.luan).toBe("Luận dài từ DeepSeek.");
     expect(merged[0]?.detail).toBe("Câu ngắn API.");
+  });
+});
+
+const fourLifeFacts = {
+  year_can_chi: "Bính Ngọ",
+  life_areas: [
+    { id: "tai_loc", label: "Tài lộc", verdict: "Thuận", detail: "API." },
+    { id: "su_nghiep", label: "Sự nghiệp", verdict: "Trung", detail: "API." },
+    { id: "tinh_cam", label: "Tình cảm", verdict: "Thuận", detail: "API." },
+    { id: "suc_khoe", label: "Sức khỏe", verdict: "Hạn", detail: "API." },
+  ],
+};
+
+function completeLifeLuan(id: string, title: string): {
+  id: string;
+  title: string;
+  text: string;
+} {
+  const long = `p1\n\np2\n\n${"x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS)}`;
+  return { id: `luu_nien_life_${id}`, title, text: long };
+}
+
+describe("deriveChapterLoadState (van_nam)", () => {
+  const long = `p1\n\np2\n\n${"x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS)}`;
+
+  it("keeps §03 loading when only one of four life areas has LLM luan", () => {
+    const sections = [completeLifeLuan("tai_loc", "Tài lộc")];
+    const load = deriveChapterLoadState(sections, {
+      luuNienFactsRaw: fourLifeFacts,
+      bundleFinished: false,
+    });
+    expect(load.van_nam).toBe("loading");
+    expect(hasLuuNienLifeLuanFromSections(sections, 4)).toBe(false);
+  });
+
+  it("marks §03 failed when bundle ends with incomplete life luan", () => {
+    const load = deriveChapterLoadState([completeLifeLuan("tai_loc", "Tài lộc")], {
+      luuNienFactsRaw: fourLifeFacts,
+      bundleFinished: true,
+    });
+    expect(load.van_nam).toBe("failed");
+  });
+
+  it("marks §03 done when all expected life areas have complete luan", () => {
+    const sections = [
+      completeLifeLuan("tai_loc", "Tài lộc"),
+      completeLifeLuan("su_nghiep", "Sự nghiệp"),
+      completeLifeLuan("tinh_cam", "Tình cảm"),
+      completeLifeLuan("suc_khoe", "Sức khỏe"),
+    ];
+    const load = deriveChapterLoadState(sections, {
+      luuNienFactsRaw: fourLifeFacts,
+      bundleFinished: true,
+    });
+    expect(load.van_nam).toBe("done");
+    expect(hasLuuNienLifeLuanFromSections(sections, 4)).toBe(true);
   });
 });
 
