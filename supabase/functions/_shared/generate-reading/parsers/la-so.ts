@@ -246,6 +246,15 @@ export function countTinhCachParagraphs(text: string): number {
     .filter(Boolean).length;
 }
 
+/** DeepSeek hay trả một khối dài với \\n đơn — đếm thêm dòng đủ dài. */
+function countSubstantialLines(text: string, minLineChars = 50): number {
+  return text
+    .trim()
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= minLineChars).length;
+}
+
 export const MIN_TINH_CACH_TRAIT_CHARS_RELAXED = 320;
 export const MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED = 2;
 
@@ -256,14 +265,77 @@ export function tinhCachTraitProseTooShort(
   const t = text.trim();
   if (relaxed) {
     if (t.length < MIN_TINH_CACH_TRAIT_CHARS_RELAXED) return true;
-    if (countTinhCachParagraphs(t) < MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED) {
-      return true;
+    if (countTinhCachParagraphs(t) >= MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED) {
+      return false;
     }
-    return false;
+    if (countSubstantialLines(t) >= MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED) {
+      return false;
+    }
+    // Một khối ≥ ~400 ký tự vẫn chấp nhận (relaxed lưu cache / hiển thị).
+    if (t.length >= MIN_TINH_CACH_TRAIT_CHARS_RELAXED + 80) return false;
+    return true;
   }
   if (t.length < MIN_TINH_CACH_TRAIT_CHARS) return true;
   if (countTinhCachParagraphs(t) < MIN_TINH_CACH_TRAIT_PARAGRAPHS) return true;
   return false;
+}
+
+function traitsFromSectionsArray(
+  raw: unknown,
+  relaxed: boolean,
+): LaSoChiTietSection[] {
+  if (!Array.isArray(raw)) return [];
+  const out: LaSoChiTietSection[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const r = row as Record<string, unknown>;
+    const idRaw = typeof r.id === "string" ? r.id.trim() : "";
+    if (!idRaw.startsWith(TINH_CACH_TRAIT_SECTION_PREFIX)) continue;
+    const title =
+      typeof r.title === "string" && r.title.trim()
+        ? r.title.trim()
+        : "Tính cách";
+    const text = coerceLaSoSectionText(r.text);
+    if (!text || tinhCachTraitProseTooShort(text, relaxed)) continue;
+    out.push({
+      id: idRaw,
+      title,
+      text,
+    });
+  }
+  return out;
+}
+
+function parseTraitRowsFromRecord(
+  record: Record<string, unknown>,
+  relaxed: boolean,
+): LaSoChiTietSection[] {
+  const traits: LaSoChiTietSection[] = [];
+  const readingsRaw = record.personality_readings ?? record.personalityReadings;
+  if (Array.isArray(readingsRaw)) {
+    for (const row of readingsRaw) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+      const r = row as Record<string, unknown>;
+      const title =
+        typeof r.title === "string" && r.title.trim()
+          ? r.title.trim()
+          : "Tính cách";
+      const id = normalizeTraitId(
+        typeof r.id === "string" ? r.id : title,
+      );
+      const text = coerceLaSoSectionText(r.text);
+      if (!text || tinhCachTraitProseTooShort(text, relaxed)) continue;
+      traits.push({
+        id: `${TINH_CACH_TRAIT_SECTION_PREFIX}${id}`,
+        title,
+        text,
+      });
+    }
+  }
+  if (traits.length === 0) {
+    traits.push(...traitsFromSectionsArray(record.sections, relaxed));
+  }
+  return traits;
 }
 
 export function parseTinhCachTraitsResponse(
@@ -280,30 +352,7 @@ export function parseTinhCachTraitsResponse(
       ? sanitizeNlttLuanProse(introRaw.trim())
       : null;
 
-  const readingsRaw = record.personality_readings ?? record.personalityReadings;
-  if (!Array.isArray(readingsRaw)) {
-    return intro ? { intro, traits: [] } : null;
-  }
-
-  const traits: LaSoChiTietSection[] = [];
-  for (const row of readingsRaw) {
-    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
-    const r = row as Record<string, unknown>;
-    const title =
-      typeof r.title === "string" && r.title.trim()
-        ? r.title.trim()
-        : "Tính cách";
-    const id = normalizeTraitId(
-      typeof r.id === "string" ? r.id : title,
-    );
-    const text = coerceLaSoSectionText(r.text);
-    if (!text || tinhCachTraitProseTooShort(text, relaxed)) continue;
-    traits.push({
-      id: `${TINH_CACH_TRAIT_SECTION_PREFIX}${id}`,
-      title,
-      text,
-    });
-  }
+  const traits = parseTraitRowsFromRecord(record, relaxed);
 
   if (!intro && traits.length === 0) return null;
   return { intro, traits };

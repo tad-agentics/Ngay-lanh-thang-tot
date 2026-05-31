@@ -35,6 +35,10 @@ export type GenerateReadingInput = {
   only_luu_nien_life?: boolean;
   /** `luu-nien` — chỉ sinh §05 core (`luu_nien_ung_xu`, …). */
   only_luu_nien_core?: boolean;
+  /** Bổ sung §02 — chỉ sinh các trait id thiếu (gap-fill). */
+  tinh_cach_trait_ids?: string[];
+  /** Bổ sung §03 — chỉ sinh các life_area id thiếu (gap-fill). */
+  luu_nien_life_area_ids?: string[];
 };
 
 /** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */

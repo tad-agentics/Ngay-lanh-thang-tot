@@ -47,6 +47,8 @@ export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON =
 export const READING_MAX_TOKENS_LA_SO_PREVIEW = 4_096;
 /** §02 personality_readings — 4 mục × ~500–600 từ. */
 export const READING_MAX_TOKENS_TINH_CACH_TRAITS = 12_288;
+/** §02 — mỗi lô 2 trait (song song trong một invoke). */
+export const READING_MAX_TOKENS_TINH_CACH_TRAITS_BATCH = 6_144;
 
 export const MIN_TIEU_VAN_SECTION_CHARS = 320;
 export const MIN_TIEU_VAN_SECTION_SENTENCE_ENDS = 5;
@@ -65,6 +67,8 @@ export const MIN_TINH_CACH_INTRO_CHARS = 80;
 export const MIN_LUU_NIEN_LIFE_AREA_CHARS = 420;
 export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS = 3;
 export const READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS = 6_144;
+/** §03 — mỗi lô 2 life_area (song song trong một invoke). */
+export const READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS_BATCH = 4_096;
 
 /** §05 `ung_xu` — Quý nhân · lưu ý (màn 18). */
 export const MIN_LUU_NIEN_UNG_XU_CHARS = 720;

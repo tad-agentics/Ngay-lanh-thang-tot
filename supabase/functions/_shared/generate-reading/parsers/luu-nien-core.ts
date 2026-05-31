@@ -11,7 +11,10 @@ import {
 import { countMenhPreviewParagraphs, countViSentenceEndings } from "./la-so.ts";
 import { tryParseLaSoChiTietRecord } from "./json.ts";
 import { pickFlowJsonField } from "./flow-json-sections.ts";
-import { LUU_NIEN_LIFE_AREA_PREFIX } from "./luu-nien-life.ts";
+import {
+  LUU_NIEN_LIFE_AREA_PREFIX,
+  luuNienLifeAreaProseTooShort,
+} from "./luu-nien-life.ts";
 
 /** Số life_areas LLM tối thiểu để coi cache lưu niên hợp lệ — khớp FE. */
 export const LUU_NIEN_FULL_LIFE_AREA_COUNT = 4;
@@ -100,14 +103,14 @@ export function luuNienCoreSectionsNeedLengthRetry(
   return core.some((s) => coreSectionTooShort(s.id, s.text));
 }
 
-/** Cache read — trả partial nếu có ≥1 life_area đủ dài (FE bổ sung mục thiếu). */
+/** Cache read — trả partial nếu có ≥1 life_area đủ relaxed (FE bổ sung mục thiếu). */
 export function luuNienLifeCachedSectionsValid(
   sections: LaSoChiTietSection[],
 ): boolean {
   return sections.some(
     (s) =>
       s.id.startsWith(LUU_NIEN_LIFE_AREA_PREFIX) &&
-      s.text.trim().length >= MIN_LUU_NIEN_LIFE_AREA_CHARS,
+      !luuNienLifeAreaProseTooShort(s.text, true),
   );
 }
 

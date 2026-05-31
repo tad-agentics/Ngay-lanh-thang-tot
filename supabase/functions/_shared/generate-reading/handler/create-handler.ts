@@ -22,6 +22,13 @@ import { dayIsoFromDayDetailData, todayIsoVietnam } from "../core/dates.ts";
 import { ok } from "../core/response.ts";
 import type { GenerateReadingFn, LaSoChiTietSection } from "../core/types.ts";
 
+function parseStringIdArray(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    .map((x) => x.trim().toLowerCase());
+}
+
 export type GenerateReadingHandlerOptions = {
   /** La-so-chi-tiet cache: trim sections for preview paywall. */
   transformCachedLaSoSections?: (
@@ -98,6 +105,9 @@ export function createGenerateReadingHandler(
     }
     const anchorReading = parseAnchorReading(body.anchor_reading);
     const threadHistory = parseThreadHistory(body.thread_history);
+
+    const tinhCachTraitIds = parseStringIdArray(body.tinh_cach_trait_ids);
+    const luuNienLifeAreaIds = parseStringIdArray(body.luu_nien_life_area_ids);
 
     if (!endpoint || data === undefined) {
       return ok(null, null, req);
@@ -223,6 +233,12 @@ export function createGenerateReadingHandler(
             data,
             ...(question ? { question } : {}),
             ...(variant === "inline" ? { variant: "inline" } : {}),
+            ...(tinhCachTraitIds.length
+              ? { tinh_cach_trait_ids: tinhCachTraitIds }
+              : {}),
+            ...(luuNienLifeAreaIds.length
+              ? { luu_nien_life_area_ids: luuNienLifeAreaIds }
+              : {}),
           };
 
     const dataJson = stableStringify(
@@ -241,7 +257,13 @@ export function createGenerateReadingHandler(
     const threadJson = threadHistory.length
       ? stableStringify(threadHistory)
       : "";
-    const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${onlyTinhCach ? "only-tinh-cach" : ""}\n${onlyLuuNienLife ? "only-luu-life" : ""}\n${onlyLuuNienCore ? "only-luu-core" : ""}\n${threadJson}\n${anchorReading ? await sha256Prefix16(anchorReading.slice(0, 4000)) : ""}\n${dataJson}`;
+    const supplementKey = [
+      tinhCachTraitIds.length ? `tinh:${tinhCachTraitIds.join(",")}` : "",
+      luuNienLifeAreaIds.length ? `life:${luuNienLifeAreaIds.join(",")}` : "",
+    ]
+      .filter(Boolean)
+      .join("|");
+    const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${onlyTinhCach ? "only-tinh-cach" : ""}\n${onlyLuuNienLife ? "only-luu-life" : ""}\n${onlyLuuNienCore ? "only-luu-core" : ""}\n${supplementKey}\n${threadJson}\n${anchorReading ? await sha256Prefix16(anchorReading.slice(0, 4000)) : ""}\n${dataJson}`;
     const cacheKey = await sha256Prefix16(cacheInput);
 
     const payload = stableStringify(promptBody);

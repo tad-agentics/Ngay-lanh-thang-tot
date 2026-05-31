@@ -117,3 +117,20 @@ export function hasLuuNienLifeLuanFromSections(
   );
   return areas.length >= expectedCount;
 }
+
+/** Life area id chưa đủ luận delivery — gọi supplement `luu_nien_life_area_ids`. */
+export function missingLuuNienLifeAreaIds(
+  facts: LuuNienFactsView | null,
+  sections: LaSoChiTietSection[],
+): string[] {
+  const merged = mergeLuuNienLifeAreasWithLuan(facts, sections);
+  if (merged.length > 0) {
+    return merged
+      .filter((a) => !isCompleteLifeAreaLuan(a.luan))
+      .map((a) => normalizeAreaId(a.id));
+  }
+  const fromLlm = parseLifeAreaLuanFromSections(sections).filter(
+    (a) => !isCompleteLifeAreaLuan(a.text),
+  );
+  return fromLlm.map((a) => normalizeAreaId(a.id));
+}

@@ -32,6 +32,14 @@ function coerceLifeAreaText(v: unknown): string | null {
 export const MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED = 240;
 export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED = 2;
 
+function countSubstantialLines(text: string, minLineChars = 50): number {
+  return text
+    .trim()
+    .split(/\n+/)
+    .map((p) => p.trim())
+    .filter((p) => p.length >= minLineChars).length;
+}
+
 export function luuNienLifeAreaProseTooShort(
   text: string,
   relaxed = false,
@@ -39,16 +47,46 @@ export function luuNienLifeAreaProseTooShort(
   const t = text.trim();
   if (relaxed) {
     if (t.length < MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED) return true;
-    if (countMenhPreviewParagraphs(t) < MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED) {
-      return true;
+    if (countMenhPreviewParagraphs(t) >= MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED) {
+      return false;
     }
-    return false;
+    if (countSubstantialLines(t) >= MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED) {
+      return false;
+    }
+    if (t.length >= MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED + 80) return false;
+    return true;
   }
   if (t.length < MIN_LUU_NIEN_LIFE_AREA_CHARS) return true;
   if (countMenhPreviewParagraphs(t) < MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS) {
     return true;
   }
   return false;
+}
+
+function lifeAreasFromSectionsArray(
+  raw: unknown,
+  relaxed: boolean,
+): LaSoChiTietSection[] {
+  if (!Array.isArray(raw)) return [];
+  const out: LaSoChiTietSection[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const r = row as Record<string, unknown>;
+    const idRaw = typeof r.id === "string" ? r.id.trim() : "";
+    if (!idRaw.startsWith(LUU_NIEN_LIFE_AREA_PREFIX)) continue;
+    const label =
+      typeof r.title === "string" && r.title.trim()
+        ? r.title.trim()
+        : "Lĩnh vực";
+    const text = coerceLifeAreaText(r.text);
+    if (!text || luuNienLifeAreaProseTooShort(text, relaxed)) continue;
+    out.push({
+      id: idRaw,
+      title: label,
+      text,
+    });
+  }
+  return out;
 }
 
 export function parseLuuNienLifeAreasResponse(
@@ -65,29 +103,30 @@ export function parseLuuNienLifeAreasResponse(
       ? sanitizeNlttLuanProse(introRaw.trim())
       : null;
 
-  const readingsRaw = record.life_area_readings ?? record.lifeAreaReadings;
-  if (!Array.isArray(readingsRaw)) {
-    return yearIntro ? { yearIntro, areas: [] } : null;
-  }
-
   const areas: LaSoChiTietSection[] = [];
-  for (const row of readingsRaw) {
-    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
-    const r = row as Record<string, unknown>;
-    const label =
-      typeof r.label === "string" && r.label.trim()
-        ? r.label.trim()
-        : "Lĩnh vực";
-    const id = normalizeLifeAreaId(
-      typeof r.id === "string" ? r.id : label,
-    );
-    const text = coerceLifeAreaText(r.text);
-    if (!text || luuNienLifeAreaProseTooShort(text, relaxed)) continue;
-    areas.push({
-      id: `${LUU_NIEN_LIFE_AREA_PREFIX}${id}`,
-      title: label,
-      text,
-    });
+  const readingsRaw = record.life_area_readings ?? record.lifeAreaReadings;
+  if (Array.isArray(readingsRaw)) {
+    for (const row of readingsRaw) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+      const r = row as Record<string, unknown>;
+      const label =
+        typeof r.label === "string" && r.label.trim()
+          ? r.label.trim()
+          : "Lĩnh vực";
+      const id = normalizeLifeAreaId(
+        typeof r.id === "string" ? r.id : label,
+      );
+      const text = coerceLifeAreaText(r.text);
+      if (!text || luuNienLifeAreaProseTooShort(text, relaxed)) continue;
+      areas.push({
+        id: `${LUU_NIEN_LIFE_AREA_PREFIX}${id}`,
+        title: label,
+        text,
+      });
+    }
+  }
+  if (areas.length === 0) {
+    areas.push(...lifeAreasFromSectionsArray(record.sections, relaxed));
   }
 
   if (!yearIntro && areas.length === 0) return null;

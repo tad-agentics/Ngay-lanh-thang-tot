@@ -73,37 +73,83 @@ export const LA_SO_CHI_TIET_ASPECTS_SYSTEM = `Bạn là chuyên gia tử vi và 
 
 ${LA_SO_VOICE_AND_BANS}`;
 
-/** §02 Tính cách — luận dài từng mục (khớp Direction C màn 18). */
-export const LA_SO_TINH_CACH_TRAITS_SYSTEM = `Bạn là chuyên gia tử vi và lịch số Việt Nam, viết luận giải **Tính cách · cá tính** (§02) cho ứng dụng.
+/** §02 — id mặc định khi data.personality_traits thiếu. */
+export const LA_SO_DEFAULT_TRAIT_IDS = [
+  "diem_manh",
+  "ca_tinh",
+  "can_luu",
+  "tinh_cam",
+] as const;
+
+export type TinhCachTraitsPromptOpts = {
+  traitIds: readonly string[];
+  includeIntro: boolean;
+};
+
+const TINH_CACH_TRAIT_PROSE_RULES = `- Với **mỗi** mục trong danh sách id, "text" là luận giải **~500 ký tự** (tối thiểu 450, mục tiêu 500–600 ký tự có dấu), chia **2–3 đoạn văn** ngăn bằng \\n\\n.
+- Mỗi đoạn 3–6 câu hoàn chỉnh; câu cuối đoạn nối mạch sang đoạn sau.
+- Diễn giải **sâu, cụ thể** theo lá số (Nhật Chủ, Thập Thần, cường nhược, Dụng/Kỵ, archetype trong data) — **không** chỉ nhắc lại nhãn ngắn từ API.
+- Viết như mô tả một con người thật: ví dụ đời sống, công việc, quan hệ — có thể áp dụng.
+- Giữ "title" trùng hoặc sát title gợi ý trong data.personality_traits; "id" khớp đúng id được yêu cầu (snake_case).`;
+
+/** §02 — prompt theo danh sách trait (không mâu thuẫn "đúng 4 mục"). */
+export function laSoTinhCachTraitsSystem(
+  opts: TinhCachTraitsPromptOpts,
+): string {
+  const traitIds = [...opts.traitIds];
+  const count = traitIds.length;
+  const idList = traitIds.join(", ");
+  const introBlock = opts.includeIntro
+    ? `- Bắt buộc khóa "tinh_cach_intro": chuỗi **3–4 câu** mở đầu §02 (Nhật Chủ + trụ giờ/nguyệt nếu có; **không** lặp nguyên văn bullet API).\n`
+    : `- **KHÔNG** có khóa "tinh_cach_intro" trong JSON đầu ra — chỉ personality_readings.\n`;
+
+  return `Bạn là chuyên gia tử vi và lịch số Việt Nam, viết luận giải **Tính cách · cá tính** (§02) cho ứng dụng.
 
 ## ĐỊNH DẠNG
 - Đầu vào: JSON "endpoint":"la-so-chi-tiet" và "data" (lá số: nhat_chu, pillars, thap_than, cuong_nhuoc, personality_traits[], tinh_cach, …).
 - Đầu ra: CHỈ một object JSON hợp lệ, không bọc \`\`\`, không lời dẫn ngoài JSON.
-- Hai khóa bắt buộc:
-  - "tinh_cach_intro": chuỗi — **3–4 câu** mở đầu §02 (Nhật Chủ + trụ giờ/nguyệt nếu có; hình tượng cá tính; **không** lặp nguyên văn bullet API).
-  - "personality_readings": mảng các object { "id", "title", "text" }.
+
+## PHẠM VI LÔ NÀY (bắt buộc)
+- CHỈ sinh personality_readings cho **đúng ${count}** mục, id: ${idList}.
+- **Không** thêm mục ngoài danh sách. **Không** sinh id khác.
+${introBlock}- Khóa "personality_readings": mảng { "id", "title", "text" } — **đúng ${count}** phần tử.
 
 ## personality_readings — LUẬN TỪNG MỤC
-- Lấy **danh sách mục** từ data.personality_traits (id, title, text gợi ý). Nếu thiếu, dùng đúng 4 mục (theo thứ tự):
-  1. "diem_manh" · Điểm mạnh
-  2. "ca_tinh" · Cá tính nổi bật
-  3. "can_luu" · Điểm cần lưu ý
-  4. "tinh_cam" · Tình cảm & quan hệ
-- Với **mỗi** mục, "text" là luận giải **~500 ký tự** (tối thiểu 450, mục tiêu 500–600 ký tự có dấu), chia **2–3 đoạn văn** ngăn bằng \\n\\n.
-- Mỗi đoạn 3–6 câu hoàn chỉnh; câu cuối đoạn nối mạch sang đoạn sau.
-- Diễn giải **sâu, cụ thể** theo lá số (Nhật Chủ, Thập Thần, cường nhược, Dụng/Kỵ, archetype trong data) — **không** chỉ nhắc lại nhãn ngắn từ API (vd. không dừng ở "Linh hoạt, khéo léo").
-- Viết như mô tả một con người thật: ví dụ đời sống, công việc, quan hệ — có thể áp dụng.
-- Giữ "title" trùng hoặc sát title gợi ý trong data; "id" ổn định (snake_case).
+${TINH_CACH_TRAIT_PROSE_RULES}
 
 ## ĐIỀU CẤM
 - KHÔNG gạch đầu dòng, KHÔNG markdown, KHÔNG tiêu đề chương trong "text".
 - KHÔNG lời chào / meta. KHÔNG bịa ngoài data. KHÔNG phán tuyệt đối.
-- KHÔNG giải thích lại Tứ Trụ, Ngũ Hành hay Đại Vận — §01 đã có; chương này chỉ nói về tính cách, cá tính.
+- KHÔNG giải thích lại Tứ Trụ, Ngũ Hành hay Đại Vận — §01 đã có.
 
 ${LA_SO_VOICE_AND_BANS}`;
+}
 
-export const LA_SO_TINH_CACH_TRAITS_RETRY_SYSTEM = `Cùng JSON la-so-chi-tiet. Trả CHỈ {"tinh_cach_intro":"...","personality_readings":[{"id","title","text"},...]}.
-Mỗi personality_readings[].text: **~500 ký tự (tối thiểu 450)**, **2–3 đoạn** (\\n\\n), văn xuôi sâu — không nhãn ngắn. Đúng 4 mục; không bỏ mục dù data ít.`;
+export function laSoTinhCachTraitsRetrySystem(
+  opts: TinhCachTraitsPromptOpts,
+): string {
+  const traitIds = [...opts.traitIds];
+  const count = traitIds.length;
+  const idList = traitIds.join(", ");
+  const introKeys = opts.includeIntro
+    ? '{"tinh_cach_intro":"...","personality_readings":[{"id","title","text"},...]}'
+    : '{"personality_readings":[{"id","title","text"},...]}';
+
+  return `Cùng JSON la-so-chi-tiet. Trả CHỈ ${introKeys}.
+Đúng **${count}** mục personality_readings, id: ${idList} — không thêm, không bớt.
+Mỗi text: **~500 ký tự (tối thiểu 450)**, **2–3 đoạn** (\\n\\n), văn xuôi sâu — không nhãn ngắn.`;
+}
+
+/** §02 full bundle (4 trait + intro) — alias builder. */
+export const LA_SO_TINH_CACH_TRAITS_SYSTEM = laSoTinhCachTraitsSystem({
+  traitIds: [...LA_SO_DEFAULT_TRAIT_IDS],
+  includeIntro: true,
+});
+
+export const LA_SO_TINH_CACH_TRAITS_RETRY_SYSTEM = laSoTinhCachTraitsRetrySystem({
+  traitIds: [...LA_SO_DEFAULT_TRAIT_IDS],
+  includeIntro: true,
+});
 
 /** Fallback một lần gọi — khi tách §01 / §02–06 thất bại. */
 export const LA_SO_CHI_TIET_SYSTEM = `Bạn là chuyên gia tử vi và lịch số Việt Nam, viết luận giải lá số cho ứng dụng.

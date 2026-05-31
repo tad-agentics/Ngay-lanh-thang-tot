@@ -6,6 +6,7 @@ import {
   mergeLuuNienLifeAreasWithLuan,
   MIN_LUU_NIEN_LIFE_LUAN_CHARS,
   MIN_LUU_NIEN_LIFE_LUAN_PARAGRAPHS,
+  missingLuuNienLifeAreaIds,
   parseLifeAreaLuanFromSections,
 } from "./luu-nien-life-ui";
 
@@ -75,6 +76,36 @@ function completeLifeLuan(id: string, title: string): {
   const long = `p1\n\np2\n\n${"x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS)}`;
   return { id: `luu_nien_life_${id}`, title, text: long };
 }
+
+describe("missingLuuNienLifeAreaIds", () => {
+  const long = `p1\n\np2\n\np3\n\n${"x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS)}`;
+
+  it("returns life area ids without complete delivery prose", () => {
+    const facts = {
+      yearCanChi: "Bính Ngọ",
+      yearRating: null,
+      yearTheme: null,
+      lifeAreas: [
+        { id: "tai_loc", label: "Tài lộc", verdict: "", detail: "" },
+        { id: "su_nghiep", label: "Sự nghiệp", verdict: "", detail: "" },
+        { id: "tinh_duyen", label: "Tình duyên", verdict: "", detail: "" },
+        { id: "suc_khoe", label: "Sức khỏe", verdict: "", detail: "" },
+      ],
+      warnings: [],
+      monthScores: [],
+      quyNhan: null,
+      daiVanNext: null,
+    };
+    const sections = [
+      { id: "luu_nien_life_tai_loc", title: "Tài lộc", text: long },
+      { id: "luu_nien_life_su_nghiep", title: "Sự nghiệp", text: long },
+    ];
+    expect(missingLuuNienLifeAreaIds(facts, sections).sort()).toEqual([
+      "suc_khoe",
+      "tinh_duyen",
+    ]);
+  });
+});
 
 describe("deriveChapterLoadState (van_nam)", () => {
   const long = `p1\n\np2\n\n${"x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS)}`;

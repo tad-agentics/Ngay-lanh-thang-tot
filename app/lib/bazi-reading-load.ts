@@ -44,7 +44,10 @@ import {
   mergeBaziReadingWithPhongThuy,
   phongThuySectionsFromGenerateReading,
 } from "~/lib/phong-thuy-ui";
-import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
+import {
+  hasLuuNienLifeLuanFromSections,
+  missingLuuNienLifeAreaIds,
+} from "~/lib/luu-nien-life-ui";
 import {
   createInitialChapterLoadState,
   deriveChapterLoadState,
@@ -53,6 +56,7 @@ import {
 import {
   hasTinhCachLuanFromSections,
   mergeLaSoTinhCachSections,
+  missingTinhCachTraitIds,
 } from "~/lib/personality-traits-ui";
 
 const BAZI_INVOKE_STAGGER_MS = 1_500;
@@ -494,13 +498,24 @@ export async function loadBaziReadingFull(
     }
   }
 
-  // Wave 2 — §02 rồi §03 life tuần tự (tránh rate limit / tab suspend song song).
+  // Wave 2 — §02 + §03 song song (scope rate limit khác nhau).
   await stagger(0);
-  const tinhGen = await invokeGenerateReadingWithRetry({
+  const wave2Tinh = invokeGenerateReadingWithRetry({
     endpoint: "la-so-chi-tiet",
     data: lasoData,
     only_tinh_cach: true,
   });
+  const wave2Life = luuNienResOk
+    ? invokeGenerateReadingWithRetry({
+        endpoint: "luu-nien",
+        data: luuNienFactsRaw,
+        only_luu_nien_life: true,
+      })
+    : null;
+  const [tinhGen, lifeGen] = await Promise.all([
+    wave2Tinh,
+    wave2Life ?? Promise.resolve(null),
+  ]);
   noteGenerateTransport(tinhGen, transportFlags);
   const tinhSections = laSoSectionsFromGenerateReading(
     tinhGen.sections,
@@ -511,15 +526,7 @@ export async function loadBaziReadingFull(
   } else if (tinhGen.transportError === "gateway_timeout") {
     toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
   }
-  reportProgress();
-
-  if (luuNienResOk) {
-    await stagger(1);
-    const lifeGen = await invokeGenerateReadingWithRetry({
-      endpoint: "luu-nien",
-      data: luuNienFactsRaw,
-      only_luu_nien_life: true,
-    });
+  if (lifeGen) {
     noteGenerateTransport(lifeGen, transportFlags);
     luuNienSections = mergeLuuNienGenerateSections(
       luuNienSectionsFromGenerateReading(lifeGen.sections, lifeGen.reading),
@@ -528,8 +535,8 @@ export async function loadBaziReadingFull(
     if (lifeGen.transportError === "gateway_timeout") {
       toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
     }
-    reportProgress();
   }
+  reportProgress();
 
   if (phongThuyFactsRaw) {
     const phongThuyGen = await invokeGenerateReadingWithRetry({
@@ -585,13 +592,16 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (hasTinhCachLuanFromSections(laSoSections)) break;
-    if (attempt > 0) await stagger(2);
+  if (!hasTinhCachLuanFromSections(laSoSections)) {
+    const missingTraits = missingTinhCachTraitIds(laSoDisplay, laSoSections);
+    await stagger(1);
     const tinhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
       only_tinh_cach: true,
+      ...(missingTraits.length > 0 && missingTraits.length < 4
+        ? { tinh_cach_trait_ids: missingTraits }
+        : {}),
     });
     noteGenerateTransport(tinhRetry, transportFlags);
     const retryTinh = laSoSectionsFromGenerateReading(
@@ -603,18 +613,20 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (
-      !luuNienResOk ||
-      hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
-    ) {
-      break;
-    }
-    if (attempt > 0) await stagger(2);
+  if (
+    luuNienResOk &&
+    !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
+  ) {
+    const luuFacts = parseLuuNienFactsView(luuNienFactsRaw);
+    const missingLife = missingLuuNienLifeAreaIds(luuFacts, luuNienSections);
+    await stagger(1);
     const lifeRetry = await invokeGenerateReadingWithRetry({
       endpoint: "luu-nien",
       data: luuNienFactsRaw,
       only_luu_nien_life: true,
+      ...(missingLife.length > 0 && missingLife.length < expectedLifeAreas
+        ? { luu_nien_life_area_ids: missingLife }
+        : {}),
     });
     noteGenerateTransport(lifeRetry, transportFlags);
     const retryLife = luuNienSectionsFromGenerateReading(

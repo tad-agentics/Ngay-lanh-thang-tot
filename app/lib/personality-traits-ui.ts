@@ -116,6 +116,27 @@ export function hasTinhCachLuanFromSections(
   );
 }
 
+function normalizeTraitId(id: string): string {
+  return id.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+
+/** Trait id API chưa có luận đủ delivery — gọi supplement `tinh_cach_trait_ids`. */
+export function missingTinhCachTraitIds(
+  laSo: LaSoJson | null | undefined,
+  sections: LaSoChiTietSection[],
+): string[] {
+  const expected =
+    parsePersonalityTraitsFromLaSo(laSo).length > 0
+      ? parsePersonalityTraitsFromLaSo(laSo).map((t) => normalizeTraitId(t.id))
+      : ["diem_manh", "ca_tinh", "can_luu", "tinh_cam"];
+  const have = new Set(
+    parsePersonalityTraitsFromSections(sections)
+      .filter((t) => traitLuanMeetsMin(t.text))
+      .map((t) => normalizeTraitId(t.id)),
+  );
+  return expected.filter((id) => !have.has(id));
+}
+
 /** §02 — có ít nhất một trait LLM đủ dài để hiển thị (không chỉ intro API). */
 export function hasTinhCachDisplayLuanFromSections(
   sections: LaSoChiTietSection[],
@@ -125,20 +146,18 @@ export function hasTinhCachDisplayLuanFromSections(
   );
 }
 
-function isTinhCachSectionId(id: string): boolean {
-  return (
-    id === TINH_CACH_INTRO_SECTION_ID ||
-    id === "tinh_cach" ||
-    id.startsWith(TINH_CACH_TRAIT_PREFIX)
-  );
-}
-
-/** Gộp §02 supplement vào bundle lá số (thay traits/intro cũ nếu có). */
+/**
+ * Upsert §02 supplement theo id (gap-fill chỉ trả subset trait — không xóa
+ * trait đã có). Drop legacy `tinh_cach` (singular) khi có supplement mới.
+ */
 export function mergeLaSoTinhCachSections(
   existing: LaSoChiTietSection[],
   tinhCach: LaSoChiTietSection[],
 ): LaSoChiTietSection[] {
   if (tinhCach.length === 0) return existing;
-  const kept = existing.filter((s) => !isTinhCachSectionId(s.id));
+  const supplementIds = new Set(tinhCach.map((s) => s.id));
+  const kept = existing.filter(
+    (s) => s.id !== "tinh_cach" && !supplementIds.has(s.id),
+  );
   return [...kept, ...tinhCach];
 }
