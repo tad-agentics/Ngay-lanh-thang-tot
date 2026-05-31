@@ -197,7 +197,10 @@ export function createGenerateReadingHandler(
       const auth = await requireBaziReadingAuth(req, {
         allowWithoutEntitlement: endpoint === "la-so-chi-tiet" && preview,
       });
-      if (!auth) return ok(null, null, req);
+      if (!auth) {
+        console.warn("generate-reading bazi auth denied", endpoint);
+        return ok(null, null, req);
+      }
       rateLimitUserId = auth.uid;
     }
 
@@ -339,6 +342,8 @@ export function createGenerateReadingHandler(
       if (!slot) {
         console.warn(
           "generate-reading rate limited",
+          endpoint,
+          rlScope,
           rateLimitUserId,
           question ? "follow-up" : "primary",
         );

@@ -19,6 +19,7 @@ import {
 } from "~/lib/bazi-reading-outline";
 import {
   invokeGenerateReading,
+  invokeGenerateReadingWithRetry,
   normalizeLaSoSectionsInput,
   type GenerateReadingResponse,
   type LaSoChiTietSection,
@@ -418,7 +419,7 @@ export async function loadBaziReadingFull(
 
   await Promise.all([
     (async () => {
-      const lasoGen = await invokeGenerateReading({
+      const lasoGen = await invokeGenerateReadingWithRetry({
         endpoint: "la-so-chi-tiet",
         data: lasoData,
       });
@@ -437,7 +438,7 @@ export async function loadBaziReadingFull(
         menhTongQuanProseFromSections(laSoSections) &&
         !hasTinhCachLuanFromSections(laSoSections)
       ) {
-        const tinhGen = await invokeGenerateReading({
+        const tinhGen = await invokeGenerateReadingWithRetry({
           endpoint: "la-so-chi-tiet",
           data: lasoData,
           only_tinh_cach: true,
@@ -457,7 +458,7 @@ export async function loadBaziReadingFull(
     })(),
     luuNienResOk
       ? (async () => {
-          const lifeGen = await invokeGenerateReading({
+          const lifeGen = await invokeGenerateReadingWithRetry({
             endpoint: "luu-nien",
             data: luuNienFactsRaw,
             only_luu_nien_life: true,
@@ -472,7 +473,7 @@ export async function loadBaziReadingFull(
       : Promise.resolve(),
     luuNienResOk
       ? (async () => {
-          const coreGen = await invokeGenerateReading({
+          const coreGen = await invokeGenerateReadingWithRetry({
             endpoint: "luu-nien",
             data: luuNienFactsRaw,
             only_luu_nien_core: true,
@@ -487,7 +488,7 @@ export async function loadBaziReadingFull(
       : Promise.resolve(),
     phongThuyFactsRaw
       ? (async () => {
-          const phongThuyGen = await invokeGenerateReading({
+          const phongThuyGen = await invokeGenerateReadingWithRetry({
             endpoint: "phong-thuy",
             data: phongThuyFactsRaw,
           });
@@ -502,7 +503,7 @@ export async function loadBaziReadingFull(
   ]);
 
   if (!deliveryHasMenhProse(laSoSections)) {
-    const menhRetry = await invokeGenerateReading({
+    const menhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
     });
@@ -527,7 +528,7 @@ export async function loadBaziReadingFull(
     if (lifeGenTransport === "gateway_timeout") {
       toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
     }
-    const lifeRetry = await invokeGenerateReading({
+    const lifeRetry = await invokeGenerateReadingWithRetry({
       endpoint: "luu-nien",
       data: luuNienFactsRaw,
       only_luu_nien_life: true,
@@ -557,7 +558,7 @@ export async function loadBaziReadingFull(
     if (tinhGenTransport === "gateway_timeout") {
       toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
     }
-    const tinhRetry = await invokeGenerateReading({
+    const tinhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
       only_tinh_cach: true,
@@ -575,7 +576,7 @@ export async function loadBaziReadingFull(
     if (coreGenTransport === "gateway_timeout") {
       toast.error("Luận quý nhân mất quá lâu — thử tải lại luận.");
     }
-    const coreRetry = await invokeGenerateReading({
+    const coreRetry = await invokeGenerateReadingWithRetry({
       endpoint: "luu-nien",
       data: luuNienFactsRaw,
       only_luu_nien_core: true,

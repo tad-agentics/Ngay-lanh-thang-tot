@@ -249,11 +249,9 @@ export async function generateLaSoChiTietFullSections(
 ): Promise<LaSoChiTietSection[] | null> {
   const budget = createEdgeBudget(GENERATE_READING_EDGE_BUDGET_MS);
 
-  /** §01 và §02 song song — budget là wall-clock nên chạy song song không rút ngắn window của nhau. */
-  const [menh, tinhCach] = await Promise.all([
-    generateMenhTongQuanSection(payload, budget),
-    generateTinhCachTraitSections(payload, budget),
-  ]);
+  /** §01 trước §02 — tránh tranh budget/DeepSeek; §02 có thể bổ sung qua `only_tinh_cach`. */
+  const menh = await generateMenhTongQuanSection(payload, budget);
+  const tinhCach = await generateTinhCachTraitSections(payload, budget);
 
   if (menh || tinhCach.length > 0) {
     return [...(menh ? [menh] : []), ...tinhCach];

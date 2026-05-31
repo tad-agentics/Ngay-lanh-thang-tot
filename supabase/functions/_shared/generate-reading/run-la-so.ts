@@ -3,26 +3,16 @@ import { createGenerateReadingHandler } from "./handler/create-handler.ts";
 import { generateLaSoReading } from "./generators/la-so.ts";
 import {
   laSoChiTietPreviewSections,
-  TINH_CACH_INTRO_SECTION_ID,
-  TINH_CACH_TRAIT_SECTION_PREFIX,
+  menhTongQuanProseTooShort,
 } from "./parsers/la-so.ts";
-import { MIN_TINH_CACH_TRAIT_CHARS } from "./core/config.ts";
 import { phongThuyCachedSectionsValid } from "./parsers/phong-thuy.ts";
 import type { LaSoChiTietSection } from "./core/types.ts";
 
-function laSoChiTietFullCacheHasTinhCach(sections: LaSoChiTietSection[]): boolean {
-  return sections.some((s) => {
-    if (s.id === TINH_CACH_INTRO_SECTION_ID) {
-      return (s.text?.trim().length ?? 0) >= 80;
-    }
-    if (s.id.startsWith(TINH_CACH_TRAIT_SECTION_PREFIX)) {
-      return (s.text?.trim().length ?? 0) >= MIN_TINH_CACH_TRAIT_CHARS;
-    }
-    if (s.id === "tinh_cach") {
-      return (s.text?.trim().length ?? 0) >= 120;
-    }
-    return false;
-  });
+/** Full `la-so-chi-tiet` cache — chỉ cần §01; §02 có cache key `only-tinh-cach` riêng. */
+function laSoChiTietFullCacheIsValid(sections: LaSoChiTietSection[]): boolean {
+  const menh = sections.find((s) => s.id === "menh_tong_quan");
+  if (!menh?.text?.trim()) return false;
+  return !menhTongQuanProseTooShort(menh.text);
 }
 
 /** La-so-domain Edge bundle — lá số chi tiết + prose endpoints only. */
@@ -33,7 +23,7 @@ export function createLaSoGenerateReadingHandler() {
     {
       transformCachedLaSoSections: (sections, preview) =>
         preview ? laSoChiTietPreviewSections(sections) : sections,
-      laSoChiTietCachedSectionsValid: laSoChiTietFullCacheHasTinhCach,
+      laSoChiTietCachedSectionsValid: laSoChiTietFullCacheIsValid,
       phongThuyCachedSectionsValid,
     },
   );

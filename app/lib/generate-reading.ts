@@ -238,6 +238,34 @@ function handleGenerateReadingErrorCode(code: string): void {
  * Gọi Edge luận giải (day | la-so | tieu-van | luu-nien) — luôn HTTP 200.
  * `reading` / `sections` / `dayReadings` tùy endpoint có thể null.
  */
+function generateReadingResponseEmpty(res: GenerateReadingResponse): boolean {
+  return (
+    !res.reading &&
+    (!res.sections || res.sections.length === 0) &&
+    (!res.dayReadings || Object.keys(res.dayReadings).length === 0)
+  );
+}
+
+const RATE_LIMIT_RETRY_MS = 11_000;
+
+/**
+ * Gọi Edge luận giải; nếu 200 rỗng (thường do rate limit 10s) thì chờ và thử lại một lần.
+ */
+export async function invokeGenerateReadingWithRetry(
+  input: GenerateReadingInput,
+): Promise<GenerateReadingResponse> {
+  const first = await invokeGenerateReading(input);
+  if (!generateReadingResponseEmpty(first) || first.transportError) {
+    return first;
+  }
+  await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+  const second = await invokeGenerateReading(input);
+  if (generateReadingResponseEmpty(second) && import.meta.env.DEV) {
+    console.warn("[luận-giải] Edge trả rỗng sau retry", input.endpoint);
+  }
+  return second;
+}
+
 export async function invokeGenerateReading(
   input: GenerateReadingInput,
 ): Promise<GenerateReadingResponse> {
