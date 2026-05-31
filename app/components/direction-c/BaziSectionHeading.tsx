@@ -3,9 +3,11 @@ import { CT, DISPLAY } from "~/lib/c-tokens";
 export function BaziSectionHeading({
   index,
   title,
+  id,
 }: {
   index: number;
   title: string;
+  id?: string;
 }) {
   return (
     <div
@@ -18,7 +20,7 @@ export function BaziSectionHeading({
       >
         {String(index).padStart(2, "0")}
       </span>
-      <span className="text-lg font-extrabold uppercase tracking-tight" style={DISPLAY}>
+      <span id={id} className="text-lg font-extrabold uppercase tracking-tight" style={DISPLAY}>
         {title}
       </span>
     </div>
@@ -27,7 +29,11 @@ export function BaziSectionHeading({
 
 export function BaziChapterEmpty({ message }: { message: string }) {
   return (
-    <p className="mt-3 font-serif text-sm leading-relaxed" style={{ color: CT.muted }}>
+    <p
+      role="alert"
+      className="mt-3 font-serif text-sm leading-relaxed"
+      style={{ color: CT.muted }}
+    >
       {message}
     </p>
   );

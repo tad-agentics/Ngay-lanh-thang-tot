@@ -91,11 +91,13 @@ export function CBaziQuyNhanSection({
           ))}
         </div>
       ) : proseLoading ? (
-        <CBaziNlttLuanInkLoading message="Đang luận quý nhân · lưu ý" compact />
+        <div role="status" aria-live="polite">
+          <CBaziNlttLuanInkLoading message="Đang luận quý nhân · lưu ý" compact />
+        </div>
       ) : proseFailed ? (
         <CBaziNlttLuanProse
           failed
-          failedMessage="Chưa tạo được luận quý nhân. Thử tải lại luận."
+          failedMessage="Quý nhân chưa luận được lần này — nhấn để thử lại."
           onRetry={onRetryLuan}
           compact
         />

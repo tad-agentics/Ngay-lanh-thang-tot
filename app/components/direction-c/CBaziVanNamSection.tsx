@@ -83,7 +83,9 @@ export function CBaziVanNamSection({
           {intro}
         </p>
       ) : luanLoading ? (
-        <CBaziNlttLuanInkLoading message="Đang luận nhịp năm" compact />
+        <div role="status" aria-live="polite">
+          <CBaziNlttLuanInkLoading message="Đang luận nhịp năm" compact />
+        </div>
       ) : null}
 
       {areas.length > 0 ? (
@@ -135,7 +137,9 @@ export function CBaziVanNamSection({
                         </p>
                       ) : null}
                       {luanLoading ? (
-                        <CBaziNlttLuanInkLoading message="Đang luận" compact />
+                        <div role="status" aria-live="polite">
+                          <CBaziNlttLuanInkLoading message="Đang luận" compact />
+                        </div>
                       ) : null}
                     </>
                   )}
@@ -201,11 +205,13 @@ export function CBaziVanNamSection({
       {prose ? (
         <CBaziNlttLuanProse text={prose} compact />
       ) : luanLoading ? (
-        <CBaziNlttLuanInkLoading message="Đang luận thực tiễn năm" compact />
+        <div role="status" aria-live="polite">
+          <CBaziNlttLuanInkLoading message="Đang luận thực tiễn năm" compact />
+        </div>
       ) : luanFailed ? (
         <CBaziNlttLuanProse
           failed
-          failedMessage="Chưa tạo được luận vận năm dài. Thử tải lại luận."
+          failedMessage="Vận năm chưa luận được lần này — nhấn để thử lại."
           onRetry={onRetryLuan}
           compact
         />
