@@ -4,6 +4,7 @@ import { generateLaSoReading } from "./generators/la-so.ts";
 import {
   laSoChiTietPreviewSections,
   menhTongQuanProseTooShort,
+  tinhCachCachedSectionsValid,
 } from "./parsers/la-so.ts";
 import {
   phongThuyAllBlocksCachedValid,
@@ -27,6 +28,7 @@ export function createLaSoGenerateReadingHandler() {
       transformCachedLaSoSections: (sections, preview) =>
         preview ? laSoChiTietPreviewSections(sections) : sections,
       laSoChiTietCachedSectionsValid: laSoChiTietFullCacheIsValid,
+      tinhCachCachedSectionsValid,
       phongThuyCachedSectionsValid,
       phongThuyAllBlocksCachedValid,
     },

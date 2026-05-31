@@ -31,7 +31,8 @@ type CBaziVanNamSectionProps = {
   /** Chờ luận 4 lĩnh vực — không gộp nhịp năm. */
   lifeLuanLoading?: boolean;
   luanLoading?: boolean;
-  luanFailed?: boolean;
+  /** Bundle xong — mục không có `luan` có thể retry. */
+  chapterVanFailed?: boolean;
   emptyReason: string | null;
   onRetryLuan?: () => void;
 };
@@ -43,7 +44,7 @@ export function CBaziVanNamSection({
   prose,
   lifeLuanLoading,
   luanLoading = false,
-  luanFailed = false,
+  chapterVanFailed = false,
   emptyReason,
   onRetryLuan,
 }: CBaziVanNamSectionProps) {
@@ -134,7 +135,7 @@ export function CBaziVanNamSection({
                     <div role="status" aria-live="polite">
                       <CBaziNlttLuanInkLoading message="Đang luận" compact />
                     </div>
-                  ) : luanFailed ? (
+                  ) : chapterVanFailed ? (
                     <CBaziNlttLuanProse
                       failed
                       failedMessage="Lĩnh vực này chưa luận được — thử Tải lại luận."
@@ -214,7 +215,7 @@ export function CBaziVanNamSection({
         <div role="status" aria-live="polite">
           <CBaziNlttLuanInkLoading message="Đang luận thực tiễn năm" compact />
         </div>
-      ) : luanFailed ? (
+      ) : chapterVanFailed ? (
         <CBaziNlttLuanProse
           failed
           failedMessage="Vận năm chưa luận được lần này — nhấn để thử lại."
@@ -222,7 +223,7 @@ export function CBaziVanNamSection({
           compact
         />
       ) : null}
-      {!prose && !luanLoading && !luanFailed && !facts && emptyReason ? (
+      {!prose && !luanLoading && !chapterVanFailed && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

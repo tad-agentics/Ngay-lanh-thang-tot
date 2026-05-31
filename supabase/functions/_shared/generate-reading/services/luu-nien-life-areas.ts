@@ -44,7 +44,15 @@ export async function generateLuuNienLifeAreaSections(
       READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS,
       { timeoutMs: callTimeout(budget), disableThinking: true },
     );
-    if (retry) parsed = parseLuuNienLifeAreasResponse(retry);
+    if (retry) {
+      parsed = parseLuuNienLifeAreasResponse(retry);
+      if (!parsed?.areas.length) {
+        const relaxedRetry = parseLuuNienLifeAreasResponse(retry, {
+          relaxed: true,
+        });
+        if (relaxedRetry?.areas.length) parsed = relaxedRetry;
+      }
+    }
   }
 
   if (!parsed?.areas.length) {

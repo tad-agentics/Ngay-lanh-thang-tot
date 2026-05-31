@@ -1,6 +1,9 @@
 import type { LaSoJson } from "~/lib/api-types";
 import { currentYearVn } from "~/lib/bazi-reading-session";
-import type { LaSoChiTietSection } from "~/lib/generate-reading";
+import {
+  expandEmbeddedSectionsEnvelope,
+  type LaSoChiTietSection,
+} from "~/lib/generate-reading";
 import {
   parseLuuNienFactsView,
   type DaiVanNextView,
@@ -15,6 +18,7 @@ import {
   type LuuNienLifeAreaView,
 } from "~/lib/luu-nien-life-ui";
 import {
+  hasTinhCachDisplayLuanFromSections,
   hasTinhCachLuanFromSections,
   parsePersonalityTraitsFromLaSo,
   parsePersonalityTraitsFromSections,
@@ -142,7 +146,8 @@ export type BaziDisplayChapter =
       /** Chờ luận 4 lĩnh vực — tách khỏi nhịp năm / thực tiễn. */
       lifeLuanLoading?: boolean;
       luanLoading?: boolean;
-      luanFailed?: boolean;
+      /** Bundle xong mà không đủ 4 lĩnh vực — dùng per-area failed. */
+      chapterVanFailed?: boolean;
       emptyReason: string | null;
     }
   | {
@@ -273,34 +278,38 @@ export function buildBaziDisplayChapters(input: {
     ? parsePhongThuyFactsView(input.phongThuyFactsRaw)
     : null;
 
-  const menhProse = menhTongQuanProseFromSections(input.sections);
-  const traits = parsePersonalityTraitsFromSections(input.sections);
-  const tinhCachIntro = tinhCachIntroFromSections(input.sections);
-  const tinhCachLegacy = sectionText(input.sections, "tinh_cach");
-  const yearIntroProse = luuNienYearIntroFromSections(input.sections);
-  const lifeAreas = mergeLuuNienLifeAreasWithLuan(luuParsed, input.sections);
-  const vanProse = luuNienVanNamProse(input.sections);
-  const huongLuan = phongThuyHuongLuanFromSections(input.sections);
-  const mauLuan = phongThuyMauLuanFromSections(input.sections);
-  const phiTinhLuan = phongThuyPhiTinhLuanFromSections(input.sections);
+  const sections = expandEmbeddedSectionsEnvelope(input.sections);
+
+  const menhProse = menhTongQuanProseFromSections(sections);
+  const traits = parsePersonalityTraitsFromSections(sections);
+  const tinhCachIntro = tinhCachIntroFromSections(sections);
+  const tinhCachLegacy = sectionText(sections, "tinh_cach");
+  const yearIntroProse = luuNienYearIntroFromSections(sections);
+  const lifeAreas = mergeLuuNienLifeAreasWithLuan(luuParsed, sections);
+  const vanProse = luuNienVanNamProse(sections);
+  const huongLuan = phongThuyHuongLuanFromSections(sections);
+  const mauLuan = phongThuyMauLuanFromSections(sections);
+  const phiTinhLuan = phongThuyPhiTinhLuanFromSections(sections);
   const hasStructuredPtLuan = hasPhongThuyStructuredLuanFromSections(
-    input.sections,
+    sections,
     ptParsed,
   );
-  const legacyPtLuan = phongThuyLegacyVanFromSections(input.sections);
+  const legacyPtLuan = phongThuyLegacyVanFromSections(sections);
   const ptProse = [huongLuan, mauLuan, phiTinhLuan].filter(Boolean).join("\n\n");
   const ptLegacyProse =
     !hasStructuredPtLuan && legacyPtLuan.length >= 80
       ? legacyPtLuan
       : !hasStructuredPtLuan
-        ? phongThuyProseFromSections(input.sections)
+        ? phongThuyProseFromSections(sections)
         : "";
-  const hasPtLuan = hasPhongThuyLuanFromSections(input.sections, ptParsed);
-  const quyProse = luuNienQuyNhanProse(input.sections);
+  const hasPtLuan = hasPhongThuyLuanFromSections(sections, ptParsed);
+  const quyProse = luuNienQuyNhanProse(sections);
   const expectedLifeAreas = Math.max(1, luuParsed?.lifeAreas.length ?? 4);
   const hasLifeAreaLuan =
-    hasLuuNienLifeLuanFromSections(input.sections, expectedLifeAreas) ||
+    hasLuuNienLifeLuanFromSections(sections, expectedLifeAreas) ||
     hasLuuNienLifeAreaDisplayLuan(lifeAreas, expectedLifeAreas);
+  const hasTinhDisplayLuan = hasTinhCachDisplayLuanFromSections(sections);
+  const hasTinhDeliveryLuan = hasTinhCachLuanFromSections(sections);
   const hasVanNarrativeLuan =
     Boolean(yearIntroProse.trim()) || Boolean(vanProse.trim());
   const hasVanLuan = hasLifeAreaLuan || hasVanNarrativeLuan;
@@ -334,7 +343,7 @@ export function buildBaziDisplayChapters(input: {
         };
       }
       case "tinh_cach": {
-        const hasLuan = hasTinhCachLuanFromSections(input.sections);
+        const hasLuan = hasTinhDeliveryLuan || hasTinhDisplayLuan;
         const skeletonTraits = (() => {
           if (!tinhLoading || hasLuan) return traits;
           const fromLaSo = parsePersonalityTraitsFromLaSo(input.laSo).map((t) => ({
@@ -354,7 +363,8 @@ export function buildBaziDisplayChapters(input: {
           luanLoading: tinhLoading && !hasLuan && skeletonTraits.length > 0,
           luanFailed:
             (load ? load.tinh_cach === "failed" : !luanPending) &&
-            !hasLuan &&
+            !hasTinhDisplayLuan &&
+            !hasTinhDeliveryLuan &&
             hasLaSo,
           emptyReason:
             hasLuan || tinhLoading || hasLaSo
@@ -363,10 +373,8 @@ export function buildBaziDisplayChapters(input: {
         };
       }
       case "van_nam": {
-        const vanLuanFailed =
-          (load ? load.van_nam === "failed" : !luanPending) &&
-          Boolean(luuParsed) &&
-          !hasLifeAreaLuan;
+        const chapterVanFailed =
+          load ? load.van_nam === "failed" : !luanPending;
         const lifeLuanLoading =
           vanLoading && Boolean(luuParsed) && !hasLifeAreaLuan;
         return {
@@ -381,7 +389,7 @@ export function buildBaziDisplayChapters(input: {
           lifeLuanLoading,
           luanLoading:
             vanLoading && Boolean(luuParsed) && !hasVanNarrativeLuan,
-          luanFailed: vanLuanFailed,
+          chapterVanFailed,
           emptyReason: luuParsed || vanLoading
             ? null
             : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",

@@ -1,10 +1,17 @@
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
-import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
+import {
+  hasLuuNienLifeAreaDisplayLuan,
+  hasLuuNienLifeLuanFromSections,
+  mergeLuuNienLifeAreasWithLuan,
+} from "~/lib/luu-nien-life-ui";
 import { parseLuuNienFactsView } from "~/lib/luu-nien-facts-ui";
 import { hasLuuNienQuyNhanLuanFromSections } from "~/lib/luu-nien-ui";
 import { parsePhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
 import { hasPhongThuyStructuredLuanFromSections } from "~/lib/phong-thuy-ui";
-import { hasTinhCachLuanFromSections } from "~/lib/personality-traits-ui";
+import {
+  hasTinhCachDisplayLuanFromSections,
+  hasTinhCachLuanFromSections,
+} from "~/lib/personality-traits-ui";
 
 /** Khớp `MIN_MENH_TONG_QUAN_LUAN_CHARS` trong `bazi-reading-outline.ts`. */
 const MIN_MENH_TONG_QUAN_LUAN_CHARS = 600;
@@ -56,10 +63,14 @@ export function deriveChapterLoadState(
     : null;
 
   const menhDone = hasMenhTongQuanLuan(sections);
-  const tinhDone = hasTinhCachLuanFromSections(sections);
+  const lifeAreas = mergeLuuNienLifeAreasWithLuan(luuFacts, sections);
+  const tinhDone =
+    hasTinhCachLuanFromSections(sections) ||
+    hasTinhCachDisplayLuanFromSections(sections);
   const vanDone =
     !luuFacts ||
-    hasLuuNienLifeLuanFromSections(sections, expectedLife);
+    hasLuuNienLifeLuanFromSections(sections, expectedLife) ||
+    hasLuuNienLifeAreaDisplayLuan(lifeAreas, expectedLife);
   const needsQuy = Boolean(luuFacts?.quyNhan || luuFacts?.daiVanNext);
   const quyDone = !needsQuy || hasLuuNienQuyNhanLuanFromSections(sections);
   const phongDone =

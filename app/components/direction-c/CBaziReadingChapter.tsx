@@ -54,7 +54,7 @@ export function CBaziReadingChapter({
           prose={chapter.prose}
           lifeLuanLoading={chapter.lifeLuanLoading}
           luanLoading={chapter.luanLoading}
-          luanFailed={chapter.luanFailed}
+          chapterVanFailed={chapter.chapterVanFailed}
           emptyReason={chapter.emptyReason}
           onRetryLuan={onRetryLuan}
         />

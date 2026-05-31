@@ -10,6 +10,8 @@ export const MIN_TINH_CACH_TRAIT_LUAN_CHARS = 420;
 export const MIN_TINH_CACH_TRAIT_LUAN_PARAGRAPHS = 2;
 /** Tối thiểu số mục trait có luận đủ dài — tránh chỉ có intro. */
 export const MIN_TINH_CACH_TRAITS_WITH_LUAN = 2;
+/** Hiển thị UI — chấp nhận luận ngắn/partial từ LLM. */
+export const MIN_TINH_CACH_DISPLAY_CHARS = 80;
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -111,6 +113,15 @@ export function hasTinhCachLuanFromSections(
 ): boolean {
   return (
     countTinhCachTraitsWithLuan(sections) >= MIN_TINH_CACH_TRAITS_WITH_LUAN
+  );
+}
+
+/** §02 — có ít nhất một trait LLM đủ dài để hiển thị (không chỉ intro API). */
+export function hasTinhCachDisplayLuanFromSections(
+  sections: LaSoChiTietSection[],
+): boolean {
+  return parsePersonalityTraitsFromSections(sections).some(
+    (t) => t.text.trim().length >= MIN_TINH_CACH_DISPLAY_CHARS,
   );
 }
 

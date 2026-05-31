@@ -1,4 +1,7 @@
-import type { LaSoChiTietSection } from "~/lib/generate-reading";
+import {
+  coalesceGenerateReadingSections,
+  type LaSoChiTietSection,
+} from "~/lib/generate-reading";
 import type { PhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
 import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 
@@ -220,16 +223,14 @@ export function phongThuySectionsFromGenerateReading(
   sections: LaSoChiTietSection[] | null,
   reading: string | null,
 ): LaSoChiTietSection[] {
-  if (sections && sections.length > 0) {
-    return sections.map((s) => ({
-      ...s,
-      id: s.id.startsWith("phong_thuy_") ? s.id : `phong_thuy_${s.id}`,
-    }));
-  }
-  const fromJson = parsePhongThuySectionsFromReadingJson(reading);
-  if (fromJson.length > 0) return fromJson;
-  const text = reading?.trim() || phongThuyFactsToProse(facts);
-  if (!text || text.startsWith("{")) return [];
+  const coalesced = coalesceGenerateReadingSections(sections, reading, {
+    idPrefix: "phong_thuy_",
+    legacyId: "van",
+    legacyTitle: "Phong thủy năm",
+  });
+  if (coalesced.length > 0) return coalesced;
+  const text = phongThuyFactsToProse(facts);
+  if (!text) return [];
   return [{ id: PHONG_THUY_VAN_SECTION_ID, title: "Phong thủy năm", text }];
 }
 

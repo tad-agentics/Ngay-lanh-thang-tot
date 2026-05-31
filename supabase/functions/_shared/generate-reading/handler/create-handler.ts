@@ -34,6 +34,8 @@ export type GenerateReadingHandlerOptions = {
   tieuVanCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** Full `la-so-chi-tiet` cache must include §02 traits (not chỉ menh + aspects). */
   laSoChiTietCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** `la-so-chi-tiet` + `only_tinh_cach`. */
+  tinhCachCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** `luu-nien` + `only_luu_nien_life`. */
   luuNienLifeCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** `luu-nien` + `only_luu_nien_core`. */
@@ -267,22 +269,42 @@ export function createGenerateReadingHandler(
           const cached = readCachedBody(endpoint, row.reading);
           if (endpoint === "la-so-chi-tiet") {
             if (cached.sections != null && cached.sections.length > 0) {
-              const laSoValid = options.laSoChiTietCachedSectionsValid;
-              if (
-                !preview &&
-                !onlyTinhCach &&
-                laSoValid &&
-                !laSoValid(cached.sections)
-              ) {
-                await admin.from("reading_cache").delete().eq(
-                  "cache_key",
-                  cacheKey,
-                );
+              if (onlyTinhCach) {
+                const tinhValid = options.tinhCachCachedSectionsValid;
+                if (tinhValid && !tinhValid(cached.sections)) {
+                  await admin.from("reading_cache").delete().eq(
+                    "cache_key",
+                    cacheKey,
+                  );
+                } else {
+                  const out = options.transformCachedLaSoSections
+                    ? options.transformCachedLaSoSections(
+                      cached.sections,
+                      preview,
+                    )
+                    : cached.sections;
+                  return ok(null, out, req);
+                }
               } else {
-                const out = options.transformCachedLaSoSections
-                  ? options.transformCachedLaSoSections(cached.sections, preview)
-                  : cached.sections;
-                return ok(null, out, req);
+                const laSoValid = options.laSoChiTietCachedSectionsValid;
+                if (
+                  !preview &&
+                  laSoValid &&
+                  !laSoValid(cached.sections)
+                ) {
+                  await admin.from("reading_cache").delete().eq(
+                    "cache_key",
+                    cacheKey,
+                  );
+                } else {
+                  const out = options.transformCachedLaSoSections
+                    ? options.transformCachedLaSoSections(
+                      cached.sections,
+                      preview,
+                    )
+                    : cached.sections;
+                  return ok(null, out, req);
+                }
               }
             } else {
               await admin.from("reading_cache").delete().eq("cache_key", cacheKey);

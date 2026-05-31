@@ -18,6 +18,7 @@ import {
   type BaziDisplayChapter,
 } from "~/lib/bazi-reading-outline";
 import {
+  coalesceGenerateReadingSections,
   invokeGenerateReading,
   invokeGenerateReadingWithRetry,
   normalizeLaSoSectionsInput,
@@ -151,13 +152,7 @@ function laSoSectionsFromGenerateReading(
   sections: LaSoChiTietSection[] | null,
   reading: string | null,
 ): LaSoChiTietSection[] {
-  const fromModel =
-    sections && sections.length > 0
-      ? sections
-      : reading?.trim()
-        ? [{ id: "tong_hop", title: "Luận giải", text: reading.trim() }]
-        : [];
-  return normalizeLaSoSectionsInput(fromModel);
+  return coalesceGenerateReadingSections(sections, reading);
 }
 
 function resolveYearCanChi(
@@ -499,50 +494,42 @@ export async function loadBaziReadingFull(
     }
   }
 
-  // Wave 2 — §02 + §03 life (stagger; phong-thủy chạy riêng sau — 3 block LLM nặng).
-  await Promise.all([
-    (async () => {
-      await stagger(0);
-      const tinhGen = await invokeGenerateReadingWithRetry({
-        endpoint: "la-so-chi-tiet",
-        data: lasoData,
-        only_tinh_cach: true,
-      });
-      noteGenerateTransport(tinhGen, transportFlags);
-      const tinhSections = laSoSectionsFromGenerateReading(
-        tinhGen.sections,
-        tinhGen.reading,
-      );
-      if (tinhSections.length > 0) {
-        laSoSections = mergeLaSoTinhCachSections(laSoSections, tinhSections);
-      } else if (tinhGen.transportError === "gateway_timeout") {
-        toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
-      }
-      reportProgress();
-    })(),
-    luuNienResOk
-      ? (async () => {
-          await stagger(1);
-          const lifeGen = await invokeGenerateReadingWithRetry({
-            endpoint: "luu-nien",
-            data: luuNienFactsRaw,
-            only_luu_nien_life: true,
-          });
-          noteGenerateTransport(lifeGen, transportFlags);
-          luuNienSections = mergeLuuNienGenerateSections(
-            luuNienSectionsFromGenerateReading(
-              lifeGen.sections,
-              lifeGen.reading,
-            ),
-            luuNienSections,
-          );
-          if (lifeGen.transportError === "gateway_timeout") {
-            toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
-          }
-          reportProgress();
-        })()
-      : Promise.resolve(),
-  ]);
+  // Wave 2 — §02 rồi §03 life tuần tự (tránh rate limit / tab suspend song song).
+  await stagger(0);
+  const tinhGen = await invokeGenerateReadingWithRetry({
+    endpoint: "la-so-chi-tiet",
+    data: lasoData,
+    only_tinh_cach: true,
+  });
+  noteGenerateTransport(tinhGen, transportFlags);
+  const tinhSections = laSoSectionsFromGenerateReading(
+    tinhGen.sections,
+    tinhGen.reading,
+  );
+  if (tinhSections.length > 0) {
+    laSoSections = mergeLaSoTinhCachSections(laSoSections, tinhSections);
+  } else if (tinhGen.transportError === "gateway_timeout") {
+    toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
+  }
+  reportProgress();
+
+  if (luuNienResOk) {
+    await stagger(1);
+    const lifeGen = await invokeGenerateReadingWithRetry({
+      endpoint: "luu-nien",
+      data: luuNienFactsRaw,
+      only_luu_nien_life: true,
+    });
+    noteGenerateTransport(lifeGen, transportFlags);
+    luuNienSections = mergeLuuNienGenerateSections(
+      luuNienSectionsFromGenerateReading(lifeGen.sections, lifeGen.reading),
+      luuNienSections,
+    );
+    if (lifeGen.transportError === "gateway_timeout") {
+      toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
+    }
+    reportProgress();
+  }
 
   if (phongThuyFactsRaw) {
     const phongThuyGen = await invokeGenerateReadingWithRetry({
@@ -598,7 +585,9 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  if (!hasTinhCachLuanFromSections(laSoSections)) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (hasTinhCachLuanFromSections(laSoSections)) break;
+    if (attempt > 0) await stagger(2);
     const tinhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
@@ -614,10 +603,14 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  if (
-    luuNienResOk &&
-    !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
-  ) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (
+      !luuNienResOk ||
+      hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
+    ) {
+      break;
+    }
+    if (attempt > 0) await stagger(2);
     const lifeRetry = await invokeGenerateReadingWithRetry({
       endpoint: "luu-nien",
       data: luuNienFactsRaw,

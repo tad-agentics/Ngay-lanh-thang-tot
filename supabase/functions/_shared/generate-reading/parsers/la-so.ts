@@ -309,6 +309,16 @@ export function parseTinhCachTraitsResponse(
   return { intro, traits };
 }
 
+/** Cache `only_tinh_cach` — cần ≥1 trait đủ relaxed (tránh hit cache chỉ menh). */
+export function tinhCachCachedSectionsValid(
+  sections: LaSoChiTietSection[],
+): boolean {
+  const traits = sections.filter((s) =>
+    s.id.startsWith(TINH_CACH_TRAIT_SECTION_PREFIX)
+  );
+  return traits.some((s) => !tinhCachTraitProseTooShort(s.text, true));
+}
+
 export function tinhCachTraitsToLaSoSections(
   payload: TinhCachTraitsPayload,
 ): LaSoChiTietSection[] {

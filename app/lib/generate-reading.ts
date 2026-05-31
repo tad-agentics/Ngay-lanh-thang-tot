@@ -223,12 +223,84 @@ function normalizeLaSoSections(
   return out.length > 0 ? out : null;
 }
 
+/** `reading` / section.text là JSON `{"sections":[...]}` (cache cũ). */
+export function parseSectionsEnvelopeFromReadingJson(
+  reading: string | null | undefined,
+  idPrefix?: string,
+): LaSoChiTietSection[] {
+  const raw = reading?.trim() ?? "";
+  if (!raw.startsWith("{") || !raw.includes('"sections"')) return [];
+  try {
+    const o = JSON.parse(raw) as { sections?: unknown };
+    if (!Array.isArray(o.sections)) return [];
+    const normalized = normalizeLaSoSections(o.sections);
+    if (!normalized?.length) return [];
+    if (!idPrefix) return normalized;
+    return normalized.map((s) => ({
+      ...s,
+      id: s.id.startsWith(idPrefix) ? s.id : `${idPrefix}${s.id}`,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Gỡ blob JSON nhúng trong `phong_thuy_van` / `tong_hop` sau cache lỗi. */
+export function expandEmbeddedSectionsEnvelope(
+  sections: LaSoChiTietSection[],
+): LaSoChiTietSection[] {
+  const out: LaSoChiTietSection[] = [];
+  for (const s of sections) {
+    const trimmed = s.text.trim();
+    if (trimmed.startsWith("{") && trimmed.includes('"sections"')) {
+      const parsed = parseSectionsEnvelopeFromReadingJson(trimmed);
+      if (parsed.length > 0) {
+        out.push(...parsed);
+        continue;
+      }
+    }
+    out.push(s);
+  }
+  return out;
+}
+
 /** Chuẩn hóa mảng section (phản hồi máy chủ hoặc session); rỗng nếu không hợp lệ. */
 export function normalizeLaSoSectionsInput(
   raw: unknown,
   maxCount = MAX_LUAN_SECTION_COUNT_BAZI_BUNDLE,
 ): LaSoChiTietSection[] {
-  return normalizeLaSoSections(raw, maxCount) ?? [];
+  const base = normalizeLaSoSections(raw, maxCount) ?? [];
+  return expandEmbeddedSectionsEnvelope(base);
+}
+
+/** Gộp `sections` + `reading` từ generate-reading (tránh bọc JSON vào `tong_hop`). */
+export function coalesceGenerateReadingSections(
+  sections: LaSoChiTietSection[] | null,
+  reading: string | null,
+  opts?: { idPrefix?: string; legacyId?: string; legacyTitle?: string },
+): LaSoChiTietSection[] {
+  const prefix = opts?.idPrefix ?? "";
+  if (sections && sections.length > 0) {
+    const mapped = prefix
+      ? sections.map((s) => ({
+          ...s,
+          id: s.id.startsWith(prefix) ? s.id : `${prefix}${s.id}`,
+        }))
+      : sections;
+    return normalizeLaSoSectionsInput(mapped);
+  }
+  const fromJson = parseSectionsEnvelopeFromReadingJson(reading, prefix || undefined);
+  if (fromJson.length > 0) return normalizeLaSoSectionsInput(fromJson);
+  const text = reading?.trim();
+  if (!text || text.startsWith("{")) return [];
+  const legacyId = opts?.legacyId ?? "tong_hop";
+  return normalizeLaSoSectionsInput([
+    {
+      id: prefix ? `${prefix}${legacyId}` : legacyId,
+      title: opts?.legacyTitle ?? "Luận giải",
+      text,
+    },
+  ]);
 }
 
 type GenerateReadingErrorBody = {
