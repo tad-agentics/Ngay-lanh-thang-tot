@@ -33,6 +33,7 @@
 | `/toi/cai-dat` UI | Align Direction C: `--display-2` typography, legal picker (Điều khoản + Bảo mật), FAQ → `/#hoi-dap`, remove duplicate PWA block + back link, logout text-only. | No | Yes | — |
 | Birth-data edit | Direction C `/toi/sua-ho-so` (`CEditProfile`) allows birth edit + lá số recompute — contradicts prior "no self-serve birth edit" rule. Logged as ADR-2026-05-27 in pivot plan. | No | No | — |
 | Luận giải LLM | Retired Edge `generate-reading` (Gemini monolith). Prod uses `generate-reading-{day,la-so,tieu-van}` + DeepSeek only. | No | Yes | — |
+| Lưu niên vs tiểu vận | Split Edge: `generate-reading-luu-nien` (`endpoint: luu-nien`, §03 vận năm); `generate-reading-tieu-van` chỉ `tieu-van` (vận tháng). Prompts/parsers tách `luu-nien-core` / `tieu-van`. Deploy: `generate-reading-luu-nien` + `generate-reading-tieu-van`. | No | Yes | — |
 | Credits / lượng (runtime) | Retired pivot credit window + `deduct_credits` on `bat-tu`, `reading-unlock`, `create-share-token`, `generate-reading-guards`. New signups `credits_balance=0`. Removed dead `app/lib/constants.ts`. Migration `20260531210000`. Deploy: `db push` + deploy `bat-tu`, `reading-unlock`, `create-share-token`, `generate-reading-*`, `day-luan-chat`. | No | Yes | — |
 
 ## Resolved

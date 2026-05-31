@@ -1,6 +1,6 @@
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
 
-/** Chèn luận lưu niên sau mục `su_nghiep` (§03 Vận năm trên màn 18). */
+/** Chèn luận lưu niên (Edge `generate-reading-luu-nien`) sau `su_nghiep` — §03 Vận năm màn 18. */
 export function mergeLaSoWithLuuNienSections(
   laSoSections: LaSoChiTietSection[],
   luuNienSections: LaSoChiTietSection[],

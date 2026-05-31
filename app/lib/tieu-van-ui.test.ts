@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatDaiVanContextLineForVanThangDisplay,
   mapTieuVanPayload,
+  tieuVanSectionsFromGenerateReading,
   tieuVanTongQuanDisplayOrNull,
 } from "./tieu-van-ui";
 
@@ -124,6 +125,23 @@ describe("formatDaiVanContextLineForVanThangDisplay", () => {
         "Đang trong vận Giáp Tý — ổn với tháng này",
       ),
     ).toBe("Giáp Tý — ổn với tháng này");
+  });
+});
+
+describe("tieuVanSectionsFromGenerateReading", () => {
+  it("prefers structured sections over prose reading", () => {
+    const out = tieuVanSectionsFromGenerateReading(
+      [{ id: "nhin_chung", title: "Nhịp tháng", text: "Đoạn AI." }],
+      "Prose fallback",
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]?.id).toBe("nhin_chung");
+  });
+
+  it("wraps prose reading when sections empty", () => {
+    const out = tieuVanSectionsFromGenerateReading(null, "  Một khối văn.  ");
+    expect(out[0]?.title).toBe("Luận giải tiểu vận");
+    expect(out[0]?.text).toBe("Một khối văn.");
   });
 });
 

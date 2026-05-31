@@ -22,12 +22,15 @@ describe("generateReadingFunctionName", () => {
     );
   });
 
-  it("routes tieu-van endpoints to generate-reading-tieu-van", () => {
+  it("routes tieu-van to generate-reading-tieu-van", () => {
     expect(generateReadingFunctionName("tieu-van")).toBe(
       "generate-reading-tieu-van",
     );
+  });
+
+  it("routes luu-nien to generate-reading-luu-nien", () => {
     expect(generateReadingFunctionName("luu-nien")).toBe(
-      "generate-reading-tieu-van",
+      "generate-reading-luu-nien",
     );
   });
 

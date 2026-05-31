@@ -24,6 +24,21 @@ describe("buildBaziDisplayChapters", () => {
     { id: "luu_nien_ung_xu", title: "Ứng xử", text: "QX" },
   ];
 
+  it("uses tong_hop prose for §01 when menh_tong_quan missing", () => {
+    const chapters = buildBaziDisplayChapters({
+      sections: [{ id: "tong_hop", title: "Luận giải", text: "Fallback prose" }],
+      laSo: { pillars: {} },
+      luuNienFactsRaw: null,
+      phongThuyFactsRaw: null,
+      yearCanChi: "",
+    });
+    const menh = chapters.find((c) => c.key === "menh_tong_quan");
+    if (menh?.kind === "menh") {
+      expect(menh.prose).toBe("Fallback prose");
+      expect(menh.emptyReason).toBeNull();
+    }
+  });
+
   it("maps API sections to five Direction C chapters", () => {
     const chapters = buildBaziDisplayChapters({
       sections,
@@ -64,9 +79,17 @@ describe("buildBaziDisplayChapters", () => {
     expect(baziOutlineSections("Bính Ngọ")[2]?.title).toBe("Vận năm Bính Ngọ");
   });
 
-  it("maps personality_traits on la-so to §02 sub-blocks", () => {
+  it("maps LLM personality_readings sections to §02 sub-blocks", () => {
+    const longBody = "Đoạn một. ".repeat(400).trim();
     const chapters = buildBaziDisplayChapters({
-      sections: [{ id: "tinh_cach", title: "Tính cách", text: "Intro Gemini" }],
+      sections: [
+        { id: "tinh_cach_intro", title: "Tổng quan", text: "Intro LLM ba câu." },
+        {
+          id: "tinh_cach_trait_diem_manh",
+          title: "Điểm mạnh",
+          text: `${longBody}\n\n${longBody}`,
+        },
+      ],
       laSo: {
         personality_traits: [
           { id: "strength", title: "Điểm mạnh", text: "Kiên trì." },
@@ -79,7 +102,8 @@ describe("buildBaziDisplayChapters", () => {
     const tinh = chapters.find((c) => c.key === "tinh_cach");
     if (tinh?.kind === "tinh_cach") {
       expect(tinh.traits).toHaveLength(1);
-      expect(tinh.introProse).toBe("Intro Gemini");
+      expect(tinh.traits[0]?.title).toBe("Điểm mạnh");
+      expect(tinh.introProse).toBe("Intro LLM ba câu.");
       expect(tinh.prose).toBe("");
     }
   });
@@ -103,6 +127,45 @@ describe("buildBaziDisplayChapters", () => {
       expect(quy.daiVanNext?.display).toBe("Đinh Mùi 2027");
       expect(quy.daiVanNext?.yearsLabel).toBe("41–50");
       expect(quy.emptyReason).toBeNull();
+    }
+  });
+
+  it("maps luu_nien_life_* into §03 life areas with LLM luan", () => {
+    const longBody = "Đoạn vận năm. ".repeat(350).trim();
+    const chapters = buildBaziDisplayChapters({
+      sections: [
+        {
+          id: "luu_nien_year_intro",
+          title: "Nhịp năm",
+          text: "Tổng quan năm Bính Ngọ.",
+        },
+        {
+          id: "luu_nien_life_tai_loc",
+          title: "Tài lộc",
+          text: `${longBody}\n\n${longBody}`,
+        },
+        { id: "luu_nien_nhin_chung", title: "Nhịp", text: "Nhịp năm LLM." },
+      ],
+      laSo: null,
+      luuNienFactsRaw: {
+        life_areas: [
+          {
+            id: "tai_loc",
+            label: "Tài lộc",
+            verdict: "Thuận",
+            detail: "Câu API ngắn.",
+          },
+        ],
+      },
+      phongThuyFactsRaw: null,
+      yearCanChi: "Bính Ngọ",
+    });
+    const van = chapters.find((c) => c.key === "van_nam");
+    if (van?.kind === "van_nam") {
+      expect(van.yearIntroProse).toContain("Bính Ngọ");
+      expect(van.lifeAreas[0]?.luan).toContain("Đoạn vận năm");
+      expect(van.prose).toBe("Nhịp năm LLM.");
+      expect(van.prose).not.toContain(longBody.slice(0, 40));
     }
   });
 

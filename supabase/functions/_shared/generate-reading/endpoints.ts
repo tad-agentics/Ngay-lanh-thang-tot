@@ -15,14 +15,15 @@ export const GENERATE_READING_LA_SO_ENDPOINTS = new Set([
   "dai-van",
 ]);
 
-/** Endpoints handled by `generate-reading-tieu-van`. */
-export const GENERATE_READING_TIEU_VAN_ENDPOINTS = new Set([
-  "tieu-van",
-  "luu-nien",
-]);
+/** Endpoints handled by `generate-reading-tieu-van` (vận tháng). */
+export const GENERATE_READING_TIEU_VAN_ENDPOINTS = new Set(["tieu-van"]);
+
+/** Endpoints handled by `generate-reading-luu-nien` (vận năm / §03 Bát Tự). */
+export const GENERATE_READING_LUU_NIEN_ENDPOINTS = new Set(["luu-nien"]);
 
 export const GENERATE_READING_ALL_ENDPOINTS = new Set([
   ...GENERATE_READING_DAY_ENDPOINTS,
   ...GENERATE_READING_LA_SO_ENDPOINTS,
   ...GENERATE_READING_TIEU_VAN_ENDPOINTS,
+  ...GENERATE_READING_LUU_NIEN_ENDPOINTS,
 ]);

@@ -26,9 +26,9 @@ describe("baziReadingBirthRevision", () => {
 });
 
 describe("BAZI_READING_DELIVERY_CONTENT_VERSION", () => {
-  it("tracks menh length / prompt generation", () => {
-    expect(BAZI_READING_DELIVERY_CONTENT_VERSION).toContain("menh");
-    expect(BAZI_READING_DELIVERY_CONTENT_VERSION).toContain("1000");
+  it("bumps when full Bát Tự luận shape changes", () => {
+    expect(BAZI_READING_DELIVERY_CONTENT_VERSION).toMatch(/^2026-/);
+    expect(BAZI_READING_DELIVERY_CONTENT_VERSION.length).toBeGreaterThan(8);
   });
 });
 
@@ -38,5 +38,15 @@ describe("delivery sections round-trip", () => {
       { id: "menh_tong_quan", title: "Mệnh", text: "Đoạn luận đủ dài." },
     ]);
     expect(sections[0]?.id).toBe("menh_tong_quan");
+  });
+
+  it("keeps full Bát Tự bundle section count (no 10-cap)", () => {
+    const rows = Array.from({ length: 14 }, (_, i) => ({
+      id: `section_${i}`,
+      title: `S${i}`,
+      text: `Luận ${i}.`,
+    }));
+    const sections = normalizeLaSoSectionsInput(rows);
+    expect(sections).toHaveLength(14);
   });
 });

@@ -1,3 +1,5 @@
+import type { LaSoChiTietSection } from "~/lib/generate-reading";
+
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
     return x as Record<string, unknown>;
@@ -320,4 +322,15 @@ export function mapTieuVanPayload(data: unknown): TieuVanUi {
     thapThanOfMonth,
     linhVuc,
   };
+}
+
+/** Luận AI tiểu vận tháng — `generate-reading-tieu-van` (JSON 3 phần hoặc prose). */
+export function tieuVanSectionsFromGenerateReading(
+  sections: LaSoChiTietSection[] | null,
+  reading: string | null,
+): LaSoChiTietSection[] {
+  if (sections && sections.length > 0) return sections;
+  const text = reading?.trim();
+  if (!text) return [];
+  return [{ id: "tieu_van_prose", title: "Luận giải tiểu vận", text }];
 }

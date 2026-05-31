@@ -28,6 +28,8 @@ export type GenerateReadingHandlerOptions = {
     preview: boolean,
   ) => LaSoChiTietSection[];
   /** Tieu-van / luu-nien cache: reject sections that are too short. */
+  cachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** @deprecated Use cachedSectionsValid */
   tieuVanCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
 };
 
@@ -243,9 +245,10 @@ export function createGenerateReadingHandler(
             await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
           } else if (endpoint === "tieu-van" || endpoint === "luu-nien") {
             if (cached.sections != null && cached.sections.length > 0) {
-              const valid = options.tieuVanCachedSectionsValid?.(
-                cached.sections,
-              ) ?? true;
+              const validate =
+                options.cachedSectionsValid ??
+                options.tieuVanCachedSectionsValid;
+              const valid = validate?.(cached.sections) ?? true;
               if (valid) {
                 return ok(null, cached.sections, req);
               }

@@ -13,8 +13,12 @@ import {
 import { loadBaziReadingFull } from "~/lib/bazi-reading-load";
 import {
   buildBaziDisplayChapters,
+  menhTongQuanProseFromSections,
   type BaziDisplayChapter,
 } from "~/lib/bazi-reading-outline";
+import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
+import { parseLuuNienFactsView } from "~/lib/luu-nien-facts-ui";
+import { hasTinhCachLuanFromSections } from "~/lib/personality-traits-ui";
 import {
   baziReadingCacheRevision,
   currentYearVn,
@@ -67,23 +71,47 @@ export function CBaziReadingScreen() {
       if (cancelled) return;
       if (dbDelivery) {
         const fromDb = deliveryToLoadResult(dbDelivery);
-        setChapters(
-          buildBaziDisplayChapters({
-            sections: fromDb.sections,
-            laSo: fromDb.laSoDisplay ?? (profile.la_so as LaSoJson) ?? null,
-            luuNienFactsRaw: fromDb.luuNienFactsRaw,
-            phongThuyFactsRaw: fromDb.phongThuyFactsRaw,
-            yearCanChi: fromDb.yearCanChi,
-          }),
-        );
-        setLoading(false);
-        return;
+        if (
+          menhTongQuanProseFromSections(fromDb.sections) &&
+          hasTinhCachLuanFromSections(fromDb.sections) &&
+          hasLuuNienLifeLuanFromSections(
+            fromDb.sections,
+            Math.max(
+              1,
+              parseLuuNienFactsView(fromDb.luuNienFactsRaw)?.lifeAreas.length ??
+                4,
+            ),
+          )
+        ) {
+          setChapters(
+            buildBaziDisplayChapters({
+              sections: fromDb.sections,
+              laSo: fromDb.laSoDisplay ?? (profile.la_so as LaSoJson) ?? null,
+              luuNienFactsRaw: fromDb.luuNienFactsRaw,
+              phongThuyFactsRaw: fromDb.phongThuyFactsRaw,
+              yearCanChi: fromDb.yearCanChi,
+            }),
+          );
+          setLoading(false);
+          return;
+        }
       }
 
       const revision = baziReadingCacheRevision(profile, year);
       const cached = readBaziReadingSession(profile.id, revision);
       if (cancelled) return;
-      if (cached) {
+      if (
+        cached &&
+        menhTongQuanProseFromSections(cached.sections) &&
+        hasTinhCachLuanFromSections(cached.sections) &&
+        hasLuuNienLifeLuanFromSections(
+          cached.sections,
+          Math.max(
+            1,
+            parseLuuNienFactsView(cached.luuNienFactsRaw)?.lifeAreas.length ?? 4,
+          ),
+        )
+      ) {
         setChapters(
           chaptersFromSession(cached, (profile.la_so as LaSoJson) ?? null),
         );

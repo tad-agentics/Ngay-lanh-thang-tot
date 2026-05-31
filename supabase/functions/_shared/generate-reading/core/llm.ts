@@ -201,17 +201,20 @@ export async function llmLaSoChiTietJson(
   system: string,
   userJson: string,
   maxTokens = 2048,
-  options: Pick<LlmCompletionOptions, "disableThinking"> = {},
+  options: Pick<LlmCompletionOptions, "disableThinking"> & {
+    timeoutMs?: number;
+  } = {},
 ): Promise<string | null> {
+  const { timeoutMs, ...llmOpts } = options;
   return await llmCompletion(
     system,
     userJson,
     maxTokens,
-    LA_SO_CHI_TIET_TIMEOUT_MS,
+    timeoutMs ?? LA_SO_CHI_TIET_TIMEOUT_MS,
     {
       jsonMode: true,
       profile: llmProfileForEndpoint("la-so-chi-tiet"),
-      ...options,
+      ...llmOpts,
     },
   );
 }

@@ -31,15 +31,71 @@ export type GenerateReadingInput = {
   preview?: boolean;
 };
 
+/** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */
+export type GenerateReadingTransportError =
+  | "gateway_timeout"
+  | "invoke_failed";
+
 export type GenerateReadingResponse = {
   reading: string | null;
   sections: LaSoChiTietSection[] | null;
   /** `chon-ngay-cards` — map ISO ngày → đoạn luận giải trên thẻ. */
   dayReadings: Record<string, string> | null;
+  transportError?: GenerateReadingTransportError;
 };
 
-/** Giới hạn payload/ sessionStorage — chống dữ liệu bất thường làm nặng DOM. */
-const MAX_LUAN_SECTION_COUNT = 10;
+const EMPTY_GENERATE_READING: GenerateReadingResponse = {
+  reading: null,
+  sections: null,
+  dayReadings: null,
+};
+
+function functionsHttpStatus(error: FunctionsHttpError): number | undefined {
+  const ctx = error.context;
+  if (
+    ctx &&
+    typeof ctx === "object" &&
+    "status" in ctx &&
+    typeof (ctx as Response).status === "number"
+  ) {
+    return (ctx as Response).status;
+  }
+  return undefined;
+}
+
+function transportErrorFromStatus(
+  status: number | undefined,
+): GenerateReadingTransportError {
+  if (status === 504 || status === 502 || status === 503) {
+    return "gateway_timeout";
+  }
+  return "invoke_failed";
+}
+
+function transportErrorFromInvoke(
+  error: unknown,
+): GenerateReadingTransportError {
+  if (error instanceof FunctionsHttpError) {
+    return transportErrorFromStatus(functionsHttpStatus(error));
+  }
+  return "invoke_failed";
+}
+
+/** Giới hạn payload — endpoint ngắn (ngày, tiểu vận 3 phần). */
+const MAX_LUAN_SECTION_COUNT_DEFAULT = 10;
+/** Bát Tự bundle: menh + traits + aspects + lưu niên life + phong thủy. */
+const MAX_LUAN_SECTION_COUNT_BAZI_BUNDLE = 32;
+
+function maxLaSoSectionsForEndpoint(endpoint: string): number {
+  if (
+    endpoint === "la-so-chi-tiet" ||
+    endpoint === "luu-nien" ||
+    endpoint === "phong-thuy"
+  ) {
+    return MAX_LUAN_SECTION_COUNT_BAZI_BUNDLE;
+  }
+  return MAX_LUAN_SECTION_COUNT_DEFAULT;
+}
 const MAX_LUAN_ID_CHARS = 64;
 const MAX_LUAN_TITLE_CHARS = 120;
 const MAX_LUAN_TEXT_CHARS = 32_000;
@@ -95,11 +151,12 @@ function normalizeDayReadingsClient(
 
 function normalizeLaSoSections(
   raw: unknown,
+  maxCount = MAX_LUAN_SECTION_COUNT_BAZI_BUNDLE,
 ): LaSoChiTietSection[] | null {
   if (!Array.isArray(raw)) return null;
   const out: LaSoChiTietSection[] = [];
   for (const row of raw) {
-    if (out.length >= MAX_LUAN_SECTION_COUNT) break;
+    if (out.length >= maxCount) break;
     if (!row || typeof row !== "object" || Array.isArray(row)) continue;
     const r = row as Record<string, unknown>;
     const id =
@@ -128,8 +185,11 @@ function normalizeLaSoSections(
 }
 
 /** Chuẩn hóa mảng section (phản hồi máy chủ hoặc session); rỗng nếu không hợp lệ. */
-export function normalizeLaSoSectionsInput(raw: unknown): LaSoChiTietSection[] {
-  return normalizeLaSoSections(raw) ?? [];
+export function normalizeLaSoSectionsInput(
+  raw: unknown,
+  maxCount = MAX_LUAN_SECTION_COUNT_BAZI_BUNDLE,
+): LaSoChiTietSection[] {
+  return normalizeLaSoSections(raw, maxCount) ?? [];
 }
 
 type GenerateReadingErrorBody = {
@@ -169,7 +229,7 @@ function handleGenerateReadingErrorCode(code: string): void {
 }
 
 /**
- * Gọi Edge luận giải (generate-reading-day | -la-so | -tieu-van) — luôn HTTP 200.
+ * Gọi Edge luận giải (day | la-so | tieu-van | luu-nien) — luôn HTTP 200.
  * `reading` / `sections` / `dayReadings` tùy endpoint có thể null.
  */
 export async function invokeGenerateReading(
@@ -210,13 +270,16 @@ export async function invokeGenerateReading(
       } else if (import.meta.env.DEV) {
         console.warn("[luận-giải]", error);
       }
-      return { reading: null, sections: null, dayReadings: null };
+      return {
+        ...EMPTY_GENERATE_READING,
+        transportError: transportErrorFromInvoke(error),
+      };
     }
     if (data && typeof data === "object" && !Array.isArray(data)) {
       const parsedErr = parseGenerateReadingError(data);
       if (parsedErr) {
         handleGenerateReadingErrorCode(parsedErr.code);
-        return { reading: null, sections: null, dayReadings: null };
+        return { ...EMPTY_GENERATE_READING, transportError: "invoke_failed" };
       }
       const d = data as Record<string, unknown>;
       const readingRaw = d.reading;
@@ -224,15 +287,21 @@ export async function invokeGenerateReading(
         typeof readingRaw === "string" && readingRaw.trim()
           ? readingRaw.trim()
           : null;
-      const sections = normalizeLaSoSections(d.sections);
+      const sections = normalizeLaSoSections(
+        d.sections,
+        maxLaSoSectionsForEndpoint(input.endpoint),
+      );
       const dayReadings = normalizeDayReadingsClient(d.day_readings);
       return { reading, sections, dayReadings };
     }
-    return { reading: null, sections: null, dayReadings: null };
+    return { ...EMPTY_GENERATE_READING, transportError: "invoke_failed" };
   } catch (e) {
     if (import.meta.env.DEV) {
       console.warn("[luận-giải] Gọi Edge thất bại:", e);
     }
-    return { reading: null, sections: null, dayReadings: null };
+    return {
+      ...EMPTY_GENERATE_READING,
+      transportError: transportErrorFromInvoke(e),
+    };
   }
 }

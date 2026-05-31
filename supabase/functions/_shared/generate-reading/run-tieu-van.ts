@@ -3,13 +3,13 @@ import { createGenerateReadingHandler } from "./handler/create-handler.ts";
 import { generateTieuVanReading } from "./generators/tieu-van.ts";
 import { tieuVanSectionsNeedLengthRetry } from "./parsers/tieu-van.ts";
 
-/** Tiểu vận / lưu niên Edge bundle — JSON 3-part prompts only. */
+/** Tiểu vận tháng — `generate-reading-tieu-van`. */
 export function createTieuVanGenerateReadingHandler() {
   return createGenerateReadingHandler(
     GENERATE_READING_TIEU_VAN_ENDPOINTS,
     generateTieuVanReading,
     {
-      tieuVanCachedSectionsValid: (sections) =>
+      cachedSectionsValid: (sections) =>
         !tieuVanSectionsNeedLengthRetry(sections),
     },
   );

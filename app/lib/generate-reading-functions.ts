@@ -15,15 +15,17 @@ const GENERATE_READING_LA_SO_ENDPOINTS = new Set([
   "dai-van",
 ]);
 
-const GENERATE_READING_TIEU_VAN_ENDPOINTS = new Set([
-  "tieu-van",
-  "luu-nien",
-]);
+/** Vận tháng — màn Luận tiểu vận. */
+const GENERATE_READING_TIEU_VAN_ENDPOINTS = new Set(["tieu-van"]);
+
+/** Vận năm (lưu niên) — §03 Luận Bát Tự. */
+const GENERATE_READING_LUU_NIEN_ENDPOINTS = new Set(["luu-nien"]);
 
 export type GenerateReadingEdgeFunction =
   | "generate-reading-day"
   | "generate-reading-la-so"
-  | "generate-reading-tieu-van";
+  | "generate-reading-tieu-van"
+  | "generate-reading-luu-nien";
 
 /** Route `endpoint` to the domain-specific Edge Function. */
 export function generateReadingFunctionName(
@@ -37,6 +39,9 @@ export function generateReadingFunctionName(
   }
   if (GENERATE_READING_TIEU_VAN_ENDPOINTS.has(endpoint)) {
     return "generate-reading-tieu-van";
+  }
+  if (GENERATE_READING_LUU_NIEN_ENDPOINTS.has(endpoint)) {
+    return "generate-reading-luu-nien";
   }
   throw new Error(`Unknown generate-reading endpoint: ${endpoint}`);
 }

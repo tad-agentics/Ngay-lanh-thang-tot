@@ -8,7 +8,15 @@ import {
   type LuuNienQuyNhanFacts,
 } from "~/lib/luu-nien-facts-ui";
 import {
-  parsePersonalityTraitsFromLaSo,
+  hasLuuNienLifeLuanFromSections,
+  luuNienYearIntroFromSections,
+  mergeLuuNienLifeAreasWithLuan,
+  type LuuNienLifeAreaView,
+} from "~/lib/luu-nien-life-ui";
+import {
+  hasTinhCachLuanFromSections,
+  parsePersonalityTraitsFromSections,
+  tinhCachIntroFromSections,
   type PersonalityTraitView,
 } from "~/lib/personality-traits-ui";
 import {
@@ -105,6 +113,8 @@ export type BaziDisplayChapter =
       title: string;
       kind: "van_nam";
       facts: LuuNienFactsView | null;
+      yearIntroProse: string;
+      lifeAreas: LuuNienLifeAreaView[];
       prose: string;
       emptyReason: string | null;
     }
@@ -132,6 +142,17 @@ function sectionText(sections: LaSoChiTietSection[], id: string): string {
   return sections.find((x) => x.id === id)?.text?.trim() ?? "";
 }
 
+/** §01 — `menh_tong_quan`, hoặc `tong_hop` / section đầu khi Edge trả prose fallback. */
+export function menhTongQuanProseFromSections(
+  sections: LaSoChiTietSection[],
+): string {
+  const menh = sectionText(sections, "menh_tong_quan");
+  if (menh) return menh;
+  const tongHop = sectionText(sections, "tong_hop");
+  if (tongHop) return tongHop;
+  return sections[0]?.text?.trim() ?? "";
+}
+
 function joinSectionTexts(
   list: LaSoChiTietSection[],
   filter?: (s: LaSoChiTietSection) => boolean,
@@ -144,17 +165,20 @@ function joinSectionTexts(
 }
 
 const LUU_NIEN_UNG_XU_ID = "luu_nien_ung_xu";
+const LUU_NIEN_YEAR_INTRO_ID = "luu_nien_year_intro";
+const LUU_NIEN_LIFE_PREFIX = "luu_nien_life_";
 
-function isLuuNienSection(s: LaSoChiTietSection): boolean {
-  return s.id.startsWith("luu_nien_");
+function isLuuNienVanNamProseSection(s: LaSoChiTietSection): boolean {
+  if (!s.id.startsWith("luu_nien_")) return false;
+  if (s.id === LUU_NIEN_UNG_XU_ID) return false;
+  if (s.id === LUU_NIEN_YEAR_INTRO_ID) return false;
+  if (s.id.startsWith(LUU_NIEN_LIFE_PREFIX)) return false;
+  return true;
 }
 
-/** §03 — mọi phần lưu niên trừ ứng xử / quý nhân. */
+/** §03 — nhịp năm / thực tiễn (không gồm 4 lĩnh vực LLM hay ứng xử §05). */
 function luuNienVanNamProse(sections: LaSoChiTietSection[]): string {
-  return joinSectionTexts(
-    sections,
-    (s) => isLuuNienSection(s) && s.id !== LUU_NIEN_UNG_XU_ID,
-  );
+  return joinSectionTexts(sections, isLuuNienVanNamProseSection);
 }
 
 /** §05 — chỉ `luu_nien_ung_xu`; không fallback sang §03. */
@@ -178,14 +202,25 @@ export function buildBaziDisplayChapters(input: {
     ? parsePhongThuyFactsView(input.phongThuyFactsRaw)
     : null;
 
-  const menhProse = sectionText(input.sections, "menh_tong_quan");
-  const traits = parsePersonalityTraitsFromLaSo(input.laSo);
-  const tinhCachGemini = sectionText(input.sections, "tinh_cach");
+  const menhProse = menhTongQuanProseFromSections(input.sections);
+  const traits = parsePersonalityTraitsFromSections(input.sections);
+  const tinhCachIntro = tinhCachIntroFromSections(input.sections);
+  const tinhCachLegacy = sectionText(input.sections, "tinh_cach");
+  const yearIntroProse = luuNienYearIntroFromSections(input.sections);
+  const lifeAreas = mergeLuuNienLifeAreasWithLuan(luuParsed, input.sections);
   const vanProse = luuNienVanNamProse(input.sections);
   const ptProse = joinSectionTexts(input.sections, (s) =>
     s.id.startsWith("phong_thuy_"),
   );
   const quyProse = luuNienQuyNhanProse(input.sections);
+  const hasVanLuan =
+    hasLuuNienLifeLuanFromSections(
+      input.sections,
+      Math.max(1, luuParsed?.lifeAreas.length ?? 4),
+    ) ||
+    lifeAreas.some((a) => a.luan.length > 0) ||
+    Boolean(yearIntroProse.trim()) ||
+    Boolean(vanProse.trim());
 
   const hasLaSo =
     input.laSo != null &&
@@ -205,23 +240,28 @@ export function buildBaziDisplayChapters(input: {
           emptyReason: hasLaSo
             ? menhProse
               ? null
-              : "Chưa tạo được luận tổng quan lá số. Thử tải lại sau."
+              : "Chưa tạo được luận tổng quan lá số. Thử tải lại luận."
             : "Chưa có lá số trên hồ sơ.",
         };
-      case "tinh_cach":
+      case "tinh_cach": {
+        const hasLuan =
+          hasTinhCachLuanFromSections(input.sections) ||
+          traits.length > 0 ||
+          Boolean(tinhCachIntro.trim()) ||
+          Boolean(tinhCachLegacy.trim());
         return {
           key: meta.key,
           index: meta.index,
           title: meta.title,
           kind: "tinh_cach",
           traits,
-          introProse: traits.length > 0 ? tinhCachGemini : "",
-          prose: traits.length === 0 ? tinhCachGemini : "",
-          emptyReason:
-            tinhCachGemini || traits.length > 0
-              ? null
-              : "Chưa tạo được luận giải tính cách. Thử tải lại sau.",
+          introProse: tinhCachIntro || (traits.length === 0 ? tinhCachLegacy : ""),
+          prose: traits.length === 0 ? tinhCachLegacy : "",
+          emptyReason: hasLuan
+            ? null
+            : "Chưa tạo được luận giải tính cách. Thử tải lại luận.",
         };
+      }
       case "van_nam":
         return {
           key: meta.key,
@@ -229,11 +269,12 @@ export function buildBaziDisplayChapters(input: {
           title: meta.title,
           kind: "van_nam",
           facts: luuParsed,
+          yearIntroProse,
+          lifeAreas,
           prose: vanProse,
-          emptyReason:
-            luuParsed || vanProse
-              ? null
-              : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",
+          emptyReason: hasVanLuan || luuParsed
+            ? null
+            : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",
         };
       case "phong_thuy":
         return {

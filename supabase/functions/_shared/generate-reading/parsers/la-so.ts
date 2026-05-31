@@ -4,6 +4,9 @@ import {
   MIN_MENH_PREVIEW_CHARS,
   MIN_MENH_PREVIEW_PARAGRAPHS,
   MIN_MENH_PREVIEW_SENTENCE_ENDS,
+  MIN_TINH_CACH_INTRO_CHARS,
+  MIN_TINH_CACH_TRAIT_CHARS,
+  MIN_TINH_CACH_TRAIT_PARAGRAPHS,
 } from "../core/config.ts";
 import { tryParseLaSoChiTietRecord } from "./json.ts";
 
@@ -217,4 +220,91 @@ export function menhSectionFromParsed(
   if (!sections?.length) return null;
   const picked = laSoChiTietPreviewSections(sections)[0];
   return picked ?? null;
+}
+
+export const TINH_CACH_INTRO_SECTION_ID = "tinh_cach_intro";
+export const TINH_CACH_TRAIT_SECTION_PREFIX = "tinh_cach_trait_";
+
+export type TinhCachTraitsPayload = {
+  intro: string | null;
+  traits: LaSoChiTietSection[];
+};
+
+function normalizeTraitId(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "") || "trait";
+}
+
+export function countTinhCachParagraphs(text: string): number {
+  return text
+    .trim()
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean).length;
+}
+
+export function tinhCachTraitProseTooShort(text: string): boolean {
+  const t = text.trim();
+  if (t.length < MIN_TINH_CACH_TRAIT_CHARS) return true;
+  if (countTinhCachParagraphs(t) < MIN_TINH_CACH_TRAIT_PARAGRAPHS) return true;
+  return false;
+}
+
+export function parseTinhCachTraitsResponse(
+  raw: string,
+): TinhCachTraitsPayload | null {
+  const record = tryParseLaSoChiTietRecord(raw);
+  if (!record) return null;
+
+  const introRaw = record.tinh_cach_intro ?? record.tinhCachIntro;
+  const intro =
+    typeof introRaw === "string" && introRaw.trim().length >= MIN_TINH_CACH_INTRO_CHARS
+      ? sanitizeNlttLuanProse(introRaw.trim())
+      : null;
+
+  const readingsRaw = record.personality_readings ?? record.personalityReadings;
+  if (!Array.isArray(readingsRaw)) {
+    return intro ? { intro, traits: [] } : null;
+  }
+
+  const traits: LaSoChiTietSection[] = [];
+  for (const row of readingsRaw) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const r = row as Record<string, unknown>;
+    const title =
+      typeof r.title === "string" && r.title.trim()
+        ? r.title.trim()
+        : "Tính cách";
+    const id = normalizeTraitId(
+      typeof r.id === "string" ? r.id : title,
+    );
+    const text = coerceLaSoSectionText(r.text);
+    if (!text || tinhCachTraitProseTooShort(text)) continue;
+    traits.push({
+      id: `${TINH_CACH_TRAIT_SECTION_PREFIX}${id}`,
+      title,
+      text,
+    });
+  }
+
+  if (!intro && traits.length === 0) return null;
+  return { intro, traits };
+}
+
+export function tinhCachTraitsToLaSoSections(
+  payload: TinhCachTraitsPayload,
+): LaSoChiTietSection[] {
+  const out: LaSoChiTietSection[] = [];
+  if (payload.intro) {
+    out.push({
+      id: TINH_CACH_INTRO_SECTION_ID,
+      title: "Tổng quan tính cách",
+      text: payload.intro,
+    });
+  }
+  out.push(...payload.traits);
+  return out;
 }

@@ -300,12 +300,12 @@ Update **`/.env.example`** to mirror (no values).
 
 ### 13. AI Reading (Luận Giải) — first-class feature
 
-**AI Reading is in scope and first-class** (Direction B, FE-HANDOFF §8). Powered by **DeepSeek V4 Flash** via split Edge Functions `generate-reading-day`, `generate-reading-la-so`, `generate-reading-tieu-van`.
+**AI Reading is in scope and first-class** (Direction B, FE-HANDOFF §8). Powered by **DeepSeek V4 Flash** via split Edge Functions `generate-reading-day`, `generate-reading-la-so`, `generate-reading-tieu-van` (vận tháng), `generate-reading-luu-nien` (vận năm).
 
 | Item | Detail |
 |---|---|
 | Provider | [DeepSeek](https://api-docs.deepseek.com/) `deepseek-v4-flash` (OpenAI-compatible `https://api.deepseek.com/chat/completions`) |
-| Edge Functions | `supabase/functions/generate-reading-day/`, `-la-so/`, `-tieu-van/` |
+| Edge Functions | `generate-reading-day/`, `-la-so/`, `-tieu-van/`, `-luu-nien/` |
 | Secrets | `DEEPSEEK_API_KEY`, optional `DEEPSEEK_MODEL`, `DEEPSEEK_THINKING=disabled` (default) |
 | Integration doc | `artifacts/integrations/deepseek-generate-reading.md` |
 | Credit gating | `feature_credit_costs` rows: `la_so_chi_tiet`, `tieu_van`, `hop_tuoi`, `chon_ngay`, `ai_reading_bulk_unlock` |

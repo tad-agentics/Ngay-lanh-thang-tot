@@ -1,9 +1,12 @@
 /** Cache invalidation versions per endpoint/prompt. */
 
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
-export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-menh-1000";
+export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-tinh-cach-traits-500w";
 export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
-export const TIEU_VAN_LUU_NIEN_PROMPT_VER = "2026-05-10-v1";
+export const TIEU_VAN_PROMPT_VER = "2026-05-31-tieu-van-split-v1";
+export const LUU_NIEN_PROMPT_VER = "2026-05-31-menh-tinh-luu-500w";
+/** @deprecated Use LUU_NIEN_PROMPT_VER or TIEU_VAN_PROMPT_VER */
+export const TIEU_VAN_LUU_NIEN_PROMPT_VER = LUU_NIEN_PROMPT_VER;
 export const HOP_TUOI_PROMPT_VER = "2026-05-10-v1";
 export const CHON_NGAY_PROMPT_VER = "2026-05-10-v1";
 export const CHON_NGAY_CARDS_PROMPT_VER = "2026-05-10-v1";
@@ -23,9 +26,8 @@ export function endpointCacheVersion(
       ? `${LA_SO_CHI_TIET_CACHE_VER}:${LA_SO_CHI_TIET_PREVIEW_PROMPT_VER}`
       : LA_SO_CHI_TIET_CACHE_VER;
   }
-  if (endpoint === "tieu-van" || endpoint === "luu-nien") {
-    return TIEU_VAN_LUU_NIEN_PROMPT_VER;
-  }
+  if (endpoint === "tieu-van") return TIEU_VAN_PROMPT_VER;
+  if (endpoint === "luu-nien") return LUU_NIEN_PROMPT_VER;
   if (endpoint === "hop-tuoi") return HOP_TUOI_PROMPT_VER;
   if (endpoint === "day-detail") {
     if (question) return `${DAY_DETAIL_FOLLOW_UP_VER}:${DAY_DETAIL_MULTITURN_VER}`;

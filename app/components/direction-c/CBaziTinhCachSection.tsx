@@ -48,7 +48,7 @@ export function CBaziTinhCachSection({
                 {t.title}
               </Mono>
               <p
-                className="mt-1 font-serif text-[12.5px] leading-snug"
+                className="mt-1 font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
                 style={{ color: CT.ink2 }}
               >
                 {t.text}

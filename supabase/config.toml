@@ -444,6 +444,9 @@ verify_jwt = false
 [functions.generate-reading-tieu-van]
 verify_jwt = false
 
+[functions.generate-reading-luu-nien]
+verify_jwt = false
+
 # Persist purchased full Bát Tự luận giải (JWT + bazi entitlement in handler).
 [functions.bazi-reading-delivery]
 verify_jwt = false

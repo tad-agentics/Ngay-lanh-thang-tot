@@ -12,6 +12,7 @@ import { invokeBatTu } from "~/lib/bat-tu";
 import {
   fallbackFlowYearCanChiLabel,
   flowYearCanChiFromFacts,
+  menhTongQuanProseFromSections,
 } from "~/lib/bazi-reading-outline";
 import {
   invokeGenerateReading,
@@ -33,6 +34,8 @@ import {
   mergeBaziReadingWithPhongThuy,
   phongThuySectionsFromGenerateReading,
 } from "~/lib/phong-thuy-ui";
+import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
+import { hasTinhCachLuanFromSections } from "~/lib/personality-traits-ui";
 
 export type BaziReadingLoadResult = {
   sections: LaSoChiTietSection[];
@@ -77,10 +80,24 @@ export type BaziPaywallBundle = {
 export function menhOverviewFromLaSoSections(
   sections: LaSoChiTietSection[],
 ): string {
-  const menh = sections.find((s) => s.id === "menh_tong_quan");
-  if (menh?.text?.trim()) return menh.text.trim();
-  const fallback = sections.find((s) => s.id === "tong_hop") ?? sections[0];
-  return fallback?.text?.trim() ?? "";
+  return menhTongQuanProseFromSections(sections);
+}
+
+function deliveryHasMenhProse(sections: LaSoChiTietSection[]): boolean {
+  return menhTongQuanProseFromSections(sections).length > 0;
+}
+
+function deliveryHasFullLuanSections(
+  sections: LaSoChiTietSection[],
+  luuNienFactsRaw?: unknown | null,
+): boolean {
+  const facts = luuNienFactsRaw ? parseLuuNienFactsView(luuNienFactsRaw) : null;
+  const expected = Math.max(1, facts?.lifeAreas.length ?? 4);
+  return (
+    deliveryHasMenhProse(sections) &&
+    hasTinhCachLuanFromSections(sections) &&
+    hasLuuNienLifeLuanFromSections(sections, expected)
+  );
 }
 
 /**
@@ -185,7 +202,10 @@ export async function loadBaziReadingFull(
 
   if (!options?.forceRegenerate) {
     const stored = await fetchBaziReadingDelivery(profile, year);
-    if (stored) {
+    if (
+      stored &&
+      deliveryHasFullLuanSections(stored.sections, stored.luu_nien_facts)
+    ) {
       return deliveryToLoadResult(stored);
     }
   }
@@ -238,6 +258,12 @@ export async function loadBaziReadingFull(
     lasoGen.sections,
     lasoGen.reading,
   );
+  if (
+    !menhTongQuanProseFromSections(laSoSections) &&
+    lasoGen.transportError === "gateway_timeout"
+  ) {
+    toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
+  }
   const luuNienSections = luuNienSectionsFromGenerateReading(
     luuNienGen.sections,
     luuNienGen.reading,
@@ -258,7 +284,11 @@ export async function loadBaziReadingFull(
     yearCanChi,
   };
 
-  if (sections.length > 0 && !options?.skipPersist) {
+  if (
+    sections.length > 0 &&
+    deliveryHasFullLuanSections(sections, luuNienFactsRaw) &&
+    !options?.skipPersist
+  ) {
     const saved = await persistBaziReadingDelivery(profile, year, result);
     if (!saved && import.meta.env.DEV) {
       console.warn("[bazi-delivery] persist failed after full generate");

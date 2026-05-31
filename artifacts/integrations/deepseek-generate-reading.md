@@ -126,7 +126,7 @@ supabase secrets set DEEPSEEK_MODEL_PRO=deepseek-v4-pro
 # optional: supabase secrets set DEEPSEEK_THINKING=disabled  # flash only
 ```
 
-Redeploy: `generate-reading-day`, `generate-reading-la-so`, `generate-reading-tieu-van`.
+Redeploy: `generate-reading-day`, `generate-reading-la-so`, `generate-reading-tieu-van`, `generate-reading-luu-nien`.
 
 ## Cache invalidation
 

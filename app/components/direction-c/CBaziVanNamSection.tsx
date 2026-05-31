@@ -3,6 +3,7 @@ import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT, DISPLAY } from "~/lib/c-tokens";
 import type { LuuNienFactsView } from "~/lib/luu-nien-facts-ui";
+import type { LuuNienLifeAreaView } from "~/lib/luu-nien-life-ui";
 
 const TONE_BAR: Record<string, string> = {
   good: CT.greenMute,
@@ -20,20 +21,30 @@ function barTone(score: number): string {
 
 type CBaziVanNamSectionProps = {
   facts: LuuNienFactsView | null;
+  yearIntroProse?: string;
+  lifeAreas?: LuuNienLifeAreaView[];
   prose: string;
   emptyReason: string | null;
 };
 
 export function CBaziVanNamSection({
   facts,
+  yearIntroProse = "",
+  lifeAreas = [],
   prose,
   emptyReason,
 }: CBaziVanNamSectionProps) {
-  if (emptyReason && !facts && !prose) {
+  const areas =
+    lifeAreas.length > 0
+      ? lifeAreas
+      : (facts?.lifeAreas.map((a) => ({ ...a, luan: "" })) ?? []);
+
+  if (emptyReason && !facts && !prose && areas.length === 0) {
     return <BaziChapterEmpty message={emptyReason} />;
   }
 
   const rating = facts?.yearRating || facts?.yearTheme;
+  const intro = yearIntroProse.trim();
 
   return (
     <div className="mt-3 space-y-3.5">
@@ -54,9 +65,20 @@ export function CBaziVanNamSection({
         </div>
       ) : null}
 
-      {facts && facts.lifeAreas.length > 0 ? (
-        <div>
-          {facts.lifeAreas.map((area, i, arr) => (
+      {intro ? (
+        <p
+          className="font-serif text-[13px] leading-relaxed whitespace-pre-wrap"
+          style={{ color: CT.ink }}
+        >
+          {intro}
+        </p>
+      ) : null}
+
+      {areas.length > 0 ? (
+        <div className={intro ? "mt-3" : ""}>
+          {areas.map((area, i, arr) => {
+            const body = area.luan.trim() || area.detail.trim();
+            return (
             <div
               key={area.id}
               className="flex gap-3.5 py-3"
@@ -76,16 +98,17 @@ export function CBaziVanNamSection({
                   {area.verdict}
                 </Mono>
               </div>
-              {area.detail ? (
+              {body ? (
                 <p
-                  className="flex-1 font-serif text-[12.5px] leading-relaxed"
+                  className="flex-1 font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
                   style={{ color: CT.ink2 }}
                 >
-                  {area.detail}
+                  {body}
                 </p>
               ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
       ) : null}
 

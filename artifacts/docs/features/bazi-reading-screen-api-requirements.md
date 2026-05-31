@@ -42,7 +42,7 @@ sequenceDiagram
   par Luận giải
     FE->>GR: la-so-chi-tiet (generate-reading-la-so)
     GR->>Gemini: aspect JSON
-    FE->>GR: luu-nien (generate-reading-tieu-van)
+    FE->>GR: luu-nien (generate-reading-luu-nien)
     GR->>Gemini: 3 phần JSON
     FE->>GR: phong-thuy (generate-reading-la-so)
     GR->>Gemini: prose
@@ -105,12 +105,12 @@ File: `supabase/functions/bat-tu/index.ts`.
 | Endpoint | Edge function | Entitlement | Ghi chú |
 |----------|---------------|-------------|---------|
 | `la-so-chi-tiet` | `generate-reading-la-so` | JWT + `canUseBaziReading` | `preview: true` → không cần entitlement; 1 section |
-| `luu-nien` | `generate-reading-tieu-van` | JWT + `canUseBaziReading` | REQ-BE-01 ✅ (`bazi-reading-gate.ts`) |
+| `luu-nien` | `generate-reading-luu-nien` | JWT + `canUseBaziReading` | REQ-BE-01 ✅ (`bazi-reading-gate.ts`) |
 | `phong-thuy` | `generate-reading-la-so` | JWT + `canUseBaziReading` | REQ-BE-01 ✅ |
 
 Shared gate: `supabase/functions/_shared/bazi-reading-gate.ts` · `requireBaziReadingAuth()`.
 
-**Deploy:** `bat-tu`, `generate-reading-la-so`, `generate-reading-tieu-van`.
+**Deploy:** `bat-tu`, `generate-reading-la-so`, `generate-reading-luu-nien` (§03 vận năm), `generate-reading-tieu-van` (vận tháng).
 
 ### 3.3 Mapping Gemini / facts → chương FE
 

@@ -8,6 +8,8 @@
 
 React Router v7 (Vite) · Supabase (DB + Auth + RLS + Edge Functions + Storage) · Vercel · Tailwind CSS · Figma Make
 
+**Luận giải Edge (DeepSeek):** `generate-reading-day` · `generate-reading-la-so` · `generate-reading-tieu-van` (vận tháng) · `generate-reading-luu-nien` (vận năm §03 Bát Tự).
+
 ---
 
 ## Rule Authority (when files conflict)

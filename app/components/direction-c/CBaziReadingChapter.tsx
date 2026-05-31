@@ -41,6 +41,8 @@ export function CBaziReadingChapter({
       {chapter.kind === "van_nam" ? (
         <CBaziVanNamSection
           facts={chapter.facts}
+          yearIntroProse={chapter.yearIntroProse}
+          lifeAreas={chapter.lifeAreas}
           prose={chapter.prose}
           emptyReason={chapter.emptyReason}
         />

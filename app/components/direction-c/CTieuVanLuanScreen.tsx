@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { CTieuVanLockedScreen } from "~/components/direction-c/CTieuVanLockedScreen";
@@ -13,7 +13,7 @@ import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 import {
   mapTieuVanPayload,
-  tieuVanTongQuanDisplayOrNull,
+  tieuVanSectionsFromGenerateReading,
   type TieuVanUi,
 } from "~/lib/tieu-van-ui";
 
@@ -27,15 +27,8 @@ type ReadingSection = {
   text: string;
 };
 
-function buildTieuVanSections(ui: TieuVanUi, reading: string | null): ReadingSection[] {
+function buildTieuVanFactSections(ui: TieuVanUi): ReadingSection[] {
   const sections: ReadingSection[] = [];
-  const tongQuan =
-    reading?.trim() ||
-    tieuVanTongQuanDisplayOrNull(ui.elementRelationCode, ui.tongQuan) ||
-    ui.tongQuan;
-  if (tongQuan?.trim()) {
-    sections.push({ id: "tong_quan", title: "Tổng quan", text: tongQuan.trim() });
-  }
   if (ui.canLuu.trim() && ui.canLuu !== "—") {
     sections.push({ id: "can_luu", title: "Cần lưu ý", text: ui.canLuu.trim() });
   }
@@ -71,13 +64,15 @@ function buildTieuVanSections(ui: TieuVanUi, reading: string | null): ReadingSec
 export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
   const { profile, loading: profileLoading } = useProfile();
   const [ui, setUi] = useState<TieuVanUi | null>(null);
-  const [reading, setReading] = useState<string | null>(null);
+  const [aiSections, setAiSections] = useState<ReadingSection[]>([]);
+  const [luanFailed, setLuanFailed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [retryKey, setRetryKey] = useState(0);
   const unlocked = canUseTieuVanReading(profile);
   const reveal = profile?.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
   const month = `${year}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
 
-  useEffect(() => {
+  const loadTieuVan = useCallback(async () => {
     if (profileLoading || !profile) return;
     if (!unlocked || !profileHasLaso(profile.la_so)) {
       setLoading(false);
@@ -88,32 +83,53 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
       setLoading(false);
       return;
     }
-    let cancelled = false;
-    void (async () => {
-      const res = await invokeBatTu<unknown>({
-        op: "tieu-van",
-        body: { ...body, month },
-      });
-      if (cancelled) return;
-      if (!res.ok) {
-        setLoading(false);
-        toast.error(res.message ?? "Không tải tiểu vận.");
-        return;
-      }
-      const mapped = mapTieuVanPayload(res.data);
-      const gen = await invokeGenerateReading({
-        endpoint: "tieu-van",
-        data: res.data,
-      });
-      if (cancelled) return;
-      setUi(mapped);
-      setReading(gen.reading?.trim() || null);
+
+    setLoading(true);
+    setLuanFailed(false);
+
+    const res = await invokeBatTu<unknown>({
+      op: "tieu-van",
+      body: { ...body, month },
+    });
+    if (!res.ok) {
       setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
+      toast.error(res.message ?? "Không tải tiểu vận.");
+      return;
+    }
+
+    const mapped = mapTieuVanPayload(res.data);
+    setUi(mapped);
+
+    const gen = await invokeGenerateReading({
+      endpoint: "tieu-van",
+      data: res.data,
+    });
+    const fromAi = tieuVanSectionsFromGenerateReading(
+      gen.sections,
+      gen.reading,
+    );
+    setAiSections(fromAi);
+
+    if (gen.transportError) {
+      setLuanFailed(true);
+      if (fromAi.length === 0) {
+        toast.error(
+          gen.transportError === "gateway_timeout"
+            ? "Luận giải mất quá lâu — thử tải lại."
+            : "Không tạo luận giải được — thử tải lại.",
+        );
+      }
+    } else if (fromAi.length === 0) {
+      setLuanFailed(true);
+      toast.error("Chưa tạo được luận giải — thử tải lại.");
+    }
+
+    setLoading(false);
   }, [profile, profileLoading, unlocked, month]);
+
+  useEffect(() => {
+    void loadTieuVan();
+  }, [loadTieuVan, retryKey]);
 
   if (profileLoading) {
     return (
@@ -127,7 +143,11 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
     return <CTieuVanLockedScreen year={year} />;
   }
 
-  const sections = ui ? buildTieuVanSections(ui, reading) : [];
+  const factSections = ui ? buildTieuVanFactSections(ui) : [];
+  const aiIds = new Set(aiSections.map((s) => s.id));
+  const factSupplement = factSections.filter((s) => !aiIds.has(s.id));
+  const sections =
+    aiSections.length > 0 ? [...aiSections, ...factSupplement] : factSections;
 
   return (
     <main
@@ -179,6 +199,31 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
                 </>
               ) : null}
             </h2>
+          </div>
+        ) : null}
+
+        {luanFailed && !loading ? (
+          <div
+            className="mt-6 rounded-sm border px-3.5 py-3"
+            style={{
+              borderColor: "rgba(180,120,80,0.35)",
+              background: "rgba(180,120,80,0.08)",
+            }}
+          >
+            <p className="text-sm leading-relaxed" style={{ color: CT.ink2 }}>
+              Luận giải AI chưa tải xong
+              {aiSections.length === 0
+                ? " — bạn vẫn xem được dữ liệu tiểu vận cơ bản bên dưới."
+                : " — một phần nội dung có thể thiếu."}
+            </p>
+            <button
+              type="button"
+              className="mt-3 font-mono text-[11px] uppercase tracking-widest underline underline-offset-2"
+              style={{ color: CT.goldDeep }}
+              onClick={() => setRetryKey((k) => k + 1)}
+            >
+              Tải lại luận giải
+            </button>
           </div>
         ) : null}
 
