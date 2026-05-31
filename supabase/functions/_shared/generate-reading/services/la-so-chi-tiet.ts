@@ -156,7 +156,7 @@ async function generateLaSoChiTietAspectSections(
   const raw = await llmLaSoChiTietJson(
     LA_SO_CHI_TIET_ASPECTS_SYSTEM,
     payload,
-    2048,
+    READING_MAX_TOKENS_LA_SO_PREVIEW,
     { timeoutMs: laSoCallTimeout(budget) },
   );
   if (!raw) return [];
@@ -166,7 +166,7 @@ async function generateLaSoChiTietAspectSections(
     const retryText = await llmLaSoChiTietJson(
       LA_SO_CHI_TIET_ASPECTS_RETRY_SYSTEM,
       payload,
-      2048,
+      READING_MAX_TOKENS_LA_SO_PREVIEW,
       { timeoutMs: laSoCallTimeout(budget) },
     );
     if (retryText) {
@@ -183,7 +183,7 @@ async function generateLaSoChiTietCombinedFallback(
 ): Promise<LaSoChiTietSection[] | null> {
   if (!budget.canSpend(JSON_ROUND_MIN_MS)) return null;
 
-  const raw = await llmLaSoChiTietJson(LA_SO_CHI_TIET_SYSTEM, payload, 2048, {
+  const raw = await llmLaSoChiTietJson(LA_SO_CHI_TIET_SYSTEM, payload, READING_MAX_TOKENS_LA_SO_PREVIEW, {
     timeoutMs: laSoCallTimeout(budget),
   });
   if (!raw) return null;
@@ -193,7 +193,7 @@ async function generateLaSoChiTietCombinedFallback(
     const retryText = await llmLaSoChiTietJson(
       LA_SO_CHI_TIET_RETRY_SYSTEM,
       payload,
-      2048,
+      READING_MAX_TOKENS_LA_SO_PREVIEW,
       { timeoutMs: laSoCallTimeout(budget) },
     );
     if (retryText) sections = parseLaSoChiTietSections(retryText);

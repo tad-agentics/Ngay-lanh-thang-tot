@@ -46,18 +46,21 @@ async function generatePhongThuyBlock(
   if (!raw) return null;
 
   let section = parsePhongThuyBlockResponse(raw, sectionId);
+  let retryRaw: string | null = null;
   if (!section && budget.canSpend(JSON_ROUND_MIN_MS)) {
-    const retry = await llmLaSoChiTietJson(
+    retryRaw = await llmLaSoChiTietJson(
       PHONG_THUY_BLOCK_RETRY_SYSTEM,
       payload,
       READING_MAX_TOKENS_PHONG_THUY_BLOCK,
-      opts,
+      { ...opts, timeoutMs: budget.callTimeout(LA_SO_CHI_TIET_TIMEOUT_MS) },
     );
-    if (retry) section = parsePhongThuyBlockResponse(retry, sectionId);
+    if (retryRaw) section = parsePhongThuyBlockResponse(retryRaw, sectionId);
   }
   if (!section) {
-    const relaxed = parsePhongThuyBlockResponse(raw, sectionId, true);
-    if (relaxed) section = relaxed;
+    section = parsePhongThuyBlockResponse(raw, sectionId, true);
+  }
+  if (!section && retryRaw) {
+    section = parsePhongThuyBlockResponse(retryRaw, sectionId, true);
   }
   return section;
 }
@@ -90,10 +93,27 @@ export async function generatePhongThuyReading(
     ),
   ]);
 
-  const sections = [huong, mau, phiTinh].filter(
+  let sections = [huong, mau, phiTinh].filter(
     (s): s is LaSoChiTietSection => s != null,
   );
-  if (sections.length === 0) return { reading: null };
+
+  if (sections.length === 0) {
+    // All 3 parallel calls failed — attempt sequential single-block retry
+    const fallbackPairs: Array<[
+      string,
+      typeof PHONG_THUY_HUONG_SECTION_ID | typeof PHONG_THUY_MAU_SECTION_ID | typeof PHONG_THUY_PHI_TINH_SECTION_ID
+    ]> = [
+      [PHONG_THUY_HUONG_SYSTEM, PHONG_THUY_HUONG_SECTION_ID],
+      [PHONG_THUY_MAU_SYSTEM, PHONG_THUY_MAU_SECTION_ID],
+      [PHONG_THUY_PHI_TINH_SYSTEM, PHONG_THUY_PHI_TINH_SECTION_ID],
+    ];
+    for (const [sys, id] of fallbackPairs) {
+      if (!budget.canSpend(JSON_ROUND_MIN_MS)) break;
+      const block = await generatePhongThuyBlock(sys, payload, id, budget);
+      if (block) sections.push(block);
+    }
+    if (sections.length === 0) return { reading: null };
+  }
 
   const toStore = JSON.stringify({ sections });
   if (admin) {

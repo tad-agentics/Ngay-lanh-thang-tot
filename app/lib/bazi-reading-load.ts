@@ -34,7 +34,6 @@ import {
   mergeLaSoWithLuuNienSections,
   hasLuuNienQuyNhanLuanFromSections,
   mergeLuuNienGenerateSections,
-  luuNienQuyNhanProseFromSections,
 } from "~/lib/luu-nien-ui";
 import { fetchPhongThuyYearFacts } from "~/lib/phong-thuy-facts";
 import { parsePhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
@@ -572,7 +571,7 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  if (luuNienResOk && !luuNienQuyNhanProseFromSections(luuNienSections)) {
+  if (luuNienResOk && !hasLuuNienQuyNhanLuanFromSections(luuNienSections)) {
     if (coreGenTransport === "gateway_timeout") {
       toast.error("Luận quý nhân mất quá lâu — thử tải lại luận.");
     }
@@ -610,6 +609,7 @@ export async function loadBaziReadingFull(
 
   if (
     sections.length > 0 &&
+    !phongThuyFetchError &&
     deliveryHasFullLuanSections(sections, luuNienFactsRaw, phongThuyFactsRaw) &&
     !options?.skipPersist
   ) {
