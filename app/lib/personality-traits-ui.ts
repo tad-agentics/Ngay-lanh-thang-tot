@@ -1,8 +1,15 @@
 import type { LaSoJson } from "~/lib/api-types";
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
+import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 
 const TINH_CACH_INTRO_SECTION_ID = "tinh_cach_intro";
 const TINH_CACH_TRAIT_PREFIX = "tinh_cach_trait_";
+
+/** Khớp Edge `MIN_TINH_CACH_TRAIT_CHARS`. */
+export const MIN_TINH_CACH_TRAIT_LUAN_CHARS = 420;
+export const MIN_TINH_CACH_TRAIT_LUAN_PARAGRAPHS = 2;
+/** Tối thiểu số mục trait có luận đủ dài — tránh chỉ có intro. */
+export const MIN_TINH_CACH_TRAITS_WITH_LUAN = 2;
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -81,12 +88,30 @@ export function tinhCachIntroFromSections(
   return legacy?.text?.trim() ?? "";
 }
 
+function traitLuanMeetsMin(text: string): boolean {
+  const t = text.trim();
+  if (t.length < MIN_TINH_CACH_TRAIT_LUAN_CHARS) return false;
+  if (splitNlttLuanParagraphs(t).length < MIN_TINH_CACH_TRAIT_LUAN_PARAGRAPHS) {
+    return false;
+  }
+  return true;
+}
+
+export function countTinhCachTraitsWithLuan(
+  sections: LaSoChiTietSection[],
+): number {
+  return parsePersonalityTraitsFromSections(sections).filter((t) =>
+    traitLuanMeetsMin(t.text),
+  ).length;
+}
+
+/** §02 — cần ít nhất 2 mục trait LLM đủ dài; intro một mình không đủ. */
 export function hasTinhCachLuanFromSections(
   sections: LaSoChiTietSection[],
 ): boolean {
-  if (parsePersonalityTraitsFromSections(sections).length > 0) return true;
-  if (tinhCachIntroFromSections(sections).length > 0) return true;
-  return false;
+  return (
+    countTinhCachTraitsWithLuan(sections) >= MIN_TINH_CACH_TRAITS_WITH_LUAN
+  );
 }
 
 function isTinhCachSectionId(id: string): boolean {

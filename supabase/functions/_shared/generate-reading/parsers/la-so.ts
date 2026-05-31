@@ -246,8 +246,8 @@ export function countTinhCachParagraphs(text: string): number {
     .filter(Boolean).length;
 }
 
-export const MIN_TINH_CACH_TRAIT_CHARS_RELAXED = 1_400;
-export const MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED = 1;
+export const MIN_TINH_CACH_TRAIT_CHARS_RELAXED = 320;
+export const MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED = 2;
 
 export function tinhCachTraitProseTooShort(
   text: string,

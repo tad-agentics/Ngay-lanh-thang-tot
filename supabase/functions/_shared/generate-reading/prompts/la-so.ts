@@ -88,8 +88,8 @@ export const LA_SO_TINH_CACH_TRAITS_SYSTEM = `Bạn là chuyên gia tử vi và 
   2. "ca_tinh" · Cá tính nổi bật
   3. "can_luu" · Điểm cần lưu ý
   4. "tinh_cam" · Tình cảm & quan hệ
-- Với **mỗi** mục, "text" là luận giải **500–600 từ** tiếng Việt (mục tiêu ~2.500–3.600 ký tự), chia **đúng 2–3 đoạn văn** ngăn bằng \\n\\n.
-- Mỗi đoạn 4–8 câu hoàn chỉnh; câu cuối đoạn nối mạch sang đoạn sau.
+- Với **mỗi** mục, "text" là luận giải **khoảng 500 chữ** (~450–600 ký tự), chia **2–3 đoạn văn** ngăn bằng \\n\\n.
+- Mỗi đoạn 3–6 câu hoàn chỉnh; câu cuối đoạn nối mạch sang đoạn sau.
 - Diễn giải **sâu, cụ thể** theo lá số (Nhật Chủ, Thập Thần, cường nhược, Dụng/Kỵ, archetype trong data) — **không** chỉ nhắc lại nhãn ngắn từ API (vd. không dừng ở "Linh hoạt, khéo léo").
 - Viết như mô tả một con người thật: ví dụ đời sống, công việc, quan hệ — có thể áp dụng.
 - Giữ "title" trùng hoặc sát title gợi ý trong data; "id" ổn định (snake_case).
@@ -101,7 +101,7 @@ export const LA_SO_TINH_CACH_TRAITS_SYSTEM = `Bạn là chuyên gia tử vi và 
 ${LA_SO_VOICE_AND_BANS}`;
 
 export const LA_SO_TINH_CACH_TRAITS_RETRY_SYSTEM = `Cùng JSON la-so-chi-tiet. Trả CHỈ {"tinh_cach_intro":"...","personality_readings":[{"id","title","text"},...]}.
-Mỗi personality_readings[].text: **500–600 từ**, **2–3 đoạn** (\\n\\n), văn xuôi sâu — không nhãn ngắn. Đủ 4 mục nếu data cho phép.`;
+Mỗi personality_readings[].text: **~500 chữ**, **2–3 đoạn** (\\n\\n), văn xuôi sâu — không nhãn ngắn. Đủ 4 mục nếu data cho phép.`;
 
 /** Fallback một lần gọi — khi tách §01 / §02–06 thất bại. */
 export const LA_SO_CHI_TIET_SYSTEM = `Bạn là chuyên gia tử vi và lịch số Việt Nam, viết luận giải lá số cho ứng dụng.

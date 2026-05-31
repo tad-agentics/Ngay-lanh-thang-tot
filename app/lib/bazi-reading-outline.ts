@@ -302,11 +302,7 @@ export function buildBaziDisplayChapters(input: {
             : "Chưa có lá số trên hồ sơ.",
         };
       case "tinh_cach": {
-        const hasLuan =
-          hasTinhCachLuanFromSections(input.sections) ||
-          traits.some((t) => t.text.trim().length > 0) ||
-          Boolean(tinhCachIntro.trim()) ||
-          Boolean(tinhCachLegacy.trim());
+        const hasLuan = hasTinhCachLuanFromSections(input.sections);
         const skeletonTraits = (() => {
           if (!luanPending || hasLuan) return traits;
           const fromLaSo = parsePersonalityTraitsFromLaSo(input.laSo).map((t) => ({

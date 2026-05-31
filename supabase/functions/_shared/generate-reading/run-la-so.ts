@@ -6,6 +6,7 @@ import {
   TINH_CACH_INTRO_SECTION_ID,
   TINH_CACH_TRAIT_SECTION_PREFIX,
 } from "./parsers/la-so.ts";
+import { MIN_TINH_CACH_TRAIT_CHARS } from "./core/config.ts";
 import { phongThuyCachedSectionsValid } from "./parsers/phong-thuy.ts";
 import type { LaSoChiTietSection } from "./core/types.ts";
 
@@ -15,7 +16,7 @@ function laSoChiTietFullCacheHasTinhCach(sections: LaSoChiTietSection[]): boolea
       return (s.text?.trim().length ?? 0) >= 80;
     }
     if (s.id.startsWith(TINH_CACH_TRAIT_SECTION_PREFIX)) {
-      return (s.text?.trim().length ?? 0) >= 400;
+      return (s.text?.trim().length ?? 0) >= MIN_TINH_CACH_TRAIT_CHARS;
     }
     if (s.id === "tinh_cach") {
       return (s.text?.trim().length ?? 0) >= 120;

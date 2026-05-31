@@ -3,4 +3,4 @@
  * (`supabase/functions/_shared/generate-reading/core/cache-versions.ts`).
  */
 export const BAZI_READING_DELIVERY_CONTENT_VERSION =
-  "2026-05-31-luu-quy-800c-v1";
+  "2026-05-31-tinh-cach-500c-v1";

@@ -55,9 +55,10 @@ export const MIN_MENH_PREVIEW_CHARS = 1000;
 export const MIN_MENH_PREVIEW_SENTENCE_ENDS = 14;
 export const MIN_MENH_PREVIEW_PARAGRAPHS = 3;
 
-/** §02 mỗi personality_readings[].text — ~500–600 từ (~2.400–3.600 ký tự). */
-export const MIN_TINH_CACH_TRAIT_CHARS = 2_400;
+/** §02 mỗi personality_readings[].text — ~500 chữ, 2–3 đoạn (khớp §03 life areas). */
+export const MIN_TINH_CACH_TRAIT_CHARS = 420;
 export const MIN_TINH_CACH_TRAIT_PARAGRAPHS = 2;
+export const MIN_TINH_CACH_TRAITS_REQUIRED = 2;
 export const MIN_TINH_CACH_INTRO_CHARS = 120;
 
 /** §03 mỗi life_area_readings[].text — ~500 chữ, đúng 3 đoạn. */

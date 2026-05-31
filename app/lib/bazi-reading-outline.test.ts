@@ -102,14 +102,19 @@ describe("buildBaziDisplayChapters", () => {
   });
 
   it("maps LLM personality_readings sections to §02 sub-blocks", () => {
-    const longBody = "Đoạn một. ".repeat(400).trim();
+    const longBody = `Đoạn một.\n\n${"x".repeat(420)}`;
     const chapters = buildBaziDisplayChapters({
       sections: [
         { id: "tinh_cach_intro", title: "Tổng quan", text: "Intro LLM ba câu." },
         {
           id: "tinh_cach_trait_diem_manh",
           title: "Điểm mạnh",
-          text: `${longBody}\n\n${longBody}`,
+          text: longBody,
+        },
+        {
+          id: "tinh_cach_trait_ca_tinh",
+          title: "Cá tính",
+          text: longBody,
         },
       ],
       laSo: {
@@ -123,8 +128,9 @@ describe("buildBaziDisplayChapters", () => {
     });
     const tinh = chapters.find((c) => c.key === "tinh_cach");
     if (tinh?.kind === "tinh_cach") {
-      expect(tinh.traits).toHaveLength(1);
+      expect(tinh.traits).toHaveLength(2);
       expect(tinh.traits[0]?.title).toBe("Điểm mạnh");
+      expect(tinh.luanLoading).toBe(false);
       expect(tinh.introProse).toBe("Intro LLM ba câu.");
       expect(tinh.prose).toBe("");
     }

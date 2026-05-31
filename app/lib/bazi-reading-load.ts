@@ -415,6 +415,7 @@ export async function loadBaziReadingFull(
 
   let lifeGenTransport: GenerateReadingResponse["transportError"];
   let coreGenTransport: GenerateReadingResponse["transportError"];
+  let tinhGenTransport: GenerateReadingResponse["transportError"];
 
   await Promise.all([
     (async () => {
@@ -442,6 +443,7 @@ export async function loadBaziReadingFull(
           data: lasoData,
           only_tinh_cach: true,
         });
+        tinhGenTransport = tinhGen.transportError;
         const tinhSections = laSoSectionsFromGenerateReading(
           tinhGen.sections,
           tinhGen.reading,
@@ -527,6 +529,27 @@ export async function loadBaziReadingFull(
         retryLife,
         luuNienSections,
       );
+      reportProgress();
+    }
+  }
+  if (
+    deliveryHasMenhProse(laSoSections) &&
+    !hasTinhCachLuanFromSections(laSoSections)
+  ) {
+    if (tinhGenTransport === "gateway_timeout") {
+      toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
+    }
+    const tinhRetry = await invokeGenerateReading({
+      endpoint: "la-so-chi-tiet",
+      data: lasoData,
+      only_tinh_cach: true,
+    });
+    const retryTinh = laSoSectionsFromGenerateReading(
+      tinhRetry.sections,
+      tinhRetry.reading,
+    );
+    if (retryTinh.length > 0) {
+      laSoSections = mergeLaSoTinhCachSections(laSoSections, retryTinh);
       reportProgress();
     }
   }

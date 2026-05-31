@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  hasTinhCachLuanFromSections,
   mergeLaSoTinhCachSections,
+  MIN_TINH_CACH_TRAIT_LUAN_CHARS,
   parsePersonalityTraitsFromLaSo,
   parsePersonalityTraitsFromSections,
   tinhCachIntroFromSections,
@@ -43,6 +45,37 @@ describe("parsePersonalityTraitsFromSections", () => {
       { id: "tinh_cach_intro", title: "Tổng quan", text: "Mở đầu §02." },
     ]);
     expect(intro).toBe("Mở đầu §02.");
+  });
+});
+
+describe("hasTinhCachLuanFromSections", () => {
+  const traitBody = `a\n\nb\n\n${"x".repeat(MIN_TINH_CACH_TRAIT_LUAN_CHARS)}`;
+
+  it("requires at least two traits with long LLM prose", () => {
+    expect(
+      hasTinhCachLuanFromSections([
+        { id: "tinh_cach_intro", title: "Intro", text: "Chỉ intro." },
+        {
+          id: "tinh_cach_trait_a",
+          title: "A",
+          text: traitBody,
+        },
+      ]),
+    ).toBe(false);
+    expect(
+      hasTinhCachLuanFromSections([
+        {
+          id: "tinh_cach_trait_a",
+          title: "A",
+          text: traitBody,
+        },
+        {
+          id: "tinh_cach_trait_b",
+          title: "B",
+          text: traitBody,
+        },
+      ]),
+    ).toBe(true);
   });
 });
 

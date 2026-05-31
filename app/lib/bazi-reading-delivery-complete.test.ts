@@ -11,7 +11,7 @@ import {
 } from "./phong-thuy-ui";
 
 const menhText = "m".repeat(MIN_MENH_TONG_QUAN_LUAN_CHARS);
-const traitText = "x".repeat(1500);
+const traitText = `a\n\nb\n\n${"x".repeat(420)}`;
 const lifeText = `a\n\nb\n\n${"y".repeat(420)}`;
 const quyText = `a\n\nb\n\nc\n\nd\n\n${"z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS)}`;
 
@@ -43,8 +43,13 @@ function fullSections(): {
   return [
     { id: "menh_tong_quan", title: "Mệnh", text: menhText },
     {
-      id: "tinh_cach_trait_1",
-      title: "T1",
+      id: "tinh_cach_trait_diem_manh",
+      title: "Điểm mạnh",
+      text: traitText,
+    },
+    {
+      id: "tinh_cach_trait_ca_tinh",
+      title: "Cá tính",
       text: traitText,
     },
     {
