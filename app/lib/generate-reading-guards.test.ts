@@ -13,8 +13,20 @@ vi.mock("../../supabase/functions/_shared/redis-cache.ts", () => ({
 
 import {
   acquireGenerateReadingRateLimit,
+  generateReadingRateLimitScope,
   subscriptionActiveForReading,
 } from "../../supabase/functions/_shared/generate-reading-guards.ts";
+
+describe("generateReadingRateLimitScope", () => {
+  it("isolates paywall preview from full la-so-chi-tiet", () => {
+    expect(
+      generateReadingRateLimitScope("la-so-chi-tiet", { preview: true }),
+    ).toBe("la-so-chi-tiet:preview");
+    expect(generateReadingRateLimitScope("la-so-chi-tiet")).toBe(
+      "la-so-chi-tiet",
+    );
+  });
+});
 
 describe("acquireGenerateReadingRateLimit", () => {
   beforeEach(() => {

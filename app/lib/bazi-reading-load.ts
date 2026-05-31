@@ -55,6 +55,8 @@ import {
 } from "~/lib/personality-traits-ui";
 
 const BAZI_INVOKE_STAGGER_MS = 1_500;
+/** Khớp `RATE_LIMIT_RETRY_MS` trong `generate-reading.ts`. */
+const BAZI_MENH_WAVE_RETRY_MS = 11_000;
 
 export type BaziReadingLoadResult = {
   sections: LaSoChiTietSection[];
@@ -473,6 +475,28 @@ export async function loadBaziReadingFull(
     menhGen.transportError === "gateway_timeout"
   ) {
     toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
+  }
+  // Wave 1 retry — preview dùng scope riêng nhưng vẫn có thể rỗng (rate limit / LLM).
+  if (!deliveryHasMenhProse(laSoSections)) {
+    await new Promise((resolve) => setTimeout(resolve, BAZI_MENH_WAVE_RETRY_MS));
+    const menhWaveRetry = await invokeGenerateReadingWithRetry({
+      endpoint: "la-so-chi-tiet",
+      data: lasoData,
+      preview: true,
+    });
+    noteGenerateTransport(menhWaveRetry, transportFlags);
+    const waveMenh = laSoSectionsFromGenerateReading(
+      menhWaveRetry.sections,
+      menhWaveRetry.reading,
+    );
+    if (waveMenh.length > 0) {
+      const waveIds = new Set(waveMenh.map((s) => s.id));
+      laSoSections = [
+        ...waveMenh,
+        ...laSoSections.filter((s) => !waveIds.has(s.id)),
+      ];
+      reportProgress();
+    }
   }
 
   // Wave 2 — §02 + §03 life + §04 (stagger để tránh rate limit 10s).

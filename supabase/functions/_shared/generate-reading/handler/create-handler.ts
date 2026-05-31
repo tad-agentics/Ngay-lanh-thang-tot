@@ -354,6 +354,7 @@ export function createGenerateReadingHandler(
 
     if (rateLimitUserId) {
       const rlScope = generateReadingRateLimitScope(endpoint, {
+        preview,
         onlyTinhCach,
         onlyLuuNienLife,
         onlyLuuNienCore,

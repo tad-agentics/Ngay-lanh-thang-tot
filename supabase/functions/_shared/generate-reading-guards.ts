@@ -63,11 +63,13 @@ export async function preflightAiReadingAccess(
 export function generateReadingRateLimitScope(
   endpoint: string,
   opts?: {
+    preview?: boolean;
     onlyTinhCach?: boolean;
     onlyLuuNienLife?: boolean;
     onlyLuuNienCore?: boolean;
   },
 ): string {
+  if (opts?.preview) return `${endpoint}:preview`;
   if (opts?.onlyTinhCach) return `${endpoint}:only-tinh-cach`;
   if (opts?.onlyLuuNienLife) return `${endpoint}:only-luu-life`;
   if (opts?.onlyLuuNienCore) return `${endpoint}:only-luu-core`;
