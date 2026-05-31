@@ -11,12 +11,14 @@ type CBaziReadingChapterProps = {
   chapter: BaziDisplayChapter;
   profile: Profile;
   onRetryMenh?: () => void;
+  onRetryLuan?: () => void;
 };
 
 export function CBaziReadingChapter({
   chapter,
   profile,
   onRetryMenh,
+  onRetryLuan,
 }: CBaziReadingChapterProps) {
   return (
     <section className="mt-8 first:mt-6">
@@ -37,7 +39,9 @@ export function CBaziReadingChapter({
           introProse={chapter.introProse}
           prose={chapter.prose}
           luanLoading={chapter.luanLoading}
+          luanFailed={chapter.luanFailed}
           emptyReason={chapter.emptyReason}
+          onRetryLuan={onRetryLuan}
         />
       ) : null}
       {chapter.kind === "van_nam" ? (
@@ -47,7 +51,9 @@ export function CBaziReadingChapter({
           lifeAreas={chapter.lifeAreas}
           prose={chapter.prose}
           luanLoading={chapter.luanLoading}
+          luanFailed={chapter.luanFailed}
           emptyReason={chapter.emptyReason}
+          onRetryLuan={onRetryLuan}
         />
       ) : null}
       {chapter.kind === "phong_thuy" ? (
@@ -55,7 +61,9 @@ export function CBaziReadingChapter({
           facts={chapter.facts}
           prose={chapter.prose}
           proseLoading={chapter.proseLoading}
+          proseFailed={chapter.proseFailed}
           emptyReason={chapter.emptyReason}
+          onRetryLuan={onRetryLuan}
         />
       ) : null}
       {chapter.kind === "quy_nhan" ? (
@@ -64,7 +72,9 @@ export function CBaziReadingChapter({
           daiVanNext={chapter.daiVanNext}
           prose={chapter.prose}
           proseLoading={chapter.proseLoading}
+          proseFailed={chapter.proseFailed}
           emptyReason={chapter.emptyReason}
+          onRetryLuan={onRetryLuan}
         />
       ) : null}
     </section>

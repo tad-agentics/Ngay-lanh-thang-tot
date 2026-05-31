@@ -12,7 +12,9 @@ type CBaziTinhCachSectionProps = {
   introProse: string;
   prose: string;
   luanLoading?: boolean;
+  luanFailed?: boolean;
   emptyReason: string | null;
+  onRetryLuan?: () => void;
 };
 
 export function CBaziTinhCachSection({
@@ -20,7 +22,9 @@ export function CBaziTinhCachSection({
   introProse,
   prose,
   luanLoading = false,
+  luanFailed = false,
   emptyReason,
+  onRetryLuan,
 }: CBaziTinhCachSectionProps) {
   const traitsWithText = traits.filter((t) => t.text.trim().length > 0);
   const hasTraits = traitsWithText.length > 0;
@@ -103,7 +107,23 @@ export function CBaziTinhCachSection({
         <CBaziNlttLuanInkLoading message="Đang luận tính cách" compact />
       ) : null}
 
-      {!hasTraits && !hasIntro && !hasFallback && !luanLoading && emptyReason ? (
+      {luanFailed && !luanLoading ? (
+        <CBaziNlttLuanProse
+          loading={false}
+          failed
+          failedMessage="Chưa tạo được luận giải tính cách. Thử tải lại luận."
+          onRetry={onRetryLuan}
+          compact
+          className="mt-3"
+        />
+      ) : null}
+
+      {!hasTraits &&
+      !hasIntro &&
+      !hasFallback &&
+      !luanLoading &&
+      !luanFailed &&
+      emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

@@ -12,7 +12,9 @@ type CBaziQuyNhanSectionProps = {
   daiVanNext: DaiVanNextView | null;
   prose: string;
   proseLoading?: boolean;
+  proseFailed?: boolean;
   emptyReason: string | null;
+  onRetryLuan?: () => void;
 };
 
 function daiVanNextSentence(dv: DaiVanNextView): string {
@@ -27,7 +29,9 @@ export function CBaziQuyNhanSection({
   daiVanNext,
   prose,
   proseLoading = false,
+  proseFailed = false,
   emptyReason,
+  onRetryLuan,
 }: CBaziQuyNhanSectionProps) {
   if (emptyReason && !quyNhan && !daiVanNext && !prose && !proseLoading) {
     return <BaziChapterEmpty message={emptyReason} />;
@@ -105,8 +109,15 @@ export function CBaziQuyNhanSection({
         <CBaziNlttLuanProse text={prose} compact />
       ) : proseLoading ? (
         <CBaziNlttLuanProse loading loadingMessage="Đang luận ứng xử năm" compact />
+      ) : proseFailed ? (
+        <CBaziNlttLuanProse
+          failed
+          failedMessage="Chưa tạo được luận quý nhân. Thử tải lại luận."
+          onRetry={onRetryLuan}
+          compact
+        />
       ) : null}
-      {!prose && !proseLoading && !facts && !daiVanNext && emptyReason ? (
+      {!prose && !proseLoading && !proseFailed && !facts && !daiVanNext && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

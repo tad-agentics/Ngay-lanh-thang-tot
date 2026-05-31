@@ -28,7 +28,9 @@ type CBaziVanNamSectionProps = {
   lifeAreas?: LuuNienLifeAreaView[];
   prose: string;
   luanLoading?: boolean;
+  luanFailed?: boolean;
   emptyReason: string | null;
+  onRetryLuan?: () => void;
 };
 
 export function CBaziVanNamSection({
@@ -37,7 +39,9 @@ export function CBaziVanNamSection({
   lifeAreas = [],
   prose,
   luanLoading = false,
+  luanFailed = false,
   emptyReason,
+  onRetryLuan,
 }: CBaziVanNamSectionProps) {
   const areas =
     lifeAreas.length > 0
@@ -196,8 +200,15 @@ export function CBaziVanNamSection({
         <CBaziNlttLuanProse text={prose} compact />
       ) : luanLoading ? (
         <CBaziNlttLuanInkLoading message="Đang luận thực tiễn năm" compact />
+      ) : luanFailed ? (
+        <CBaziNlttLuanProse
+          failed
+          failedMessage="Chưa tạo được luận vận năm dài. Thử tải lại luận."
+          onRetry={onRetryLuan}
+          compact
+        />
       ) : null}
-      {!prose && !luanLoading && !facts && emptyReason ? (
+      {!prose && !luanLoading && !luanFailed && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

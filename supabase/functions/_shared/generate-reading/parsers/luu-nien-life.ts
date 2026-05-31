@@ -29,8 +29,21 @@ function coerceLifeAreaText(v: unknown): string | null {
   return t.length > 0 ? t : null;
 }
 
-export function luuNienLifeAreaProseTooShort(text: string): boolean {
+export const MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED = 1_400;
+export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED = 1;
+
+export function luuNienLifeAreaProseTooShort(
+  text: string,
+  relaxed = false,
+): boolean {
   const t = text.trim();
+  if (relaxed) {
+    if (t.length < MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED) return true;
+    if (countMenhPreviewParagraphs(t) < MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED) {
+      return true;
+    }
+    return false;
+  }
   if (t.length < MIN_LUU_NIEN_LIFE_AREA_CHARS) return true;
   if (countMenhPreviewParagraphs(t) < MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS) {
     return true;
@@ -40,7 +53,9 @@ export function luuNienLifeAreaProseTooShort(text: string): boolean {
 
 export function parseLuuNienLifeAreasResponse(
   raw: string,
+  opts?: { relaxed?: boolean },
 ): LuuNienLifeAreasPayload | null {
+  const relaxed = opts?.relaxed === true;
   const record = tryParseLaSoChiTietRecord(raw);
   if (!record) return null;
 
@@ -67,7 +82,7 @@ export function parseLuuNienLifeAreasResponse(
       typeof r.id === "string" ? r.id : label,
     );
     const text = coerceLifeAreaText(r.text);
-    if (!text || luuNienLifeAreaProseTooShort(text)) continue;
+    if (!text || luuNienLifeAreaProseTooShort(text, relaxed)) continue;
     areas.push({
       id: `${LUU_NIEN_LIFE_AREA_PREFIX}${id}`,
       title: label,

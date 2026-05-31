@@ -322,6 +322,7 @@ export function CBaziReadingScreen() {
                   chapter={ch}
                   profile={profile}
                   onRetryMenh={ch.kind === "menh" ? retryLoad : undefined}
+                  onRetryLuan={retryLoad}
                 />
               ) : null,
             )}

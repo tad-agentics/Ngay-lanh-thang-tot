@@ -31,22 +31,24 @@ export async function generateLuuNienLifeAreaSections(
     LUU_NIEN_LIFE_AREAS_SYSTEM,
     payload,
     READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS,
-    { timeoutMs: callTimeout(budget) },
+    { timeoutMs: callTimeout(budget), disableThinking: true },
   );
   if (!raw) return [];
 
   let parsed = parseLuuNienLifeAreasResponse(raw);
-  if (
-    (!parsed?.areas.length || !parsed.yearIntro) &&
-    budget.canSpend(JSON_ROUND_MIN_MS)
-  ) {
+  if (!parsed?.areas.length && budget.canSpend(JSON_ROUND_MIN_MS)) {
     const retry = await llmLaSoChiTietJson(
       LUU_NIEN_LIFE_AREAS_RETRY_SYSTEM,
       payload,
       READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS,
-      { timeoutMs: callTimeout(budget) },
+      { timeoutMs: callTimeout(budget), disableThinking: true },
     );
     if (retry) parsed = parseLuuNienLifeAreasResponse(retry);
+  }
+
+  if (!parsed?.areas.length) {
+    const relaxed = parseLuuNienLifeAreasResponse(raw, { relaxed: true });
+    if (relaxed?.areas.length) parsed = relaxed;
   }
 
   if (!parsed) return [];

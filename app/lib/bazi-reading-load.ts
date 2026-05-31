@@ -351,25 +351,15 @@ export async function loadBaziReadingFull(
   }
 
   const luuNienResOk = luuNienFactsRaw != null;
+  const expectedLifeAreas = Math.max(
+    1,
+    parseLuuNienFactsView(luuNienFactsRaw)?.lifeAreas.length ?? 4,
+  );
 
-  const [lasoGen, luuNienGen, phongThuyGen] = await Promise.all([
-    invokeGenerateReading({
-      endpoint: "la-so-chi-tiet",
-      data: lasoData,
-    }),
-    luuNienResOk
-      ? invokeGenerateReading({
-          endpoint: "luu-nien",
-          data: luuNienFactsRaw,
-        })
-      : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
-    phongThuyFactsRaw
-      ? invokeGenerateReading({
-          endpoint: "phong-thuy",
-          data: phongThuyFactsRaw,
-        })
-      : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
-  ]);
+  const lasoGen = await invokeGenerateReading({
+    endpoint: "la-so-chi-tiet",
+    data: lasoData,
+  });
 
   let laSoSections = laSoSectionsFromGenerateReading(
     lasoGen.sections,
@@ -400,10 +390,48 @@ export async function loadBaziReadingFull(
       toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
     }
   }
-  const luuNienSections = luuNienSectionsFromGenerateReading(
+
+  const [luuNienGen, phongThuyGen] = await Promise.all([
+    luuNienResOk
+      ? invokeGenerateReading({
+          endpoint: "luu-nien",
+          data: luuNienFactsRaw,
+        })
+      : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
+    phongThuyFactsRaw
+      ? invokeGenerateReading({
+          endpoint: "phong-thuy",
+          data: phongThuyFactsRaw,
+        })
+      : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
+  ]);
+
+  let luuNienSections = luuNienSectionsFromGenerateReading(
     luuNienGen.sections,
     luuNienGen.reading,
   );
+  if (
+    luuNienResOk &&
+    !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
+  ) {
+    if (luuNienGen.transportError === "gateway_timeout") {
+      toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
+    }
+    const luuRetry = await invokeGenerateReading({
+      endpoint: "luu-nien",
+      data: luuNienFactsRaw,
+    });
+    const retrySections = luuNienSectionsFromGenerateReading(
+      luuRetry.sections,
+      luuRetry.reading,
+    );
+    if (
+      hasLuuNienLifeLuanFromSections(retrySections, expectedLifeAreas) ||
+      retrySections.length > luuNienSections.length
+    ) {
+      luuNienSections = retrySections;
+    }
+  }
   const phongThuySections = phongThuySectionsFromGenerateReading(
     phongThuyFactsRaw,
     phongThuyGen.reading,

@@ -14,17 +14,35 @@ type CBaziPhongThuySectionProps = {
   facts: PhongThuyFactsView | null;
   prose: string;
   proseLoading?: boolean;
+  proseFailed?: boolean;
   emptyReason: string | null;
+  onRetryLuan?: () => void;
 };
 
 export function CBaziPhongThuySection({
   facts,
   prose,
   proseLoading = false,
+  proseFailed = false,
   emptyReason,
+  onRetryLuan,
 }: CBaziPhongThuySectionProps) {
-  if (emptyReason && !facts && !prose) {
-    return <BaziChapterEmpty message={emptyReason} />;
+  if (emptyReason && !facts && !prose && !proseLoading) {
+    return (
+      <div className="mt-3">
+        <BaziChapterEmpty message={emptyReason} />
+        {onRetryLuan ? (
+          <button
+            type="button"
+            onClick={onRetryLuan}
+            className="mt-3 cursor-pointer border bg-transparent px-3 py-1.5 font-[family-name:var(--display-2)] text-[10px] font-bold uppercase tracking-[0.06em]"
+            style={{ borderColor: CT.goldDeep, color: CT.ink }}
+          >
+            Tải lại luận
+          </button>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -143,8 +161,15 @@ export function CBaziPhongThuySection({
         <CBaziNlttLuanProse text={prose} compact />
       ) : proseLoading ? (
         <CBaziNlttLuanProse loading loadingMessage="Đang luận phong thủy năm" compact />
+      ) : proseFailed ? (
+        <CBaziNlttLuanProse
+          failed
+          failedMessage="Chưa tạo được luận phong thủy. Thử tải lại luận."
+          onRetry={onRetryLuan}
+          compact
+        />
       ) : null}
-      {!prose && !proseLoading && !facts && emptyReason ? (
+      {!prose && !proseLoading && !proseFailed && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>
