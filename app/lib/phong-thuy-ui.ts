@@ -186,6 +186,35 @@ export function hasPhongThuyLuanFromSections(
   return hasPhongThuyStructuredLuanFromSections(sections, facts);
 }
 
+/** Cache cũ / lỗi Edge: `reading` là JSON `{"sections":[...]}` thay vì `sections` riêng. */
+export function parsePhongThuySectionsFromReadingJson(
+  reading: string | null | undefined,
+): LaSoChiTietSection[] {
+  const raw = reading?.trim() ?? "";
+  if (!raw.startsWith("{")) return [];
+  try {
+    const o = JSON.parse(raw) as { sections?: unknown };
+    if (!Array.isArray(o.sections)) return [];
+    const out: LaSoChiTietSection[] = [];
+    for (const row of o.sections) {
+      if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+      const r = row as Record<string, unknown>;
+      const id = typeof r.id === "string" ? r.id.trim() : "";
+      const text = typeof r.text === "string" ? r.text.trim() : "";
+      if (!id || !text) continue;
+      const title = typeof r.title === "string" ? r.title.trim() : id;
+      out.push({
+        id: id.startsWith("phong_thuy_") ? id : `phong_thuy_${id}`,
+        title: title.length > 0 ? title : id,
+        text,
+      });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
 export function phongThuySectionsFromGenerateReading(
   facts: unknown,
   sections: LaSoChiTietSection[] | null,
@@ -197,8 +226,10 @@ export function phongThuySectionsFromGenerateReading(
       id: s.id.startsWith("phong_thuy_") ? s.id : `phong_thuy_${s.id}`,
     }));
   }
+  const fromJson = parsePhongThuySectionsFromReadingJson(reading);
+  if (fromJson.length > 0) return fromJson;
   const text = reading?.trim() || phongThuyFactsToProse(facts);
-  if (!text) return [];
+  if (!text || text.startsWith("{")) return [];
   return [{ id: PHONG_THUY_VAN_SECTION_ID, title: "Phong thủy năm", text }];
 }
 

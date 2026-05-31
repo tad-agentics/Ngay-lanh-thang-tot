@@ -79,7 +79,11 @@ export function readCachedBody(
     }
     return { reading: null, sections: null, dayReadings: null };
   }
-  if (endpoint === "tieu-van" || endpoint === "luu-nien") {
+  if (
+    endpoint === "tieu-van" ||
+    endpoint === "luu-nien" ||
+    endpoint === "phong-thuy"
+  ) {
     try {
       const o = JSON.parse(reading) as { sections?: unknown };
       if (Array.isArray(o.sections) && o.sections.length > 0) {

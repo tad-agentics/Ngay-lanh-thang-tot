@@ -10,6 +10,8 @@ import {
   PHONG_THUY_PHI_TINH_SECTION_ID,
   phongThuyHuongLuanFromSections,
   phongThuySectionsFromGenerateReading,
+  parsePhongThuySectionsFromReadingJson,
+  PHONG_THUY_VAN_SECTION_ID,
 } from "./phong-thuy-ui";
 
 const facts: PhongThuyFactsView = {
@@ -155,5 +157,29 @@ describe("phongThuySectionsFromGenerateReading", () => {
       null,
     );
     expect(out[0]?.id).toBe("phong_thuy_huong");
+  });
+
+  it("parses JSON blob in reading when sections null (cache bug)", () => {
+    const json = JSON.stringify({
+      sections: [
+        {
+          id: "phong_thuy_huong",
+          title: "Hướng tốt cho bạn",
+          text: "Năm nay Đông Nam thuận.",
+        },
+      ],
+    });
+    const out = phongThuySectionsFromGenerateReading(null, null, json);
+    expect(out[0]?.id).toBe("phong_thuy_huong");
+    expect(out[0]?.text).toContain("Đông Nam");
+    expect(out.some((s) => s.id === PHONG_THUY_VAN_SECTION_ID)).toBe(false);
+  });
+});
+
+describe("parsePhongThuySectionsFromReadingJson", () => {
+  it("returns empty for plain prose", () => {
+    expect(parsePhongThuySectionsFromReadingJson("Văn xuôi bình thường.")).toEqual(
+      [],
+    );
   });
 });
