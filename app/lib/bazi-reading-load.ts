@@ -45,9 +45,16 @@ import {
 } from "~/lib/phong-thuy-ui";
 import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
 import {
+  createInitialChapterLoadState,
+  deriveChapterLoadState,
+  type BaziChapterLoadState,
+} from "~/lib/bazi-chapter-load";
+import {
   hasTinhCachLuanFromSections,
   mergeLaSoTinhCachSections,
 } from "~/lib/personality-traits-ui";
+
+const BAZI_INVOKE_STAGGER_MS = 1_500;
 
 export type BaziReadingLoadResult = {
   sections: LaSoChiTietSection[];
@@ -75,7 +82,7 @@ export function buildBaziSkeletonChapters(
     phongThuyFactsRaw: facts.phongThuyFactsRaw,
     yearCanChi: facts.yearCanChi,
     phongThuyFetchError: facts.phongThuyFetchError,
-    luanPending: true,
+    chapterLoad: createInitialChapterLoadState(),
   });
 }
 
@@ -301,7 +308,10 @@ export async function loadBaziReadingFull(
     forceRegenerate?: boolean;
     preloadedFacts?: BaziReadingFactsBundle;
     /** Gọi sau mỗi invoke LLM xong — cập nhật UI từng §, không chờ cả bundle. */
-    onProgress?: (partial: BaziReadingLoadResult) => void;
+    onProgress?: (
+      partial: BaziReadingLoadResult,
+      chapterLoad: BaziChapterLoadState,
+    ) => void;
   },
 ): Promise<BaziReadingLoadResult> {
   const empty: BaziReadingLoadResult = {
@@ -399,95 +409,101 @@ export async function loadBaziReadingFull(
   let luuNienSections: LaSoChiTietSection[] = [];
   let phongThuySections: LaSoChiTietSection[] = [];
 
-  const reportProgress = () => {
-    options?.onProgress?.({
-      sections: mergeBaziReadingWithPhongThuy(
-        mergeLaSoWithLuuNienSections(laSoSections, luuNienSections),
-        phongThuySections,
-      ),
-      laSoDisplay,
+  const mergeSections = () =>
+    mergeBaziReadingWithPhongThuy(
+      mergeLaSoWithLuuNienSections(laSoSections, luuNienSections),
+      phongThuySections,
+    );
+
+  const buildPartialResult = (): BaziReadingLoadResult => ({
+    sections: mergeSections(),
+    laSoDisplay,
+    luuNienFactsRaw,
+    phongThuyFactsRaw,
+    yearCanChi,
+    phongThuyFetchError,
+  });
+
+  let bundleFinished = false;
+
+  const reportProgress = (finished = false) => {
+    const partial = buildPartialResult();
+    const chapterLoad = deriveChapterLoadState(partial.sections, {
       luuNienFactsRaw,
       phongThuyFactsRaw,
-      yearCanChi,
       phongThuyFetchError,
+      bundleFinished: finished,
     });
+    options?.onProgress?.(partial, chapterLoad);
   };
 
-  let lifeGenTransport: GenerateReadingResponse["transportError"];
-  let coreGenTransport: GenerateReadingResponse["transportError"];
-  let tinhGenTransport: GenerateReadingResponse["transportError"];
+  const stagger = (slot: number) =>
+    new Promise<void>((resolve) => {
+      setTimeout(resolve, slot * BAZI_INVOKE_STAGGER_MS);
+    });
 
+  // Wave 1 — §01 menh only (preview path, cache riêng; không gọi full la-so 52s).
+  const menhGen = await invokeGenerateReadingWithRetry({
+    endpoint: "la-so-chi-tiet",
+    data: lasoData,
+    preview: true,
+  });
+  laSoSections = laSoSectionsFromGenerateReading(
+    menhGen.sections,
+    menhGen.reading,
+  );
+  reportProgress();
+  if (
+    !menhTongQuanProseFromSections(laSoSections) &&
+    menhGen.transportError === "gateway_timeout"
+  ) {
+    toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
+  }
+
+  // Wave 2 — §02 + §03 life + §04 (stagger để tránh rate limit 10s).
   await Promise.all([
     (async () => {
-      const lasoGen = await invokeGenerateReadingWithRetry({
+      await stagger(0);
+      const tinhGen = await invokeGenerateReadingWithRetry({
         endpoint: "la-so-chi-tiet",
         data: lasoData,
+        only_tinh_cach: true,
       });
-      laSoSections = laSoSectionsFromGenerateReading(
-        lasoGen.sections,
-        lasoGen.reading,
+      const tinhSections = laSoSectionsFromGenerateReading(
+        tinhGen.sections,
+        tinhGen.reading,
       );
+      if (tinhSections.length > 0) {
+        laSoSections = mergeLaSoTinhCachSections(laSoSections, tinhSections);
+      } else if (tinhGen.transportError === "gateway_timeout") {
+        toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
+      }
       reportProgress();
-      if (
-        !menhTongQuanProseFromSections(laSoSections) &&
-        lasoGen.transportError === "gateway_timeout"
-      ) {
-        toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
-      }
-      if (
-        menhTongQuanProseFromSections(laSoSections) &&
-        !hasTinhCachLuanFromSections(laSoSections)
-      ) {
-        const tinhGen = await invokeGenerateReadingWithRetry({
-          endpoint: "la-so-chi-tiet",
-          data: lasoData,
-          only_tinh_cach: true,
-        });
-        tinhGenTransport = tinhGen.transportError;
-        const tinhSections = laSoSectionsFromGenerateReading(
-          tinhGen.sections,
-          tinhGen.reading,
-        );
-        if (tinhSections.length > 0) {
-          laSoSections = mergeLaSoTinhCachSections(laSoSections, tinhSections);
-          reportProgress();
-        } else if (tinhGen.transportError === "gateway_timeout") {
-          toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
-        }
-      }
     })(),
     luuNienResOk
       ? (async () => {
+          await stagger(1);
           const lifeGen = await invokeGenerateReadingWithRetry({
             endpoint: "luu-nien",
             data: luuNienFactsRaw,
             only_luu_nien_life: true,
           });
-          lifeGenTransport = lifeGen.transportError;
           luuNienSections = mergeLuuNienGenerateSections(
-            luuNienSectionsFromGenerateReading(lifeGen.sections, lifeGen.reading),
+            luuNienSectionsFromGenerateReading(
+              lifeGen.sections,
+              lifeGen.reading,
+            ),
             luuNienSections,
           );
-          reportProgress();
-        })()
-      : Promise.resolve(),
-    luuNienResOk
-      ? (async () => {
-          const coreGen = await invokeGenerateReadingWithRetry({
-            endpoint: "luu-nien",
-            data: luuNienFactsRaw,
-            only_luu_nien_core: true,
-          });
-          coreGenTransport = coreGen.transportError;
-          luuNienSections = mergeLuuNienGenerateSections(
-            luuNienSections,
-            luuNienSectionsFromGenerateReading(coreGen.sections, coreGen.reading),
-          );
+          if (lifeGen.transportError === "gateway_timeout") {
+            toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
+          }
           reportProgress();
         })()
       : Promise.resolve(),
     phongThuyFactsRaw
       ? (async () => {
+          await stagger(2);
           const phongThuyGen = await invokeGenerateReadingWithRetry({
             endpoint: "phong-thuy",
             data: phongThuyFactsRaw,
@@ -502,62 +518,45 @@ export async function loadBaziReadingFull(
       : Promise.resolve(),
   ]);
 
+  // Wave 3 — §05 quý nhân.
+  if (luuNienResOk) {
+    await stagger(1);
+    const coreGen = await invokeGenerateReadingWithRetry({
+      endpoint: "luu-nien",
+      data: luuNienFactsRaw,
+      only_luu_nien_core: true,
+    });
+    luuNienSections = mergeLuuNienGenerateSections(
+      luuNienSections,
+      luuNienSectionsFromGenerateReading(coreGen.sections, coreGen.reading),
+    );
+    if (coreGen.transportError === "gateway_timeout") {
+      toast.error("Luận quý nhân mất quá lâu — thử tải lại luận.");
+    }
+    reportProgress();
+  }
+
+  // Targeted retries (chỉ § còn thiếu).
   if (!deliveryHasMenhProse(laSoSections)) {
     const menhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
+      preview: true,
     });
-    const retryLaSo = laSoSectionsFromGenerateReading(
+    const retryMenh = laSoSectionsFromGenerateReading(
       menhRetry.sections,
       menhRetry.reading,
     );
-    if (deliveryHasMenhProse(retryLaSo)) {
-      const retryIds = new Set(retryLaSo.map((s) => s.id));
+    if (retryMenh.length > 0) {
+      const retryIds = new Set(retryMenh.map((s) => s.id));
       laSoSections = [
-        ...retryLaSo,
+        ...retryMenh,
         ...laSoSections.filter((s) => !retryIds.has(s.id)),
       ];
       reportProgress();
     }
   }
-
-  if (
-    luuNienResOk &&
-    !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
-  ) {
-    if (lifeGenTransport === "gateway_timeout") {
-      toast.error("Luận vận năm mất quá lâu — thử tải lại luận.");
-    }
-    const lifeRetry = await invokeGenerateReadingWithRetry({
-      endpoint: "luu-nien",
-      data: luuNienFactsRaw,
-      only_luu_nien_life: true,
-    });
-    const retryLife = luuNienSectionsFromGenerateReading(
-      lifeRetry.sections,
-      lifeRetry.reading,
-    );
-    if (
-      hasLuuNienLifeLuanFromSections(
-        mergeLuuNienGenerateSections(retryLife, luuNienSections),
-        expectedLifeAreas,
-      ) ||
-      retryLife.length > 0
-    ) {
-      luuNienSections = mergeLuuNienGenerateSections(
-        retryLife,
-        luuNienSections,
-      );
-      reportProgress();
-    }
-  }
-  if (
-    deliveryHasMenhProse(laSoSections) &&
-    !hasTinhCachLuanFromSections(laSoSections)
-  ) {
-    if (tinhGenTransport === "gateway_timeout") {
-      toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
-    }
+  if (!hasTinhCachLuanFromSections(laSoSections)) {
     const tinhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
@@ -572,10 +571,25 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  if (luuNienResOk && !hasLuuNienQuyNhanLuanFromSections(luuNienSections)) {
-    if (coreGenTransport === "gateway_timeout") {
-      toast.error("Luận quý nhân mất quá lâu — thử tải lại luận.");
+  if (
+    luuNienResOk &&
+    !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
+  ) {
+    const lifeRetry = await invokeGenerateReadingWithRetry({
+      endpoint: "luu-nien",
+      data: luuNienFactsRaw,
+      only_luu_nien_life: true,
+    });
+    const retryLife = luuNienSectionsFromGenerateReading(
+      lifeRetry.sections,
+      lifeRetry.reading,
+    );
+    if (retryLife.length > 0) {
+      luuNienSections = mergeLuuNienGenerateSections(retryLife, luuNienSections);
+      reportProgress();
     }
+  }
+  if (luuNienResOk && !hasLuuNienQuyNhanLuanFromSections(luuNienSections)) {
     const coreRetry = await invokeGenerateReadingWithRetry({
       endpoint: "luu-nien",
       data: luuNienFactsRaw,
@@ -593,6 +607,27 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
+  if (phongThuyFactsRaw) {
+    const ptFacts = parsePhongThuyFactsView(phongThuyFactsRaw);
+    if (!hasPhongThuyLuanFromSections(mergeSections(), ptFacts)) {
+      const phongRetry = await invokeGenerateReadingWithRetry({
+        endpoint: "phong-thuy",
+        data: phongThuyFactsRaw,
+      });
+      const retryPt = phongThuySectionsFromGenerateReading(
+        phongThuyFactsRaw,
+        phongRetry.sections,
+        phongRetry.reading,
+      );
+      if (retryPt.length > 0) {
+        phongThuySections = retryPt;
+        reportProgress();
+      }
+    }
+  }
+
+  bundleFinished = true;
+  reportProgress(true);
 
   const sections = mergeBaziReadingWithPhongThuy(
     mergeLaSoWithLuuNienSections(laSoSections, luuNienSections),

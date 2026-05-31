@@ -100,12 +100,12 @@ export function parsePhongThuyBlockResponse(
   };
 }
 
+/** Cache read — partial OK (≥1 block hợp lệ); FE/generator bổ sung block thiếu. */
 export function phongThuyCachedSectionsValid(
   sections: LaSoChiTietSection[],
 ): boolean {
-  for (const id of PHONG_THUY_SECTION_IDS) {
+  return PHONG_THUY_SECTION_IDS.some((id) => {
     const s = sections.find((x) => x.id === id);
-    if (!s || phongThuyBlockProseTooShort(s.text, id)) return false;
-  }
-  return true;
+    return Boolean(s && !phongThuyBlockProseTooShort(s.text, id));
+  });
 }

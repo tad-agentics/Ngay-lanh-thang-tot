@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  createInitialChapterLoadState,
+  type BaziChapterLoadState,
+} from "./bazi-chapter-load";
+import {
   baziOutlineSections,
   buildBaziDisplayChapters,
   flowYearCanChiFromFacts,
@@ -24,6 +28,29 @@ describe("buildBaziDisplayChapters", () => {
     { id: "luu_nien_ung_xu", title: "Ứng xử", text: "QX" },
   ];
 
+  it("sets §01 proseFailed when menh chapter load is failed", () => {
+    const load: BaziChapterLoadState = {
+      menh_tong_quan: "failed",
+      tinh_cach: "done",
+      van_nam: "done",
+      phong_thuy: "done",
+      quy_nhan: "done",
+    };
+    const chapters = buildBaziDisplayChapters({
+      sections: [],
+      laSo: { pillars: {} },
+      luuNienFactsRaw: null,
+      phongThuyFactsRaw: null,
+      yearCanChi: "",
+      chapterLoad: load,
+    });
+    const menh = chapters.find((c) => c.key === "menh_tong_quan");
+    if (menh?.kind === "menh") {
+      expect(menh.proseFailed).toBe(true);
+      expect(menh.proseLoading).toBe(false);
+    }
+  });
+
   it("does not map phong_thuy or luu_nien into §01 during partial load", () => {
     const chapters = buildBaziDisplayChapters({
       sections: [
@@ -37,7 +64,7 @@ describe("buildBaziDisplayChapters", () => {
       luuNienFactsRaw: null,
       phongThuyFactsRaw: { huong_tot: ["Đông"] },
       yearCanChi: "",
-      luanPending: true,
+      chapterLoad: createInitialChapterLoadState(),
     });
     const menh = chapters.find((c) => c.key === "menh_tong_quan");
     if (menh?.kind === "menh") {

@@ -100,16 +100,15 @@ export function luuNienCoreSectionsNeedLengthRetry(
   return core.some((s) => coreSectionTooShort(s.id, s.text));
 }
 
-/** Cache hợp lệ chỉ khi đủ 4 life_areas LLM (khớp FE delivery gate). */
+/** Cache read — trả partial nếu có ≥1 life_area đủ dài (FE bổ sung mục thiếu). */
 export function luuNienLifeCachedSectionsValid(
   sections: LaSoChiTietSection[],
 ): boolean {
-  const lifeOk = sections.filter(
+  return sections.some(
     (s) =>
       s.id.startsWith(LUU_NIEN_LIFE_AREA_PREFIX) &&
       s.text.trim().length >= MIN_LUU_NIEN_LIFE_AREA_CHARS,
-  ).length;
-  return lifeOk >= LUU_NIEN_FULL_LIFE_AREA_COUNT;
+  );
 }
 
 /** @deprecated Use luuNienLifeCachedSectionsValid */

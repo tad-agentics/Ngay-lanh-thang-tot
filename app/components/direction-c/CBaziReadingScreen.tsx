@@ -19,6 +19,10 @@ import {
   type BaziReadingLoadResult,
 } from "~/lib/bazi-reading-load";
 import {
+  deriveChapterLoadState,
+  type BaziChapterLoadState,
+} from "~/lib/bazi-chapter-load";
+import {
   buildBaziDisplayChapters,
   type BaziDisplayChapter,
 } from "~/lib/bazi-reading-outline";
@@ -37,7 +41,7 @@ import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 function buildChaptersFromLoadResult(
   partial: BaziReadingLoadResult,
   profileLaSo: LaSoJson | null,
-  options?: { luanPending?: boolean },
+  options?: { chapterLoad?: BaziChapterLoadState },
 ): BaziDisplayChapter[] {
   return buildBaziDisplayChapters({
     sections: partial.sections,
@@ -46,7 +50,7 @@ function buildChaptersFromLoadResult(
     phongThuyFactsRaw: partial.phongThuyFactsRaw,
     yearCanChi: partial.yearCanChi,
     phongThuyFetchError: partial.phongThuyFetchError,
-    luanPending: options?.luanPending,
+    chapterLoad: options?.chapterLoad,
   });
 }
 
@@ -66,6 +70,22 @@ function chaptersFromSession(
   profileLaSo: LaSoJson | null,
 ): BaziDisplayChapter[] {
   return buildChaptersFromLoadResult(cached, profileLaSo);
+}
+
+/** SessionStorage partial — sau mỗi wave generate, reload không mất § đã xong. */
+function persistPartialBaziSession(
+  profileId: string,
+  revision: string,
+  partial: BaziReadingLoadResult,
+): void {
+  if (partial.sections.length === 0) return;
+  persistBaziReadingSession(profileId, revision, {
+    sections: partial.sections,
+    yearCanChi: partial.yearCanChi,
+    laSoDisplay: partial.laSoDisplay,
+    luuNienFactsRaw: partial.luuNienFactsRaw,
+    phongThuyFactsRaw: partial.phongThuyFactsRaw,
+  });
 }
 
 export function CBaziReadingScreen() {
@@ -149,12 +169,7 @@ export function CBaziReadingScreen() {
     })();
 
     const profileLaSo = (profile.la_so as LaSoJson) ?? null;
-
-    const applyPartial = (partial: BaziReadingLoadResult) => {
-      setChapters(
-        buildChaptersFromLoadResult(partial, profileLaSo, { luanPending: true }),
-      );
-    };
+    const sessionRevision = baziReadingCacheRevision(profile, year);
 
     async function runFullLoad(preloadedFacts?: BaziReadingFactsBundle) {
       const gen = ++genRef.current;
@@ -162,22 +177,27 @@ export function CBaziReadingScreen() {
       setGenerating(true);
       const full = await loadBaziReadingFull(profile, year, {
         preloadedFacts: preloadedFacts ?? factsRef.current ?? undefined,
-        onProgress: (partial) => {
+        onProgress: (partial, chapterLoad) => {
           if (cancelled || gen !== genRef.current) return;
-          applyPartial(partial);
+          persistPartialBaziSession(profile.id, sessionRevision, partial);
+          setChapters(
+            buildChaptersFromLoadResult(partial, profileLaSo, { chapterLoad }),
+          );
         },
       });
       if (cancelled || gen !== genRef.current) return;
-      setChapters(buildChaptersFromLoadResult(full, profileLaSo));
+      setChapters(
+        buildChaptersFromLoadResult(full, profileLaSo, {
+          chapterLoad: deriveChapterLoadState(full.sections, {
+            luuNienFactsRaw: full.luuNienFactsRaw,
+            phongThuyFactsRaw: full.phongThuyFactsRaw,
+            phongThuyFetchError: full.phongThuyFetchError,
+            bundleFinished: true,
+          }),
+        }),
+      );
       if (full.sections.length > 0) {
-        const revision = baziReadingCacheRevision(profile, year);
-        persistBaziReadingSession(profile.id, revision, {
-          sections: full.sections,
-          yearCanChi: full.yearCanChi,
-          laSoDisplay: full.laSoDisplay,
-          luuNienFactsRaw: full.luuNienFactsRaw,
-          phongThuyFactsRaw: full.phongThuyFactsRaw,
-        });
+        persistPartialBaziSession(profile.id, sessionRevision, full);
       }
       setGenerating(false);
     }
@@ -191,6 +211,7 @@ export function CBaziReadingScreen() {
     if (!profile || !unlocked) return;
     const gen = ++genRef.current;
     const profileLaSo = (profile.la_so as LaSoJson) ?? null;
+    const sessionRevision = baziReadingCacheRevision(profile, year);
     setGenerating(true);
     void (async () => {
       const facts =
@@ -201,31 +222,30 @@ export function CBaziReadingScreen() {
         factsRef.current = facts;
         setChapters(buildBaziSkeletonChapters(facts));
       }
-      const applyPartial = (partial: BaziReadingLoadResult) => {
-        if (gen !== genRef.current) return;
-        setChapters(
-          buildChaptersFromLoadResult(partial, profileLaSo, { luanPending: true }),
-        );
-      };
       const full = await loadBaziReadingFull(profile, year, {
         forceRegenerate: true,
         preloadedFacts: facts ?? undefined,
-        onProgress: applyPartial,
+        onProgress: (partial, chapterLoad) => {
+          if (gen !== genRef.current) return;
+          persistPartialBaziSession(profile.id, sessionRevision, partial);
+          setChapters(
+            buildChaptersFromLoadResult(partial, profileLaSo, { chapterLoad }),
+          );
+        },
       });
       if (gen !== genRef.current) return;
-      setChapters(buildChaptersFromLoadResult(full, profileLaSo));
-      if (full.sections.length > 0) {
-        persistBaziReadingSession(
-          profile.id,
-          baziReadingCacheRevision(profile, year),
-          {
-            sections: full.sections,
-            yearCanChi: full.yearCanChi,
-            laSoDisplay: full.laSoDisplay,
+      setChapters(
+        buildChaptersFromLoadResult(full, profileLaSo, {
+          chapterLoad: deriveChapterLoadState(full.sections, {
             luuNienFactsRaw: full.luuNienFactsRaw,
             phongThuyFactsRaw: full.phongThuyFactsRaw,
-          },
-        );
+            phongThuyFetchError: full.phongThuyFetchError,
+            bundleFinished: true,
+          }),
+        }),
+      );
+      if (full.sections.length > 0) {
+        persistPartialBaziSession(profile.id, sessionRevision, full);
       }
       setGenerating(false);
     })();

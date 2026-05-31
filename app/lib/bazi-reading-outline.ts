@@ -31,6 +31,7 @@ import {
   parsePhongThuyFactsView,
   type PhongThuyFactsView,
 } from "~/lib/phong-thuy-facts-ui";
+import type { BaziChapterLoadState } from "~/lib/bazi-chapter-load";
 import {
   hasPhongThuyLuanFromSections,
   phongThuyHuongLuanFromSections,
@@ -110,6 +111,7 @@ export type BaziDisplayChapter =
       laSo: LaSoJson | null;
       prose: string;
       proseLoading?: boolean;
+      proseFailed?: boolean;
       emptyReason: string | null;
     }
   | {
@@ -247,8 +249,16 @@ export function buildBaziDisplayChapters(input: {
   phongThuyFetchError?: string | null;
   /** Facts đã có — chờ LLM; không hiện emptyReason cho § có dữ liệu. */
   luanPending?: boolean;
+  /** Staged generate — ưu tiên hơn `luanPending` global. */
+  chapterLoad?: BaziChapterLoadState;
 }): BaziDisplayChapter[] {
   const luanPending = input.luanPending === true;
+  const load = input.chapterLoad;
+  const menhLoading = load ? load.menh_tong_quan === "loading" : luanPending;
+  const tinhLoading = load ? load.tinh_cach === "loading" : luanPending;
+  const vanLoading = load ? load.van_nam === "loading" : luanPending;
+  const phongLoading = load ? load.phong_thuy === "loading" : luanPending;
+  const quyLoading = load ? load.quy_nhan === "loading" : luanPending;
   const outline = baziOutlineSections(input.yearCanChi);
   const luuParsed = input.luuNienFactsRaw
     ? parseLuuNienFactsView(input.luuNienFactsRaw)
@@ -286,7 +296,11 @@ export function buildBaziDisplayChapters(input: {
 
   return outline.map((meta) => {
     switch (meta.key) {
-      case "menh_tong_quan":
+      case "menh_tong_quan": {
+        const menhFailed =
+          (load ? load.menh_tong_quan === "failed" : false) &&
+          hasLaSo &&
+          !menhProse;
         return {
           key: meta.key,
           index: meta.index,
@@ -294,17 +308,19 @@ export function buildBaziDisplayChapters(input: {
           kind: "menh",
           laSo: input.laSo,
           prose: menhProse,
-          proseLoading: luanPending && hasLaSo && !menhProse,
+          proseLoading: menhLoading && hasLaSo && !menhProse,
+          proseFailed: menhFailed,
           emptyReason: hasLaSo
-            ? menhProse || luanPending
+            ? menhProse || menhLoading || menhFailed
               ? null
               : "§01 Mệnh tổng quan chưa tạo được — DeepSeek có thể đang tải chậm. Nhấn 'Tải lại luận' bên dưới."
             : "Chưa có lá số trên hồ sơ.",
         };
+      }
       case "tinh_cach": {
         const hasLuan = hasTinhCachLuanFromSections(input.sections);
         const skeletonTraits = (() => {
-          if (!luanPending || hasLuan) return traits;
+          if (!tinhLoading || hasLuan) return traits;
           const fromLaSo = parsePersonalityTraitsFromLaSo(input.laSo).map((t) => ({
             ...t,
             text: "",
@@ -319,17 +335,22 @@ export function buildBaziDisplayChapters(input: {
           traits: skeletonTraits,
           introProse: tinhCachIntro || (traits.length === 0 ? tinhCachLegacy : ""),
           prose: traits.length === 0 ? tinhCachLegacy : "",
-          luanLoading: luanPending && !hasLuan && skeletonTraits.length > 0,
-          luanFailed: !luanPending && !hasLuan && hasLaSo,
+          luanLoading: tinhLoading && !hasLuan && skeletonTraits.length > 0,
+          luanFailed:
+            (load ? load.tinh_cach === "failed" : !luanPending) &&
+            !hasLuan &&
+            hasLaSo,
           emptyReason:
-            hasLuan || luanPending || hasLaSo
+            hasLuan || tinhLoading || hasLaSo
               ? null
               : "Chưa tạo được luận giải tính cách. Thử tải lại luận.",
         };
       }
       case "van_nam": {
         const vanLuanFailed =
-          !luanPending && Boolean(luuParsed) && !hasVanLuan;
+          (load ? load.van_nam === "failed" : !luanPending) &&
+          Boolean(luuParsed) &&
+          !hasVanLuan;
         return {
           key: meta.key,
           index: meta.index,
@@ -339,16 +360,19 @@ export function buildBaziDisplayChapters(input: {
           yearIntroProse,
           lifeAreas,
           prose: vanProse,
-          luanLoading: luanPending && Boolean(luuParsed) && !hasVanLuan,
+          luanLoading: vanLoading && Boolean(luuParsed) && !hasVanLuan,
           luanFailed: vanLuanFailed,
-          emptyReason: luuParsed || luanPending
+          emptyReason: luuParsed || vanLoading
             ? null
             : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",
         };
       }
       case "phong_thuy": {
         const ptEmpty = phongThuyEmptyMessage(input.phongThuyFetchError);
-        const proseFailed = !luanPending && Boolean(ptParsed) && !hasPtLuan;
+        const proseFailed =
+          (load ? load.phong_thuy === "failed" : !luanPending) &&
+          Boolean(ptParsed) &&
+          !hasPtLuan;
         return {
           key: meta.key,
           index: meta.index,
@@ -359,15 +383,18 @@ export function buildBaziDisplayChapters(input: {
           mauLuan,
           phiTinhLuan,
           prose: ptProse,
-          proseLoading: luanPending && Boolean(ptParsed) && !hasPtLuan,
+          proseLoading: phongLoading && Boolean(ptParsed) && !hasPtLuan,
           proseFailed,
           emptyReason:
-            ptParsed || hasPtLuan || luanPending ? null : ptEmpty,
+            ptParsed || hasPtLuan || phongLoading ? null : ptEmpty,
         };
       }
       case "quy_nhan": {
         const hasFacts = Boolean(luuParsed?.quyNhan || luuParsed?.daiVanNext);
-        const proseFailed = !luanPending && hasFacts && !quyProse;
+        const proseFailed =
+          (load ? load.quy_nhan === "failed" : !luanPending) &&
+          hasFacts &&
+          !quyProse;
         return {
           key: meta.key,
           index: meta.index,
@@ -376,10 +403,10 @@ export function buildBaziDisplayChapters(input: {
           quyNhan: luuParsed?.quyNhan ?? null,
           daiVanNext: luuParsed?.daiVanNext ?? null,
           prose: quyProse,
-          proseLoading: luanPending && hasFacts && !quyProse,
+          proseLoading: quyLoading && hasFacts && !quyProse,
           proseFailed,
           emptyReason:
-            hasFacts || quyProse || luanPending
+            hasFacts || quyProse || quyLoading
               ? null
               : "Chưa có dữ liệu quý nhân. Thử tải lại sau.",
         };

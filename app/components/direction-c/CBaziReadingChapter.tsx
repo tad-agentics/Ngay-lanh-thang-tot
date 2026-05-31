@@ -30,6 +30,7 @@ export function CBaziReadingChapter({
           laSo={chapter.laSo}
           prose={chapter.prose}
           proseLoading={chapter.proseLoading}
+          proseFailed={chapter.proseFailed}
           emptyReason={chapter.emptyReason}
           onRetryProse={onRetryMenh}
         />
