@@ -6,6 +6,7 @@ import type { EdgeBudget } from "../core/edge-budget.ts";
 import { llmLaSoChiTietJson } from "../core/llm.ts";
 import type { LaSoChiTietSection } from "../core/types.ts";
 import {
+  luuNienLifeAreaProseTooShort,
   luuNienLifeAreasToSections,
   parseLuuNienLifeAreasResponse,
 } from "../parsers/luu-nien-life.ts";
@@ -49,6 +50,23 @@ export async function generateLuuNienLifeAreaSections(
   if (!parsed?.areas.length) {
     const relaxed = parseLuuNienLifeAreasResponse(raw, { relaxed: true });
     if (relaxed?.areas.length) parsed = relaxed;
+  }
+
+  // Length retry: relaxed-accepted areas are still short — try expanding before accepting
+  if (parsed?.areas.length && budget.canSpend(JSON_ROUND_MIN_MS)) {
+    const hasShort = parsed.areas.some((s) => luuNienLifeAreaProseTooShort(s.text));
+    if (hasShort) {
+      const lengthRetry = await llmLaSoChiTietJson(
+        LUU_NIEN_LIFE_AREAS_RETRY_SYSTEM,
+        payload,
+        READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS,
+        { timeoutMs: callTimeout(budget), disableThinking: true },
+      );
+      if (lengthRetry) {
+        const retryParsed = parseLuuNienLifeAreasResponse(lengthRetry);
+        if (retryParsed?.areas.length) parsed = retryParsed;
+      }
+    }
   }
 
   if (!parsed) return [];

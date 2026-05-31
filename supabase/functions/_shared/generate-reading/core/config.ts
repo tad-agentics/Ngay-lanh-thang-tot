@@ -59,7 +59,7 @@ export const MIN_MENH_PREVIEW_PARAGRAPHS = 3;
 export const MIN_TINH_CACH_TRAIT_CHARS = 420;
 export const MIN_TINH_CACH_TRAIT_PARAGRAPHS = 2;
 export const MIN_TINH_CACH_TRAITS_REQUIRED = 2;
-export const MIN_TINH_CACH_INTRO_CHARS = 120;
+export const MIN_TINH_CACH_INTRO_CHARS = 80;
 
 /** §03 mỗi life_area_readings[].text — ~500 chữ, đúng 3 đoạn. */
 export const MIN_LUU_NIEN_LIFE_AREA_CHARS = 420;
