@@ -42,13 +42,13 @@ describe("mergeLuuNienGenerateSections", () => {
 });
 
 describe("hasLuuNienQuyNhanLuanFromSections", () => {
-  it("requires luu_nien_ung_xu at min length", () => {
+  it("requires luu_nien_ung_xu at min length and paragraphs", () => {
     expect(
       hasLuuNienQuyNhanLuanFromSections([
         {
           id: "luu_nien_ung_xu",
-          title: "Ứng xử",
-          text: "z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS),
+          title: "Quý nhân",
+          text: `a\n\nb\n\nc\n\nd\n\n${"z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS)}`,
         },
       ]),
     ).toBe(true);

@@ -1,10 +1,14 @@
 import type { LaSoChiTietSection } from "../core/types.ts";
 import {
   MIN_LUU_NIEN_LIFE_AREA_CHARS,
+  MIN_LUU_NIEN_UNG_XU_CHARS,
+  MIN_LUU_NIEN_UNG_XU_CHARS_RELAXED,
+  MIN_LUU_NIEN_UNG_XU_PARAGRAPHS,
+  MIN_LUU_NIEN_UNG_XU_PARAGRAPHS_RELAXED,
   MIN_TIEU_VAN_SECTION_CHARS,
   MIN_TIEU_VAN_SECTION_SENTENCE_ENDS,
 } from "../core/config.ts";
-import { countViSentenceEndings } from "./la-so.ts";
+import { countMenhPreviewParagraphs, countViSentenceEndings } from "./la-so.ts";
 import { tryParseLaSoChiTietRecord } from "./json.ts";
 import { pickFlowJsonField } from "./flow-json-sections.ts";
 import { LUU_NIEN_LIFE_AREA_PREFIX } from "./luu-nien-life.ts";
@@ -24,8 +28,42 @@ const LUU_NIEN_CORE_TITLE: Record<
 > = {
   nhin_chung: "Nhịp năm & khung ngũ hành",
   thuc_tien: "Công việc, tài chính & quan hệ",
-  ung_xu: "Đại vận & cách ứng xử",
+  ung_xu: "Quý nhân · lưu ý",
 };
+
+function isUngXuSectionId(id: string): boolean {
+  return id === "ung_xu" || id === "luu_nien_ung_xu";
+}
+
+function coreNhipSectionTooShort(text: string): boolean {
+  const t = text.trim();
+  if (t.length < MIN_TIEU_VAN_SECTION_CHARS) return true;
+  if (countViSentenceEndings(t) < MIN_TIEU_VAN_SECTION_SENTENCE_ENDS) {
+    return true;
+  }
+  return false;
+}
+
+function ungXuSectionTooShort(text: string, relaxed = false): boolean {
+  const t = text.trim();
+  const minChars = relaxed
+    ? MIN_LUU_NIEN_UNG_XU_CHARS_RELAXED
+    : MIN_LUU_NIEN_UNG_XU_CHARS;
+  const minParagraphs = relaxed
+    ? MIN_LUU_NIEN_UNG_XU_PARAGRAPHS_RELAXED
+    : MIN_LUU_NIEN_UNG_XU_PARAGRAPHS;
+  if (t.length < minChars) return true;
+  if (countMenhPreviewParagraphs(t) < minParagraphs) return true;
+  return false;
+}
+
+function coreSectionTooShort(sectionId: string, text: string): boolean {
+  const bare = sectionId.replace(/^luu_nien_/, "");
+  if (isUngXuSectionId(bare) || isUngXuSectionId(sectionId)) {
+    return ungXuSectionTooShort(text);
+  }
+  return coreNhipSectionTooShort(text);
+}
 
 export function parseLuuNienCoreSections(
   raw: string,
@@ -45,15 +83,6 @@ export function parseLuuNienCoreSections(
   return out;
 }
 
-function coreSectionTooShort(text: string): boolean {
-  const t = text.trim();
-  if (t.length < MIN_TIEU_VAN_SECTION_CHARS) return true;
-  if (countViSentenceEndings(t) < MIN_TIEU_VAN_SECTION_SENTENCE_ENDS) {
-    return true;
-  }
-  return false;
-}
-
 export function luuNienCoreSectionsNeedLengthRetry(
   sections: LaSoChiTietSection[] | null,
 ): boolean {
@@ -68,7 +97,7 @@ export function luuNienCoreSectionsNeedLengthRetry(
       s.id === "ung_xu",
   );
   if (core.length === 0) return false;
-  return core.some((s) => coreSectionTooShort(s.text));
+  return core.some((s) => coreSectionTooShort(s.id, s.text));
 }
 
 /** Cache hợp lệ chỉ khi đủ 4 life_areas LLM (khớp FE delivery gate). */
@@ -96,7 +125,7 @@ export function luuNienCoreCachedSectionsValid(
   const ok = sections.filter(
     (s) =>
       coreIds.has(s.id) &&
-      !coreSectionTooShort(s.text),
+      !coreSectionTooShort(s.id, s.text),
   ).length;
   return ok >= LUU_NIEN_CORE_SECTION_ORDER.length;
 }

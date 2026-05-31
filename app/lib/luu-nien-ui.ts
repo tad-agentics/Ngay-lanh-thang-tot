@@ -1,4 +1,5 @@
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
+import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 
 /**
  * Chèn luận lưu niên sau `su_nghiep` nếu có (legacy aspects); không có thì sau §02.
@@ -44,16 +45,19 @@ export function luuNienQuyNhanProseFromSections(
   return sections.find((s) => s.id === "luu_nien_ung_xu")?.text?.trim() ?? "";
 }
 
-/** Tối thiểu ký tự §05 — khớp `MIN_TIEU_VAN_SECTION_CHARS` Edge core. */
-export const MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS = 320;
+/** Tối thiểu ký tự §05 — khớp `MIN_LUU_NIEN_UNG_XU_CHARS` Edge. */
+export const MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS = 720;
+export const MIN_LUU_NIEN_QUY_NHAN_LUAN_PARAGRAPHS = 4;
 
 export function hasLuuNienQuyNhanLuanFromSections(
   sections: LaSoChiTietSection[],
 ): boolean {
-  return (
-    luuNienQuyNhanProseFromSections(sections).length >=
-    MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS
-  );
+  const text = luuNienQuyNhanProseFromSections(sections);
+  if (text.length < MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS) return false;
+  if (splitNlttLuanParagraphs(text).length < MIN_LUU_NIEN_QUY_NHAN_LUAN_PARAGRAPHS) {
+    return false;
+  }
+  return true;
 }
 
 export function luuNienSectionsFromGenerateReading(

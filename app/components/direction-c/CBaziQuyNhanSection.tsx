@@ -1,11 +1,15 @@
 import { Mono } from "~/components/brand";
-import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import {
+  CBaziNlttLuanInkLoading,
+  CBaziNlttLuanProse,
+} from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT } from "~/lib/c-tokens";
 import type {
   DaiVanNextView,
   LuuNienQuyNhanFacts,
 } from "~/lib/luu-nien-facts-ui";
+import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 
 type CBaziQuyNhanSectionProps = {
   quyNhan: LuuNienQuyNhanFacts | null;
@@ -17,13 +21,6 @@ type CBaziQuyNhanSectionProps = {
   onRetryLuan?: () => void;
 };
 
-function daiVanNextSentence(dv: DaiVanNextView): string {
-  const head = dv.display.trim();
-  const tail = dv.themeVi?.trim() ?? "";
-  if (head && tail) return `${head} — ${tail}`;
-  return head || tail;
-}
-
 export function CBaziQuyNhanSection({
   quyNhan,
   daiVanNext,
@@ -33,18 +30,18 @@ export function CBaziQuyNhanSection({
   emptyReason,
   onRetryLuan,
 }: CBaziQuyNhanSectionProps) {
-  if (emptyReason && !quyNhan && !daiVanNext && !prose && !proseLoading) {
+  const hop = quyNhan?.tuoiHop ?? [];
+  const xung = quyNhan?.tuoiXung ?? [];
+  const hasCards = hop.length > 0 || xung.length > 0;
+  const hasFacts = Boolean(quyNhan || daiVanNext);
+
+  if (emptyReason && !hasFacts && !prose && !proseLoading) {
     return <BaziChapterEmpty message={emptyReason} />;
   }
 
-  const facts = quyNhan;
-
-  const hop = facts?.tuoiHop ?? [];
-  const xung = facts?.tuoiXung ?? [];
-
   return (
     <div className="mt-3 space-y-3.5">
-      {hop.length > 0 || xung.length > 0 ? (
+      {hasCards ? (
         <div className="grid grid-cols-2 gap-2">
           {hop.length > 0 ? (
             <div
@@ -81,34 +78,20 @@ export function CBaziQuyNhanSection({
         </div>
       ) : null}
 
-      {facts?.huongQuyNhan ? (
-        <p className="font-serif text-[12.5px]" style={{ color: CT.ink2 }}>
-          Quý nhân thường đến từ phương{" "}
-          <strong style={{ color: CT.ink }}>{facts.huongQuyNhan}</strong>.
-        </p>
-      ) : null}
-
-      {facts?.note ? (
-        <p className="font-serif text-[12.5px] leading-relaxed" style={{ color: CT.ink2 }}>
-          {facts.note}
-        </p>
-      ) : null}
-
-      {daiVanNext ? (
-        <p className="font-serif text-[12.5px] leading-relaxed" style={{ color: CT.ink2 }}>
-          <strong style={{ color: CT.ink, fontWeight: 600 }}>Đại vận năm tới</strong>
-          {" — "}
-          {daiVanNextSentence(daiVanNext)}
-          {daiVanNext.yearsLabel ? (
-            <span style={{ color: CT.muted }}> ({daiVanNext.yearsLabel})</span>
-          ) : null}
-        </p>
-      ) : null}
-
       {prose ? (
-        <CBaziNlttLuanProse text={prose} compact />
+        <div className="space-y-2.5">
+          {splitNlttLuanParagraphs(prose).map((para) => (
+            <p
+              key={para.slice(0, 48)}
+              className="font-serif text-[12.5px] leading-relaxed"
+              style={{ color: CT.ink2 }}
+            >
+              {para}
+            </p>
+          ))}
+        </div>
       ) : proseLoading ? (
-        <CBaziNlttLuanProse loading loadingMessage="Đang luận ứng xử năm" compact />
+        <CBaziNlttLuanInkLoading message="Đang luận quý nhân · lưu ý" compact />
       ) : proseFailed ? (
         <CBaziNlttLuanProse
           failed
@@ -117,7 +100,7 @@ export function CBaziQuyNhanSection({
           compact
         />
       ) : null}
-      {!prose && !proseLoading && !proseFailed && !facts && !daiVanNext && emptyReason ? (
+      {!prose && !proseLoading && !proseFailed && !hasFacts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

@@ -166,14 +166,17 @@ export function CBaziPhongThuySection({
           <Mono className="mb-2 text-[9px]" style={{ color: CT.muted }}>
             Màu sắc hợp
           </Mono>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2.5">
             {facts!.mauMay.map((c) => (
-              <div key={c.name} className="flex-1 text-center">
+              <div key={c.name} className="w-[52px] shrink-0 text-center">
                 <div
-                  className="aspect-square w-full border"
+                  className="mx-auto size-10 border"
                   style={{ background: c.hex, borderColor: CT.hairline }}
                 />
-                <p className="mt-1 font-serif text-[10.5px]" style={{ color: CT.ink2 }}>
+                <p
+                  className="mt-1 font-serif text-[10px] leading-tight"
+                  style={{ color: CT.ink2 }}
+                >
                   {c.name}
                 </p>
               </div>

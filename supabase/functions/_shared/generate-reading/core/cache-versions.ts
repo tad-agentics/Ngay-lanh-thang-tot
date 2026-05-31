@@ -3,7 +3,7 @@
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
 export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-bazi-bundle-v3";
 export const LUU_NIEN_ONLY_LIFE_CACHE_VER = "2026-05-31-luu-life-500c-3p-v2";
-export const LUU_NIEN_ONLY_CORE_CACHE_VER = "2026-05-31-luu-core-only-v1";
+export const LUU_NIEN_ONLY_CORE_CACHE_VER = "2026-05-31-luu-quy-800c-v1";
 export const LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER = "2026-05-31-tinh-cach-only-v1";
 export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
 export const TIEU_VAN_PROMPT_VER = "2026-05-31-tieu-van-split-v1";

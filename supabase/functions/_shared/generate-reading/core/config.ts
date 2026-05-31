@@ -65,6 +65,12 @@ export const MIN_LUU_NIEN_LIFE_AREA_CHARS = 420;
 export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS = 3;
 export const READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS = 6_144;
 
+/** §05 `ung_xu` — Quý nhân · lưu ý (màn 18). */
+export const MIN_LUU_NIEN_UNG_XU_CHARS = 720;
+export const MIN_LUU_NIEN_UNG_XU_PARAGRAPHS = 4;
+export const MIN_LUU_NIEN_UNG_XU_CHARS_RELAXED = 560;
+export const MIN_LUU_NIEN_UNG_XU_PARAGRAPHS_RELAXED = 3;
+
 /** §04 mỗi khối hướng / màu / phi tinh. */
 export const READING_MAX_TOKENS_PHONG_THUY_BLOCK = 4_096;
 export const MIN_PHONG_THUY_HUONG_CHARS = 420;

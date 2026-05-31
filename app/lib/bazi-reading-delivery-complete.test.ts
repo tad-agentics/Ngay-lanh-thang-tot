@@ -13,7 +13,7 @@ import {
 const menhText = "m".repeat(MIN_MENH_TONG_QUAN_LUAN_CHARS);
 const traitText = "x".repeat(1500);
 const lifeText = `a\n\nb\n\n${"y".repeat(420)}`;
-const quyText = "z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS);
+const quyText = `a\n\nb\n\nc\n\nd\n\n${"z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS)}`;
 
 function phongSections(): { id: string; title: string; text: string }[] {
   return [
