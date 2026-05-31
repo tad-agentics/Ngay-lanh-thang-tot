@@ -35,6 +35,13 @@ const LA_SO_PREVIEW_LLM_OPTS = { disableThinking: true } as const;
 const JSON_ROUND_MIN_MS = 10_000;
 const EXPAND_ROUND_MIN_MS = 8_000;
 const PROSE_ROUND_MIN_MS = 8_000;
+/**
+ * Preview §01 — cap per-call JSON ngắn hơn `LA_SO_CHI_TIET_TIMEOUT_MS` để 2 vòng
+ * JSON không đốt hết budget (52s) trước prose fallback. Trước đây callTimeout cho
+ * tới 28s/vòng → 28+23s ≈ 51s, prose bị bỏ → §01 trả rỗng (0 cache).
+ */
+const PREVIEW_JSON_CALL_MS = 18_000;
+const PREVIEW_PROSE_CALL_MS = 20_000;
 
 const ASPECT_IDS = new Set<string>(
   LA_SO_ASPECT_ORDER.filter((id) => id !== "menh_tong_quan" && id !== "tinh_cach"),
@@ -107,17 +114,23 @@ export async function generateMenhTongQuanSection(
     LA_SO_CHI_TIET_PREVIEW_SYSTEM,
     payload,
     READING_MAX_TOKENS_LA_SO_PREVIEW,
-    { ...LA_SO_PREVIEW_LLM_OPTS, timeoutMs: laSoCallTimeout(budget) },
+    {
+      ...LA_SO_PREVIEW_LLM_OPTS,
+      timeoutMs: budget.callTimeout(PREVIEW_JSON_CALL_MS),
+    },
   );
-  if (!raw) return null;
 
-  let sections = parseLaSoChiTietSections(raw);
-  if (!sections?.length && budget.canSpend(JSON_ROUND_MIN_MS)) {
+  let sections = raw ? parseLaSoChiTietSections(raw) : null;
+  // Chỉ retry JSON khi vẫn còn budget cho prose fallback sau đó.
+  if (!sections?.length && budget.canSpend(PREVIEW_JSON_CALL_MS + PROSE_ROUND_MIN_MS)) {
     const retry = await llmLaSoChiTietJson(
       LA_SO_CHI_TIET_PREVIEW_SYSTEM,
       payload,
       READING_MAX_TOKENS_LA_SO_PREVIEW,
-      { ...LA_SO_PREVIEW_LLM_OPTS, timeoutMs: laSoCallTimeout(budget) },
+      {
+        ...LA_SO_PREVIEW_LLM_OPTS,
+        timeoutMs: budget.callTimeout(PREVIEW_JSON_CALL_MS),
+      },
     );
     if (retry) sections = parseLaSoChiTietSections(retry);
   }
@@ -128,7 +141,7 @@ export async function generateMenhTongQuanSection(
       SYSTEM_PROMPT,
       payload,
       READING_MAX_TOKENS_LA_SO_PREVIEW,
-      laSoCallTimeout(budget),
+      budget.callTimeout(PREVIEW_PROSE_CALL_MS),
       { profile: LA_SO_CHI_TIET_PROFILE, disableThinking: true },
     );
     const t = plain?.trim() ?? "";

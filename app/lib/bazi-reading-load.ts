@@ -62,6 +62,11 @@ import {
 const BAZI_INVOKE_STAGGER_MS = 1_500;
 /** Khớp `RATE_LIMIT_RETRY_MS` trong `generate-reading.ts`. */
 const BAZI_MENH_WAVE_RETRY_MS = 11_000;
+/**
+ * Gap-fill rỗng ở lần đầu (client bị ngắt) trong khi Edge vẫn cache xong → thử lại
+ * 1 lần để hứng cache ấm (~200ms), tránh mất hẳn một mục dù Edge đã sinh.
+ */
+const BAZI_GAP_FILL_WARM_RETRY_MS = 1_200;
 /** Preview §01 trước Wave 2 — tránh 8× la-so khi mệnh còn trống. */
 const BAZI_MENH_PREVIEW_MAX_ATTEMPTS = 2;
 
@@ -572,17 +577,25 @@ export async function loadBaziReadingFull(
   const missingTraits = missingTinhCachTraitIds(laSoDisplay, laSoSections);
   for (let i = 0; i < missingTraits.length; i++) {
     await stagger(i + 1);
-    const tinhRetry = await invokeGenerateReadingWithRetry({
-      endpoint: "la-so-chi-tiet",
-      data: lasoData,
-      only_tinh_cach: true,
-      tinh_cach_trait_ids: [missingTraits[i]],
-    });
-    noteGenerateTransport(tinhRetry, transportFlags);
-    const retryTinh = laSoSectionsFromGenerateReading(
-      tinhRetry.sections,
-      tinhRetry.reading,
-    );
+    let retryTinh: LaSoChiTietSection[] = [];
+    for (let attempt = 0; attempt < 2 && retryTinh.length === 0; attempt++) {
+      if (attempt > 0) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, BAZI_GAP_FILL_WARM_RETRY_MS),
+        );
+      }
+      const tinhRetry = await invokeGenerateReadingWithRetry({
+        endpoint: "la-so-chi-tiet",
+        data: lasoData,
+        only_tinh_cach: true,
+        tinh_cach_trait_ids: [missingTraits[i]],
+      });
+      noteGenerateTransport(tinhRetry, transportFlags);
+      retryTinh = laSoSectionsFromGenerateReading(
+        tinhRetry.sections,
+        tinhRetry.reading,
+      );
+    }
     if (retryTinh.length > 0) {
       laSoSections = mergeLaSoTinhCachSections(laSoSections, retryTinh);
       reportProgress();
@@ -593,17 +606,25 @@ export async function loadBaziReadingFull(
     const missingLife = missingLuuNienLifeAreaIds(luuFacts, luuNienSections);
     for (let i = 0; i < missingLife.length; i++) {
       await stagger(i + 1);
-      const lifeRetry = await invokeGenerateReadingWithRetry({
-        endpoint: "luu-nien",
-        data: luuNienFactsRaw,
-        only_luu_nien_life: true,
-        luu_nien_life_area_ids: [missingLife[i]],
-      });
-      noteGenerateTransport(lifeRetry, transportFlags);
-      const retryLife = luuNienSectionsFromGenerateReading(
-        lifeRetry.sections,
-        lifeRetry.reading,
-      );
+      let retryLife: LaSoChiTietSection[] = [];
+      for (let attempt = 0; attempt < 2 && retryLife.length === 0; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, BAZI_GAP_FILL_WARM_RETRY_MS),
+          );
+        }
+        const lifeRetry = await invokeGenerateReadingWithRetry({
+          endpoint: "luu-nien",
+          data: luuNienFactsRaw,
+          only_luu_nien_life: true,
+          luu_nien_life_area_ids: [missingLife[i]],
+        });
+        noteGenerateTransport(lifeRetry, transportFlags);
+        retryLife = luuNienSectionsFromGenerateReading(
+          lifeRetry.sections,
+          lifeRetry.reading,
+        );
+      }
       if (retryLife.length > 0) {
         luuNienSections = mergeLuuNienGenerateSections(
           retryLife,
