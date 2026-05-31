@@ -224,6 +224,40 @@ describe("buildBaziDisplayChapters", () => {
     }
   });
 
+  it("keeps life-area loading when only year intro exists (no life LLM yet)", () => {
+    const chapters = buildBaziDisplayChapters({
+      sections: [
+        {
+          id: "luu_nien_year_intro",
+          title: "Nhịp năm",
+          text: "Chỉ có nhịp năm, chưa có 4 lĩnh vực.",
+        },
+      ],
+      laSo: null,
+      luuNienFactsRaw: {
+        life_areas: [
+          { id: "tai_loc", label: "Tài lộc", verdict: "Thuận", detail: "API." },
+          { id: "su_nghiep", label: "Sự nghiệp", verdict: "—", detail: "API." },
+        ],
+      },
+      phongThuyFactsRaw: null,
+      yearCanChi: "Bính Ngọ",
+      chapterLoad: {
+        menh_tong_quan: "done",
+        tinh_cach: "loading",
+        van_nam: "loading",
+        phong_thuy: "loading",
+        quy_nhan: "loading",
+      },
+    });
+    const van = chapters.find((c) => c.key === "van_nam");
+    if (van?.kind === "van_nam") {
+      expect(van.lifeLuanLoading).toBe(true);
+      expect(van.luanLoading).toBe(false);
+      expect(van.lifeAreas[0]?.luan).toBe("");
+    }
+  });
+
   it("does not duplicate luu-nien prose across van_nam and quy_nhan", () => {
     const sections: LaSoChiTietSection[] = [
       { id: "luu_nien_nhin_chung", title: "Nhịp", text: "A" },

@@ -73,10 +73,18 @@ export function mergeLuuNienLifeAreasWithLuan(
   if (facts?.lifeAreas.length) {
     return facts.lifeAreas.map((area) => {
       const key = normalizeAreaId(area.id);
-      const luan =
+      let luan =
         luanById.get(key) ??
         luanById.get(normalizeAreaId(area.label)) ??
         "";
+      if (!luan) {
+        for (const [id, text] of luanById) {
+          if (id.includes(key) || key.includes(id)) {
+            luan = text;
+            break;
+          }
+        }
+      }
       return { ...area, luan };
     });
   }
@@ -88,6 +96,15 @@ export function mergeLuuNienLifeAreasWithLuan(
     detail: "",
     luan: x.text,
   }));
+}
+
+/** Có luận LLM hiển thị được cho §03 (không dùng nhịp năm / vanProse chung). */
+export function hasLuuNienLifeAreaDisplayLuan(
+  lifeAreas: LuuNienLifeAreaView[],
+  expectedCount = LUU_NIEN_FULL_LIFE_AREA_COUNT,
+): boolean {
+  const withLuan = lifeAreas.filter((a) => a.luan.trim().length >= 80);
+  return withLuan.length >= expectedCount;
 }
 
 /** Đủ luận §03 life_areas (mặc định 4 mục đủ độ dài). */

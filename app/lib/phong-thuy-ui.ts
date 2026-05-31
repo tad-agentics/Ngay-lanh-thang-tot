@@ -141,20 +141,21 @@ function meetsPhiTinhLuan(text: string): boolean {
   );
 }
 
-/** §04 — đủ luận LLM theo facts (3 khối hoặc legacy `phong_thuy_van`). */
-export function hasPhongThuyLuanFromSections(
+/** §04 — 3 khối LLM (hướng · màu · phi tinh) — dùng cho UI từng mục, không gồm legacy. */
+export function hasPhongThuyStructuredLuanFromSections(
   sections: LaSoChiTietSection[],
   facts?: PhongThuyFactsView | null,
 ): boolean {
-  const legacy = sectionText(sections, PHONG_THUY_VAN_SECTION_ID);
-  if (legacy.length >= 80) return true;
-
   const needsHuong = (facts?.huongTot.length ?? 0) > 0;
   const needsMau = (facts?.mauMay.length ?? 0) > 0;
   const needsPhi = (facts?.phiTinh.length ?? 0) > 0;
 
   if (!needsHuong && !needsMau && !needsPhi) {
-    return phongThuyProseFromSections(sections).length >= 80;
+    return (
+      meetsHuongLuan(phongThuyHuongLuanFromSections(sections)) ||
+      meetsMauLuan(phongThuyMauLuanFromSections(sections)) ||
+      meetsPhiTinhLuan(phongThuyPhiTinhLuanFromSections(sections))
+    );
   }
 
   if (needsHuong && !meetsHuongLuan(phongThuyHuongLuanFromSections(sections))) {
@@ -167,6 +168,22 @@ export function hasPhongThuyLuanFromSections(
     return false;
   }
   return true;
+}
+
+export function phongThuyLegacyVanFromSections(
+  sections: LaSoChiTietSection[],
+): string {
+  return sectionText(sections, PHONG_THUY_VAN_SECTION_ID);
+}
+
+/** §04 — đủ luận LLM theo facts (3 khối hoặc legacy `phong_thuy_van`). */
+export function hasPhongThuyLuanFromSections(
+  sections: LaSoChiTietSection[],
+  facts?: PhongThuyFactsView | null,
+): boolean {
+  const legacy = phongThuyLegacyVanFromSections(sections);
+  if (legacy.length >= 80) return true;
+  return hasPhongThuyStructuredLuanFromSections(sections, facts);
 }
 
 export function phongThuySectionsFromGenerateReading(

@@ -52,6 +52,7 @@ export function CBaziReadingChapter({
           yearIntroProse={chapter.yearIntroProse}
           lifeAreas={chapter.lifeAreas}
           prose={chapter.prose}
+          lifeLuanLoading={chapter.lifeLuanLoading}
           luanLoading={chapter.luanLoading}
           luanFailed={chapter.luanFailed}
           emptyReason={chapter.emptyReason}

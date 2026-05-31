@@ -4,6 +4,7 @@ import { deriveChapterLoadState } from "./bazi-chapter-load";
 import type { PhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
 import {
   hasPhongThuyLuanFromSections,
+  hasPhongThuyStructuredLuanFromSections,
   PHONG_THUY_HUONG_SECTION_ID,
   PHONG_THUY_MAU_SECTION_ID,
   PHONG_THUY_PHI_TINH_SECTION_ID,
@@ -49,13 +50,10 @@ describe("hasPhongThuyLuanFromSections", () => {
     expect(phongThuyHuongLuanFromSections(sections).length).toBeGreaterThanOrEqual(420);
   });
 
-  it("accepts legacy phong_thuy_van", () => {
-    expect(
-      hasPhongThuyLuanFromSections(
-        [{ id: "phong_thuy_van", title: "PT", text: "x".repeat(80) }],
-        facts,
-      ),
-    ).toBe(true);
+  it("accepts legacy phong_thuy_van for delivery gate only", () => {
+    const sections = [{ id: "phong_thuy_van", title: "PT", text: "x".repeat(80) }];
+    expect(hasPhongThuyLuanFromSections(sections, facts)).toBe(true);
+    expect(hasPhongThuyStructuredLuanFromSections(sections, facts)).toBe(false);
   });
 
   it("returns false when huong block missing", () => {

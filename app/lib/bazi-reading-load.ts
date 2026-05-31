@@ -499,7 +499,7 @@ export async function loadBaziReadingFull(
     }
   }
 
-  // Wave 2 — §02 + §03 life + §04 (stagger để tránh rate limit 10s).
+  // Wave 2 — §02 + §03 life (stagger; phong-thủy chạy riêng sau — 3 block LLM nặng).
   await Promise.all([
     (async () => {
       await stagger(0);
@@ -542,23 +542,21 @@ export async function loadBaziReadingFull(
           reportProgress();
         })()
       : Promise.resolve(),
-    phongThuyFactsRaw
-      ? (async () => {
-          await stagger(2);
-          const phongThuyGen = await invokeGenerateReadingWithRetry({
-            endpoint: "phong-thuy",
-            data: phongThuyFactsRaw,
-          });
-          noteGenerateTransport(phongThuyGen, transportFlags);
-          phongThuySections = phongThuySectionsFromGenerateReading(
-            phongThuyFactsRaw,
-            phongThuyGen.sections,
-            phongThuyGen.reading,
-          );
-          reportProgress();
-        })()
-      : Promise.resolve(),
   ]);
+
+  if (phongThuyFactsRaw) {
+    const phongThuyGen = await invokeGenerateReadingWithRetry({
+      endpoint: "phong-thuy",
+      data: phongThuyFactsRaw,
+    });
+    noteGenerateTransport(phongThuyGen, transportFlags);
+    phongThuySections = phongThuySectionsFromGenerateReading(
+      phongThuyFactsRaw,
+      phongThuyGen.sections,
+      phongThuyGen.reading,
+    );
+    reportProgress();
+  }
 
   // Wave 3 — §05 quý nhân.
   if (luuNienResOk) {

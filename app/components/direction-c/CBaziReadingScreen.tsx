@@ -286,7 +286,9 @@ export function CBaziReadingScreen() {
     return chapters.filter((ch) => {
       if (ch.kind === "menh") return ch.proseLoading;
       if (ch.kind === "tinh_cach") return ch.luanLoading;
-      if (ch.kind === "van_nam") return ch.luanLoading;
+      if (ch.kind === "van_nam") {
+        return ch.lifeLuanLoading ?? ch.luanLoading;
+      }
       if (ch.kind === "phong_thuy") return ch.proseLoading;
       if (ch.kind === "quy_nhan") return ch.proseLoading;
       return false;

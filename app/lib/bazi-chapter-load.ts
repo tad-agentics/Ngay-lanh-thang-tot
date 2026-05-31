@@ -3,7 +3,7 @@ import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
 import { parseLuuNienFactsView } from "~/lib/luu-nien-facts-ui";
 import { hasLuuNienQuyNhanLuanFromSections } from "~/lib/luu-nien-ui";
 import { parsePhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
-import { hasPhongThuyLuanFromSections } from "~/lib/phong-thuy-ui";
+import { hasPhongThuyStructuredLuanFromSections } from "~/lib/phong-thuy-ui";
 import { hasTinhCachLuanFromSections } from "~/lib/personality-traits-ui";
 
 /** Khớp `MIN_MENH_TONG_QUAN_LUAN_CHARS` trong `bazi-reading-outline.ts`. */
@@ -67,7 +67,7 @@ export function deriveChapterLoadState(
       ? false
       : opts.phongThuyFactsRaw == null
         ? true
-        : hasPhongThuyLuanFromSections(sections, ptFacts);
+        : hasPhongThuyStructuredLuanFromSections(sections, ptFacts);
 
   const status = (
     done: boolean,

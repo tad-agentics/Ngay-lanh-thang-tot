@@ -136,12 +136,16 @@ export async function generateLuuNienReading(
     if (lifeSections.length > 0) {
       return cacheAndReturnSections(ctx, lifeSections);
     }
-  } else if (onlyLuuNienCore) {
+    return { reading: null, sections: [] };
+  }
+  if (onlyLuuNienCore) {
     const coreSections = await generateLuuNienCoreSections(ctx, budget);
     if (coreSections?.length) {
       return cacheAndReturnSections(ctx, coreSections);
     }
-  } else {
+    return { reading: null, sections: [] };
+  }
+  {
     const lifeSections = await generateLuuNienLifeAreaSections(payload, budget);
     const coreSections = await generateLuuNienCoreSections(ctx, budget);
     const merged = [...lifeSections, ...(coreSections ?? [])];

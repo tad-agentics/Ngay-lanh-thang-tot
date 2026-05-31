@@ -8,6 +8,7 @@ import {
   type LuuNienQuyNhanFacts,
 } from "~/lib/luu-nien-facts-ui";
 import {
+  hasLuuNienLifeAreaDisplayLuan,
   hasLuuNienLifeLuanFromSections,
   luuNienYearIntroFromSections,
   mergeLuuNienLifeAreasWithLuan,
@@ -34,9 +35,12 @@ import {
 import type { BaziChapterLoadState } from "~/lib/bazi-chapter-load";
 import {
   hasPhongThuyLuanFromSections,
+  hasPhongThuyStructuredLuanFromSections,
   phongThuyHuongLuanFromSections,
+  phongThuyLegacyVanFromSections,
   phongThuyMauLuanFromSections,
   phongThuyPhiTinhLuanFromSections,
+  phongThuyProseFromSections,
 } from "~/lib/phong-thuy-ui";
 
 export type BaziOutlineKey =
@@ -135,6 +139,8 @@ export type BaziDisplayChapter =
       yearIntroProse: string;
       lifeAreas: LuuNienLifeAreaView[];
       prose: string;
+      /** Chờ luận 4 lĩnh vực — tách khỏi nhịp năm / thực tiễn. */
+      lifeLuanLoading?: boolean;
       luanLoading?: boolean;
       luanFailed?: boolean;
       emptyReason: string | null;
@@ -277,17 +283,27 @@ export function buildBaziDisplayChapters(input: {
   const huongLuan = phongThuyHuongLuanFromSections(input.sections);
   const mauLuan = phongThuyMauLuanFromSections(input.sections);
   const phiTinhLuan = phongThuyPhiTinhLuanFromSections(input.sections);
+  const hasStructuredPtLuan = hasPhongThuyStructuredLuanFromSections(
+    input.sections,
+    ptParsed,
+  );
+  const legacyPtLuan = phongThuyLegacyVanFromSections(input.sections);
   const ptProse = [huongLuan, mauLuan, phiTinhLuan].filter(Boolean).join("\n\n");
+  const ptLegacyProse =
+    !hasStructuredPtLuan && legacyPtLuan.length >= 80
+      ? legacyPtLuan
+      : !hasStructuredPtLuan
+        ? phongThuyProseFromSections(input.sections)
+        : "";
   const hasPtLuan = hasPhongThuyLuanFromSections(input.sections, ptParsed);
   const quyProse = luuNienQuyNhanProse(input.sections);
-  const hasVanLuan =
-    hasLuuNienLifeLuanFromSections(
-      input.sections,
-      Math.max(1, luuParsed?.lifeAreas.length ?? 4),
-    ) ||
-    lifeAreas.some((a) => a.luan.length > 0) ||
-    Boolean(yearIntroProse.trim()) ||
-    Boolean(vanProse.trim());
+  const expectedLifeAreas = Math.max(1, luuParsed?.lifeAreas.length ?? 4);
+  const hasLifeAreaLuan =
+    hasLuuNienLifeLuanFromSections(input.sections, expectedLifeAreas) ||
+    hasLuuNienLifeAreaDisplayLuan(lifeAreas, expectedLifeAreas);
+  const hasVanNarrativeLuan =
+    Boolean(yearIntroProse.trim()) || Boolean(vanProse.trim());
+  const hasVanLuan = hasLifeAreaLuan || hasVanNarrativeLuan;
 
   const hasLaSo =
     input.laSo != null &&
@@ -350,7 +366,9 @@ export function buildBaziDisplayChapters(input: {
         const vanLuanFailed =
           (load ? load.van_nam === "failed" : !luanPending) &&
           Boolean(luuParsed) &&
-          !hasVanLuan;
+          !hasLifeAreaLuan;
+        const lifeLuanLoading =
+          vanLoading && Boolean(luuParsed) && !hasLifeAreaLuan;
         return {
           key: meta.key,
           index: meta.index,
@@ -360,7 +378,9 @@ export function buildBaziDisplayChapters(input: {
           yearIntroProse,
           lifeAreas,
           prose: vanProse,
-          luanLoading: vanLoading && Boolean(luuParsed) && !hasVanLuan,
+          lifeLuanLoading,
+          luanLoading:
+            vanLoading && Boolean(luuParsed) && !hasVanNarrativeLuan,
           luanFailed: vanLuanFailed,
           emptyReason: luuParsed || vanLoading
             ? null
@@ -372,7 +392,8 @@ export function buildBaziDisplayChapters(input: {
         const proseFailed =
           (load ? load.phong_thuy === "failed" : !luanPending) &&
           Boolean(ptParsed) &&
-          !hasPtLuan;
+          !hasStructuredPtLuan &&
+          legacyPtLuan.length < 80;
         return {
           key: meta.key,
           index: meta.index,
@@ -382,8 +403,9 @@ export function buildBaziDisplayChapters(input: {
           huongLuan,
           mauLuan,
           phiTinhLuan,
-          prose: ptProse,
-          proseLoading: phongLoading && Boolean(ptParsed) && !hasPtLuan,
+          prose: ptProse || ptLegacyProse,
+          proseLoading:
+            phongLoading && Boolean(ptParsed) && !hasStructuredPtLuan,
           proseFailed,
           emptyReason:
             ptParsed || hasPtLuan || phongLoading ? null : ptEmpty,

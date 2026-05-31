@@ -88,7 +88,7 @@ export function CBaziPhongThuySection({
   onRetryLuan,
 }: CBaziPhongThuySectionProps) {
   const hasStructuredLuan = Boolean(huongLuan || mauLuan || phiTinhLuan);
-  const legacyProse = !hasStructuredLuan ? prose : "";
+  const legacyProse = !hasStructuredLuan ? prose.trim() : "";
 
   if (emptyReason && !facts && !legacyProse && !hasStructuredLuan && !proseLoading) {
     return (

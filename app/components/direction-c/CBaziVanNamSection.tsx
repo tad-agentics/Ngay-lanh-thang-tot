@@ -28,6 +28,8 @@ type CBaziVanNamSectionProps = {
   yearIntroProse?: string;
   lifeAreas?: LuuNienLifeAreaView[];
   prose: string;
+  /** Chờ luận 4 lĩnh vực — không gộp nhịp năm. */
+  lifeLuanLoading?: boolean;
   luanLoading?: boolean;
   luanFailed?: boolean;
   emptyReason: string | null;
@@ -39,11 +41,13 @@ export function CBaziVanNamSection({
   yearIntroProse = "",
   lifeAreas = [],
   prose,
+  lifeLuanLoading,
   luanLoading = false,
   luanFailed = false,
   emptyReason,
   onRetryLuan,
 }: CBaziVanNamSectionProps) {
+  const areaLuanLoading = lifeLuanLoading ?? luanLoading;
   const areas =
     lifeAreas.length > 0
       ? lifeAreas
@@ -126,23 +130,25 @@ export function CBaziVanNamSection({
                         </p>
                       ))}
                     </div>
-                  ) : (
-                    <>
-                      {detail && !luanLoading ? (
-                        <p
-                          className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
-                          style={{ color: CT.ink2 }}
-                        >
-                          {detail}
-                        </p>
-                      ) : null}
-                      {luanLoading ? (
-                        <div role="status" aria-live="polite">
-                          <CBaziNlttLuanInkLoading message="Đang luận" compact />
-                        </div>
-                      ) : null}
-                    </>
-                  )}
+                  ) : areaLuanLoading ? (
+                    <div role="status" aria-live="polite">
+                      <CBaziNlttLuanInkLoading message="Đang luận" compact />
+                    </div>
+                  ) : luanFailed ? (
+                    <CBaziNlttLuanProse
+                      failed
+                      failedMessage="Lĩnh vực này chưa luận được — thử Tải lại luận."
+                      onRetry={onRetryLuan}
+                      compact
+                    />
+                  ) : detail ? (
+                    <p
+                      className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
+                      style={{ color: CT.ink2 }}
+                    >
+                      {detail}
+                    </p>
+                  ) : null}
                 </div>
               </div>
             );
