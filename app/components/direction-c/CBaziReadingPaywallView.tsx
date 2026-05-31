@@ -47,7 +47,14 @@ function PaywallLockedChapterBody({ chapter }: { chapter: BaziPaywallLockedChapt
       );
     case "phong_thuy":
       return (
-        <CBaziPhongThuySection facts={chapter.facts} prose="" emptyReason={null} />
+        <CBaziPhongThuySection
+          facts={chapter.facts}
+          huongLuan=""
+          mauLuan=""
+          phiTinhLuan=""
+          prose=""
+          emptyReason={null}
+        />
       );
     case "quy_nhan":
       return (

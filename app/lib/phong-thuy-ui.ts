@@ -1,4 +1,16 @@
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
+import type { PhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
+import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
+
+export const PHONG_THUY_HUONG_SECTION_ID = "phong_thuy_huong";
+export const PHONG_THUY_MAU_SECTION_ID = "phong_thuy_mau";
+export const PHONG_THUY_PHI_TINH_SECTION_ID = "phong_thuy_phi_tinh";
+/** Legacy single-block prose. */
+export const PHONG_THUY_VAN_SECTION_ID = "phong_thuy_van";
+
+export const MIN_PHONG_THUY_HUONG_LUAN_CHARS = 320;
+export const MIN_PHONG_THUY_MAU_LUAN_CHARS = 320;
+export const MIN_PHONG_THUY_PHI_TINH_LUAN_CHARS = 560;
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -74,9 +86,39 @@ export function phongThuyFactsToProse(facts: unknown): string {
   return parts.join("\n\n");
 }
 
+function sectionText(sections: LaSoChiTietSection[], id: string): string {
+  return sections.find((s) => s.id === id)?.text?.trim() ?? "";
+}
+
+export function phongThuyHuongLuanFromSections(
+  sections: LaSoChiTietSection[],
+): string {
+  return sectionText(sections, PHONG_THUY_HUONG_SECTION_ID);
+}
+
+export function phongThuyMauLuanFromSections(
+  sections: LaSoChiTietSection[],
+): string {
+  return sectionText(sections, PHONG_THUY_MAU_SECTION_ID);
+}
+
+export function phongThuyPhiTinhLuanFromSections(
+  sections: LaSoChiTietSection[],
+): string {
+  return sectionText(sections, PHONG_THUY_PHI_TINH_SECTION_ID);
+}
+
 export function phongThuyProseFromSections(
   sections: LaSoChiTietSection[],
 ): string {
+  const structured = [
+    phongThuyHuongLuanFromSections(sections),
+    phongThuyMauLuanFromSections(sections),
+    phongThuyPhiTinhLuanFromSections(sections),
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  if (structured) return structured;
   return sections
     .filter((s) => s.id.startsWith("phong_thuy_"))
     .map((s) => s.text.trim())
@@ -84,20 +126,63 @@ export function phongThuyProseFromSections(
     .join("\n\n");
 }
 
-/** §04 — có luận LLM (không chỉ facts deterministic). */
+function meetsHuongLuan(text: string): boolean {
+  return text.length >= MIN_PHONG_THUY_HUONG_LUAN_CHARS;
+}
+
+function meetsMauLuan(text: string): boolean {
+  return text.length >= MIN_PHONG_THUY_MAU_LUAN_CHARS;
+}
+
+function meetsPhiTinhLuan(text: string): boolean {
+  return (
+    text.length >= MIN_PHONG_THUY_PHI_TINH_LUAN_CHARS &&
+    splitNlttLuanParagraphs(text).length >= 3
+  );
+}
+
+/** §04 — đủ luận LLM theo facts (3 khối hoặc legacy `phong_thuy_van`). */
 export function hasPhongThuyLuanFromSections(
   sections: LaSoChiTietSection[],
+  facts?: PhongThuyFactsView | null,
 ): boolean {
-  return phongThuyProseFromSections(sections).length >= 80;
+  const legacy = sectionText(sections, PHONG_THUY_VAN_SECTION_ID);
+  if (legacy.length >= 80) return true;
+
+  const needsHuong = (facts?.huongTot.length ?? 0) > 0;
+  const needsMau = (facts?.mauMay.length ?? 0) > 0;
+  const needsPhi = (facts?.phiTinh.length ?? 0) > 0;
+
+  if (!needsHuong && !needsMau && !needsPhi) {
+    return phongThuyProseFromSections(sections).length >= 80;
+  }
+
+  if (needsHuong && !meetsHuongLuan(phongThuyHuongLuanFromSections(sections))) {
+    return false;
+  }
+  if (needsMau && !meetsMauLuan(phongThuyMauLuanFromSections(sections))) {
+    return false;
+  }
+  if (needsPhi && !meetsPhiTinhLuan(phongThuyPhiTinhLuanFromSections(sections))) {
+    return false;
+  }
+  return true;
 }
 
 export function phongThuySectionsFromGenerateReading(
   facts: unknown,
+  sections: LaSoChiTietSection[] | null,
   reading: string | null,
 ): LaSoChiTietSection[] {
+  if (sections && sections.length > 0) {
+    return sections.map((s) => ({
+      ...s,
+      id: s.id.startsWith("phong_thuy_") ? s.id : `phong_thuy_${s.id}`,
+    }));
+  }
   const text = reading?.trim() || phongThuyFactsToProse(facts);
   if (!text) return [];
-  return [{ id: "phong_thuy_van", title: "Phong thủy năm", text }];
+  return [{ id: PHONG_THUY_VAN_SECTION_ID, title: "Phong thủy năm", text }];
 }
 
 /** Chèn §04 sau block lưu niên, trước `tai_van`. */

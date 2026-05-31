@@ -6,6 +6,7 @@ import {
   TINH_CACH_INTRO_SECTION_ID,
   TINH_CACH_TRAIT_SECTION_PREFIX,
 } from "./parsers/la-so.ts";
+import { phongThuyCachedSectionsValid } from "./parsers/phong-thuy.ts";
 import type { LaSoChiTietSection } from "./core/types.ts";
 
 function laSoChiTietFullCacheHasTinhCach(sections: LaSoChiTietSection[]): boolean {
@@ -32,6 +33,7 @@ export function createLaSoGenerateReadingHandler() {
       transformCachedLaSoSections: (sections, preview) =>
         preview ? laSoChiTietPreviewSections(sections) : sections,
       laSoChiTietCachedSectionsValid: laSoChiTietFullCacheHasTinhCach,
+      phongThuyCachedSectionsValid,
     },
   );
 }

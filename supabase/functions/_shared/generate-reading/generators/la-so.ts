@@ -6,6 +6,7 @@ import {
 import { llmLegacyProse } from "../core/llm.ts";
 import type { GenerateContext, GenerateResult } from "../core/types.ts";
 import { SYSTEM_PROMPT } from "../prompts/legacy-prose.ts";
+import { generatePhongThuyReading } from "./phong-thuy.ts";
 import {
   generateLaSoChiTietFullSections,
   generateLaSoChiTietPreviewSections,
@@ -16,6 +17,10 @@ export async function generateLaSoReading(
   ctx: GenerateContext,
 ): Promise<GenerateResult> {
   const { endpoint, payload, preview, onlyTinhCach, admin, now, cacheKey } = ctx;
+
+  if (endpoint === "phong-thuy") {
+    return generatePhongThuyReading(ctx);
+  }
 
   if (endpoint === "la-so-chi-tiet") {
     if (onlyTinhCach) {

@@ -38,6 +38,8 @@ export type GenerateReadingHandlerOptions = {
   luuNienLifeCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** `luu-nien` + `only_luu_nien_core`. */
   luuNienCoreCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** `phong-thuy` — 3 khối sections. */
+  phongThuyCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
 };
 
 export function createGenerateReadingHandler(
@@ -279,7 +281,11 @@ export function createGenerateReadingHandler(
             } else {
               await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
             }
-          } else if (endpoint === "tieu-van" || endpoint === "luu-nien") {
+          } else if (
+            endpoint === "tieu-van" ||
+            endpoint === "luu-nien" ||
+            endpoint === "phong-thuy"
+          ) {
             if (cached.sections != null && cached.sections.length > 0) {
               let validate =
                 options.cachedSectionsValid ??
@@ -290,6 +296,9 @@ export function createGenerateReadingHandler(
               } else if (endpoint === "luu-nien" && onlyLuuNienCore) {
                 validate =
                   options.luuNienCoreCachedSectionsValid ?? validate;
+              } else if (endpoint === "phong-thuy") {
+                validate =
+                  options.phongThuyCachedSectionsValid ?? validate;
               }
               const valid = validate?.(cached.sections) ?? true;
               if (valid) {

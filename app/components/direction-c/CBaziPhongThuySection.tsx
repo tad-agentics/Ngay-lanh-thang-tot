@@ -1,8 +1,12 @@
 import { Mono } from "~/components/brand";
-import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import {
+  CBaziNlttLuanInkLoading,
+  CBaziNlttLuanProse,
+} from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT } from "~/lib/c-tokens";
 import type { PhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
+import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 
 const PHI_COLOR = {
   good: CT.goldDeep,
@@ -12,6 +16,9 @@ const PHI_COLOR = {
 
 type CBaziPhongThuySectionProps = {
   facts: PhongThuyFactsView | null;
+  huongLuan: string;
+  mauLuan: string;
+  phiTinhLuan: string;
   prose: string;
   proseLoading?: boolean;
   proseFailed?: boolean;
@@ -19,15 +26,71 @@ type CBaziPhongThuySectionProps = {
   onRetryLuan?: () => void;
 };
 
+function PhongThuyLuanBlock({
+  luan,
+  loading,
+  loadingMessage,
+  failed,
+  onRetry,
+}: {
+  luan: string;
+  loading: boolean;
+  loadingMessage: string;
+  failed: boolean;
+  onRetry?: () => void;
+}) {
+  if (luan) {
+    return (
+      <div className="mt-3 space-y-2.5">
+        {splitNlttLuanParagraphs(luan).map((para) => (
+          <p
+            key={para.slice(0, 48)}
+            className="font-serif text-[12.5px] leading-relaxed"
+            style={{ color: CT.ink2 }}
+          >
+            {para}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  if (loading) {
+    return (
+      <div className="mt-3">
+        <CBaziNlttLuanInkLoading message={loadingMessage} compact />
+      </div>
+    );
+  }
+  if (failed) {
+    return (
+      <div className="mt-3">
+        <CBaziNlttLuanProse
+          failed
+          failedMessage="Chưa tạo được luận cho mục này. Thử tải lại luận."
+          onRetry={onRetry}
+          compact
+        />
+      </div>
+    );
+  }
+  return null;
+}
+
 export function CBaziPhongThuySection({
   facts,
+  huongLuan,
+  mauLuan,
+  phiTinhLuan,
   prose,
   proseLoading = false,
   proseFailed = false,
   emptyReason,
   onRetryLuan,
 }: CBaziPhongThuySectionProps) {
-  if (emptyReason && !facts && !prose && !proseLoading) {
+  const hasStructuredLuan = Boolean(huongLuan || mauLuan || phiTinhLuan);
+  const legacyProse = !hasStructuredLuan ? prose : "";
+
+  if (emptyReason && !facts && !legacyProse && !hasStructuredLuan && !proseLoading) {
     return (
       <div className="mt-3">
         <BaziChapterEmpty message={emptyReason} />
@@ -45,15 +108,19 @@ export function CBaziPhongThuySection({
     );
   }
 
+  const showHuong = (facts?.huongTot.length ?? 0) > 0;
+  const showMau = (facts?.mauMay.length ?? 0) > 0;
+  const showPhi = (facts?.phiTinh.length ?? 0) > 0;
+
   return (
     <div className="mt-3 space-y-4">
-      {facts && facts.huongTot.length > 0 ? (
+      {showHuong ? (
         <div>
           <Mono className="mb-1.5 text-[9px]" style={{ color: CT.muted }}>
             Hướng tốt cho bạn
           </Mono>
           <div className="grid grid-cols-2 gap-1.5">
-            {facts.huongTot.map((d) => (
+            {facts!.huongTot.map((d) => (
               <div
                 key={d.name}
                 className="px-3 py-2.5"
@@ -76,24 +143,31 @@ export function CBaziPhongThuySection({
               </div>
             ))}
           </div>
-          {facts.huongXau.length > 0 ? (
+          {facts!.huongXau.length > 0 ? (
             <p className="mt-2 font-serif text-[11.5px]" style={{ color: CT.muted }}>
               Tránh:{" "}
               <span style={{ color: CT.red, fontWeight: 600 }}>
-                {facts.huongXau.join(", ")}
+                {facts!.huongXau.join(", ")}
               </span>
             </p>
           ) : null}
+          <PhongThuyLuanBlock
+            luan={huongLuan}
+            loading={proseLoading && !huongLuan}
+            loadingMessage="Đang luận hướng tốt"
+            failed={proseFailed && !huongLuan}
+            onRetry={onRetryLuan}
+          />
         </div>
       ) : null}
 
-      {facts && facts.mauMay.length > 0 ? (
+      {showMau ? (
         <div>
           <Mono className="mb-2 text-[9px]" style={{ color: CT.muted }}>
             Màu sắc hợp
           </Mono>
           <div className="flex gap-2">
-            {facts.mauMay.map((c) => (
+            {facts!.mauMay.map((c) => (
               <div key={c.name} className="flex-1 text-center">
                 <div
                   className="aspect-square w-full border"
@@ -105,18 +179,25 @@ export function CBaziPhongThuySection({
               </div>
             ))}
           </div>
-          {facts.mauKy.length > 0 ? (
+          {facts!.mauKy.length > 0 ? (
             <p className="mt-2 font-serif text-[11.5px]" style={{ color: CT.muted }}>
               Tránh:{" "}
               <span style={{ color: CT.red, fontWeight: 600 }}>
-                {facts.mauKy.join(", ")}
+                {facts!.mauKy.join(", ")}
               </span>
             </p>
           ) : null}
+          <PhongThuyLuanBlock
+            luan={mauLuan}
+            loading={proseLoading && !mauLuan}
+            loadingMessage="Đang luận màu sắc hợp"
+            failed={proseFailed && !mauLuan}
+            onRetry={onRetryLuan}
+          />
         </div>
       ) : null}
 
-      {facts && facts.phiTinh.length > 0 ? (
+      {showPhi ? (
         <div>
           <Mono className="mb-2 text-[9px]" style={{ color: CT.muted }}>
             Sao bay trong nhà
@@ -125,7 +206,7 @@ export function CBaziPhongThuySection({
             className="grid grid-cols-3 gap-0.5 border p-1"
             style={{ borderColor: CT.hairline, background: "#fff" }}
           >
-            {facts.phiTinh.map((cell) => (
+            {facts!.phiTinh.map((cell) => (
               <div
                 key={`${cell.direction}-${cell.star}`}
                 className="px-1 py-1.5 text-center"
@@ -146,22 +227,29 @@ export function CBaziPhongThuySection({
               </div>
             ))}
           </div>
-          {facts.phiTinhNote ? (
+          {facts!.phiTinhNote && !phiTinhLuan ? (
             <p
               className="mt-2 font-serif text-[11px] italic leading-relaxed"
               style={{ color: CT.muted }}
             >
-              {facts.phiTinhNote}
+              {facts!.phiTinhNote}
             </p>
           ) : null}
+          <PhongThuyLuanBlock
+            luan={phiTinhLuan}
+            loading={proseLoading && !phiTinhLuan}
+            loadingMessage="Đang luận sao bay trong nhà"
+            failed={proseFailed && !phiTinhLuan}
+            onRetry={onRetryLuan}
+          />
         </div>
       ) : null}
 
-      {prose ? (
-        <CBaziNlttLuanProse text={prose} compact />
-      ) : proseLoading ? (
+      {legacyProse ? (
+        <CBaziNlttLuanProse text={legacyProse} compact />
+      ) : !hasStructuredLuan && proseLoading ? (
         <CBaziNlttLuanProse loading loadingMessage="Đang luận phong thủy năm" compact />
-      ) : proseFailed ? (
+      ) : !hasStructuredLuan && proseFailed ? (
         <CBaziNlttLuanProse
           failed
           failedMessage="Chưa tạo được luận phong thủy. Thử tải lại luận."
@@ -169,7 +257,12 @@ export function CBaziPhongThuySection({
           compact
         />
       ) : null}
-      {!prose && !proseLoading && !proseFailed && !facts && emptyReason ? (
+      {!legacyProse &&
+      !hasStructuredLuan &&
+      !proseLoading &&
+      !proseFailed &&
+      !facts &&
+      emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

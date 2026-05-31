@@ -59,6 +59,9 @@ export function CBaziReadingChapter({
       {chapter.kind === "phong_thuy" ? (
         <CBaziPhongThuySection
           facts={chapter.facts}
+          huongLuan={chapter.huongLuan}
+          mauLuan={chapter.mauLuan}
+          phiTinhLuan={chapter.phiTinhLuan}
           prose={chapter.prose}
           proseLoading={chapter.proseLoading}
           proseFailed={chapter.proseFailed}

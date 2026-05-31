@@ -37,6 +37,7 @@ import {
   luuNienQuyNhanProseFromSections,
 } from "~/lib/luu-nien-ui";
 import { fetchPhongThuyYearFacts } from "~/lib/phong-thuy-facts";
+import { parsePhongThuyFactsView } from "~/lib/phong-thuy-facts-ui";
 import {
   hasPhongThuyLuanFromSections,
   mergeBaziReadingWithPhongThuy,
@@ -186,8 +187,9 @@ export function baziReadingDeliveryIsComplete(
   const needsQuy = Boolean(luuFacts?.quyNhan || luuFacts?.daiVanNext);
   if (needsQuy && !hasLuuNienQuyNhanLuanFromSections(sections)) return false;
 
-  if (opts?.phongThuyFactsRaw != null && !hasPhongThuyLuanFromSections(sections)) {
-    return false;
+  if (opts?.phongThuyFactsRaw != null) {
+    const ptFacts = parsePhongThuyFactsView(opts.phongThuyFactsRaw);
+    if (!hasPhongThuyLuanFromSections(sections, ptFacts)) return false;
   }
 
   return true;
@@ -490,6 +492,7 @@ export async function loadBaziReadingFull(
           });
           phongThuySections = phongThuySectionsFromGenerateReading(
             phongThuyFactsRaw,
+            phongThuyGen.sections,
             phongThuyGen.reading,
           );
           reportProgress();

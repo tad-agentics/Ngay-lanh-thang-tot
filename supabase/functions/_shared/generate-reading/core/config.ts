@@ -65,6 +65,15 @@ export const MIN_LUU_NIEN_LIFE_AREA_CHARS = 420;
 export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS = 3;
 export const READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS = 6_144;
 
+/** §04 mỗi khối hướng / màu / phi tinh. */
+export const READING_MAX_TOKENS_PHONG_THUY_BLOCK = 4_096;
+export const MIN_PHONG_THUY_HUONG_CHARS = 420;
+export const MIN_PHONG_THUY_HUONG_PARAGRAPHS = 2;
+export const MIN_PHONG_THUY_MAU_CHARS = 420;
+export const MIN_PHONG_THUY_MAU_PARAGRAPHS = 2;
+export const MIN_PHONG_THUY_PHI_TINH_CHARS = 720;
+export const MIN_PHONG_THUY_PHI_TINH_PARAGRAPHS = 4;
+
 export const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,
   "chon-ngay": 24 * 60 * 60 * 1000,

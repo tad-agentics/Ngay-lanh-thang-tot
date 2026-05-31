@@ -8,6 +8,7 @@ export const LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER = "2026-05-31-tinh-cach-onl
 export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
 export const TIEU_VAN_PROMPT_VER = "2026-05-31-tieu-van-split-v1";
 export const LUU_NIEN_PROMPT_VER = "2026-05-31-menh-tinh-luu-500w";
+export const PHONG_THUY_SECTIONS_CACHE_VER = "2026-05-31-phong-3blocks-v1";
 /** @deprecated Use LUU_NIEN_PROMPT_VER or TIEU_VAN_PROMPT_VER */
 export const TIEU_VAN_LUU_NIEN_PROMPT_VER = LUU_NIEN_PROMPT_VER;
 export const HOP_TUOI_PROMPT_VER = "2026-05-10-v1";
@@ -60,5 +61,6 @@ export function endpointCacheVersion(
   if (endpoint === "chon-ngay") return CHON_NGAY_PROMPT_VER;
   if (endpoint === "chon-ngay-cards") return CHON_NGAY_CARDS_PROMPT_VER;
   if (endpoint === "ngay-hom-nay") return INLINE_LICH_TO_PROMPT_VER;
+  if (endpoint === "phong-thuy") return PHONG_THUY_SECTIONS_CACHE_VER;
   return "";
 }

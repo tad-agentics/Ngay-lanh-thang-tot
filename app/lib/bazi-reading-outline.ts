@@ -31,6 +31,12 @@ import {
   parsePhongThuyFactsView,
   type PhongThuyFactsView,
 } from "~/lib/phong-thuy-facts-ui";
+import {
+  hasPhongThuyLuanFromSections,
+  phongThuyHuongLuanFromSections,
+  phongThuyMauLuanFromSections,
+  phongThuyPhiTinhLuanFromSections,
+} from "~/lib/phong-thuy-ui";
 
 export type BaziOutlineKey =
   | "menh_tong_quan"
@@ -137,6 +143,9 @@ export type BaziDisplayChapter =
       title: string;
       kind: "phong_thuy";
       facts: PhongThuyFactsView | null;
+      huongLuan: string;
+      mauLuan: string;
+      phiTinhLuan: string;
       prose: string;
       proseLoading?: boolean;
       proseFailed?: boolean;
@@ -255,9 +264,11 @@ export function buildBaziDisplayChapters(input: {
   const yearIntroProse = luuNienYearIntroFromSections(input.sections);
   const lifeAreas = mergeLuuNienLifeAreasWithLuan(luuParsed, input.sections);
   const vanProse = luuNienVanNamProse(input.sections);
-  const ptProse = joinSectionTexts(input.sections, (s) =>
-    s.id.startsWith("phong_thuy_"),
-  );
+  const huongLuan = phongThuyHuongLuanFromSections(input.sections);
+  const mauLuan = phongThuyMauLuanFromSections(input.sections);
+  const phiTinhLuan = phongThuyPhiTinhLuanFromSections(input.sections);
+  const ptProse = [huongLuan, mauLuan, phiTinhLuan].filter(Boolean).join("\n\n");
+  const hasPtLuan = hasPhongThuyLuanFromSections(input.sections, ptParsed);
   const quyProse = luuNienQuyNhanProse(input.sections);
   const hasVanLuan =
     hasLuuNienLifeLuanFromSections(
@@ -341,19 +352,21 @@ export function buildBaziDisplayChapters(input: {
       }
       case "phong_thuy": {
         const ptEmpty = phongThuyEmptyMessage(input.phongThuyFetchError);
-        const proseFailed =
-          !luanPending && Boolean(ptParsed) && !ptProse;
+        const proseFailed = !luanPending && Boolean(ptParsed) && !hasPtLuan;
         return {
           key: meta.key,
           index: meta.index,
           title: meta.title,
           kind: "phong_thuy",
           facts: ptParsed,
+          huongLuan,
+          mauLuan,
+          phiTinhLuan,
           prose: ptProse,
-          proseLoading: luanPending && Boolean(ptParsed) && !ptProse,
+          proseLoading: luanPending && Boolean(ptParsed) && !hasPtLuan,
           proseFailed,
           emptyReason:
-            ptParsed || ptProse || luanPending ? null : ptEmpty,
+            ptParsed || hasPtLuan || luanPending ? null : ptEmpty,
         };
       }
       case "quy_nhan": {
