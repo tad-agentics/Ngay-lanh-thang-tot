@@ -31,6 +31,8 @@ export type GenerateReadingHandlerOptions = {
   cachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** @deprecated Use cachedSectionsValid */
   tieuVanCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** Full `la-so-chi-tiet` cache must include §02 traits (not chỉ menh + aspects). */
+  laSoChiTietCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
 };
 
 export function createGenerateReadingHandler(
@@ -71,6 +73,8 @@ export function createGenerateReadingHandler(
           ? "teaser"
           : "";
     const preview = body.preview === true;
+    const onlyTinhCach =
+      endpoint === "la-so-chi-tiet" && body.only_tinh_cach === true;
     const anchorReading = parseAnchorReading(body.anchor_reading);
     const threadHistory = parseThreadHistory(body.thread_history);
 
@@ -204,13 +208,14 @@ export function createGenerateReadingHandler(
     );
     const endpointVer = endpointCacheVersion(endpoint, {
       preview,
+      onlyTinhCach,
       question,
       variant,
     });
     const threadJson = threadHistory.length
       ? stableStringify(threadHistory)
       : "";
-    const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${threadJson}\n${anchorReading ? await sha256Prefix16(anchorReading.slice(0, 4000)) : ""}\n${dataJson}`;
+    const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${onlyTinhCach ? "only-tinh-cach" : ""}\n${threadJson}\n${anchorReading ? await sha256Prefix16(anchorReading.slice(0, 4000)) : ""}\n${dataJson}`;
     const cacheKey = await sha256Prefix16(cacheInput);
 
     const payload = stableStringify(promptBody);
@@ -237,12 +242,26 @@ export function createGenerateReadingHandler(
           const cached = readCachedBody(endpoint, row.reading);
           if (endpoint === "la-so-chi-tiet") {
             if (cached.sections != null && cached.sections.length > 0) {
-              const out = options.transformCachedLaSoSections
-                ? options.transformCachedLaSoSections(cached.sections, preview)
-                : cached.sections;
-              return ok(null, out, req);
+              const laSoValid = options.laSoChiTietCachedSectionsValid;
+              if (
+                !preview &&
+                !onlyTinhCach &&
+                laSoValid &&
+                !laSoValid(cached.sections)
+              ) {
+                await admin.from("reading_cache").delete().eq(
+                  "cache_key",
+                  cacheKey,
+                );
+              } else {
+                const out = options.transformCachedLaSoSections
+                  ? options.transformCachedLaSoSections(cached.sections, preview)
+                  : cached.sections;
+                return ok(null, out, req);
+              }
+            } else {
+              await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
             }
-            await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
           } else if (endpoint === "tieu-van" || endpoint === "luu-nien") {
             if (cached.sections != null && cached.sections.length > 0) {
               const validate =
@@ -295,6 +314,7 @@ export function createGenerateReadingHandler(
       question,
       variant,
       preview,
+      onlyTinhCach,
       promptBody,
       payload,
       cacheKey,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  mergeLaSoTinhCachSections,
   parsePersonalityTraitsFromLaSo,
   parsePersonalityTraitsFromSections,
   tinhCachIntroFromSections,
@@ -42,5 +43,29 @@ describe("parsePersonalityTraitsFromSections", () => {
       { id: "tinh_cach_intro", title: "Tổng quan", text: "Mở đầu §02." },
     ]);
     expect(intro).toBe("Mở đầu §02.");
+  });
+});
+
+describe("mergeLaSoTinhCachSections", () => {
+  it("replaces prior §02 sections with supplement", () => {
+    const merged = mergeLaSoTinhCachSections(
+      [
+        { id: "menh_tong_quan", title: "Mệnh", text: "A" },
+        { id: "tinh_cach", title: "Cũ", text: "legacy" },
+      ],
+      [
+        { id: "tinh_cach_intro", title: "Intro", text: "Mới." },
+        {
+          id: "tinh_cach_trait_ca_tinh",
+          title: "Cá tính",
+          text: "Luận dài.",
+        },
+      ],
+    );
+    expect(merged.map((s) => s.id)).toEqual([
+      "menh_tong_quan",
+      "tinh_cach_intro",
+      "tinh_cach_trait_ca_tinh",
+    ]);
   });
 });

@@ -11,6 +11,7 @@ type CBaziQuyNhanSectionProps = {
   quyNhan: LuuNienQuyNhanFacts | null;
   daiVanNext: DaiVanNextView | null;
   prose: string;
+  proseLoading?: boolean;
   emptyReason: string | null;
 };
 
@@ -25,9 +26,10 @@ export function CBaziQuyNhanSection({
   quyNhan,
   daiVanNext,
   prose,
+  proseLoading = false,
   emptyReason,
 }: CBaziQuyNhanSectionProps) {
-  if (emptyReason && !quyNhan && !daiVanNext && !prose) {
+  if (emptyReason && !quyNhan && !daiVanNext && !prose && !proseLoading) {
     return <BaziChapterEmpty message={emptyReason} />;
   }
 
@@ -99,8 +101,12 @@ export function CBaziQuyNhanSection({
         </p>
       ) : null}
 
-      {prose ? <CBaziNlttLuanProse text={prose} compact /> : null}
-      {!prose && !facts && !daiVanNext && emptyReason ? (
+      {prose ? (
+        <CBaziNlttLuanProse text={prose} compact />
+      ) : proseLoading ? (
+        <CBaziNlttLuanProse loading loadingMessage="Đang luận ứng xử năm" compact />
+      ) : null}
+      {!prose && !proseLoading && !facts && !daiVanNext && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

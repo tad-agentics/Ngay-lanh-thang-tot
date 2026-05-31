@@ -26,6 +26,7 @@ export function CBaziReadingChapter({
           profile={profile}
           laSo={chapter.laSo}
           prose={chapter.prose}
+          proseLoading={chapter.proseLoading}
           emptyReason={chapter.emptyReason}
           onRetryProse={onRetryMenh}
         />
@@ -35,6 +36,7 @@ export function CBaziReadingChapter({
           traits={chapter.traits}
           introProse={chapter.introProse}
           prose={chapter.prose}
+          luanLoading={chapter.luanLoading}
           emptyReason={chapter.emptyReason}
         />
       ) : null}
@@ -44,6 +46,7 @@ export function CBaziReadingChapter({
           yearIntroProse={chapter.yearIntroProse}
           lifeAreas={chapter.lifeAreas}
           prose={chapter.prose}
+          luanLoading={chapter.luanLoading}
           emptyReason={chapter.emptyReason}
         />
       ) : null}
@@ -51,6 +54,7 @@ export function CBaziReadingChapter({
         <CBaziPhongThuySection
           facts={chapter.facts}
           prose={chapter.prose}
+          proseLoading={chapter.proseLoading}
           emptyReason={chapter.emptyReason}
         />
       ) : null}
@@ -59,6 +63,7 @@ export function CBaziReadingChapter({
           quyNhan={chapter.quyNhan}
           daiVanNext={chapter.daiVanNext}
           prose={chapter.prose}
+          proseLoading={chapter.proseLoading}
           emptyReason={chapter.emptyReason}
         />
       ) : null}

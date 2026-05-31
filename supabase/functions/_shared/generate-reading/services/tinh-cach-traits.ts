@@ -31,22 +31,30 @@ export async function generateTinhCachTraitSections(
     LA_SO_TINH_CACH_TRAITS_SYSTEM,
     payload,
     READING_MAX_TOKENS_TINH_CACH_TRAITS,
-    { timeoutMs: callTimeout(budget) },
+    { timeoutMs: callTimeout(budget), disableThinking: true },
   );
   if (!raw) return [];
 
   let parsed = parseTinhCachTraitsResponse(raw);
-  if (
-    (!parsed?.traits.length || !parsed.intro) &&
-    budget.canSpend(JSON_ROUND_MIN_MS)
-  ) {
+  if (!parsed?.traits.length && budget.canSpend(JSON_ROUND_MIN_MS)) {
     const retry = await llmLaSoChiTietJson(
       LA_SO_TINH_CACH_TRAITS_RETRY_SYSTEM,
       payload,
       READING_MAX_TOKENS_TINH_CACH_TRAITS,
-      { timeoutMs: callTimeout(budget) },
+      { timeoutMs: callTimeout(budget), disableThinking: true },
     );
-    if (retry) parsed = parseTinhCachTraitsResponse(retry);
+    if (retry) {
+      parsed = parseTinhCachTraitsResponse(retry);
+      if (!parsed?.traits.length) {
+        const relaxedRetry = parseTinhCachTraitsResponse(retry, { relaxed: true });
+        if (relaxedRetry?.traits.length) parsed = relaxedRetry;
+      }
+    }
+  }
+
+  if (!parsed?.traits.length) {
+    const relaxed = parseTinhCachTraitsResponse(raw, { relaxed: true });
+    if (relaxed?.traits.length) parsed = relaxed;
   }
 
   if (!parsed) return [];

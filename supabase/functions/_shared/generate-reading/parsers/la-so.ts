@@ -246,8 +246,21 @@ export function countTinhCachParagraphs(text: string): number {
     .filter(Boolean).length;
 }
 
-export function tinhCachTraitProseTooShort(text: string): boolean {
+export const MIN_TINH_CACH_TRAIT_CHARS_RELAXED = 1_400;
+export const MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED = 1;
+
+export function tinhCachTraitProseTooShort(
+  text: string,
+  relaxed = false,
+): boolean {
   const t = text.trim();
+  if (relaxed) {
+    if (t.length < MIN_TINH_CACH_TRAIT_CHARS_RELAXED) return true;
+    if (countTinhCachParagraphs(t) < MIN_TINH_CACH_TRAIT_PARAGRAPHS_RELAXED) {
+      return true;
+    }
+    return false;
+  }
   if (t.length < MIN_TINH_CACH_TRAIT_CHARS) return true;
   if (countTinhCachParagraphs(t) < MIN_TINH_CACH_TRAIT_PARAGRAPHS) return true;
   return false;
@@ -255,7 +268,9 @@ export function tinhCachTraitProseTooShort(text: string): boolean {
 
 export function parseTinhCachTraitsResponse(
   raw: string,
+  opts?: { relaxed?: boolean },
 ): TinhCachTraitsPayload | null {
+  const relaxed = opts?.relaxed === true;
   const record = tryParseLaSoChiTietRecord(raw);
   if (!record) return null;
 
@@ -282,7 +297,7 @@ export function parseTinhCachTraitsResponse(
       typeof r.id === "string" ? r.id : title,
     );
     const text = coerceLaSoSectionText(r.text);
-    if (!text || tinhCachTraitProseTooShort(text)) continue;
+    if (!text || tinhCachTraitProseTooShort(text, relaxed)) continue;
     traits.push({
       id: `${TINH_CACH_TRAIT_SECTION_PREFIX}${id}`,
       title,

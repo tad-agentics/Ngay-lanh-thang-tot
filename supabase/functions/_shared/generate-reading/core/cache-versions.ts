@@ -1,7 +1,8 @@
 /** Cache invalidation versions per endpoint/prompt. */
 
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
-export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-tinh-cach-traits-500w";
+export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-tinh-cach-parallel-v2";
+export const LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER = "2026-05-31-tinh-cach-only-v1";
 export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
 export const TIEU_VAN_PROMPT_VER = "2026-05-31-tieu-van-split-v1";
 export const LUU_NIEN_PROMPT_VER = "2026-05-31-menh-tinh-luu-500w";
@@ -18,10 +19,18 @@ export const GLOBAL_LLM_VER = "2026-05-29-deepseek-pro-day-multiturn";
 
 export function endpointCacheVersion(
   endpoint: string,
-  opts: { preview: boolean; question: string; variant: string },
+  opts: {
+    preview: boolean;
+    onlyTinhCach?: boolean;
+    question: string;
+    variant: string;
+  },
 ): string {
-  const { preview, question, variant } = opts;
+  const { preview, onlyTinhCach, question, variant } = opts;
   if (endpoint === "la-so-chi-tiet") {
+    if (onlyTinhCach) {
+      return `${LA_SO_CHI_TIET_CACHE_VER}:${LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER}`;
+    }
     return preview
       ? `${LA_SO_CHI_TIET_CACHE_VER}:${LA_SO_CHI_TIET_PREVIEW_PROMPT_VER}`
       : LA_SO_CHI_TIET_CACHE_VER;

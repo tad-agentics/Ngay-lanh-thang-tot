@@ -13,12 +13,14 @@ const PHI_COLOR = {
 type CBaziPhongThuySectionProps = {
   facts: PhongThuyFactsView | null;
   prose: string;
+  proseLoading?: boolean;
   emptyReason: string | null;
 };
 
 export function CBaziPhongThuySection({
   facts,
   prose,
+  proseLoading = false,
   emptyReason,
 }: CBaziPhongThuySectionProps) {
   if (emptyReason && !facts && !prose) {
@@ -137,8 +139,12 @@ export function CBaziPhongThuySection({
         </div>
       ) : null}
 
-      {prose ? <CBaziNlttLuanProse text={prose} compact /> : null}
-      {!prose && !facts && emptyReason ? (
+      {prose ? (
+        <CBaziNlttLuanProse text={prose} compact />
+      ) : proseLoading ? (
+        <CBaziNlttLuanProse loading loadingMessage="Đang luận phong thủy năm" compact />
+      ) : null}
+      {!prose && !proseLoading && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

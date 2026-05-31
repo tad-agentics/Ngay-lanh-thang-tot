@@ -9,14 +9,29 @@ import { SYSTEM_PROMPT } from "../prompts/legacy-prose.ts";
 import {
   generateLaSoChiTietFullSections,
   generateLaSoChiTietPreviewSections,
+  generateLaSoChiTietTinhCachOnlySections,
 } from "../services/la-so-chi-tiet.ts";
 
 export async function generateLaSoReading(
   ctx: GenerateContext,
 ): Promise<GenerateResult> {
-  const { endpoint, payload, preview, admin, now, cacheKey } = ctx;
+  const { endpoint, payload, preview, onlyTinhCach, admin, now, cacheKey } = ctx;
 
   if (endpoint === "la-so-chi-tiet") {
+    if (onlyTinhCach) {
+      const sections = await generateLaSoChiTietTinhCachOnlySections(payload);
+      if (!sections.length) return { reading: null };
+      const toStore = JSON.stringify({ sections });
+      if (admin) {
+        const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
+        await admin.from("reading_cache").upsert(
+          { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
+          { onConflict: "cache_key" },
+        );
+      }
+      return { reading: null, sections };
+    }
+
     if (preview) {
       const sectionsOut = await generateLaSoChiTietPreviewSections(payload);
       if (!sectionsOut?.length) return { reading: null };

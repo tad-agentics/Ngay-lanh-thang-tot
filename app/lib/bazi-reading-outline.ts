@@ -15,10 +15,18 @@ import {
 } from "~/lib/luu-nien-life-ui";
 import {
   hasTinhCachLuanFromSections,
+  parsePersonalityTraitsFromLaSo,
   parsePersonalityTraitsFromSections,
   tinhCachIntroFromSections,
   type PersonalityTraitView,
 } from "~/lib/personality-traits-ui";
+
+const SKELETON_TINH_CACH_TRAITS: PersonalityTraitView[] = [
+  { id: "diem_manh", title: "Điểm mạnh", text: "" },
+  { id: "ca_tinh", title: "Cá tính nổi bật", text: "" },
+  { id: "can_luu", title: "Điểm cần lưu ý", text: "" },
+  { id: "tinh_cam", title: "Tình cảm & quan hệ", text: "" },
+];
 import {
   parsePhongThuyFactsView,
   type PhongThuyFactsView,
@@ -95,6 +103,7 @@ export type BaziDisplayChapter =
       kind: "menh";
       laSo: LaSoJson | null;
       prose: string;
+      proseLoading?: boolean;
       emptyReason: string | null;
     }
   | {
@@ -105,6 +114,7 @@ export type BaziDisplayChapter =
       traits: PersonalityTraitView[];
       introProse: string;
       prose: string;
+      luanLoading?: boolean;
       emptyReason: string | null;
     }
   | {
@@ -116,6 +126,7 @@ export type BaziDisplayChapter =
       yearIntroProse: string;
       lifeAreas: LuuNienLifeAreaView[];
       prose: string;
+      luanLoading?: boolean;
       emptyReason: string | null;
     }
   | {
@@ -125,6 +136,7 @@ export type BaziDisplayChapter =
       kind: "phong_thuy";
       facts: PhongThuyFactsView | null;
       prose: string;
+      proseLoading?: boolean;
       emptyReason: string | null;
     }
   | {
@@ -135,6 +147,7 @@ export type BaziDisplayChapter =
       quyNhan: LuuNienQuyNhanFacts | null;
       daiVanNext: DaiVanNextView | null;
       prose: string;
+      proseLoading?: boolean;
       emptyReason: string | null;
     };
 
@@ -194,7 +207,10 @@ export function buildBaziDisplayChapters(input: {
   phongThuyFactsRaw: unknown | null;
   yearCanChi: string;
   phongThuyFetchError?: string | null;
+  /** Facts đã có — chờ LLM; không hiện emptyReason cho § có dữ liệu. */
+  luanPending?: boolean;
 }): BaziDisplayChapter[] {
+  const luanPending = input.luanPending === true;
   const outline = baziOutlineSections(input.yearCanChi);
   const luuParsed = input.luuNienFactsRaw
     ? parseLuuNienFactsView(input.luuNienFactsRaw)
@@ -238,8 +254,9 @@ export function buildBaziDisplayChapters(input: {
           kind: "menh",
           laSo: input.laSo,
           prose: menhProse,
+          proseLoading: luanPending && hasLaSo && !menhProse,
           emptyReason: hasLaSo
-            ? menhProse
+            ? menhProse || luanPending
               ? null
               : "Chưa tạo được luận tổng quan lá số. Thử tải lại luận."
             : "Chưa có lá số trên hồ sơ.",
@@ -247,20 +264,30 @@ export function buildBaziDisplayChapters(input: {
       case "tinh_cach": {
         const hasLuan =
           hasTinhCachLuanFromSections(input.sections) ||
-          traits.length > 0 ||
+          traits.some((t) => t.text.trim().length > 0) ||
           Boolean(tinhCachIntro.trim()) ||
           Boolean(tinhCachLegacy.trim());
+        const skeletonTraits = (() => {
+          if (!luanPending || hasLuan) return traits;
+          const fromLaSo = parsePersonalityTraitsFromLaSo(input.laSo).map((t) => ({
+            ...t,
+            text: "",
+          }));
+          return fromLaSo.length > 0 ? fromLaSo : SKELETON_TINH_CACH_TRAITS;
+        })();
         return {
           key: meta.key,
           index: meta.index,
           title: meta.title,
           kind: "tinh_cach",
-          traits,
+          traits: skeletonTraits,
           introProse: tinhCachIntro || (traits.length === 0 ? tinhCachLegacy : ""),
           prose: traits.length === 0 ? tinhCachLegacy : "",
-          emptyReason: hasLuan
-            ? null
-            : "Chưa tạo được luận giải tính cách. Thử tải lại luận.",
+          luanLoading: luanPending && !hasLuan && skeletonTraits.length > 0,
+          emptyReason:
+            hasLuan || luanPending
+              ? null
+              : "Chưa tạo được luận giải tính cách. Thử tải lại luận.",
         };
       }
       case "van_nam":
@@ -273,9 +300,14 @@ export function buildBaziDisplayChapters(input: {
           yearIntroProse,
           lifeAreas,
           prose: vanProse,
-          emptyReason: hasVanLuan || luuParsed
-            ? null
-            : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",
+          luanLoading:
+            luanPending &&
+            Boolean(luuParsed) &&
+            !hasVanLuan,
+          emptyReason:
+            hasVanLuan || luuParsed || luanPending
+              ? null
+              : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",
         };
       case "phong_thuy": {
         const ptEmpty =
@@ -290,7 +322,9 @@ export function buildBaziDisplayChapters(input: {
           kind: "phong_thuy",
           facts: ptParsed,
           prose: ptProse,
-          emptyReason: ptParsed || ptProse ? null : ptEmpty,
+          proseLoading: luanPending && Boolean(ptParsed) && !ptProse,
+          emptyReason:
+            ptParsed || ptProse || luanPending ? null : ptEmpty,
         };
       }
       case "quy_nhan":
@@ -302,8 +336,12 @@ export function buildBaziDisplayChapters(input: {
           quyNhan: luuParsed?.quyNhan ?? null,
           daiVanNext: luuParsed?.daiVanNext ?? null,
           prose: quyProse,
+          proseLoading:
+            luanPending &&
+            Boolean(luuParsed?.quyNhan || luuParsed?.daiVanNext) &&
+            !quyProse,
           emptyReason:
-            luuParsed?.quyNhan || luuParsed?.daiVanNext || quyProse
+            luuParsed?.quyNhan || luuParsed?.daiVanNext || quyProse || luanPending
               ? null
               : "Chưa có dữ liệu quý nhân. Thử tải lại sau.",
         };

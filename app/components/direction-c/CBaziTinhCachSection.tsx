@@ -1,5 +1,8 @@
 import { Mono } from "~/components/brand";
-import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import {
+  CBaziNlttLuanInkLoading,
+  CBaziNlttLuanProse,
+} from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT } from "~/lib/c-tokens";
 import type { PersonalityTraitView } from "~/lib/personality-traits-ui";
@@ -8,6 +11,7 @@ type CBaziTinhCachSectionProps = {
   traits: PersonalityTraitView[];
   introProse: string;
   prose: string;
+  luanLoading?: boolean;
   emptyReason: string | null;
 };
 
@@ -15,13 +19,16 @@ export function CBaziTinhCachSection({
   traits,
   introProse,
   prose,
+  luanLoading = false,
   emptyReason,
 }: CBaziTinhCachSectionProps) {
-  const hasTraits = traits.length > 0;
+  const traitsWithText = traits.filter((t) => t.text.trim().length > 0);
+  const hasTraits = traitsWithText.length > 0;
   const hasIntro = Boolean(introProse.trim());
   const hasFallback = Boolean(prose.trim());
+  const showTraitShells = luanLoading && traits.length > 0;
 
-  if (emptyReason && !hasTraits && !hasIntro && !hasFallback) {
+  if (emptyReason && !hasTraits && !hasIntro && !hasFallback && !showTraitShells) {
     return <BaziChapterEmpty message={emptyReason} />;
   }
 
@@ -34,11 +41,45 @@ export function CBaziTinhCachSection({
         >
           {introProse}
         </p>
+      ) : luanLoading && !hasIntro ? (
+        <CBaziNlttLuanInkLoading
+          message="Đang luận mở đầu tính cách"
+          compact
+          className={traits.length > 0 ? "mb-3" : undefined}
+        />
       ) : null}
 
-      {hasTraits ? (
+      {showTraitShells ? (
         <div className={hasIntro ? "mt-4" : ""}>
-          {traits.map((t, i) => (
+          {traits.map((t) => (
+            <div
+              key={t.id}
+              className="border-t py-3 first:border-t-0 first:pt-0"
+              style={{ borderColor: CT.hairline2 }}
+            >
+              <Mono className="text-[9px]" style={{ color: CT.goldDeep }}>
+                {t.title}
+              </Mono>
+              {t.text.trim() ? (
+                <p
+                  className="mt-1 font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
+                  style={{ color: CT.ink2 }}
+                >
+                  {t.text}
+                </p>
+              ) : (
+                <CBaziNlttLuanInkLoading
+                  message="Đang luận"
+                  compact
+                  className="mt-1"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      ) : hasTraits ? (
+        <div className={hasIntro ? "mt-4" : ""}>
+          {traitsWithText.map((t) => (
             <div
               key={t.id}
               className="border-t py-3 first:border-t-0 first:pt-0"
@@ -58,9 +99,11 @@ export function CBaziTinhCachSection({
         </div>
       ) : hasFallback ? (
         <CBaziNlttLuanProse text={prose} compact />
+      ) : luanLoading ? (
+        <CBaziNlttLuanInkLoading message="Đang luận tính cách" compact />
       ) : null}
 
-      {!hasTraits && !hasIntro && !hasFallback && emptyReason ? (
+      {!hasTraits && !hasIntro && !hasFallback && !luanLoading && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>

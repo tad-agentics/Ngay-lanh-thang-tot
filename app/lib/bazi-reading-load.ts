@@ -10,9 +10,11 @@ import type { Profile } from "~/lib/profile-context";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import {
+  buildBaziDisplayChapters,
   fallbackFlowYearCanChiLabel,
   flowYearCanChiFromFacts,
   menhTongQuanProseFromSections,
+  type BaziDisplayChapter,
 } from "~/lib/bazi-reading-outline";
 import {
   invokeGenerateReading,
@@ -35,7 +37,10 @@ import {
   phongThuySectionsFromGenerateReading,
 } from "~/lib/phong-thuy-ui";
 import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
-import { hasTinhCachLuanFromSections } from "~/lib/personality-traits-ui";
+import {
+  hasTinhCachLuanFromSections,
+  mergeLaSoTinhCachSections,
+} from "~/lib/personality-traits-ui";
 
 export type BaziReadingLoadResult = {
   sections: LaSoChiTietSection[];
@@ -46,6 +51,72 @@ export type BaziReadingLoadResult = {
   /** `bat-tu` op `phong-thuy` failed — §04 may be empty despite other chapters OK. */
   phongThuyFetchError: string | null;
 };
+
+/** Facts lá số + lưu niên + phong thủy — không gọi LLM. */
+export type BaziReadingFactsBundle = Omit<BaziReadingLoadResult, "sections"> & {
+  /** Raw `bat-tu` la-so response — tái dùng cho generate-reading. */
+  lasoRaw?: unknown;
+};
+
+export function buildBaziSkeletonChapters(
+  facts: BaziReadingFactsBundle,
+): BaziDisplayChapter[] {
+  return buildBaziDisplayChapters({
+    sections: [],
+    laSo: facts.laSoDisplay,
+    luuNienFactsRaw: facts.luuNienFactsRaw,
+    phongThuyFactsRaw: facts.phongThuyFactsRaw,
+    yearCanChi: facts.yearCanChi,
+    phongThuyFetchError: facts.phongThuyFetchError,
+    luanPending: true,
+  });
+}
+
+/** Tải facts song song — hiển thị skeleton trước khi DeepSeek xong. */
+export async function fetchBaziReadingFactsBundle(
+  profile: Profile,
+  year: number,
+  options?: { silentPhongThuyToast?: boolean },
+): Promise<BaziReadingFactsBundle | null> {
+  const body = profileToBatTuPersonQuery(profile);
+  if (!body.birth_date) return null;
+
+  const [lasoRes, luuNienRes, phongThuyRes] = await Promise.all([
+    invokeBatTu<unknown>({ op: "la-so", body }),
+    fetchLuuNienYearFacts(profile, year),
+    fetchPhongThuyYearFacts(profile, year),
+  ]);
+
+  if (!lasoRes.ok) {
+    toast.error(lasoRes.message ?? "Không tải lá số.");
+    return null;
+  }
+
+  const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
+  const laSoDisplay =
+    mergeLaSoJsonForChiTietDisplay(
+      profile.la_so as LaSoJson,
+      enrichment,
+    ) ?? (profile.la_so as LaSoJson);
+
+  const luuNienFactsRaw = luuNienRes.ok ? luuNienRes.data : null;
+  const phongThuyFactsRaw = phongThuyRes.ok ? phongThuyRes.data : null;
+  const phongThuyFetchError = phongThuyRes.ok
+    ? null
+    : (phongThuyRes.message ?? "Không tải phong thủy năm.");
+  if (!phongThuyRes.ok && !options?.silentPhongThuyToast) {
+    toast.error(phongThuyFetchError);
+  }
+
+  return {
+    laSoDisplay,
+    luuNienFactsRaw,
+    phongThuyFactsRaw,
+    yearCanChi: resolveYearCanChi(year, luuNienFactsRaw),
+    phongThuyFetchError,
+    lasoRaw: lasoRes.data,
+  };
+}
 
 function laSoSectionsFromGenerateReading(
   sections: LaSoChiTietSection[] | null,
@@ -192,7 +263,11 @@ export async function loadBaziPaywallMenhOverview(
 export async function loadBaziReadingFull(
   profile: Profile,
   year: number,
-  options?: { skipPersist?: boolean; forceRegenerate?: boolean },
+  options?: {
+    skipPersist?: boolean;
+    forceRegenerate?: boolean;
+    preloadedFacts?: BaziReadingFactsBundle;
+  },
 ): Promise<BaziReadingLoadResult> {
   const empty: BaziReadingLoadResult = {
     sections: [],
@@ -216,54 +291,87 @@ export async function loadBaziReadingFull(
   const body = profileToBatTuPersonQuery(profile);
   if (!body.birth_date) return empty;
 
-  const [lasoRes, luuNienRes, phongThuyRes] = await Promise.all([
-    invokeBatTu<unknown>({ op: "la-so", body }),
-    fetchLuuNienYearFacts(profile, year),
-    fetchPhongThuyYearFacts(profile, year),
-  ]);
+  let factsBundle = options?.preloadedFacts;
 
-  if (!lasoRes.ok) {
-    toast.error(lasoRes.message ?? "Không tải lá số.");
-    return empty;
+  if (!factsBundle) {
+    const [lasoRes, luuNienRes, phongThuyRes] = await Promise.all([
+      invokeBatTu<unknown>({ op: "la-so", body }),
+      fetchLuuNienYearFacts(profile, year),
+      fetchPhongThuyYearFacts(profile, year),
+    ]);
+
+    if (!lasoRes.ok) {
+      toast.error(lasoRes.message ?? "Không tải lá số.");
+      return empty;
+    }
+
+    const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
+    const laSoDisplay =
+      mergeLaSoJsonForChiTietDisplay(
+        profile.la_so as LaSoJson,
+        enrichment,
+      ) ?? (profile.la_so as LaSoJson);
+
+    const luuNienFactsRaw = luuNienRes.ok ? luuNienRes.data : null;
+    const phongThuyFactsRaw = phongThuyRes.ok ? phongThuyRes.data : null;
+    const phongThuyFetchError = phongThuyRes.ok
+      ? null
+      : (phongThuyRes.message ?? "Không tải phong thủy năm.");
+    if (!phongThuyRes.ok) {
+      toast.error(phongThuyFetchError);
+    }
+
+    factsBundle = {
+      laSoDisplay,
+      luuNienFactsRaw,
+      phongThuyFactsRaw,
+      yearCanChi: resolveYearCanChi(year, luuNienFactsRaw),
+      phongThuyFetchError,
+      lasoRaw: lasoRes.data,
+    };
   }
 
-  const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
-  const laSoDisplay =
-    mergeLaSoJsonForChiTietDisplay(
-      profile.la_so as LaSoJson,
-      enrichment,
-    ) ?? (profile.la_so as LaSoJson);
+  const {
+    laSoDisplay,
+    luuNienFactsRaw,
+    phongThuyFactsRaw,
+    yearCanChi,
+    phongThuyFetchError,
+    lasoRaw,
+  } = factsBundle;
 
-  const luuNienFactsRaw = luuNienRes.ok ? luuNienRes.data : null;
-  const phongThuyFactsRaw = phongThuyRes.ok ? phongThuyRes.data : null;
-  const phongThuyFetchError = phongThuyRes.ok
-    ? null
-    : (phongThuyRes.message ?? "Không tải phong thủy năm.");
-  if (!phongThuyRes.ok) {
-    toast.error(phongThuyFetchError);
+  let lasoData = lasoRaw;
+  if (!lasoData) {
+    const lasoRes = await invokeBatTu<unknown>({ op: "la-so", body });
+    if (!lasoRes.ok) {
+      toast.error(lasoRes.message ?? "Không tải lá số.");
+      return { ...factsBundle, sections: [] };
+    }
+    lasoData = lasoRes.data;
   }
-  const yearCanChi = resolveYearCanChi(year, luuNienFactsRaw);
+
+  const luuNienResOk = luuNienFactsRaw != null;
 
   const [lasoGen, luuNienGen, phongThuyGen] = await Promise.all([
     invokeGenerateReading({
       endpoint: "la-so-chi-tiet",
-      data: lasoRes.data,
+      data: lasoData,
     }),
-    luuNienRes.ok
+    luuNienResOk
       ? invokeGenerateReading({
           endpoint: "luu-nien",
-          data: luuNienRes.data,
+          data: luuNienFactsRaw,
         })
       : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
-    phongThuyRes.ok
+    phongThuyFactsRaw
       ? invokeGenerateReading({
           endpoint: "phong-thuy",
-          data: phongThuyRes.data,
+          data: phongThuyFactsRaw,
         })
       : Promise.resolve({ reading: null, sections: null, dayReadings: null }),
   ]);
 
-  const laSoSections = laSoSectionsFromGenerateReading(
+  let laSoSections = laSoSectionsFromGenerateReading(
     lasoGen.sections,
     lasoGen.reading,
   );
@@ -273,12 +381,31 @@ export async function loadBaziReadingFull(
   ) {
     toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
   }
+  if (
+    menhTongQuanProseFromSections(laSoSections) &&
+    !hasTinhCachLuanFromSections(laSoSections)
+  ) {
+    const tinhGen = await invokeGenerateReading({
+      endpoint: "la-so-chi-tiet",
+      data: lasoData,
+      only_tinh_cach: true,
+    });
+    const tinhSections = laSoSectionsFromGenerateReading(
+      tinhGen.sections,
+      tinhGen.reading,
+    );
+    if (tinhSections.length > 0) {
+      laSoSections = mergeLaSoTinhCachSections(laSoSections, tinhSections);
+    } else if (tinhGen.transportError === "gateway_timeout") {
+      toast.error("Luận tính cách mất quá lâu — thử tải lại luận.");
+    }
+  }
   const luuNienSections = luuNienSectionsFromGenerateReading(
     luuNienGen.sections,
     luuNienGen.reading,
   );
   const phongThuySections = phongThuySectionsFromGenerateReading(
-    phongThuyRes.ok ? phongThuyRes.data : null,
+    phongThuyFactsRaw,
     phongThuyGen.reading,
   );
 

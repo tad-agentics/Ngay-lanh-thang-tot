@@ -88,3 +88,21 @@ export function hasTinhCachLuanFromSections(
   if (tinhCachIntroFromSections(sections).length > 0) return true;
   return false;
 }
+
+function isTinhCachSectionId(id: string): boolean {
+  return (
+    id === TINH_CACH_INTRO_SECTION_ID ||
+    id === "tinh_cach" ||
+    id.startsWith(TINH_CACH_TRAIT_PREFIX)
+  );
+}
+
+/** Gộp §02 supplement vào bundle lá số (thay traits/intro cũ nếu có). */
+export function mergeLaSoTinhCachSections(
+  existing: LaSoChiTietSection[],
+  tinhCach: LaSoChiTietSection[],
+): LaSoChiTietSection[] {
+  if (tinhCach.length === 0) return existing;
+  const kept = existing.filter((s) => !isTinhCachSectionId(s.id));
+  return [...kept, ...tinhCach];
+}

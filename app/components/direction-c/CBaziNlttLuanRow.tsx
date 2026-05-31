@@ -46,21 +46,54 @@ export function CBaziNlttLuanRow({
   );
 }
 
-function NlttLuanTypingCursor() {
+/** Design system §13B — ink block cursor, 1s blink. */
+export function CBaziNlttLuanInkCursor() {
   return (
     <>
       <span
         aria-hidden
         className="inline-block align-[-2px] ml-px"
         style={{
-          width: 6,
-          height: 13,
+          width: 7,
+          height: 14,
           background: CT.ink,
           animation: "b-cursor-blink 1s steps(2) infinite",
         }}
       />
       <style>{`@keyframes b-cursor-blink { 50% { opacity: 0; } }`}</style>
     </>
+  );
+}
+
+function NlttLuanTypingCursor() {
+  return <CBaziNlttLuanInkCursor />;
+}
+
+/** Ink block + cursor while LLM chưa trả prose (không spinner). */
+export function CBaziNlttLuanInkLoading({
+  message = "Đang luận giải",
+  className,
+  compact = false,
+}: {
+  message?: string;
+  className?: string;
+  compact?: boolean;
+}) {
+  return (
+    <CBaziNlttLuanRow
+      kicker="NLTT đang luận…"
+      className={className}
+      compact={compact}
+    >
+      <p
+        className="mt-1 font-serif text-[14px] italic leading-[1.6]"
+        style={{ color: CT.ink2 }}
+        aria-live="polite"
+      >
+        {message}
+        <CBaziNlttLuanInkCursor />
+      </p>
+    </CBaziNlttLuanRow>
   );
 }
 
@@ -100,10 +133,12 @@ function CBaziNlttLuanTypingBody({
   if (loading && !fullText) {
     return (
       <p
-        className="mt-1 font-serif text-sm italic leading-relaxed"
+        className="mt-1 font-serif text-[14px] italic leading-[1.6]"
         style={{ color: CT.ink2 }}
+        aria-live="polite"
       >
-        Đang luận giải…
+        Đang luận giải
+        <CBaziNlttLuanInkCursor />
       </p>
     );
   }
@@ -185,10 +220,12 @@ export function CBaziNlttLuanProse({
     <CBaziNlttLuanRow kicker={kicker} className={className} compact={compact}>
       {loading && !hasText ? (
         <p
-          className="mt-1 font-serif text-sm italic leading-relaxed"
+          className="mt-1 font-serif text-[14px] italic leading-[1.6]"
           style={{ color: CT.ink2 }}
+          aria-live="polite"
         >
-          {loadingMessage}
+          {loadingMessage.replace(/…$/, "")}
+          <CBaziNlttLuanInkCursor />
         </p>
       ) : failed && !hasText ? (
         <>

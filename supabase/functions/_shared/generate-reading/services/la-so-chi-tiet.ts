@@ -236,14 +236,24 @@ export async function generateLaSoChiTietPreviewSections(
   return menh ? [menh] : null;
 }
 
+/** §02 only — fresh edge budget (client supplement when full bundle thiếu traits). */
+export async function generateLaSoChiTietTinhCachOnlySections(
+  payload: string,
+): Promise<LaSoChiTietSection[]> {
+  const budget = createEdgeBudget(GENERATE_READING_EDGE_BUDGET_MS);
+  return generateTinhCachTraitSections(payload, budget);
+}
+
 export async function generateLaSoChiTietFullSections(
   payload: string,
 ): Promise<LaSoChiTietSection[] | null> {
   const budget = createEdgeBudget(GENERATE_READING_EDGE_BUDGET_MS);
 
-  const menh = await generateMenhTongQuanSection(payload, budget);
-  const tinhCach = await generateTinhCachTraitSections(payload, budget);
-  const aspects = await generateLaSoChiTietAspectSections(payload, budget);
+  const [menh, tinhCach, aspects] = await Promise.all([
+    generateMenhTongQuanSection(payload, budget),
+    generateTinhCachTraitSections(payload, budget),
+    generateLaSoChiTietAspectSections(payload, budget),
+  ]);
 
   if (menh || tinhCach.length > 0 || aspects.length > 0) {
     return [...(menh ? [menh] : []), ...tinhCach, ...aspects];

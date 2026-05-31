@@ -9,6 +9,8 @@ export type GenerateContext = {
   question: string;
   variant: "" | "inline" | "teaser";
   preview: boolean;
+  /** `la-so-chi-tiet` — chỉ sinh §02 (supplement khi full bundle thiếu traits). */
+  onlyTinhCach: boolean;
   promptBody: Record<string, unknown>;
   payload: string;
   cacheKey: string;

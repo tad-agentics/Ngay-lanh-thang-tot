@@ -29,6 +29,8 @@ export type GenerateReadingInput = {
   variant?: "inline" | "teaser";
   /** `la-so-chi-tiet` paywall — chỉ trả `menh_tong_quan` cho user chưa mở khóa. */
   preview?: boolean;
+  /** `la-so-chi-tiet` — chỉ sinh §02 khi full bundle thiếu traits. */
+  only_tinh_cach?: boolean;
 };
 
 /** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */

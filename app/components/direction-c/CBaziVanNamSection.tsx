@@ -1,5 +1,8 @@
 import { Mono } from "~/components/brand";
-import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
+import {
+  CBaziNlttLuanInkLoading,
+  CBaziNlttLuanProse,
+} from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT, DISPLAY } from "~/lib/c-tokens";
 import type { LuuNienFactsView } from "~/lib/luu-nien-facts-ui";
@@ -24,6 +27,7 @@ type CBaziVanNamSectionProps = {
   yearIntroProse?: string;
   lifeAreas?: LuuNienLifeAreaView[];
   prose: string;
+  luanLoading?: boolean;
   emptyReason: string | null;
 };
 
@@ -32,6 +36,7 @@ export function CBaziVanNamSection({
   yearIntroProse = "",
   lifeAreas = [],
   prose,
+  luanLoading = false,
   emptyReason,
 }: CBaziVanNamSectionProps) {
   const areas =
@@ -72,41 +77,64 @@ export function CBaziVanNamSection({
         >
           {intro}
         </p>
+      ) : luanLoading ? (
+        <CBaziNlttLuanInkLoading message="Đang luận nhịp năm" compact />
       ) : null}
 
       {areas.length > 0 ? (
         <div className={intro ? "mt-3" : ""}>
           {areas.map((area, i, arr) => {
-            const body = area.luan.trim() || area.detail.trim();
+            const luan = area.luan.trim();
+            const detail = area.detail.trim();
             return (
-            <div
-              key={area.id}
-              className="flex gap-3.5 py-3"
-              style={{
-                borderBottom:
-                  i < arr.length - 1 ? `1px solid ${CT.hairline2}` : undefined,
-              }}
-            >
-              <div className="min-w-[78px] shrink-0">
-                <div
-                  className="font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-tight"
-                  style={{ color: CT.ink }}
-                >
-                  {area.label}
+              <div
+                key={area.id}
+                className="flex gap-3.5 py-3"
+                style={{
+                  borderBottom:
+                    i < arr.length - 1 ? `1px solid ${CT.hairline2}` : undefined,
+                }}
+              >
+                <div className="min-w-[78px] shrink-0">
+                  <div
+                    className="font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-tight"
+                    style={{ color: CT.ink }}
+                  >
+                    {area.label}
+                  </div>
+                  <Mono className="mt-0.5 text-[10px]" style={{ color: CT.goldDeep }}>
+                    {area.verdict}
+                  </Mono>
                 </div>
-                <Mono className="mt-0.5 text-[10px]" style={{ color: CT.goldDeep }}>
-                  {area.verdict}
-                </Mono>
+                <div className="min-w-0 flex-1">
+                  {luan ? (
+                    <p
+                      className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
+                      style={{ color: CT.ink2 }}
+                    >
+                      {luan}
+                    </p>
+                  ) : (
+                    <>
+                      {detail ? (
+                        <p
+                          className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
+                          style={{ color: CT.ink2 }}
+                        >
+                          {detail}
+                        </p>
+                      ) : null}
+                      {luanLoading ? (
+                        <CBaziNlttLuanInkLoading
+                          message="Đang luận"
+                          compact
+                          className={detail ? "mt-1.5" : undefined}
+                        />
+                      ) : null}
+                    </>
+                  )}
+                </div>
               </div>
-              {body ? (
-                <p
-                  className="flex-1 font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
-                  style={{ color: CT.ink2 }}
-                >
-                  {body}
-                </p>
-              ) : null}
-            </div>
             );
           })}
         </div>
@@ -164,8 +192,12 @@ export function CBaziVanNamSection({
         </div>
       ) : null}
 
-      {prose ? <CBaziNlttLuanProse text={prose} compact /> : null}
-      {!prose && !facts && emptyReason ? (
+      {prose ? (
+        <CBaziNlttLuanProse text={prose} compact />
+      ) : luanLoading ? (
+        <CBaziNlttLuanInkLoading message="Đang luận thực tiễn năm" compact />
+      ) : null}
+      {!prose && !luanLoading && !facts && emptyReason ? (
         <BaziChapterEmpty message={emptyReason} />
       ) : null}
     </div>
