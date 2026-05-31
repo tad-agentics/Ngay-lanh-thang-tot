@@ -24,6 +24,28 @@ describe("buildBaziDisplayChapters", () => {
     { id: "luu_nien_ung_xu", title: "Ứng xử", text: "QX" },
   ];
 
+  it("does not map phong_thuy or luu_nien into §01 during partial load", () => {
+    const chapters = buildBaziDisplayChapters({
+      sections: [
+        {
+          id: "phong_thuy_van",
+          title: "Phong thủy",
+          text: "Hướng tốt/xấu năm nay theo phi tinh seed — không lọc Dụng Thần.",
+        },
+      ],
+      laSo: { pillars: {} },
+      luuNienFactsRaw: null,
+      phongThuyFactsRaw: { huong_tot: ["Đông"] },
+      yearCanChi: "",
+      luanPending: true,
+    });
+    const menh = chapters.find((c) => c.key === "menh_tong_quan");
+    if (menh?.kind === "menh") {
+      expect(menh.prose).toBe("");
+      expect(menh.proseLoading).toBe(true);
+    }
+  });
+
   it("uses tong_hop prose for §01 when menh_tong_quan missing", () => {
     const chapters = buildBaziDisplayChapters({
       sections: [{ id: "tong_hop", title: "Luận giải", text: "Fallback prose" }],

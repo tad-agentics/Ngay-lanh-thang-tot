@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { baziReadingDeliveryIsComplete } from "./bazi-reading-load";
+import { MIN_MENH_TONG_QUAN_LUAN_CHARS } from "./bazi-reading-outline";
 import { LUU_NIEN_LIFE_AREA_PREFIX } from "./luu-nien-life-ui";
 import { MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS } from "./luu-nien-ui";
 
+const menhText = "m".repeat(MIN_MENH_TONG_QUAN_LUAN_CHARS);
 const traitText = "x".repeat(1500);
 const lifeText = "y".repeat(2500);
 const quyText = "z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS);
@@ -15,7 +17,7 @@ function fullSections(): {
   text: string;
 }[] {
   return [
-    { id: "menh_tong_quan", title: "Mệnh", text: "Tổng quan đủ dài." },
+    { id: "menh_tong_quan", title: "Mệnh", text: menhText },
     {
       id: "tinh_cach_trait_1",
       title: "T1",

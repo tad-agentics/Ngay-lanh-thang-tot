@@ -172,7 +172,7 @@ function sectionText(sections: LaSoChiTietSection[], id: string): string {
   return sections.find((x) => x.id === id)?.text?.trim() ?? "";
 }
 
-/** §01 — `menh_tong_quan`, hoặc `tong_hop` / section đầu khi Edge trả prose fallback. */
+/** §01 — chỉ `menh_tong_quan` hoặc `tong_hop` (legacy combined). Không fallback `sections[0]` — tránh nhầm `phong_thuy_*` / `luu_nien_*` khi onProgress tải song song. */
 export function menhTongQuanProseFromSections(
   sections: LaSoChiTietSection[],
 ): string {
@@ -180,7 +180,19 @@ export function menhTongQuanProseFromSections(
   if (menh) return menh;
   const tongHop = sectionText(sections, "tong_hop");
   if (tongHop) return tongHop;
-  return sections[0]?.text?.trim() ?? "";
+  return "";
+}
+
+/** Tối thiểu ký tự §01 full — khớp chuẩn preview Edge (`MIN_MENH_PREVIEW_CHARS` ≈ 1000); FE dùng ngưỡng thấp hơn một chút cho gate lưu. */
+export const MIN_MENH_TONG_QUAN_LUAN_CHARS = 400;
+
+export function hasMenhTongQuanLuanFromSections(
+  sections: LaSoChiTietSection[],
+): boolean {
+  return (
+    menhTongQuanProseFromSections(sections).length >=
+    MIN_MENH_TONG_QUAN_LUAN_CHARS
+  );
 }
 
 function joinSectionTexts(

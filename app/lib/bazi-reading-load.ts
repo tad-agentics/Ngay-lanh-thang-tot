@@ -13,6 +13,7 @@ import {
   buildBaziDisplayChapters,
   fallbackFlowYearCanChiLabel,
   flowYearCanChiFromFacts,
+  hasMenhTongQuanLuanFromSections,
   menhTongQuanProseFromSections,
   type BaziDisplayChapter,
 } from "~/lib/bazi-reading-outline";
@@ -162,7 +163,7 @@ export function menhOverviewFromLaSoSections(
 }
 
 function deliveryHasMenhProse(sections: LaSoChiTietSection[]): boolean {
-  return menhTongQuanProseFromSections(sections).length > 0;
+  return hasMenhTongQuanLuanFromSections(sections);
 }
 
 /** Đủ 5 § màn 18 để persist DB / fast-path cache (không regenerate thiếu §04–§05). */
