@@ -502,6 +502,25 @@ export async function loadBaziReadingFull(
       : Promise.resolve(),
   ]);
 
+  if (!deliveryHasMenhProse(laSoSections)) {
+    const menhRetry = await invokeGenerateReading({
+      endpoint: "la-so-chi-tiet",
+      data: lasoData,
+    });
+    const retryLaSo = laSoSectionsFromGenerateReading(
+      menhRetry.sections,
+      menhRetry.reading,
+    );
+    if (deliveryHasMenhProse(retryLaSo)) {
+      const retryIds = new Set(retryLaSo.map((s) => s.id));
+      laSoSections = [
+        ...retryLaSo,
+        ...laSoSections.filter((s) => !retryIds.has(s.id)),
+      ];
+      reportProgress();
+    }
+  }
+
   if (
     luuNienResOk &&
     !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
