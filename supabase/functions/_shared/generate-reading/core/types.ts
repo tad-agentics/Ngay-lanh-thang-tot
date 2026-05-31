@@ -11,6 +11,10 @@ export type GenerateContext = {
   preview: boolean;
   /** `la-so-chi-tiet` — chỉ sinh §02 (supplement khi full bundle thiếu traits). */
   onlyTinhCach: boolean;
+  /** `luu-nien` — chỉ sinh §03 life_areas. */
+  onlyLuuNienLife: boolean;
+  /** `luu-nien` — chỉ sinh §05 core (`luu_nien_ung_xu`, …). */
+  onlyLuuNienCore: boolean;
   promptBody: Record<string, unknown>;
   payload: string;
   cacheKey: string;

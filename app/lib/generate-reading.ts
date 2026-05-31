@@ -31,6 +31,10 @@ export type GenerateReadingInput = {
   preview?: boolean;
   /** `la-so-chi-tiet` — chỉ sinh §02 khi full bundle thiếu traits. */
   only_tinh_cach?: boolean;
+  /** `luu-nien` — chỉ sinh §03 life_areas. */
+  only_luu_nien_life?: boolean;
+  /** `luu-nien` — chỉ sinh §05 core (`luu_nien_ung_xu`, …). */
+  only_luu_nien_core?: boolean;
 };
 
 /** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */

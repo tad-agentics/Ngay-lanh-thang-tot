@@ -26,7 +26,7 @@ describe("acquireGenerateReadingRateLimit", () => {
 
     await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(true);
     expect(redisSetNxEx).toHaveBeenCalledWith(
-      "gen_reading_rl:v1:user-1",
+      "gen_reading_rl:v1:user-1:default",
       "1",
       10,
     );
@@ -40,7 +40,7 @@ describe("acquireGenerateReadingRateLimit", () => {
       acquireGenerateReadingRateLimit("user-1", { followUp: true }),
     ).resolves.toBe(true);
     expect(redisSetNxEx).toHaveBeenCalledWith(
-      "gen_reading_rl_followup:v1:user-1",
+      "gen_reading_rl_followup:v1:user-1:default",
       "1",
       2,
     );
@@ -51,7 +51,29 @@ describe("acquireGenerateReadingRateLimit", () => {
     redisGetString.mockResolvedValue("1");
 
     await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(false);
-    expect(redisGetString).toHaveBeenCalledWith("gen_reading_rl:v1:user-1");
+    expect(redisGetString).toHaveBeenCalledWith(
+      "gen_reading_rl:v1:user-1:default",
+    );
+  });
+
+  it("allows parallel scopes for Bát Tự bundle invokes", async () => {
+    redisSetNxEx.mockResolvedValue(true);
+
+    await expect(
+      acquireGenerateReadingRateLimit("user-1", {
+        scope: "la-so-chi-tiet",
+      }),
+    ).resolves.toBe(true);
+    await expect(
+      acquireGenerateReadingRateLimit("user-1", {
+        scope: "luu-nien:only-luu-life",
+      }),
+    ).resolves.toBe(true);
+    expect(redisSetNxEx).toHaveBeenCalledWith(
+      "gen_reading_rl:v1:user-1:luu-nien:only-luu-life",
+      "1",
+      10,
+    );
   });
 
   it("fails open when NX returns false but GET finds no key (Redis error)", async () => {

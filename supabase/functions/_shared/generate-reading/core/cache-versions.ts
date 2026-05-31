@@ -1,7 +1,9 @@
 /** Cache invalidation versions per endpoint/prompt. */
 
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
-export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-tinh-cach-parallel-v2";
+export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-bazi-bundle-v3";
+export const LUU_NIEN_ONLY_LIFE_CACHE_VER = "2026-05-31-luu-life-only-v1";
+export const LUU_NIEN_ONLY_CORE_CACHE_VER = "2026-05-31-luu-core-only-v1";
 export const LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER = "2026-05-31-tinh-cach-only-v1";
 export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
 export const TIEU_VAN_PROMPT_VER = "2026-05-31-tieu-van-split-v1";
@@ -22,11 +24,14 @@ export function endpointCacheVersion(
   opts: {
     preview: boolean;
     onlyTinhCach?: boolean;
+    onlyLuuNienLife?: boolean;
+    onlyLuuNienCore?: boolean;
     question: string;
     variant: string;
   },
 ): string {
-  const { preview, onlyTinhCach, question, variant } = opts;
+  const { preview, onlyTinhCach, onlyLuuNienLife, onlyLuuNienCore, question, variant } =
+    opts;
   if (endpoint === "la-so-chi-tiet") {
     if (onlyTinhCach) {
       return `${LA_SO_CHI_TIET_CACHE_VER}:${LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER}`;
@@ -36,7 +41,15 @@ export function endpointCacheVersion(
       : LA_SO_CHI_TIET_CACHE_VER;
   }
   if (endpoint === "tieu-van") return TIEU_VAN_PROMPT_VER;
-  if (endpoint === "luu-nien") return LUU_NIEN_PROMPT_VER;
+  if (endpoint === "luu-nien") {
+    if (onlyLuuNienLife) {
+      return `${LUU_NIEN_PROMPT_VER}:${LUU_NIEN_ONLY_LIFE_CACHE_VER}`;
+    }
+    if (onlyLuuNienCore) {
+      return `${LUU_NIEN_PROMPT_VER}:${LUU_NIEN_ONLY_CORE_CACHE_VER}`;
+    }
+    return LUU_NIEN_PROMPT_VER;
+  }
   if (endpoint === "hop-tuoi") return HOP_TUOI_PROMPT_VER;
   if (endpoint === "day-detail") {
     if (question) return `${DAY_DETAIL_FOLLOW_UP_VER}:${DAY_DETAIL_MULTITURN_VER}`;

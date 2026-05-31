@@ -39,7 +39,11 @@ async function generateLuuNienCoreSections(
 ): Promise<LaSoChiTietSection[] | null> {
   const { payload, data } = ctx;
   const profile = llmProfileForEndpoint("luu-nien");
-  const llmOpts = { profile, jsonMode: true as const };
+  const llmOpts = {
+    profile,
+    jsonMode: true as const,
+    disableThinking: true,
+  };
 
   const jsonTimeout = () =>
     budget.callTimeout(
@@ -124,17 +128,26 @@ async function cacheAndReturnSections(
 export async function generateLuuNienReading(
   ctx: GenerateContext,
 ): Promise<GenerateResult> {
-  const { endpoint, payload, admin, now, cacheKey } = ctx;
+  const { endpoint, payload, onlyLuuNienLife, onlyLuuNienCore } = ctx;
   const budget = createEdgeBudget(GENERATE_READING_EDGE_BUDGET_MS);
 
-  const [lifeSections, coreSections] = await Promise.all([
-    generateLuuNienLifeAreaSections(payload, budget),
-    generateLuuNienCoreSections(ctx, budget),
-  ]);
-  const merged = [...lifeSections, ...(coreSections ?? [])];
-
-  if (merged.length > 0) {
-    return cacheAndReturnSections(ctx, merged);
+  if (onlyLuuNienLife) {
+    const lifeSections = await generateLuuNienLifeAreaSections(payload, budget);
+    if (lifeSections.length > 0) {
+      return cacheAndReturnSections(ctx, lifeSections);
+    }
+  } else if (onlyLuuNienCore) {
+    const coreSections = await generateLuuNienCoreSections(ctx, budget);
+    if (coreSections?.length) {
+      return cacheAndReturnSections(ctx, coreSections);
+    }
+  } else {
+    const lifeSections = await generateLuuNienLifeAreaSections(payload, budget);
+    const coreSections = await generateLuuNienCoreSections(ctx, budget);
+    const merged = [...lifeSections, ...(coreSections ?? [])];
+    if (merged.length > 0) {
+      return cacheAndReturnSections(ctx, merged);
+    }
   }
 
   if (!budget.canSpend(PROSE_ROUND_MIN_MS)) {

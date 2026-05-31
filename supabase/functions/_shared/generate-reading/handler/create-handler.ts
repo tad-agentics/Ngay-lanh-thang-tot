@@ -3,6 +3,7 @@ import { requireBaziReadingAuth } from "../../bazi-reading-gate.ts";
 import { buildDayLuanPromptContext } from "../../day-luan-prompt-context.ts";
 import {
   acquireGenerateReadingRateLimit,
+  generateReadingRateLimitScope,
   preflightAiReadingAccess,
 } from "../../generate-reading-guards.ts";
 import { isLuanContextPayload } from "../../luan-context.ts";
@@ -33,6 +34,10 @@ export type GenerateReadingHandlerOptions = {
   tieuVanCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
   /** Full `la-so-chi-tiet` cache must include §02 traits (not chỉ menh + aspects). */
   laSoChiTietCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** `luu-nien` + `only_luu_nien_life`. */
+  luuNienLifeCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
+  /** `luu-nien` + `only_luu_nien_core`. */
+  luuNienCoreCachedSectionsValid?: (sections: LaSoChiTietSection[]) => boolean;
 };
 
 export function createGenerateReadingHandler(
@@ -75,6 +80,16 @@ export function createGenerateReadingHandler(
     const preview = body.preview === true;
     const onlyTinhCach =
       endpoint === "la-so-chi-tiet" && body.only_tinh_cach === true;
+    const onlyLuuNienLife =
+      endpoint === "luu-nien" && body.only_luu_nien_life === true;
+    const onlyLuuNienCore =
+      endpoint === "luu-nien" && body.only_luu_nien_core === true;
+    if (onlyLuuNienLife && onlyLuuNienCore) {
+      console.warn(
+        "generate-reading: only_luu_nien_life and only_luu_nien_core are mutually exclusive",
+      );
+      return ok(null, null, req);
+    }
     const anchorReading = parseAnchorReading(body.anchor_reading);
     const threadHistory = parseThreadHistory(body.thread_history);
 
@@ -209,13 +224,15 @@ export function createGenerateReadingHandler(
     const endpointVer = endpointCacheVersion(endpoint, {
       preview,
       onlyTinhCach,
+      onlyLuuNienLife,
+      onlyLuuNienCore,
       question,
       variant,
     });
     const threadJson = threadHistory.length
       ? stableStringify(threadHistory)
       : "";
-    const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${onlyTinhCach ? "only-tinh-cach" : ""}\n${threadJson}\n${anchorReading ? await sha256Prefix16(anchorReading.slice(0, 4000)) : ""}\n${dataJson}`;
+    const cacheInput = `${GLOBAL_LLM_VER}\n${endpointVer}\n${endpoint}\n${variant}\n${question}\n${preview ? "preview" : ""}\n${onlyTinhCach ? "only-tinh-cach" : ""}\n${onlyLuuNienLife ? "only-luu-life" : ""}\n${onlyLuuNienCore ? "only-luu-core" : ""}\n${threadJson}\n${anchorReading ? await sha256Prefix16(anchorReading.slice(0, 4000)) : ""}\n${dataJson}`;
     const cacheKey = await sha256Prefix16(cacheInput);
 
     const payload = stableStringify(promptBody);
@@ -264,9 +281,16 @@ export function createGenerateReadingHandler(
             }
           } else if (endpoint === "tieu-van" || endpoint === "luu-nien") {
             if (cached.sections != null && cached.sections.length > 0) {
-              const validate =
+              let validate =
                 options.cachedSectionsValid ??
                 options.tieuVanCachedSectionsValid;
+              if (endpoint === "luu-nien" && onlyLuuNienLife) {
+                validate =
+                  options.luuNienLifeCachedSectionsValid ?? validate;
+              } else if (endpoint === "luu-nien" && onlyLuuNienCore) {
+                validate =
+                  options.luuNienCoreCachedSectionsValid ?? validate;
+              }
               const valid = validate?.(cached.sections) ?? true;
               if (valid) {
                 return ok(null, cached.sections, req);
@@ -294,8 +318,14 @@ export function createGenerateReadingHandler(
     }
 
     if (rateLimitUserId) {
+      const rlScope = generateReadingRateLimitScope(endpoint, {
+        onlyTinhCach,
+        onlyLuuNienLife,
+        onlyLuuNienCore,
+      });
       const slot = await acquireGenerateReadingRateLimit(rateLimitUserId, {
         followUp: question.length > 0,
+        scope: rlScope,
       });
       if (!slot) {
         console.warn(
@@ -315,6 +345,8 @@ export function createGenerateReadingHandler(
       variant,
       preview,
       onlyTinhCach,
+      onlyLuuNienLife,
+      onlyLuuNienCore,
       promptBody,
       payload,
       cacheKey,

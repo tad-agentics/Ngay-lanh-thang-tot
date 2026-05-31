@@ -74,6 +74,23 @@ export function phongThuyFactsToProse(facts: unknown): string {
   return parts.join("\n\n");
 }
 
+export function phongThuyProseFromSections(
+  sections: LaSoChiTietSection[],
+): string {
+  return sections
+    .filter((s) => s.id.startsWith("phong_thuy_"))
+    .map((s) => s.text.trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+/** §04 — có luận LLM (không chỉ facts deterministic). */
+export function hasPhongThuyLuanFromSections(
+  sections: LaSoChiTietSection[],
+): boolean {
+  return phongThuyProseFromSections(sections).length >= 80;
+}
+
 export function phongThuySectionsFromGenerateReading(
   facts: unknown,
   reading: string | null,

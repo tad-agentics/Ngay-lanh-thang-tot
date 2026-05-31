@@ -59,6 +59,21 @@ export async function preflightAiReadingAccess(
   return { allowed: false, reason: "sub_expired" };
 }
 
+/** Một scope / cửa sổ — Bát Tự bundle gọi song song la-so + luu-life + luu-core + phong-thuy. */
+export function generateReadingRateLimitScope(
+  endpoint: string,
+  opts?: {
+    onlyTinhCach?: boolean;
+    onlyLuuNienLife?: boolean;
+    onlyLuuNienCore?: boolean;
+  },
+): string {
+  if (opts?.onlyTinhCach) return `${endpoint}:only-tinh-cach`;
+  if (opts?.onlyLuuNienLife) return `${endpoint}:only-luu-life`;
+  if (opts?.onlyLuuNienCore) return `${endpoint}:only-luu-core`;
+  return endpoint;
+}
+
 /**
  * Fixed window: at most one generate-reading LLM path per user per window.
  * Follow-ups use a separate key so the initial day luận does not block chat 10s.
@@ -66,12 +81,13 @@ export async function preflightAiReadingAccess(
  */
 export async function acquireGenerateReadingRateLimit(
   userId: string,
-  opts?: { followUp?: boolean },
+  opts?: { followUp?: boolean; /** Per-endpoint/subset — Bát Tự bundle gọi song song. */ scope?: string },
 ): Promise<boolean> {
   const followUp = opts?.followUp === true;
+  const scope = (opts?.scope ?? "default").trim() || "default";
   const key = followUp
-    ? `gen_reading_rl_followup:v1:${userId}`
-    : `gen_reading_rl:v1:${userId}`;
+    ? `gen_reading_rl_followup:v1:${userId}:${scope}`
+    : `gen_reading_rl:v1:${userId}:${scope}`;
   const windowSec = followUp
     ? FOLLOW_UP_RATE_LIMIT_WINDOW_SEC
     : RATE_LIMIT_WINDOW_SEC;

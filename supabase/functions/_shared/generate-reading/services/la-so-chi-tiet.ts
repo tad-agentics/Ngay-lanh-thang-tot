@@ -249,18 +249,18 @@ export async function generateLaSoChiTietFullSections(
 ): Promise<LaSoChiTietSection[] | null> {
   const budget = createEdgeBudget(GENERATE_READING_EDGE_BUDGET_MS);
 
-  const [menh, tinhCach, aspects] = await Promise.all([
+  /** Màn 18 (5 §) chỉ dùng menh + tinh_cach — aspects chỉ còn trong combined fallback legacy. */
+  const [menh, tinhCach] = await Promise.all([
     generateMenhTongQuanSection(payload, budget),
     generateTinhCachTraitSections(payload, budget),
-    generateLaSoChiTietAspectSections(payload, budget),
   ]);
 
-  if (menh || tinhCach.length > 0 || aspects.length > 0) {
-    return [...(menh ? [menh] : []), ...tinhCach, ...aspects];
+  if (menh || tinhCach.length > 0) {
+    return [...(menh ? [menh] : []), ...tinhCach];
   }
 
   console.warn(
-    "[luận-giải] la-so-chi-tiet full: §01/aspects trống — fallback một lần gọi",
+    "[luận-giải] la-so-chi-tiet full: §01/§02 trống — fallback một lần gọi",
     budget.elapsed(),
   );
   return generateLaSoChiTietCombinedFallback(payload, budget);

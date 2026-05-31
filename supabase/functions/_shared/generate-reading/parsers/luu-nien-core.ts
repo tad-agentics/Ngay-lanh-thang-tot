@@ -72,7 +72,7 @@ export function luuNienCoreSectionsNeedLengthRetry(
 }
 
 /** Cache hợp lệ chỉ khi đủ 4 life_areas LLM (khớp FE delivery gate). */
-export function luuNienCachedSectionsValid(
+export function luuNienLifeCachedSectionsValid(
   sections: LaSoChiTietSection[],
 ): boolean {
   const lifeOk = sections.filter(
@@ -81,4 +81,22 @@ export function luuNienCachedSectionsValid(
       s.text.trim().length >= MIN_LUU_NIEN_LIFE_AREA_CHARS,
   ).length;
   return lifeOk >= LUU_NIEN_FULL_LIFE_AREA_COUNT;
+}
+
+/** @deprecated Use luuNienLifeCachedSectionsValid */
+export const luuNienCachedSectionsValid = luuNienLifeCachedSectionsValid;
+
+/** Cache `only_luu_nien_core` — đủ 3 phần nhịp năm. */
+export function luuNienCoreCachedSectionsValid(
+  sections: LaSoChiTietSection[],
+): boolean {
+  const coreIds = new Set(
+    LUU_NIEN_CORE_SECTION_ORDER.map((id) => `luu_nien_${id}`),
+  );
+  const ok = sections.filter(
+    (s) =>
+      coreIds.has(s.id) &&
+      !coreSectionTooShort(s.text),
+  ).length;
+  return ok >= LUU_NIEN_CORE_SECTION_ORDER.length;
 }

@@ -11,19 +11,18 @@ import {
   fetchBaziReadingDelivery,
 } from "~/lib/bazi-reading-delivery";
 import {
+  baziReadingDeliveryIsComplete,
   buildBaziSkeletonChapters,
   fetchBaziReadingFactsBundle,
   loadBaziReadingFull,
   type BaziReadingFactsBundle,
+  type BaziReadingLoadResult,
 } from "~/lib/bazi-reading-load";
 import {
   buildBaziDisplayChapters,
-  menhTongQuanProseFromSections,
   type BaziDisplayChapter,
 } from "~/lib/bazi-reading-outline";
-import { hasLuuNienLifeLuanFromSections } from "~/lib/luu-nien-life-ui";
-import { parseLuuNienFactsView } from "~/lib/luu-nien-facts-ui";
-import { hasTinhCachLuanFromSections } from "~/lib/personality-traits-ui";
+import type { LaSoChiTietSection } from "~/lib/generate-reading";
 import {
   baziReadingCacheRevision,
   currentYearVn,
@@ -35,17 +34,38 @@ import { canUseBaziReading } from "~/lib/entitlements";
 import { profileHasLaso } from "~/lib/la-so-ui";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 
+function buildChaptersFromLoadResult(
+  partial: BaziReadingLoadResult,
+  profileLaSo: LaSoJson | null,
+  options?: { luanPending?: boolean },
+): BaziDisplayChapter[] {
+  return buildBaziDisplayChapters({
+    sections: partial.sections,
+    laSo: partial.laSoDisplay ?? profileLaSo,
+    luuNienFactsRaw: partial.luuNienFactsRaw,
+    phongThuyFactsRaw: partial.phongThuyFactsRaw,
+    yearCanChi: partial.yearCanChi,
+    phongThuyFetchError: partial.phongThuyFetchError,
+    luanPending: options?.luanPending,
+  });
+}
+
+function cachedDeliveryIsComplete(
+  sections: LaSoChiTietSection[],
+  luuNienFactsRaw: unknown | null,
+  phongThuyFactsRaw: unknown | null,
+): boolean {
+  return baziReadingDeliveryIsComplete(sections, {
+    luuNienFactsRaw,
+    phongThuyFactsRaw,
+  });
+}
+
 function chaptersFromSession(
   cached: NonNullable<ReturnType<typeof readBaziReadingSession>>,
   profileLaSo: LaSoJson | null,
 ): BaziDisplayChapter[] {
-  return buildBaziDisplayChapters({
-    sections: cached.sections,
-    laSo: cached.laSoDisplay ?? profileLaSo,
-    luuNienFactsRaw: cached.luuNienFactsRaw,
-    phongThuyFactsRaw: cached.phongThuyFactsRaw,
-    yearCanChi: cached.yearCanChi,
-  });
+  return buildChaptersFromLoadResult(cached, profileLaSo);
 }
 
 export function CBaziReadingScreen() {
@@ -83,25 +103,17 @@ export function CBaziReadingScreen() {
       if (dbDelivery) {
         const fromDb = deliveryToLoadResult(dbDelivery);
         if (
-          menhTongQuanProseFromSections(fromDb.sections) &&
-          hasTinhCachLuanFromSections(fromDb.sections) &&
-          hasLuuNienLifeLuanFromSections(
+          cachedDeliveryIsComplete(
             fromDb.sections,
-            Math.max(
-              1,
-              parseLuuNienFactsView(fromDb.luuNienFactsRaw)?.lifeAreas.length ??
-                4,
-            ),
+            fromDb.luuNienFactsRaw,
+            fromDb.phongThuyFactsRaw,
           )
         ) {
           setChapters(
-            buildBaziDisplayChapters({
-              sections: fromDb.sections,
-              laSo: fromDb.laSoDisplay ?? (profile.la_so as LaSoJson) ?? null,
-              luuNienFactsRaw: fromDb.luuNienFactsRaw,
-              phongThuyFactsRaw: fromDb.phongThuyFactsRaw,
-              yearCanChi: fromDb.yearCanChi,
-            }),
+            buildChaptersFromLoadResult(
+              fromDb,
+              (profile.la_so as LaSoJson) ?? null,
+            ),
           );
           setGenerating(false);
           return;
@@ -113,14 +125,10 @@ export function CBaziReadingScreen() {
       if (cancelled) return;
       if (
         cached &&
-        menhTongQuanProseFromSections(cached.sections) &&
-        hasTinhCachLuanFromSections(cached.sections) &&
-        hasLuuNienLifeLuanFromSections(
+        cachedDeliveryIsComplete(
           cached.sections,
-          Math.max(
-            1,
-            parseLuuNienFactsView(cached.luuNienFactsRaw)?.lifeAreas.length ?? 4,
-          ),
+          cached.luuNienFactsRaw,
+          cached.phongThuyFactsRaw,
         )
       ) {
         setChapters(
@@ -140,23 +148,27 @@ export function CBaziReadingScreen() {
       await runFullLoad(facts ?? undefined);
     })();
 
+    const profileLaSo = (profile.la_so as LaSoJson) ?? null;
+
+    const applyPartial = (partial: BaziReadingLoadResult) => {
+      setChapters(
+        buildChaptersFromLoadResult(partial, profileLaSo, { luanPending: true }),
+      );
+    };
+
     async function runFullLoad(preloadedFacts?: BaziReadingFactsBundle) {
       const gen = ++genRef.current;
       if (cancelled) return;
       setGenerating(true);
       const full = await loadBaziReadingFull(profile, year, {
         preloadedFacts: preloadedFacts ?? factsRef.current ?? undefined,
+        onProgress: (partial) => {
+          if (cancelled || gen !== genRef.current) return;
+          applyPartial(partial);
+        },
       });
       if (cancelled || gen !== genRef.current) return;
-      const built = buildBaziDisplayChapters({
-        sections: full.sections,
-        laSo: full.laSoDisplay,
-        luuNienFactsRaw: full.luuNienFactsRaw,
-        phongThuyFactsRaw: full.phongThuyFactsRaw,
-        yearCanChi: full.yearCanChi,
-        phongThuyFetchError: full.phongThuyFetchError,
-      });
-      setChapters(built);
+      setChapters(buildChaptersFromLoadResult(full, profileLaSo));
       if (full.sections.length > 0) {
         const revision = baziReadingCacheRevision(profile, year);
         persistBaziReadingSession(profile.id, revision, {
@@ -178,6 +190,7 @@ export function CBaziReadingScreen() {
   const retryLoad = () => {
     if (!profile || !unlocked) return;
     const gen = ++genRef.current;
+    const profileLaSo = (profile.la_so as LaSoJson) ?? null;
     setGenerating(true);
     void (async () => {
       const facts =
@@ -188,21 +201,19 @@ export function CBaziReadingScreen() {
         factsRef.current = facts;
         setChapters(buildBaziSkeletonChapters(facts));
       }
+      const applyPartial = (partial: BaziReadingLoadResult) => {
+        if (gen !== genRef.current) return;
+        setChapters(
+          buildChaptersFromLoadResult(partial, profileLaSo, { luanPending: true }),
+        );
+      };
       const full = await loadBaziReadingFull(profile, year, {
         forceRegenerate: true,
         preloadedFacts: facts ?? undefined,
+        onProgress: applyPartial,
       });
       if (gen !== genRef.current) return;
-      setChapters(
-        buildBaziDisplayChapters({
-          sections: full.sections,
-          laSo: full.laSoDisplay,
-          luuNienFactsRaw: full.luuNienFactsRaw,
-          phongThuyFactsRaw: full.phongThuyFactsRaw,
-          yearCanChi: full.yearCanChi,
-          phongThuyFetchError: full.phongThuyFetchError,
-        }),
-      );
+      setChapters(buildChaptersFromLoadResult(full, profileLaSo));
       if (full.sections.length > 0) {
         persistBaziReadingSession(
           profile.id,
@@ -219,6 +230,18 @@ export function CBaziReadingScreen() {
       setGenerating(false);
     })();
   };
+
+  const pendingLuanCount = useMemo(() => {
+    if (!chapters || !generating) return 0;
+    return chapters.filter((ch) => {
+      if (ch.kind === "menh") return ch.proseLoading;
+      if (ch.kind === "tinh_cach") return ch.luanLoading;
+      if (ch.kind === "van_nam") return ch.luanLoading;
+      if (ch.kind === "phong_thuy") return ch.proseLoading;
+      if (ch.kind === "quy_nhan") return ch.proseLoading;
+      return false;
+    }).length;
+  }, [chapters, generating]);
 
   const hasContent = useMemo(
     () =>
@@ -326,13 +349,15 @@ export function CBaziReadingScreen() {
                 />
               ) : null,
             )}
-            {generating ? (
+            {generating && pendingLuanCount > 0 ? (
               <p
                 className="mt-6 text-center font-serif text-[12px] italic"
                 style={{ color: CT.muted }}
                 aria-live="polite"
               >
-                NLTT đang hoàn thiện luận giải…
+                {pendingLuanCount >= 5
+                  ? "NLTT đang soạn luận giải — bạn có thể đọc từng phần bên trên khi sẵn sàng."
+                  : `Đang soạn thêm ${pendingLuanCount} phần luận…`}
               </p>
             ) : null}
           </>
