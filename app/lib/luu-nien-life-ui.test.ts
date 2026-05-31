@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   hasLuuNienLifeLuanFromSections,
   mergeLuuNienLifeAreasWithLuan,
+  MIN_LUU_NIEN_LIFE_LUAN_CHARS,
+  MIN_LUU_NIEN_LIFE_LUAN_PARAGRAPHS,
   parseLifeAreaLuanFromSections,
 } from "./luu-nien-life-ui";
 
@@ -55,7 +57,7 @@ describe("mergeLuuNienLifeAreasWithLuan", () => {
 });
 
 describe("hasLuuNienLifeLuanFromSections", () => {
-  const long = "x".repeat(2_500);
+  const long = `p1\n\np2\n\n${"x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS)}`;
 
   it("requires expected life area count with min length", () => {
     expect(
@@ -92,5 +94,16 @@ describe("hasLuuNienLifeLuanFromSections", () => {
         4,
       ),
     ).toBe(false);
+  });
+
+  it("rejects long single-paragraph life luan", () => {
+    const onePara = "x".repeat(MIN_LUU_NIEN_LIFE_LUAN_CHARS);
+    expect(
+      hasLuuNienLifeLuanFromSections(
+        [{ id: "luu_nien_life_a", title: "A", text: onePara }],
+        1,
+      ),
+    ).toBe(false);
+    expect(MIN_LUU_NIEN_LIFE_LUAN_PARAGRAPHS).toBe(3);
   });
 });

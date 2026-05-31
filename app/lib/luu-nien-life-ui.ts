@@ -7,8 +7,17 @@ export const LUU_NIEN_LIFE_AREA_PREFIX = "luu_nien_life_";
 /** Số lĩnh vực life_areas chuẩn trên màn §03 — khớp parser Edge. */
 export const LUU_NIEN_FULL_LIFE_AREA_COUNT = 4;
 
-/** Tối thiểu ký tự / mục — khớp `MIN_LUU_NIEN_LIFE_AREA_CHARS` Edge. */
-const MIN_LUU_NIEN_LIFE_LUAN_CHARS = 2_400;
+/** Tối thiểu ký tự / mục — khớp `MIN_LUU_NIEN_LIFE_AREA_CHARS` Edge (~500 chữ). */
+export const MIN_LUU_NIEN_LIFE_LUAN_CHARS = 420;
+export const MIN_LUU_NIEN_LIFE_LUAN_PARAGRAPHS = 3;
+
+function countParagraphs(text: string): number {
+  return text
+    .trim()
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean).length;
+}
 
 export type LuuNienLifeAreaView = LuuNienLifeArea & {
   /** Luận dài từ generate-reading; ưu tiên hơn `detail` API. */
@@ -38,7 +47,11 @@ export function parseLifeAreaLuanFromSections(
 }
 
 function isCompleteLifeAreaLuan(text: string): boolean {
-  return text.trim().length >= MIN_LUU_NIEN_LIFE_LUAN_CHARS;
+  const t = text.trim();
+  return (
+    t.length >= MIN_LUU_NIEN_LIFE_LUAN_CHARS &&
+    countParagraphs(t) >= MIN_LUU_NIEN_LIFE_LUAN_PARAGRAPHS
+  );
 }
 
 export function luuNienYearIntroFromSections(

@@ -7,7 +7,7 @@ import { MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS } from "./luu-nien-ui";
 
 const menhText = "m".repeat(MIN_MENH_TONG_QUAN_LUAN_CHARS);
 const traitText = "x".repeat(1500);
-const lifeText = "y".repeat(2500);
+const lifeText = `a\n\nb\n\n${"y".repeat(420)}`;
 const quyText = "z".repeat(MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS);
 const phongText = "p".repeat(80);
 

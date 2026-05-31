@@ -60,10 +60,10 @@ export const MIN_TINH_CACH_TRAIT_CHARS = 2_400;
 export const MIN_TINH_CACH_TRAIT_PARAGRAPHS = 2;
 export const MIN_TINH_CACH_INTRO_CHARS = 120;
 
-/** §03 mỗi life_area_readings[].text — ~500 từ, 2–3 đoạn. */
-export const MIN_LUU_NIEN_LIFE_AREA_CHARS = 2_400;
-export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS = 2;
-export const READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS = 12_288;
+/** §03 mỗi life_area_readings[].text — ~500 chữ, đúng 3 đoạn. */
+export const MIN_LUU_NIEN_LIFE_AREA_CHARS = 420;
+export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS = 3;
+export const READING_MAX_TOKENS_LUU_NIEN_LIFE_AREAS = 6_144;
 
 export const TTL_MS: Record<string, number> = {
   "ngay-hom-nay": 24 * 60 * 60 * 1000,

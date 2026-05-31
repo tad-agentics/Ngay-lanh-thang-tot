@@ -29,8 +29,8 @@ function coerceLifeAreaText(v: unknown): string | null {
   return t.length > 0 ? t : null;
 }
 
-export const MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED = 1_400;
-export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED = 1;
+export const MIN_LUU_NIEN_LIFE_AREA_CHARS_RELAXED = 300;
+export const MIN_LUU_NIEN_LIFE_AREA_PARAGRAPHS_RELAXED = 2;
 
 export function luuNienLifeAreaProseTooShort(
   text: string,

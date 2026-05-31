@@ -5,6 +5,7 @@ import {
 } from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT, DISPLAY } from "~/lib/c-tokens";
+import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 import type { LuuNienFactsView } from "~/lib/luu-nien-facts-ui";
 import type { LuuNienLifeAreaView } from "~/lib/luu-nien-life-ui";
 
@@ -112,15 +113,20 @@ export function CBaziVanNamSection({
                 </div>
                 <div className="min-w-0 flex-1">
                   {luan ? (
-                    <p
-                      className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
-                      style={{ color: CT.ink2 }}
-                    >
-                      {luan}
-                    </p>
+                    <div className="space-y-2.5">
+                      {splitNlttLuanParagraphs(luan).map((para) => (
+                        <p
+                          key={para.slice(0, 48)}
+                          className="font-serif text-[12.5px] leading-relaxed"
+                          style={{ color: CT.ink2 }}
+                        >
+                          {para}
+                        </p>
+                      ))}
+                    </div>
                   ) : (
                     <>
-                      {detail ? (
+                      {detail && !luanLoading ? (
                         <p
                           className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
                           style={{ color: CT.ink2 }}
@@ -129,11 +135,7 @@ export function CBaziVanNamSection({
                         </p>
                       ) : null}
                       {luanLoading ? (
-                        <CBaziNlttLuanInkLoading
-                          message="Đang luận"
-                          compact
-                          className={detail ? "mt-1.5" : undefined}
-                        />
+                        <CBaziNlttLuanInkLoading message="Đang luận" compact />
                       ) : null}
                     </>
                   )}

@@ -20,7 +20,7 @@ function callTimeout(budget: EdgeBudget): number {
   return budget.callTimeout(LA_SO_CHI_TIET_TIMEOUT_MS);
 }
 
-/** §03 — luận ~500 từ / lĩnh vực vận năm. */
+/** §03 — luận ~500 chữ / 3 đoạn / lĩnh vực vận năm. */
 export async function generateLuuNienLifeAreaSections(
   payload: string,
   budget: EdgeBudget,
