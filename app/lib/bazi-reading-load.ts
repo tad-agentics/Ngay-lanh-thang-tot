@@ -64,7 +64,20 @@ export type BaziReadingLoadResult = {
   yearCanChi: string;
   /** `bat-tu` op `phong-thuy` failed — §04 may be empty despite other chapters OK. */
   phongThuyFetchError: string | null;
+  /** Ít nhất một invoke Edge bị Chrome ngắt (tab background / đổi mạng). */
+  networkInterrupted?: boolean;
 };
+
+const BAZI_NETWORK_INTERRUPTED_TOAST_ID = "bazi-network-interrupted";
+
+function noteGenerateTransport(
+  res: { transportError?: string },
+  flags: { networkInterrupted: boolean },
+): void {
+  if (res.transportError === "network_interrupted") {
+    flags.networkInterrupted = true;
+  }
+}
 
 /** Facts lá số + lưu niên + phong thủy — không gọi LLM. */
 export type BaziReadingFactsBundle = Omit<BaziReadingLoadResult, "sections"> & {
@@ -408,6 +421,7 @@ export async function loadBaziReadingFull(
   let laSoSections: LaSoChiTietSection[] = [];
   let luuNienSections: LaSoChiTietSection[] = [];
   let phongThuySections: LaSoChiTietSection[] = [];
+  const transportFlags = { networkInterrupted: false };
 
   const mergeSections = () =>
     mergeBaziReadingWithPhongThuy(
@@ -448,6 +462,7 @@ export async function loadBaziReadingFull(
     data: lasoData,
     preview: true,
   });
+  noteGenerateTransport(menhGen, transportFlags);
   laSoSections = laSoSectionsFromGenerateReading(
     menhGen.sections,
     menhGen.reading,
@@ -469,6 +484,7 @@ export async function loadBaziReadingFull(
         data: lasoData,
         only_tinh_cach: true,
       });
+      noteGenerateTransport(tinhGen, transportFlags);
       const tinhSections = laSoSectionsFromGenerateReading(
         tinhGen.sections,
         tinhGen.reading,
@@ -488,6 +504,7 @@ export async function loadBaziReadingFull(
             data: luuNienFactsRaw,
             only_luu_nien_life: true,
           });
+          noteGenerateTransport(lifeGen, transportFlags);
           luuNienSections = mergeLuuNienGenerateSections(
             luuNienSectionsFromGenerateReading(
               lifeGen.sections,
@@ -508,6 +525,7 @@ export async function loadBaziReadingFull(
             endpoint: "phong-thuy",
             data: phongThuyFactsRaw,
           });
+          noteGenerateTransport(phongThuyGen, transportFlags);
           phongThuySections = phongThuySectionsFromGenerateReading(
             phongThuyFactsRaw,
             phongThuyGen.sections,
@@ -526,6 +544,7 @@ export async function loadBaziReadingFull(
       data: luuNienFactsRaw,
       only_luu_nien_core: true,
     });
+    noteGenerateTransport(coreGen, transportFlags);
     luuNienSections = mergeLuuNienGenerateSections(
       luuNienSections,
       luuNienSectionsFromGenerateReading(coreGen.sections, coreGen.reading),
@@ -543,6 +562,7 @@ export async function loadBaziReadingFull(
       data: lasoData,
       preview: true,
     });
+    noteGenerateTransport(menhRetry, transportFlags);
     const retryMenh = laSoSectionsFromGenerateReading(
       menhRetry.sections,
       menhRetry.reading,
@@ -562,6 +582,7 @@ export async function loadBaziReadingFull(
       data: lasoData,
       only_tinh_cach: true,
     });
+    noteGenerateTransport(tinhRetry, transportFlags);
     const retryTinh = laSoSectionsFromGenerateReading(
       tinhRetry.sections,
       tinhRetry.reading,
@@ -580,6 +601,7 @@ export async function loadBaziReadingFull(
       data: luuNienFactsRaw,
       only_luu_nien_life: true,
     });
+    noteGenerateTransport(lifeRetry, transportFlags);
     const retryLife = luuNienSectionsFromGenerateReading(
       lifeRetry.sections,
       lifeRetry.reading,
@@ -595,6 +617,7 @@ export async function loadBaziReadingFull(
       data: luuNienFactsRaw,
       only_luu_nien_core: true,
     });
+    noteGenerateTransport(coreRetry, transportFlags);
     const retryCore = luuNienSectionsFromGenerateReading(
       coreRetry.sections,
       coreRetry.reading,
@@ -614,6 +637,7 @@ export async function loadBaziReadingFull(
         endpoint: "phong-thuy",
         data: phongThuyFactsRaw,
       });
+      noteGenerateTransport(phongRetry, transportFlags);
       const retryPt = phongThuySectionsFromGenerateReading(
         phongThuyFactsRaw,
         phongRetry.sections,
@@ -641,7 +665,18 @@ export async function loadBaziReadingFull(
     phongThuyFactsRaw,
     yearCanChi,
     phongThuyFetchError,
+    networkInterrupted: transportFlags.networkInterrupted,
   };
+
+  if (
+    transportFlags.networkInterrupted &&
+    !deliveryHasFullLuanSections(sections, luuNienFactsRaw, phongThuyFactsRaw)
+  ) {
+    toast.error(
+      "Kết nối bị ngắt khi đang luận — giữ tab mở, rồi thử Tải lại luận.",
+      { id: BAZI_NETWORK_INTERRUPTED_TOAST_ID },
+    );
+  }
 
   if (
     sections.length > 0 &&

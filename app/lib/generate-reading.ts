@@ -40,7 +40,9 @@ export type GenerateReadingInput = {
 /** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */
 export type GenerateReadingTransportError =
   | "gateway_timeout"
-  | "invoke_failed";
+  | "invoke_failed"
+  /** Tab background / đổi mạng — Chrome ERR_NETWORK_* */
+  | "network_interrupted";
 
 export type GenerateReadingResponse = {
   reading: string | null;
@@ -78,11 +80,42 @@ function transportErrorFromStatus(
   return "invoke_failed";
 }
 
+/** Chrome: IO_SUSPENDED, NETWORK_CHANGED, Failed to fetch, … */
+export function isClientNetworkFailure(error: unknown): boolean {
+  const parts: string[] = [];
+  if (error instanceof Error) {
+    parts.push(error.message, error.name);
+    const cause = (error as Error & { cause?: unknown }).cause;
+    if (cause instanceof Error) parts.push(cause.message);
+  } else if (typeof error === "string") {
+    parts.push(error);
+  } else if (error && typeof error === "object" && "message" in error) {
+    parts.push(String((error as { message: unknown }).message));
+  }
+  const blob = parts.join(" ").toLowerCase();
+  return (
+    blob.includes("failed to fetch") ||
+    blob.includes("load failed") ||
+    blob.includes("network error") ||
+    blob.includes("err_network") ||
+    blob.includes("io_suspended") ||
+    blob.includes("network_changed") ||
+    blob.includes("internet connection appears to be offline")
+  );
+}
+
 function transportErrorFromInvoke(
   error: unknown,
 ): GenerateReadingTransportError {
+  if (isClientNetworkFailure(error)) {
+    return "network_interrupted";
+  }
   if (error instanceof FunctionsHttpError) {
-    return transportErrorFromStatus(functionsHttpStatus(error));
+    const status = functionsHttpStatus(error);
+    if (status === undefined && isClientNetworkFailure(error.message)) {
+      return "network_interrupted";
+    }
+    return transportErrorFromStatus(status);
   }
   return "invoke_failed";
 }
@@ -247,23 +280,46 @@ function generateReadingResponseEmpty(res: GenerateReadingResponse): boolean {
 }
 
 const RATE_LIMIT_RETRY_MS = 11_000;
+const NETWORK_RETRY_DELAYS_MS = [2_000, 5_000] as const;
+
+function shouldRetryRateLimitEmpty(res: GenerateReadingResponse): boolean {
+  return generateReadingResponseEmpty(res) && !res.transportError;
+}
+
+function shouldRetryNetwork(res: GenerateReadingResponse): boolean {
+  return res.transportError === "network_interrupted";
+}
 
 /**
- * Gọi Edge luận giải; nếu 200 rỗng (thường do rate limit 10s) thì chờ và thử lại một lần.
+ * Gọi Edge luận giải; retry khi 200 rỗng (rate limit) hoặc mạng tab bị ngắt.
  */
 export async function invokeGenerateReadingWithRetry(
   input: GenerateReadingInput,
 ): Promise<GenerateReadingResponse> {
-  const first = await invokeGenerateReading(input);
-  if (!generateReadingResponseEmpty(first) || first.transportError) {
-    return first;
+  let res = await invokeGenerateReading(input);
+
+  if (shouldRetryRateLimitEmpty(res)) {
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+    res = await invokeGenerateReading(input);
   }
-  await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
-  const second = await invokeGenerateReading(input);
-  if (generateReadingResponseEmpty(second) && import.meta.env.DEV) {
+
+  for (const waitMs of NETWORK_RETRY_DELAYS_MS) {
+    if (!shouldRetryNetwork(res)) break;
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    res = await invokeGenerateReading(input);
+    if (shouldRetryRateLimitEmpty(res)) {
+      await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+      res = await invokeGenerateReading(input);
+    }
+  }
+
+  if (generateReadingResponseEmpty(res) && import.meta.env.DEV) {
     console.warn("[luận-giải] Edge trả rỗng sau retry", input.endpoint);
   }
-  return second;
+  if (shouldRetryNetwork(res) && import.meta.env.DEV) {
+    console.warn("[luận-giải] Mạng client ngắt sau retry", input.endpoint);
+  }
+  return res;
 }
 
 export async function invokeGenerateReading(

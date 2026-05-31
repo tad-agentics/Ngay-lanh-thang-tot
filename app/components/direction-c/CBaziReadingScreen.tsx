@@ -95,6 +95,10 @@ export function CBaziReadingScreen() {
   const [generating, setGenerating] = useState(true);
   const genRef = useRef(0);
   const factsRef = useRef<BaziReadingFactsBundle | null>(null);
+  const partialLoadRef = useRef<BaziReadingLoadResult | null>(null);
+  const needsVisibleResumeRef = useRef(false);
+  const resumeLoadRef = useRef<(() => Promise<void>) | null>(null);
+  const visibleResumeInFlightRef = useRef(false);
   const unlocked = canUseBaziReading(profile);
   const year = currentYearVn();
 
@@ -179,6 +183,7 @@ export function CBaziReadingScreen() {
         preloadedFacts: preloadedFacts ?? factsRef.current ?? undefined,
         onProgress: (partial, chapterLoad) => {
           if (cancelled || gen !== genRef.current) return;
+          partialLoadRef.current = partial;
           persistPartialBaziSession(profile.id, sessionRevision, partial);
           setChapters(
             buildChaptersFromLoadResult(partial, profileLaSo, { chapterLoad }),
@@ -186,6 +191,7 @@ export function CBaziReadingScreen() {
         },
       });
       if (cancelled || gen !== genRef.current) return;
+      partialLoadRef.current = full;
       setChapters(
         buildChaptersFromLoadResult(full, profileLaSo, {
           chapterLoad: deriveChapterLoadState(full.sections, {
@@ -199,13 +205,44 @@ export function CBaziReadingScreen() {
       if (full.sections.length > 0) {
         persistPartialBaziSession(profile.id, sessionRevision, full);
       }
+      needsVisibleResumeRef.current = Boolean(
+        full.networkInterrupted &&
+          !cachedDeliveryIsComplete(
+            full.sections,
+            full.luuNienFactsRaw,
+            full.phongThuyFactsRaw,
+          ),
+      );
       setGenerating(false);
     }
 
+    resumeLoadRef.current = () => runFullLoad(factsRef.current ?? undefined);
+
     return () => {
       cancelled = true;
+      resumeLoadRef.current = null;
     };
   }, [profile, profileLoading, unlocked, year]);
+
+  useEffect(() => {
+    if (!profile || !unlocked) return;
+
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!needsVisibleResumeRef.current) return;
+      if (generating || visibleResumeInFlightRef.current) return;
+      if (!factsRef.current) return;
+
+      needsVisibleResumeRef.current = false;
+      visibleResumeInFlightRef.current = true;
+      void resumeLoadRef.current?.().finally(() => {
+        visibleResumeInFlightRef.current = false;
+      });
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [profile, unlocked, generating]);
 
   const retryLoad = () => {
     if (!profile || !unlocked) return;
@@ -227,6 +264,7 @@ export function CBaziReadingScreen() {
         preloadedFacts: facts ?? undefined,
         onProgress: (partial, chapterLoad) => {
           if (gen !== genRef.current) return;
+          partialLoadRef.current = partial;
           persistPartialBaziSession(profile.id, sessionRevision, partial);
           setChapters(
             buildChaptersFromLoadResult(partial, profileLaSo, { chapterLoad }),
@@ -234,6 +272,7 @@ export function CBaziReadingScreen() {
         },
       });
       if (gen !== genRef.current) return;
+      partialLoadRef.current = full;
       setChapters(
         buildChaptersFromLoadResult(full, profileLaSo, {
           chapterLoad: deriveChapterLoadState(full.sections, {
@@ -247,6 +286,14 @@ export function CBaziReadingScreen() {
       if (full.sections.length > 0) {
         persistPartialBaziSession(profile.id, sessionRevision, full);
       }
+      needsVisibleResumeRef.current = Boolean(
+        full.networkInterrupted &&
+          !cachedDeliveryIsComplete(
+            full.sections,
+            full.luuNienFactsRaw,
+            full.phongThuyFactsRaw,
+          ),
+      );
       setGenerating(false);
     })();
   };
