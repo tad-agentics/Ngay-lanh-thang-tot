@@ -3,9 +3,12 @@ import {
   CBaziNlttLuanInkLoading,
   CBaziNlttLuanProse,
 } from "~/components/direction-c/CBaziNlttLuanRow";
+import {
+  CBaziLuanSubsectionProse,
+  CBaziLuanSubsectionWithState,
+} from "~/components/direction-c/CBaziLuanSubsection";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import { CT, DISPLAY } from "~/lib/c-tokens";
-import { splitNlttLuanParagraphs } from "~/lib/nltt-luan-prose";
 import type { LuuNienFactsView } from "~/lib/luu-nien-facts-ui";
 import type { LuuNienLifeAreaView } from "~/lib/luu-nien-life-ui";
 
@@ -48,7 +51,6 @@ export function CBaziVanNamSection({
   emptyReason,
   onRetryLuan,
 }: CBaziVanNamSectionProps) {
-  const areaLuanLoading = lifeLuanLoading ?? luanLoading;
   const areas =
     lifeAreas.length > 0
       ? lifeAreas
@@ -81,12 +83,7 @@ export function CBaziVanNamSection({
       ) : null}
 
       {intro ? (
-        <p
-          className="font-serif text-[13px] leading-relaxed whitespace-pre-wrap"
-          style={{ color: CT.ink }}
-        >
-          {intro}
-        </p>
+        <CBaziLuanSubsectionProse text={intro} />
       ) : luanLoading ? (
         <div role="status" aria-live="polite">
           <CBaziNlttLuanInkLoading message="Đang luận nhịp năm" compact />
@@ -95,65 +92,21 @@ export function CBaziVanNamSection({
 
       {areas.length > 0 ? (
         <div className={intro ? "mt-3" : ""}>
-          {areas.map((area, i, arr) => {
-            const luan = area.luan.trim();
-            const detail = area.detail.trim();
-            return (
-              <div
-                key={area.id}
-                className="flex gap-3.5 py-3"
-                style={{
-                  borderBottom:
-                    i < arr.length - 1 ? `1px solid ${CT.hairline2}` : undefined,
-                }}
-              >
-                <div className="min-w-[78px] shrink-0">
-                  <div
-                    className="font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-tight"
-                    style={{ color: CT.ink }}
-                  >
-                    {area.label}
-                  </div>
-                  <Mono className="mt-0.5 text-[10px]" style={{ color: CT.goldDeep }}>
-                    {area.verdict}
-                  </Mono>
-                </div>
-                <div className="min-w-0 flex-1">
-                  {luan ? (
-                    <div className="space-y-2.5">
-                      {splitNlttLuanParagraphs(luan).map((para) => (
-                        <p
-                          key={para.slice(0, 48)}
-                          className="font-serif text-[12.5px] leading-relaxed"
-                          style={{ color: CT.ink2 }}
-                        >
-                          {para}
-                        </p>
-                      ))}
-                    </div>
-                  ) : areaLuanLoading ? (
-                    <div role="status" aria-live="polite">
-                      <CBaziNlttLuanInkLoading message="Đang luận" compact />
-                    </div>
-                  ) : chapterVanFailed ? (
-                    <CBaziNlttLuanProse
-                      failed
-                      failedMessage="Lĩnh vực này chưa luận được — thử Tải lại luận."
-                      onRetry={onRetryLuan}
-                      compact
-                    />
-                  ) : detail ? (
-                    <p
-                      className="font-serif text-[12.5px] leading-relaxed whitespace-pre-wrap"
-                      style={{ color: CT.ink2 }}
-                    >
-                      {detail}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
+          {areas.map((area) => (
+            <CBaziLuanSubsectionWithState
+              key={area.id}
+              label={area.label}
+              subtitle={area.verdict || undefined}
+              text={area.luan}
+              luanLoading={
+                area.luanLoading ??
+                ((lifeLuanLoading ?? luanLoading) && !area.luan.trim())
+              }
+              luanFailed={area.luanFailed}
+              failedMessage="Lĩnh vực này chưa luận được — thử Tải lại luận."
+              onRetry={onRetryLuan}
+            />
+          ))}
         </div>
       ) : null}
 

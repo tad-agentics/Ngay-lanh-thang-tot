@@ -32,7 +32,16 @@ export type PersonalityTraitView = {
   id: string;
   title: string;
   text: string;
+  luanLoading?: boolean;
+  luanFailed?: boolean;
 };
+
+export const TINH_CACH_SKELETON_TRAITS: PersonalityTraitView[] = [
+  { id: "diem_manh", title: "Điểm mạnh", text: "" },
+  { id: "ca_tinh", title: "Cá tính nổi bật", text: "" },
+  { id: "can_luu", title: "Điểm cần lưu ý", text: "" },
+  { id: "tinh_cam", title: "Tình cảm & quan hệ", text: "" },
+];
 
 /** `LaSoResponse.personality_traits[]` (OpenAPI 0.1.3) — §02 Direction C màn 18. */
 export function parsePersonalityTraitsFromLaSo(
@@ -90,7 +99,8 @@ export function tinhCachIntroFromSections(
   return legacy?.text?.trim() ?? "";
 }
 
-function traitLuanMeetsMin(text: string): boolean {
+/** Đủ độ dài delivery §02 (420 ký tự, 2 đoạn). */
+export function isTraitLuanDeliveryComplete(text: string): boolean {
   const t = text.trim();
   if (t.length < MIN_TINH_CACH_TRAIT_LUAN_CHARS) return false;
   if (splitNlttLuanParagraphs(t).length < MIN_TINH_CACH_TRAIT_LUAN_PARAGRAPHS) {
@@ -103,7 +113,7 @@ export function countTinhCachTraitsWithLuan(
   sections: LaSoChiTietSection[],
 ): number {
   return parsePersonalityTraitsFromSections(sections).filter((t) =>
-    traitLuanMeetsMin(t.text),
+    isTraitLuanDeliveryComplete(t.text),
   ).length;
 }
 
@@ -131,7 +141,7 @@ export function missingTinhCachTraitIds(
       : ["diem_manh", "ca_tinh", "can_luu", "tinh_cam"];
   const have = new Set(
     parsePersonalityTraitsFromSections(sections)
-      .filter((t) => traitLuanMeetsMin(t.text))
+      .filter((t) => isTraitLuanDeliveryComplete(t.text))
       .map((t) => normalizeTraitId(t.id)),
   );
   return expected.filter((id) => !have.has(id));
@@ -160,4 +170,35 @@ export function mergeLaSoTinhCachSections(
     (s) => s.id !== "tinh_cach" && !supplementIds.has(s.id),
   );
   return [...kept, ...tinhCach];
+}
+
+/** Luôn 4 mục theo lá số — merge luận LLM theo id để hiện từng trait khi xong. */
+export function mergePersonalityTraitsWithLuan(
+  laSo: LaSoJson | null | undefined,
+  sections: LaSoChiTietSection[],
+): PersonalityTraitView[] {
+  const fromLaSo = parsePersonalityTraitsFromLaSo(laSo);
+  const fromLlm = parsePersonalityTraitsFromSections(sections);
+  const expected =
+    fromLaSo.length >= 4
+      ? fromLaSo
+      : fromLlm.length > 0
+        ? fromLlm.map((t) => ({ id: t.id, title: t.title, text: "" }))
+        : fromLaSo.length > 0
+          ? fromLaSo
+          : [];
+  const textById = new Map(
+    fromLlm.map((t) => [normalizeTraitId(t.id), t.text]),
+  );
+  const titleById = new Map(
+    fromLlm.map((t) => [normalizeTraitId(t.id), t.title]),
+  );
+  return expected.map((t) => {
+    const key = normalizeTraitId(t.id);
+    return {
+      ...t,
+      title: titleById.get(key) ?? t.title,
+      text: textById.get(key) ?? "",
+    };
+  });
 }

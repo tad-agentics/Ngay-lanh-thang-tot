@@ -20,18 +20,10 @@ import {
 import {
   hasTinhCachDisplayLuanFromSections,
   hasTinhCachLuanFromSections,
-  parsePersonalityTraitsFromLaSo,
-  parsePersonalityTraitsFromSections,
+  mergePersonalityTraitsWithLuan,
+  TINH_CACH_SKELETON_TRAITS,
   tinhCachIntroFromSections,
-  type PersonalityTraitView,
 } from "~/lib/personality-traits-ui";
-
-const SKELETON_TINH_CACH_TRAITS: PersonalityTraitView[] = [
-  { id: "diem_manh", title: "Điểm mạnh", text: "" },
-  { id: "ca_tinh", title: "Cá tính nổi bật", text: "" },
-  { id: "can_luu", title: "Điểm cần lưu ý", text: "" },
-  { id: "tinh_cam", title: "Tình cảm & quan hệ", text: "" },
-];
 import {
   parsePhongThuyFactsView,
   type PhongThuyFactsView,
@@ -281,7 +273,6 @@ export function buildBaziDisplayChapters(input: {
   const sections = expandEmbeddedSectionsEnvelope(input.sections);
 
   const menhProse = menhTongQuanProseFromSections(sections);
-  const traits = parsePersonalityTraitsFromSections(sections);
   const tinhCachIntro = tinhCachIntroFromSections(sections);
   const tinhCachLegacy = sectionText(sections, "tinh_cach");
   const yearIntroProse = luuNienYearIntroFromSections(sections);
@@ -319,6 +310,14 @@ export function buildBaziDisplayChapters(input: {
     typeof input.laSo === "object" &&
     Object.keys(input.laSo as object).length > 0;
 
+  const traitsMerged = mergePersonalityTraitsWithLuan(input.laSo, sections);
+  const traits =
+    traitsMerged.length > 0
+      ? traitsMerged
+      : tinhLoading && hasLaSo
+        ? TINH_CACH_SKELETON_TRAITS
+        : [];
+
   return outline.map((meta) => {
     switch (meta.key) {
       case "menh_tong_quan": {
@@ -344,28 +343,30 @@ export function buildBaziDisplayChapters(input: {
       }
       case "tinh_cach": {
         const hasLuan = hasTinhDeliveryLuan || hasTinhDisplayLuan;
-        const skeletonTraits = (() => {
-          if (!tinhLoading || hasLuan) return traits;
-          const fromLaSo = parsePersonalityTraitsFromLaSo(input.laSo).map((t) => ({
+        const tinhChapterFailed =
+          (load ? load.tinh_cach === "failed" : !luanPending) &&
+          !hasTinhDisplayLuan &&
+          !hasTinhDeliveryLuan &&
+          hasLaSo;
+        const tinhSettled = load ? load.tinh_cach !== "loading" : !luanPending;
+        const traitsWithStatus = traits.map((t) => {
+          const hasText = t.text.trim().length > 0;
+          return {
             ...t,
-            text: "",
-          }));
-          return fromLaSo.length > 0 ? fromLaSo : SKELETON_TINH_CACH_TRAITS;
-        })();
+            luanLoading: tinhLoading && !hasText,
+            luanFailed: tinhSettled && hasLaSo && !hasText,
+          };
+        });
         return {
           key: meta.key,
           index: meta.index,
           title: meta.title,
           kind: "tinh_cach",
-          traits: skeletonTraits,
+          traits: traitsWithStatus,
           introProse: tinhCachIntro || (traits.length === 0 ? tinhCachLegacy : ""),
           prose: traits.length === 0 ? tinhCachLegacy : "",
-          luanLoading: tinhLoading && !hasLuan && skeletonTraits.length > 0,
-          luanFailed:
-            (load ? load.tinh_cach === "failed" : !luanPending) &&
-            !hasTinhDisplayLuan &&
-            !hasTinhDeliveryLuan &&
-            hasLaSo,
+          luanLoading: tinhLoading && traitsWithStatus.some((t) => t.luanLoading),
+          luanFailed: tinhChapterFailed,
           emptyReason:
             hasLuan || tinhLoading || hasLaSo
               ? null
@@ -373,10 +374,19 @@ export function buildBaziDisplayChapters(input: {
         };
       }
       case "van_nam": {
-        const chapterVanFailed =
+        const vanChapterFailed =
           load ? load.van_nam === "failed" : !luanPending;
-        const lifeLuanLoading =
+        const vanSettled = load ? load.van_nam !== "loading" : !luanPending;
+        const vanStillLoading =
           vanLoading && Boolean(luuParsed) && !hasLifeAreaLuan;
+        const lifeAreasWithStatus = lifeAreas.map((area) => {
+          const hasText = area.luan.trim().length > 0;
+          return {
+            ...area,
+            luanLoading: vanLoading && Boolean(luuParsed) && !hasText,
+            luanFailed: vanSettled && Boolean(luuParsed) && !hasText,
+          };
+        });
         return {
           key: meta.key,
           index: meta.index,
@@ -384,12 +394,12 @@ export function buildBaziDisplayChapters(input: {
           kind: "van_nam",
           facts: luuParsed,
           yearIntroProse,
-          lifeAreas,
+          lifeAreas: lifeAreasWithStatus,
           prose: vanProse,
-          lifeLuanLoading,
+          lifeLuanLoading: vanStillLoading,
           luanLoading:
             vanLoading && Boolean(luuParsed) && !hasVanNarrativeLuan,
-          chapterVanFailed,
+          chapterVanFailed: vanChapterFailed && !hasLifeAreaLuan,
           emptyReason: luuParsed || vanLoading
             ? null
             : "Chưa có dữ liệu vận năm. Kiểm tra kết nối hoặc thử lại.",

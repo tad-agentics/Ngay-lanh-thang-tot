@@ -258,6 +258,44 @@ describe("buildBaziDisplayChapters", () => {
     }
   });
 
+  it("marks only incomplete life areas luanFailed when van_nam chapter failed", () => {
+    const longLuan = `${"Đoạn một. ".repeat(60)}\n\n${"Đoạn hai. ".repeat(60)}\n\n${"Đoạn ba. ".repeat(60)}`;
+    const chapters = buildBaziDisplayChapters({
+      sections: [
+        {
+          id: "luu_nien_life_suc_khoe",
+          title: "Sức khỏe",
+          text: longLuan,
+        },
+      ],
+      laSo: { pillars: {} },
+      luuNienFactsRaw: {
+        life_areas: [
+          { id: "suc_khoe", label: "Sức khỏe", verdict: "Tốt", detail: "" },
+          { id: "tai_loc", label: "Tài lộc", verdict: "Trung", detail: "" },
+        ],
+      },
+      phongThuyFactsRaw: null,
+      yearCanChi: "",
+      chapterLoad: {
+        menh_tong_quan: "done",
+        tinh_cach: "done",
+        van_nam: "failed",
+        phong_thuy: "done",
+        quy_nhan: "done",
+      },
+    });
+    const van = chapters.find((c) => c.key === "van_nam");
+    if (van?.kind === "van_nam") {
+      expect(van.lifeAreas.find((a) => a.id === "suc_khoe")?.luanFailed).toBe(
+        false,
+      );
+      expect(van.lifeAreas.find((a) => a.id === "tai_loc")?.luanFailed).toBe(
+        true,
+      );
+    }
+  });
+
   it("does not duplicate luu-nien prose across van_nam and quy_nhan", () => {
     const sections: LaSoChiTietSection[] = [
       { id: "luu_nien_nhin_chung", title: "Nhịp", text: "A" },

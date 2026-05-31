@@ -62,6 +62,8 @@ import {
 const BAZI_INVOKE_STAGGER_MS = 1_500;
 /** Khớp `RATE_LIMIT_RETRY_MS` trong `generate-reading.ts`. */
 const BAZI_MENH_WAVE_RETRY_MS = 11_000;
+/** Preview §01 trước Wave 2 — tránh 8× la-so khi mệnh còn trống. */
+const BAZI_MENH_PREVIEW_MAX_ATTEMPTS = 2;
 
 export type BaziReadingLoadResult = {
   sections: LaSoChiTietSection[];
@@ -414,10 +416,6 @@ export async function loadBaziReadingFull(
   }
 
   const luuNienResOk = luuNienFactsRaw != null;
-  const expectedLifeAreas = Math.max(
-    1,
-    parseLuuNienFactsView(luuNienFactsRaw)?.lifeAreas.length ?? 4,
-  );
 
   let laSoSections: LaSoChiTietSection[] = [];
   let luuNienSections: LaSoChiTietSection[] = [];
@@ -457,45 +455,44 @@ export async function loadBaziReadingFull(
       setTimeout(resolve, slot * BAZI_INVOKE_STAGGER_MS);
     });
 
-  // Wave 1 — §01 menh only (preview path, cache riêng; không gọi full la-so 52s).
-  const menhGen = await invokeGenerateReadingWithRetry({
-    endpoint: "la-so-chi-tiet",
-    data: lasoData,
-    preview: true,
-  });
-  noteGenerateTransport(menhGen, transportFlags);
-  laSoSections = laSoSectionsFromGenerateReading(
-    menhGen.sections,
-    menhGen.reading,
-  );
-  reportProgress();
-  if (
-    !menhTongQuanProseFromSections(laSoSections) &&
-    menhGen.transportError === "gateway_timeout"
-  ) {
-    toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
-  }
-  // Wave 1 retry — preview dùng scope riêng nhưng vẫn có thể rỗng (rate limit / LLM).
-  if (!deliveryHasMenhProse(laSoSections)) {
-    await new Promise((resolve) => setTimeout(resolve, BAZI_MENH_WAVE_RETRY_MS));
-    const menhWaveRetry = await invokeGenerateReadingWithRetry({
+  const mergeMenhPreviewSections = (
+    incoming: LaSoChiTietSection[],
+  ): LaSoChiTietSection[] => {
+    if (incoming.length === 0) return laSoSections;
+    const incomingIds = new Set(incoming.map((s) => s.id));
+    return [
+      ...incoming,
+      ...laSoSections.filter((s) => !incomingIds.has(s.id)),
+    ];
+  };
+
+  // Wave 1 — §01 preview: tối đa 3 lần (scope riêng) trước Wave 2.
+  for (let menhAttempt = 0; menhAttempt < BAZI_MENH_PREVIEW_MAX_ATTEMPTS; menhAttempt++) {
+    if (menhAttempt > 0) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, BAZI_MENH_WAVE_RETRY_MS),
+      );
+    }
+    const menhGen = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
       preview: true,
     });
-    noteGenerateTransport(menhWaveRetry, transportFlags);
-    const waveMenh = laSoSectionsFromGenerateReading(
-      menhWaveRetry.sections,
-      menhWaveRetry.reading,
+    noteGenerateTransport(menhGen, transportFlags);
+    const menhSections = laSoSectionsFromGenerateReading(
+      menhGen.sections,
+      menhGen.reading,
     );
-    if (waveMenh.length > 0) {
-      const waveIds = new Set(waveMenh.map((s) => s.id));
-      laSoSections = [
-        ...waveMenh,
-        ...laSoSections.filter((s) => !waveIds.has(s.id)),
-      ];
-      reportProgress();
+    laSoSections = mergeMenhPreviewSections(menhSections);
+    reportProgress();
+    if (
+      menhAttempt === 0 &&
+      !deliveryHasMenhProse(laSoSections) &&
+      menhGen.transportError === "gateway_timeout"
+    ) {
+      toast.error("Luận tổng quan mất quá lâu — thử tải lại luận.");
     }
+    if (deliveryHasMenhProse(laSoSections)) break;
   }
 
   // Wave 2 — §02 + §03 song song (scope rate limit khác nhau).
@@ -571,37 +568,15 @@ export async function loadBaziReadingFull(
     reportProgress();
   }
 
-  // Targeted retries (chỉ § còn thiếu).
-  if (!deliveryHasMenhProse(laSoSections)) {
-    const menhRetry = await invokeGenerateReadingWithRetry({
-      endpoint: "la-so-chi-tiet",
-      data: lasoData,
-      preview: true,
-    });
-    noteGenerateTransport(menhRetry, transportFlags);
-    const retryMenh = laSoSectionsFromGenerateReading(
-      menhRetry.sections,
-      menhRetry.reading,
-    );
-    if (retryMenh.length > 0) {
-      const retryIds = new Set(retryMenh.map((s) => s.id));
-      laSoSections = [
-        ...retryMenh,
-        ...laSoSections.filter((s) => !retryIds.has(s.id)),
-      ];
-      reportProgress();
-    }
-  }
-  if (!hasTinhCachLuanFromSections(laSoSections)) {
-    const missingTraits = missingTinhCachTraitIds(laSoDisplay, laSoSections);
-    await stagger(1);
+  // Targeted gap-fill — một invoke / mục còn thiếu (snapshot cố định để không bỏ sót).
+  const missingTraits = missingTinhCachTraitIds(laSoDisplay, laSoSections);
+  for (let i = 0; i < missingTraits.length; i++) {
+    await stagger(i + 1);
     const tinhRetry = await invokeGenerateReadingWithRetry({
       endpoint: "la-so-chi-tiet",
       data: lasoData,
       only_tinh_cach: true,
-      ...(missingTraits.length > 0 && missingTraits.length < 4
-        ? { tinh_cach_trait_ids: missingTraits }
-        : {}),
+      tinh_cach_trait_ids: [missingTraits[i]],
     });
     noteGenerateTransport(tinhRetry, transportFlags);
     const retryTinh = laSoSectionsFromGenerateReading(
@@ -613,29 +588,29 @@ export async function loadBaziReadingFull(
       reportProgress();
     }
   }
-  if (
-    luuNienResOk &&
-    !hasLuuNienLifeLuanFromSections(luuNienSections, expectedLifeAreas)
-  ) {
+  if (luuNienResOk) {
     const luuFacts = parseLuuNienFactsView(luuNienFactsRaw);
     const missingLife = missingLuuNienLifeAreaIds(luuFacts, luuNienSections);
-    await stagger(1);
-    const lifeRetry = await invokeGenerateReadingWithRetry({
-      endpoint: "luu-nien",
-      data: luuNienFactsRaw,
-      only_luu_nien_life: true,
-      ...(missingLife.length > 0 && missingLife.length < expectedLifeAreas
-        ? { luu_nien_life_area_ids: missingLife }
-        : {}),
-    });
-    noteGenerateTransport(lifeRetry, transportFlags);
-    const retryLife = luuNienSectionsFromGenerateReading(
-      lifeRetry.sections,
-      lifeRetry.reading,
-    );
-    if (retryLife.length > 0) {
-      luuNienSections = mergeLuuNienGenerateSections(retryLife, luuNienSections);
-      reportProgress();
+    for (let i = 0; i < missingLife.length; i++) {
+      await stagger(i + 1);
+      const lifeRetry = await invokeGenerateReadingWithRetry({
+        endpoint: "luu-nien",
+        data: luuNienFactsRaw,
+        only_luu_nien_life: true,
+        luu_nien_life_area_ids: [missingLife[i]],
+      });
+      noteGenerateTransport(lifeRetry, transportFlags);
+      const retryLife = luuNienSectionsFromGenerateReading(
+        lifeRetry.sections,
+        lifeRetry.reading,
+      );
+      if (retryLife.length > 0) {
+        luuNienSections = mergeLuuNienGenerateSections(
+          retryLife,
+          luuNienSections,
+        );
+        reportProgress();
+      }
     }
   }
   if (luuNienResOk && !hasLuuNienQuyNhanLuanFromSections(luuNienSections)) {

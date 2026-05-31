@@ -22,6 +22,10 @@ function countParagraphs(text: string): number {
 export type LuuNienLifeAreaView = LuuNienLifeArea & {
   /** Luận dài từ generate-reading; ưu tiên hơn `detail` API. */
   luan: string;
+  /** Bundle xong mà mục này chưa đủ luận delivery. */
+  luanFailed?: boolean;
+  /** Mục này đang chờ LLM (các mục khác có thể đã hiện). */
+  luanLoading?: boolean;
 };
 
 function normalizeAreaId(id: string): string {
@@ -46,7 +50,8 @@ export function parseLifeAreaLuanFromSections(
   return out;
 }
 
-function isCompleteLifeAreaLuan(text: string): boolean {
+/** Đủ độ dài delivery §03 (420 ký tự, 3 đoạn). */
+export function isLifeAreaLuanDeliveryComplete(text: string): boolean {
   const t = text.trim();
   return (
     t.length >= MIN_LUU_NIEN_LIFE_LUAN_CHARS &&
@@ -113,7 +118,7 @@ export function hasLuuNienLifeLuanFromSections(
   expectedCount = LUU_NIEN_FULL_LIFE_AREA_COUNT,
 ): boolean {
   const areas = parseLifeAreaLuanFromSections(sections).filter((a) =>
-    isCompleteLifeAreaLuan(a.text),
+    isLifeAreaLuanDeliveryComplete(a.text),
   );
   return areas.length >= expectedCount;
 }
@@ -126,11 +131,11 @@ export function missingLuuNienLifeAreaIds(
   const merged = mergeLuuNienLifeAreasWithLuan(facts, sections);
   if (merged.length > 0) {
     return merged
-      .filter((a) => !isCompleteLifeAreaLuan(a.luan))
+      .filter((a) => !isLifeAreaLuanDeliveryComplete(a.luan))
       .map((a) => normalizeAreaId(a.id));
   }
   const fromLlm = parseLifeAreaLuanFromSections(sections).filter(
-    (a) => !isCompleteLifeAreaLuan(a.text),
+    (a) => !isLifeAreaLuanDeliveryComplete(a.text),
   );
   return fromLlm.map((a) => normalizeAreaId(a.id));
 }
