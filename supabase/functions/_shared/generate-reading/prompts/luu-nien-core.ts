@@ -22,10 +22,10 @@ Công việc, tài chính, quan hệ **trong năm**; bám life_areas / month_sco
 Luận **một mạch văn xuôi**, lồng ghép **tự nhiên** mọi fact có trong data — **không** liệt kê khô kiểu gạch đầu dòng hay 3 câu tách rời.
 
 Bắt buộc có trong nội dung (chỉ khi data có field tương ứng — bỏ qua hoàn toàn nếu thiếu):
-1. **Tuổi hợp** — dùng `quy_nhan.tuoi_hop` hoặc `quy_nhan.tuoiHop` (cùng một field, ưu tiên snake_case): hợp để làm gì — đối tác, hợp tác, tin cậy, khi nào nên chủ động kết nối.
-2. **Tuổi xung** — dùng `quy_nhan.tuoi_xung` hoặc `quy_nhan.tuoiXung`: xung nghĩa là gì trong năm — va chạm, hiểu lầm, tránh gì.
+1. **Tuổi hợp** — dùng quy_nhan.tuoi_hop hoặc quy_nhan.tuoiHop (cùng một field, ưu tiên snake_case): hợp để làm gì — đối tác, hợp tác, tin cậy, khi nào nên chủ động kết nối.
+2. **Tuổi xung** — dùng quy_nhan.tuoi_xung hoặc quy_nhan.tuoiXung: xung nghĩa là gì trong năm — va chạm, hiểu lầm, tránh gì.
 3. **Làm việc cùng tuổi xung**: cách khắc chế, ranh giới, nhịp giao tiếp — thực tế, không đạo lý chung chung. Bỏ nếu không có tuổi xung.
-4. **Hướng quý nhân** (`quy_nhan.huong_quy_nhan` hoặc `huong_quy_nhan`), **ghi chú** `quy_nhan.note` — xen vào đoạn, không tách câu riêng “Quý nhân đến từ phương …”. Bỏ nếu không có field.
+4. **Hướng quý nhân** (quy_nhan.huong_quy_nhan hoặc huong_quy_nhan), **ghi chú** quy_nhan.note — xen vào đoạn, không tách câu riêng “Quý nhân đến từ phương …”. Bỏ nếu không có field.
 5. **Đại vận năm tới** (dai_van_next): can chi, hành, khoảng tuổi/năm — ý nghĩa chuyển tiếp, không copy nguyên chuỗi label API.
 
 Không lặp 4 lĩnh vực life_area (đã có life_area_readings). Không lặp nhin_chung/thuc_tien.

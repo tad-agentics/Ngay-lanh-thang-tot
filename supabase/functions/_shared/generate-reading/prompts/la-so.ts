@@ -17,8 +17,8 @@ export const LA_SO_MENH_TONG_QUAN_PROMPT_BLOCK = `## CẤU TRÚC menh_tong_quan 
 - Nối ý sang đoạn 3: hành và thần ấy tác động thế nào tới **nhịp vận** hiện tại.
 
 ### Đoạn 3 — Đại vận · tổng kết · mời đọc tiếp
-- Luận **đại vận đang chạy** từ `dai_van_current` (nếu có), nếu không thì `dai_van_list[0]`, nếu không thì `dai_van` — dùng trường `display` và khoảng tuổi để luận ý chính của 10 năm này. Nếu không có trường nào, bỏ qua chi tiết đại vận.
-- Nếu data không có `pillars`, mô tả Nhật Chủ và Ngũ Hành từ `nhat_chu` và `element_counts` thay thế — không bịa can chi trụ.
+- Luận **đại vận đang chạy** từ dai_van_current (nếu có), nếu không thì dai_van_list[0], nếu không thì dai_van — dùng trường display và khoảng tuổi để luận ý chính của 10 năm này. Nếu không có trường nào, bỏ qua chi tiết đại vận.
+- Nếu data không có pillars, mô tả Nhật Chủ và Ngũ Hành từ nhat_chu và element_counts thay thế — không bịa can chi trụ.
 - **Tóm tắt bức tranh toàn cảnh** 2–3 câu (Nhật Chủ + Ngũ Hành + đại vận).
 - Kết bằng 1–2 câu **ấm, cụ thể**, gợi người đọc tiếp tục các chương luận giải chi tiết phía dưới: tính cách, vận năm, phong thủy, quý nhân (không hứa hẹn tuyệt đối; không nhắc giá hay "mua").
 - KHÔNG đi sâu tính cách / sự nghiệp / tình duyên — để các chương sau.

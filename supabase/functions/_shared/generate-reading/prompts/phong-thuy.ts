@@ -13,7 +13,7 @@ ${PHONG_THUY_JSON_RULES}
 ## NHIỆM VỤ
 Trả CHỈ {"text":"..."} — luận **Hướng tốt / hướng nên tránh** cho năm đang xem.
 
-- Bám `huong_tot` / `huong_tot_nam_nay` và `huong_xau` / `huong_xau_nam_nay` trong data. Nếu cả hai đều thiếu hoặc rỗng, viết một đoạn ngắn thông báo "Chưa đủ dữ liệu hướng cho năm này" và dừng — không bịa hướng.
+- Bám huong_tot / huong_tot_nam_nay và huong_xau / huong_xau_nam_nay trong data. Nếu cả hai đều thiếu hoặc rỗng, viết một đoạn ngắn thông báo "Chưa đủ dữ liệu hướng cho năm này" và dừng — không bịa hướng.
 - Giải thích **vì sao** từng hướng thuận (bàn làm việc, cửa chính, phòng ngủ, bếp…) và hướng xấu nên hạn chế.
 - Liên hệ Dụng Thần / Kỵ Thần / mệnh trong data nếu có — không bịa.
 - **~500 ký tự** (tối thiểu 450, mục tiêu 500–600 ký tự có dấu), chia **2–3 đoạn** bằng \\n\\n.`;
@@ -25,7 +25,7 @@ ${PHONG_THUY_JSON_RULES}
 ## NHIỆM VỤ
 Trả CHỈ {"text":"..."} — luận **Màu sắc hợp / màu kỵ**.
 
-- Bám `mau_may_man` / `mauMayMan` và `mau_ky` nếu có trong data. Nếu thiếu cả hai, ghi "Chưa đủ dữ liệu màu sắc" và dừng.
+- Bám mau_may_man / mauMayMan và mau_ky nếu có trong data. Nếu thiếu cả hai, ghi "Chưa đủ dữ liệu màu sắc" và dừng.
 - Giải thích **vì sao** các màu này hòa với mệnh/Dụng Thần năm nay.
 - Gợi ý **đồ dùng, sơn tường, textile, decor** trong nhà — có nên bổ sung vật gì (chất liệu, hình khối), tránh màu kỵ.
 - **~500 ký tự** (tối thiểu 450, mục tiêu 500–600 ký tự có dấu), chia **2–3 đoạn** bằng \\n\\n.`;
