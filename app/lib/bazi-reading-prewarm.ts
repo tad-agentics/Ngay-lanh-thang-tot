@@ -9,9 +9,18 @@ import {
 } from "~/lib/bazi-reading-session";
 import { canUseBaziReading } from "~/lib/entitlements";
 import { profileHasLaso } from "~/lib/la-so-ui";
+import {
+  isBaziReadingScreenLoadActive,
+  setBaziReadingScreenLoadActive,
+} from "~/lib/bazi-reading-load-coord";
 import type { Profile } from "~/lib/profile-context";
 
 const PREWARM_STORAGE_PREFIX = "bazi-prewarm:";
+
+export {
+  isBaziReadingScreenLoadActive,
+  setBaziReadingScreenLoadActive,
+};
 
 function prewarmStorageKey(profile: Profile, year: number): string {
   return `${PREWARM_STORAGE_PREFIX}${profile.id}:${baziReadingCacheRevision(profile, year)}`;
@@ -36,6 +45,15 @@ function writePrewarmStatus(key: string, status: "running" | "done" | "idle"): v
   }
 }
 
+/** Hủy prewarm đang chạy (vào màn luận / reload). */
+export function cancelBaziReadingPrewarm(
+  profile: Profile,
+  year?: number,
+): void {
+  const y = year ?? currentYearVn();
+  writePrewarmStatus(prewarmStorageKey(profile, y), "idle");
+}
+
 export type ScheduleBaziPrewarmOptions = {
   year?: number;
   /** Bỏ qua khi màn `/toi/luan-bat-tu` đang chạy loader hiển thị. */
@@ -50,7 +68,7 @@ export function scheduleBaziReadingPrewarm(
   profile: Profile,
   options?: ScheduleBaziPrewarmOptions,
 ): void {
-  if (options?.skipWhenScreenLoading) return;
+  if (options?.skipWhenScreenLoading || isBaziReadingScreenLoadActive()) return;
   if (!canUseBaziReading(profile) || !profileHasLaso(profile.la_so)) return;
 
   const year = options?.year ?? currentYearVn();
@@ -60,6 +78,11 @@ export function scheduleBaziReadingPrewarm(
   writePrewarmStatus(key, "running");
 
   void (async () => {
+    if (isBaziReadingScreenLoadActive()) {
+      writePrewarmStatus(key, "idle");
+      return;
+    }
+
     const stored = await fetchBaziReadingDelivery(profile, year);
     if (
       stored &&
@@ -72,8 +95,17 @@ export function scheduleBaziReadingPrewarm(
       return;
     }
 
-    await loadBaziReadingFull(profile, year);
-    writePrewarmStatus(key, "done");
+    if (isBaziReadingScreenLoadActive()) {
+      writePrewarmStatus(key, "idle");
+      return;
+    }
+
+    await loadBaziReadingFull(profile, year, { loadSource: "prewarm" });
+    if (!isBaziReadingScreenLoadActive()) {
+      writePrewarmStatus(key, "done");
+    } else {
+      writePrewarmStatus(key, "idle");
+    }
   })().catch(() => {
     writePrewarmStatus(key, "idle");
   });

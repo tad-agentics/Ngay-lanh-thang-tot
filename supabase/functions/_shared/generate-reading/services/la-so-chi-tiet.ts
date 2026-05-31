@@ -40,8 +40,8 @@ const PROSE_ROUND_MIN_MS = 8_000;
  * JSON không đốt hết budget (52s) trước prose fallback. Trước đây callTimeout cho
  * tới 28s/vòng → 28+23s ≈ 51s, prose bị bỏ → §01 trả rỗng (0 cache).
  */
-const PREVIEW_JSON_CALL_MS = 18_000;
-const PREVIEW_PROSE_CALL_MS = 20_000;
+const PREVIEW_JSON_CALL_MS = 14_000;
+const PREVIEW_PROSE_CALL_MS = 24_000;
 
 const ASPECT_IDS = new Set<string>(
   LA_SO_ASPECT_ORDER.filter((id) => id !== "menh_tong_quan" && id !== "tinh_cach"),
@@ -56,6 +56,28 @@ function filterAspectSections(
 ): LaSoChiTietSection[] {
   if (!sections?.length) return [];
   return sections.filter((s) => ASPECT_IDS.has(s.id));
+}
+
+function menhPreviewIsAcceptable(menh: LaSoChiTietSection | null): boolean {
+  return menh != null && !menhTongQuanProseTooShort(menh.text);
+}
+
+async function menhFromProseFallback(
+  payload: string,
+  budget: EdgeBudget,
+): Promise<LaSoChiTietSection | null> {
+  if (!budget.canSpend(PROSE_ROUND_MIN_MS)) return null;
+  const plain = await llmCompletion(
+    SYSTEM_PROMPT,
+    payload,
+    READING_MAX_TOKENS_LA_SO_PREVIEW,
+    budget.callTimeout(PREVIEW_PROSE_CALL_MS),
+    { profile: LA_SO_CHI_TIET_PROFILE, disableThinking: true },
+  );
+  const t = plain?.trim() ?? "";
+  if (!t) return null;
+  const menh = menhTongQuanFallbackSection(t);
+  return menhPreviewIsAcceptable(menh) ? menh : null;
 }
 
 async function expandMenhTongQuanIfShort(
@@ -108,7 +130,10 @@ export async function generateMenhTongQuanSection(
   payload: string,
   budget: EdgeBudget,
 ): Promise<LaSoChiTietSection | null> {
-  if (!budget.canSpend(JSON_ROUND_MIN_MS)) return null;
+  if (!budget.canSpend(JSON_ROUND_MIN_MS)) {
+    console.warn("[luận-giải] menh preview: hết budget trước JSON");
+    return menhFromProseFallback(payload, budget);
+  }
 
   const raw = await llmLaSoChiTietJson(
     LA_SO_CHI_TIET_PREVIEW_SYSTEM,
@@ -121,8 +146,23 @@ export async function generateMenhTongQuanSection(
   );
 
   let sections = raw ? parseLaSoChiTietSections(raw) : null;
-  // Chỉ retry JSON khi vẫn còn budget cho prose fallback sau đó.
-  if (!sections?.length && budget.canSpend(PREVIEW_JSON_CALL_MS + PROSE_ROUND_MIN_MS)) {
+
+  let menh = menhSectionFromParsed(sections);
+  if (!menh && sections?.length) {
+    menh = laSoChiTietPreviewSections(sections)[0] ?? null;
+  }
+
+  if (menh && !menhPreviewIsAcceptable(menh) && budget.canSpend(EXPAND_ROUND_MIN_MS)) {
+    menh = await expandMenhTongQuanIfShort(menh, payload, budget);
+  }
+
+  if (menhPreviewIsAcceptable(menh)) return menh;
+
+  // JSON rỗng hoặc parse lỗi — một lần retry JSON (không retry khi đã có § rác).
+  if (
+    !sections?.length &&
+    budget.canSpend(PREVIEW_JSON_CALL_MS + PROSE_ROUND_MIN_MS)
+  ) {
     const retry = await llmLaSoChiTietJson(
       LA_SO_CHI_TIET_PREVIEW_SYSTEM,
       payload,
@@ -132,31 +172,25 @@ export async function generateMenhTongQuanSection(
         timeoutMs: budget.callTimeout(PREVIEW_JSON_CALL_MS),
       },
     );
-    if (retry) sections = parseLaSoChiTietSections(retry);
+    sections = retry ? parseLaSoChiTietSections(retry) : null;
+    menh = menhSectionFromParsed(sections);
+    if (!menh && sections?.length) {
+      menh = laSoChiTietPreviewSections(sections)[0] ?? null;
+    }
+    if (menh && !menhPreviewIsAcceptable(menh) && budget.canSpend(EXPAND_ROUND_MIN_MS)) {
+      menh = await expandMenhTongQuanIfShort(menh, payload, budget);
+    }
+    if (menhPreviewIsAcceptable(menh)) return menh;
   }
 
-  if (!sections?.length) {
-    if (!budget.canSpend(PROSE_ROUND_MIN_MS)) return null;
-    const plain = await llmCompletion(
-      SYSTEM_PROMPT,
-      payload,
-      READING_MAX_TOKENS_LA_SO_PREVIEW,
-      budget.callTimeout(PREVIEW_PROSE_CALL_MS),
-      { profile: LA_SO_CHI_TIET_PROFILE, disableThinking: true },
+  const prose = await menhFromProseFallback(payload, budget);
+  if (!prose) {
+    console.warn(
+      "[luận-giải] menh preview: JSON/expand không đạt + prose rỗng",
+      budget.elapsed(),
     );
-    const t = plain?.trim() ?? "";
-    if (!t) return null;
-    return menhTongQuanFallbackSection(t);
   }
-
-  let menh = menhSectionFromParsed(sections);
-  if (!menh) {
-    const picked = laSoChiTietPreviewSections(sections)[0];
-    menh = picked ?? null;
-  }
-  if (!menh) return null;
-
-  return expandMenhTongQuanIfShort(menh, payload, budget);
+  return prose;
 }
 
 /** §02–§06 — tách khỏi §01 để không tranh prompt với preview. */

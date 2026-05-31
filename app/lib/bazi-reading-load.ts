@@ -58,6 +58,7 @@ import {
   mergeLaSoTinhCachSections,
   missingTinhCachTraitIds,
 } from "~/lib/personality-traits-ui";
+import { isBaziReadingScreenLoadActive } from "~/lib/bazi-reading-load-coord";
 
 const BAZI_INVOKE_STAGGER_MS = 1_500;
 /** Khớp `RATE_LIMIT_RETRY_MS` trong `generate-reading.ts`. */
@@ -328,6 +329,8 @@ export async function loadBaziReadingFull(
     skipPersist?: boolean;
     forceRegenerate?: boolean;
     preloadedFacts?: BaziReadingFactsBundle;
+    /** `prewarm` — bỏ qua nếu màn luận đang load (tránh chồng Edge). */
+    loadSource?: "screen" | "prewarm";
     /** Gọi sau mỗi invoke LLM xong — cập nhật UI từng §, không chờ cả bundle. */
     onProgress?: (
       partial: BaziReadingLoadResult,
@@ -343,6 +346,13 @@ export async function loadBaziReadingFull(
     yearCanChi: fallbackFlowYearCanChiLabel(year) || "",
     phongThuyFetchError: null,
   };
+
+  if (
+    options?.loadSource === "prewarm" &&
+    isBaziReadingScreenLoadActive()
+  ) {
+    return empty;
+  }
 
   if (!options?.forceRegenerate) {
     const stored = await fetchBaziReadingDelivery(profile, year);

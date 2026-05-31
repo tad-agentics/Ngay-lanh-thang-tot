@@ -314,11 +314,7 @@ export function createGenerateReadingHandler(
                 }
               } else {
                 const laSoValid = options.laSoChiTietCachedSectionsValid;
-                if (
-                  !preview &&
-                  laSoValid &&
-                  !laSoValid(cached.sections)
-                ) {
+                if (laSoValid && !laSoValid(cached.sections)) {
                   await admin.from("reading_cache").delete().eq(
                     "cache_key",
                     cacheKey,

@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router";
 
-import { scheduleBaziReadingPrewarm } from "~/lib/bazi-reading-prewarm";
+import {
+  cancelBaziReadingPrewarm,
+  scheduleBaziReadingPrewarm,
+} from "~/lib/bazi-reading-prewarm";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { canUseBaziReading } from "~/lib/entitlements";
 import { profileHasLaso } from "~/lib/la-so-ui";
@@ -16,8 +19,13 @@ export function useBaziReadingPrewarm(profile: Profile | null): void {
     if (!profile || !canUseBaziReading(profile) || !profileHasLaso(profile.la_so)) {
       return;
     }
+    const year = currentYearVn();
+    if (onLuanScreen) {
+      cancelBaziReadingPrewarm(profile, year);
+      return;
+    }
     scheduleBaziReadingPrewarm(profile, {
-      year: currentYearVn(),
+      year,
       skipWhenScreenLoading: onLuanScreen,
     });
   }, [

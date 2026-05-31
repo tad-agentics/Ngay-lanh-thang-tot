@@ -7,11 +7,20 @@ import { llmLegacyProse } from "../core/llm.ts";
 import type { GenerateContext, GenerateResult } from "../core/types.ts";
 import { SYSTEM_PROMPT } from "../prompts/legacy-prose.ts";
 import { generatePhongThuyReading } from "./phong-thuy.ts";
+import { menhTongQuanProseTooShort } from "../parsers/la-so.ts";
 import {
   generateLaSoChiTietFullSections,
   generateLaSoChiTietPreviewSections,
   generateLaSoChiTietTinhCachOnlySections,
 } from "../services/la-so-chi-tiet.ts";
+
+function previewMenhIsStorable(
+  sections: { id: string; text: string }[],
+): boolean {
+  const menh = sections.find((s) => s.id === "menh_tong_quan");
+  if (!menh?.text?.trim()) return false;
+  return !menhTongQuanProseTooShort(menh.text);
+}
 
 export async function generateLaSoReading(
   ctx: GenerateContext,
@@ -39,7 +48,9 @@ export async function generateLaSoReading(
 
     if (preview) {
       const sectionsOut = await generateLaSoChiTietPreviewSections(payload);
-      if (!sectionsOut?.length) return { reading: null };
+      if (!sectionsOut?.length || !previewMenhIsStorable(sectionsOut)) {
+        return { reading: null };
+      }
       const toStore = JSON.stringify({ sections: sectionsOut });
       if (admin) {
         const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();

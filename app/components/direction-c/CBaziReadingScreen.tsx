@@ -19,6 +19,8 @@ import {
   type BaziReadingFactsBundle,
   type BaziReadingLoadResult,
 } from "~/lib/bazi-reading-load";
+import { setBaziReadingScreenLoadActive } from "~/lib/bazi-reading-load-coord";
+import { cancelBaziReadingPrewarm } from "~/lib/bazi-reading-prewarm";
 import {
   createInitialChapterLoadState,
   deriveChapterLoadState,
@@ -151,6 +153,7 @@ export function CBaziReadingScreen() {
     }
 
     let cancelled = false;
+    cancelBaziReadingPrewarm(profile, year);
     const profileLaSo = (profile.la_so as LaSoJson) ?? null;
     const sessionRevision = baziReadingCacheRevision(profile, year);
 
@@ -225,10 +228,12 @@ export function CBaziReadingScreen() {
       }
       setInstantProse(false);
       setGenerating(true);
+      setBaziReadingScreenLoadActive(true);
       let full: BaziReadingLoadResult;
       try {
         full = await loadBaziReadingFull(profile, year, {
           forceRegenerate: opts?.force === true,
+          loadSource: "screen",
           preloadedFacts: preloadedFacts ?? factsRef.current ?? undefined,
           onProgress: (partial, nextChapterLoad) => {
             if (cancelled || gen !== genRef.current) return;
@@ -246,6 +251,9 @@ export function CBaziReadingScreen() {
         });
       } finally {
         fullLoadInFlightRef.current = false;
+        if (gen === genRef.current) {
+          setBaziReadingScreenLoadActive(false);
+        }
       }
       if (cancelled || gen !== genRef.current) return;
       partialLoadRef.current = full;
@@ -282,6 +290,7 @@ export function CBaziReadingScreen() {
 
     return () => {
       cancelled = true;
+      setBaziReadingScreenLoadActive(false);
       resumeLoadRef.current = null;
       runFullLoadRef.current = null;
     };
