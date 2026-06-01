@@ -1,4 +1,4 @@
-/** Luận inline giả — ngày khác (user chưa từng đăng ký gói), không gọi Gemini. */
+/** Luận inline giả — ngày khác (user chưa từng đăng ký gói), không gọi DeepSeek. */
 
 const DEFAULT_OTHER_DAY_INLINE_MOCK =
   "Ngày này được chấm riêng theo lá số của bạn. Đặt lịch để đọc luận giải đầy đủ — phân tích bốn yếu tố, giờ tốt và hỏi tiếp theo từng ngày.";

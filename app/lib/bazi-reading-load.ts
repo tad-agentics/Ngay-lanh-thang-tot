@@ -236,7 +236,7 @@ function deliveryHasFullLuanSections(
 }
 
 /**
- * Paywall §01 — một lần `la-so` + Gemini preview (`menh_tong_quan` only).
+ * Paywall §01 — một lần `la-so` + DeepSeek preview (`menh_tong_quan` only).
  */
 export async function loadBaziPaywallBundle(
   profile: Profile,
@@ -279,7 +279,7 @@ export async function loadBaziPaywallLaSoDisplay(
   return bundle.laSoDisplay;
 }
 
-/** Gemini `la-so-chi-tiet` — `preview: true` chỉ trả `menh_tong_quan` (paywall §01). */
+/** DeepSeek `la-so-chi-tiet` — `preview: true` chỉ trả `menh_tong_quan` (paywall §01). */
 export async function loadBaziLaSoChiTietSections(
   profile: Profile,
   options?: { preview?: boolean },

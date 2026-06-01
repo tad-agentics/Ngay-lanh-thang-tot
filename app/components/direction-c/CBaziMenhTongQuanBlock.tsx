@@ -30,7 +30,7 @@ const NGU_HANH_LABEL: Record<string, string> = {
 type CBaziMenhTongQuanBlockProps = {
   profile: Profile;
   laSo?: LaSoJson | null;
-  /** Gemini `menh_tong_quan` — tổng quan lá số (§01). */
+  /** DeepSeek `menh_tong_quan` — tổng quan lá số (§01). */
   prose?: string | null;
   /** Show below §01 `h2` while luận giải is generating. */
   proseLoading?: boolean;

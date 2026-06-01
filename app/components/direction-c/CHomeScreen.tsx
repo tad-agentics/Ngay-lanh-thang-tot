@@ -23,7 +23,7 @@ import {
   isNewUserDayLuanTeaser,
   subscriptionActive,
 } from "~/lib/entitlements";
-import { buildHomeInlineFallback } from "~/lib/home-bat-tu";
+import { pickInlineLuanFallback } from "~/lib/home-bat-tu";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
@@ -67,9 +67,11 @@ export function CHomeScreen() {
     mockInlineText: null,
   });
 
-  const inlineFallbackText =
-    today?.homeSummaryLine.trim() ||
-    (today ? buildHomeInlineFallback(today) : "");
+  const inlineFallbackText = today ? pickInlineLuanFallback(today) : "";
+  const showInlineLuan =
+    readingLoading ||
+    Boolean(readingText?.trim()) ||
+    Boolean(inlineFallbackText.trim());
 
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
@@ -128,7 +130,23 @@ export function CHomeScreen() {
                 >
                   Luận giải đầy đủ cần kết nối lại.
                 </p>
-              ) : paywallBlurred ? (
+              ) : !showInlineLuan && subActive ? (
+                <p
+                  className="px-[18px] pb-3.5 font-serif text-sm italic leading-snug"
+                  style={{ color: CT.muted }}
+                >
+                  Chưa tạo được luận giải NLTT cho hôm nay. Tải lại trang hoặc mở{" "}
+                  <button
+                    type="button"
+                    className="cursor-pointer border-none bg-transparent p-0 font-serif italic underline"
+                    style={{ color: CT.goldDeep }}
+                    onClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
+                  >
+                    luận chi tiết
+                  </button>
+                  .
+                </p>
+              ) : !showInlineLuan ? null : paywallBlurred ? (
                 <DayLuanPaywallBlur minHeight={100}>
                   <CTodayReasoning
                     text={readingText}

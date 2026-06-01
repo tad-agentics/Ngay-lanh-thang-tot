@@ -46,7 +46,7 @@ function stringList(raw: unknown): string[] {
   return out;
 }
 
-/** Deterministic §04 copy from `PhongThuyResponse` when Gemini omits prose. */
+/** Deterministic §04 copy from `PhongThuyResponse` when DeepSeek omits prose. */
 export function phongThuyFactsToProse(facts: unknown): string {
   const root = asRecord(facts);
   if (!root) return "";

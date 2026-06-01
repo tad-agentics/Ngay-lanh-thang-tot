@@ -31,7 +31,7 @@ export function useInlineDayReading({
   subActive: boolean;
   /** User mới chưa từng đăng ký gói — teaser / mock, không áp dụng user hết hạn. */
   newUserTeaser: boolean;
-  /** Ngày khác: luận giả inline cố định, không gọi Gemini. */
+  /** Ngày khác: luận giả inline cố định, không gọi DeepSeek. */
   mockInlineText?: string | null;
 }) {
   const { user } = useAuth();

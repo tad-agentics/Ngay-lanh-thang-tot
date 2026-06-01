@@ -242,7 +242,7 @@ function luuNienQuyNhanProse(sections: LaSoChiTietSection[]): string {
   return sectionText(sections, LUU_NIEN_UNG_XU_ID);
 }
 
-/** Luôn 5 § Direction C màn 18 — kể cả khi thiếu API/Gemini. */
+/** Luôn 5 § Direction C màn 18 — kể cả khi thiếu API/DeepSeek. */
 export function buildBaziDisplayChapters(input: {
   sections: LaSoChiTietSection[];
   laSo: LaSoJson | null;

@@ -29,7 +29,10 @@ export function CTodayReasoning({
   onCtaClick,
   showCta = true,
 }: CTodayReasoningProps) {
-  const fullText = (text ?? fallbackText ?? "").trim();
+  const aiText = (text ?? "").trim();
+  const engineFallback = (fallbackText ?? "").trim();
+  const fullText = aiText || engineFallback;
+  const isAiLuan = Boolean(aiText);
   const [n, setN] = useState(0);
   const typingDoneRef = useRef(false);
 
@@ -82,7 +85,17 @@ export function CTodayReasoning({
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <Mono style={{ color: CT.muted, fontSize: 9.5 }}>
-            {loading ? "NLTT đang luận…" : done ? "NLTT luận" : "NLTT đang luận…"}
+            {loading
+              ? isAiLuan
+                ? "NLTT đang luận…"
+                : "Đang tải…"
+              : done
+                ? isAiLuan
+                  ? "NLTT luận"
+                  : "Tóm tắt ngày"
+                : isAiLuan
+                  ? "NLTT đang luận…"
+                  : "Đang tải…"}
           </Mono>
           <p
             style={{
@@ -112,7 +125,7 @@ export function CTodayReasoning({
             ) : null}
           </p>
           <style>{`@keyframes b-cursor-blink { 50% { opacity: 0; } }`}</style>
-          {done ? (
+          {done && isAiLuan ? (
             <div
               style={{
                 marginTop: 10,
@@ -131,7 +144,7 @@ export function CTodayReasoning({
               ))}
             </div>
           ) : null}
-          {done && showCta && onCtaClick ? (
+          {done && showCta && onCtaClick && isAiLuan ? (
             <button
               type="button"
               onClick={onCtaClick}

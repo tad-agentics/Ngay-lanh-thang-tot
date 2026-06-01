@@ -9,8 +9,10 @@ import {
   parseNgayHomNayForHome,
   parseWeeklyGoodDayCount,
   parseWeeklySummaryForScreen,
+  pickInlineLuanFallback,
 } from "~/lib/home-bat-tu";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
+import { SCORE_METHODOLOGY_DEFAULT_SUMMARY } from "~/lib/score-methodology";
 
 describe("parseNgayHomNayForHome", () => {
   it("reads hoang_dao and hours from a typical-shaped payload", () => {
@@ -193,6 +195,22 @@ describe("mergeDayDetailScoreIntoHome", () => {
     });
     expect(merged.score).toBe(85);
     expect(merged.homeSummaryLine).toContain("Dụng Thần");
+  });
+});
+
+describe("pickInlineLuanFallback", () => {
+  it("does not use score_methodology boilerplate as inline luận", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-29",
+      day_type: "hoang-dao",
+      good_for: ["Khai trương"],
+      score_methodology: { summary_vi: SCORE_METHODOLOGY_DEFAULT_SUMMARY },
+    });
+    expect(home).not.toBeNull();
+    expect(home!.homeSummaryLine).toBe("");
+    const line = pickInlineLuanFallback(home!);
+    expect(line).not.toContain("Điểm tổng hợp từ Trực");
+    expect(line).toContain("Khai trương");
   });
 });
 

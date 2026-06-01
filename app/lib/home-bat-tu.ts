@@ -9,6 +9,7 @@ import {
 import {
   parseScoreMethodology,
   type ScoreMethodologyView,
+  SCORE_METHODOLOGY_DEFAULT_SUMMARY,
 } from "~/lib/score-methodology";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
@@ -473,6 +474,23 @@ function pickInlineSummaryFromDayDetail(
   return "";
 }
 
+/** True when line is generic score-methodology copy, not day-specific luận. */
+export function isScoreMethodologyBoilerplate(line: string): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  return t === SCORE_METHODOLOGY_DEFAULT_SUMMARY;
+}
+
+/**
+ * Teaser for inline luận block when DeepSeek (generate-reading-day) has not returned yet.
+ * Never uses `score_methodology.summary_vi` (methodology helper — see parseNgayHomNayForHome).
+ */
+export function pickInlineLuanFallback(home: NgayHomNayHome): string {
+  const line = home.homeSummaryLine.trim();
+  if (line && !isScoreMethodologyBoilerplate(line)) return line;
+  return buildHomeInlineFallback(home);
+}
+
 /** Deterministic teaser when engine + LLM both omit prose. */
 export function buildHomeInlineFallback(home: NgayHomNayHome): string {
   const parts: string[] = [];
@@ -655,10 +673,6 @@ export function parseNgayHomNayForHome(raw: unknown): NgayHomNayHome | null {
       "hint_vi",
     ]) ||
     pickStr(root, ["summary_vi", "one_liner", "reason_vi"]) ||
-    pickStr(asRecord(nested.score_methodology) ?? {}, [
-      "summary_vi",
-      "summaryVi",
-    ]) ||
     pickStr(asRecord(nested.daily_advice) ?? {}, [
       "summary_vi",
       "hint_vi",

@@ -9,6 +9,10 @@ export type ScoreMethodologyView = {
   weights: ScoreMethodologyWeightView[];
 };
 
+/** Default when API omits `summary_vi` — not personalized NLTT luận. */
+export const SCORE_METHODOLOGY_DEFAULT_SUMMARY =
+  "Điểm tổng hợp từ Trực, sao, Can Chi với lá số, và giờ vàng.";
+
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
     return x as Record<string, unknown>;
@@ -56,9 +60,7 @@ export function parseScoreMethodology(raw: unknown): ScoreMethodologyView | null
 
   if (!summaryVi && weights.length === 0) return null;
   return {
-    summaryVi:
-      summaryVi ||
-      "Điểm tổng hợp từ Trực, sao, Can Chi với lá số, và giờ vàng.",
+    summaryVi: summaryVi || SCORE_METHODOLOGY_DEFAULT_SUMMARY,
     weights,
   };
 }

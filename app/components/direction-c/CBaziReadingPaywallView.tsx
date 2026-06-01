@@ -116,7 +116,7 @@ type CBaziReadingPaywallViewProps = {
   profile: Profile;
 };
 
-/** Paywall màn 18: §01 lá số live + Gemini tổng quan; §02–05 mock blur. */
+/** Paywall màn 18: §01 lá số live + DeepSeek tổng quan; §02–05 mock blur. */
 export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProps) {
   const navigate = useNavigate();
   const year = currentYearVn();
