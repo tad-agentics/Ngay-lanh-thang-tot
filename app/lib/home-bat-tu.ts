@@ -458,19 +458,26 @@ export interface NgayHomNayHome {
   scoreMethodology: ScoreMethodologyView | null;
 }
 
+/** Prose fallback for `/ngay` when NLTT inline is unavailable (non-sub teaser paths). */
+export function pickDayDetailInlineLuanFallback(
+  detail: NonNullable<ReturnType<typeof parseDayDetailForView>>,
+): string {
+  return pickInlineSummaryFromDayDetail(detail);
+}
+
 function pickInlineSummaryFromDayDetail(
   detail: NonNullable<ReturnType<typeof parseDayDetailForView>>,
 ): string {
   for (const line of detail.reasonLines) {
     const t = line.trim();
-    if (t) return t;
+    if (t && !isEngineScoreBreakdownLine(t)) return t;
   }
   for (const row of detail.breakdown) {
     const t = row.reasonVi.trim();
-    if (t && t !== "—") return t;
+    if (t && t !== "—" && !isEngineScoreBreakdownLine(t)) return t;
   }
   const truc = detail.trucDescription.trim();
-  if (truc) return truc;
+  if (truc && !isEngineScoreBreakdownLine(truc)) return truc;
   return "";
 }
 
@@ -482,12 +489,35 @@ export function isScoreMethodologyBoilerplate(line: string): boolean {
 }
 
 /**
+ * Engine breakdown / score helper copy — not NLTT luận giải.
+ * Used to keep methodology out of inline luận and card quotes.
+ */
+export function isEngineScoreBreakdownLine(line: string): boolean {
+  const t = line.trim();
+  if (!t) return false;
+  if (isScoreMethodologyBoilerplate(t)) return true;
+  if (/cộng\s+[\d.]+\s*điểm/i.test(t)) return true;
+  if (/tổng\s+điểm\s+ngày/i.test(t)) return true;
+  if (/trong\s+tổng\s+điểm/i.test(t)) return true;
+  if (/^trực\s+.+\s+cộng\s+/iu.test(t)) return true;
+  if (/mọi ngày (bắt đầu|đều có).*nền/i.test(t)) return true;
+  return false;
+}
+
+/**
  * Teaser for inline luận block when DeepSeek (generate-reading-day) has not returned yet.
  * Never uses `score_methodology.summary_vi` (methodology helper — see parseNgayHomNayForHome).
  */
 export function pickInlineLuanFallback(home: NgayHomNayHome): string {
   const line = home.homeSummaryLine.trim();
-  if (line && !isScoreMethodologyBoilerplate(line)) return line;
+  const methodology = home.scoreMethodology?.summaryVi?.trim() ?? "";
+  if (
+    line &&
+    !isEngineScoreBreakdownLine(line) &&
+    (!methodology || line !== methodology)
+  ) {
+    return line;
+  }
   return buildHomeInlineFallback(home);
 }
 

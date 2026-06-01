@@ -9,6 +9,7 @@ import {
   parseNgayHomNayForHome,
   parseWeeklyGoodDayCount,
   parseWeeklySummaryForScreen,
+  isEngineScoreBreakdownLine,
   pickInlineLuanFallback,
 } from "~/lib/home-bat-tu";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
@@ -198,6 +199,24 @@ describe("mergeDayDetailScoreIntoHome", () => {
   });
 });
 
+describe("isEngineScoreBreakdownLine", () => {
+  it("flags trực + điểm breakdown copy", () => {
+    expect(
+      isEngineScoreBreakdownLine(
+        "Trực Trừ cộng 29 điểm trong tổng điểm ngày. Với lá số của bạn, Trực này hỗ trợ việc sự kiện chung.",
+      ),
+    ).toBe(true);
+  });
+
+  it("allows personalized reason prose", () => {
+    expect(
+      isEngineScoreBreakdownLine(
+        "Can Quý hòa Dụng Thần Thổ — thuận ký kết và khai trương.",
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("pickInlineLuanFallback", () => {
   it("does not use score_methodology boilerplate as inline luận", () => {
     const home = parseNgayHomNayForHome({
@@ -210,6 +229,20 @@ describe("pickInlineLuanFallback", () => {
     expect(home!.homeSummaryLine).toBe("");
     const line = pickInlineLuanFallback(home!);
     expect(line).not.toContain("Điểm tổng hợp từ Trực");
+    expect(line).toContain("Khai trương");
+  });
+
+  it("falls back to chips when homeSummaryLine is score breakdown", () => {
+    const home = parseNgayHomNayForHome({
+      date: "2026-05-29",
+      day_type: "hoang-dao",
+      good_for: ["Khai trương"],
+      summary_vi:
+        "Trực Trừ cộng 29 điểm trong tổng điểm ngày. Với lá số của bạn, Trực này hỗ trợ việc sự kiện chung.",
+    });
+    expect(home).not.toBeNull();
+    const line = pickInlineLuanFallback(home!);
+    expect(line).not.toMatch(/cộng\s+29\s+điểm/i);
     expect(line).toContain("Khai trương");
   });
 });

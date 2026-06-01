@@ -21,6 +21,7 @@ import {
   isSubscriptionLapsed,
 } from "~/lib/entitlements";
 import { neverSubFreeDayReading } from "~/lib/entitlements";
+import { pickDayDetailInlineLuanFallback } from "~/lib/home-bat-tu";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import { CT } from "~/lib/c-tokens";
 import {
@@ -79,6 +80,11 @@ export function CDayDetailScreen() {
   const neverSubTodayFree = profile
     ? neverSubFreeDayReading(profile, iso, todayIso)
     : false;
+  const expectNlttLuan = subActive || neverSubTodayFree;
+  const dayEngineFallback =
+    detail && !expectNlttLuan
+      ? pickDayDetailInlineLuanFallback(detail) || null
+      : null;
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
   const birthDate = birthQuery?.birth_date ?? null;
 
@@ -254,12 +260,12 @@ export function CDayDetailScreen() {
                 personalized ? (
                   <CTodayReasoning
                     text={readingText}
-                    fallbackText={detail.reasonLines[0] ?? null}
-                    loading={readingLoading && (subActive || neverSubTodayFree)}
+                    fallbackText={dayEngineFallback}
+                    loading={readingLoading && expectNlttLuan}
                     instant={instantTyping}
                     onTypingComplete={markTypingSeen}
                     onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
-                    showCta={Boolean(user) && (subActive || neverSubTodayFree)}
+                    showCta={Boolean(user) && expectNlttLuan}
                   />
                 ) : null
               }

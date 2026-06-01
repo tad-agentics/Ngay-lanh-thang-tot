@@ -64,11 +64,21 @@ export function CHomeScreen() {
     newUserTeaser,
   });
 
-  const inlineFallbackText = today ? pickInlineLuanFallback(today) : "";
-  const showInlineLuan =
-    readingLoading ||
-    Boolean(readingText?.trim()) ||
-    Boolean(inlineFallbackText.trim());
+  const expectNlttLuan = newUserTeaser || subActive;
+  const engineFallbackText = today ? pickInlineLuanFallback(today) : "";
+  const inlineFallbackText = expectNlttLuan ? "" : engineFallbackText;
+  const showInlineLuan = expectNlttLuan
+    ? readingLoading ||
+      Boolean(readingText?.trim()) ||
+      Boolean(user && today)
+    : readingLoading ||
+      Boolean(readingText?.trim()) ||
+      Boolean(engineFallbackText.trim());
+  const showNlttLuanFailed =
+    expectNlttLuan &&
+    Boolean(user && today) &&
+    !readingLoading &&
+    !readingText?.trim();
 
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
@@ -127,7 +137,7 @@ export function CHomeScreen() {
                 >
                   Luận giải đầy đủ cần kết nối lại.
                 </p>
-              ) : !showInlineLuan && subActive ? (
+              ) : showNlttLuanFailed ? (
                 <p
                   className="px-[18px] pb-3.5 font-serif text-sm italic leading-snug"
                   style={{ color: CT.muted }}
