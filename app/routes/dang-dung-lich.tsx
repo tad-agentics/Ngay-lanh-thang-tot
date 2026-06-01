@@ -141,6 +141,7 @@ export default function DangDungLichRoute() {
 
     return () => {
       cancelled = true;
+      ranRef.current = false;
       timers.forEach(window.clearTimeout);
     };
   }, [profile, profileLoading, navigate, retryTick]);

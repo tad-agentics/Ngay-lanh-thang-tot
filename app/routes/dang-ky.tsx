@@ -15,6 +15,7 @@ import {
 import { BackBar, Mono } from "~/components/brand";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import { useAuth } from "~/lib/auth";
+import { applyBirthToProfile } from "~/lib/auth-birth-sync";
 import {
   displayNameFromAuthUser,
   emailFromAuthUser,
@@ -178,26 +179,12 @@ export default function DangKy() {
     gioSinh: string,
     gioiTinhValue: "nam" | "nu",
   ) {
-    const patch = {
-      display_name: fullName.trim() || undefined,
-      ngay_sinh: ngayIso,
-      gio_sinh: gioSinh,
-      gioi_tinh: gioiTinhValue,
-    };
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update(patch)
-      .eq("id", uid);
-    if (profileError) return profileError.message;
-
-    // Strip the email-verification stash from user_metadata now that the profile
-    // row is written. Fire-and-forget — failure to clean is not fatal, but keeping
-    // the fields in raw_user_meta_data causes them to (a) persist in JWTs for the
-    // account lifetime and (b) permanently shadow the profile row on future /dang-ky
-    // loads due to the "prev wins" guard ordering.
-    void supabase.auth.updateUser({
-      data: { ngay_sinh: null, gio_sinh: null, gioi_tinh: null },
-    });
+    const profileError = await applyBirthToProfile(
+      uid,
+      { ngay_sinh: ngayIso, gio_sinh: gioSinh, gioi_tinh: gioiTinhValue },
+      fullName.trim() || displayNameFromAuthUser(user),
+    );
+    if (profileError) return profileError;
 
     if (landingSignupPrefillHasAny(prefill)) {
       const pe = await applyLandingPrefillToProfile(uid, prefill, {

@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   tryConsumePendingReferralClaim,
+  syncSignupBirthMetadataToProfile,
   getSession,
   exchangeCodeForSession,
   from,
 } = vi.hoisted(() => ({
   tryConsumePendingReferralClaim: vi.fn(),
+  syncSignupBirthMetadataToProfile: vi.fn(),
   getSession: vi.fn(),
   exchangeCodeForSession: vi.fn(),
   from: vi.fn(),
@@ -14,6 +16,10 @@ const {
 
 vi.mock("~/lib/referral-claim", () => ({
   tryConsumePendingReferralClaim,
+}));
+
+vi.mock("~/lib/auth-birth-sync", () => ({
+  syncSignupBirthMetadataToProfile,
 }));
 
 vi.mock("~/lib/supabase", () => ({
@@ -43,6 +49,7 @@ function mockProfileRow(row: {
 describe("resolvePostLoginPath", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    syncSignupBirthMetadataToProfile.mockResolvedValue(false);
   });
 
   it("consumes pending referral before resolving destination", async () => {
@@ -99,7 +106,28 @@ describe("resolvePostLoginPath", () => {
     const dest = await resolvePostLoginPath();
 
     expect(tryConsumePendingReferralClaim).not.toHaveBeenCalled();
+    expect(syncSignupBirthMetadataToProfile).not.toHaveBeenCalled();
     expect(dest).toBe("/dang-nhap");
+  });
+
+  it("syncs signup birth metadata before reading profile", async () => {
+    const session = {
+      access_token: "tok",
+      user: { id: "u1", user_metadata: { ngay_sinh: "1990-01-01" } },
+    };
+    getSession.mockResolvedValue({ data: { session }, error: null });
+    tryConsumePendingReferralClaim.mockResolvedValue(undefined);
+    syncSignupBirthMetadataToProfile.mockResolvedValue(true);
+    mockProfileRow({
+      onboarding_completed_at: null,
+      ngay_sinh: "1990-01-01",
+      gio_sinh: "05:00:00",
+      gioi_tinh: "nam",
+    });
+
+    await resolvePostLoginPath();
+
+    expect(syncSignupBirthMetadataToProfile).toHaveBeenCalledWith(session.user);
   });
 });
 

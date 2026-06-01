@@ -1,3 +1,4 @@
+import { syncSignupBirthMetadataToProfile } from "~/lib/auth-birth-sync";
 import {
   destinationAfterAuthFromProfile,
   type PostLoginProfile,
@@ -16,6 +17,10 @@ export async function resolvePostLoginPath(): Promise<string> {
   if (error || !uid) return "/dang-nhap";
 
   await tryConsumePendingReferralClaim(session);
+
+  if (session.user) {
+    await syncSignupBirthMetadataToProfile(session.user);
+  }
 
   const { data: prof } = await supabase
     .from("profiles")
