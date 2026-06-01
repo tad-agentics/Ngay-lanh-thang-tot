@@ -16,7 +16,11 @@ import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
-import { canUseCalendar, isNewUserDayLuanTeaser } from "~/lib/entitlements";
+import {
+  canUseCalendar,
+  isNewUserDayLuanTeaser,
+  isSubscriptionLapsed,
+} from "~/lib/entitlements";
 import { dayLuanOtherDayInlineMock } from "~/lib/day-luan-inline-mock";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import { CT } from "~/lib/c-tokens";
@@ -70,11 +74,7 @@ export function CDayDetailScreen() {
   const subActive = profile ? canUseCalendar(profile) : false;
   const newUserTeaser = profile ? isNewUserDayLuanTeaser(profile) : false;
   const subscriptionExpired = Boolean(
-    user &&
-      profile &&
-      personalized &&
-      profile.subscription_expires_at != null &&
-      !subActive,
+    user && profile && personalized && isSubscriptionLapsed(profile),
   );
   const inlineMockText =
     newUserTeaser && iso && iso !== todayIsoInVn()

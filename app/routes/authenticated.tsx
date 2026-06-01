@@ -7,12 +7,14 @@ import { CSubExpired } from "~/components/CSubExpired";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { Button } from "~/components/ui/button";
 import { useEntitlements } from "~/hooks/useEntitlements";
-import { isNewUserDayLuanTeaser } from "~/lib/entitlements";
+import {
+  isNeverSubscribedUser,
+  isSubscriptionLapsed,
+} from "~/lib/entitlements";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { consumeAuthRedirectReason } from "~/lib/auth-session-redirect";
 import {
-  isCalendarBrowsePath,
   isOnboardingExemptPath,
   isSubscriptionExemptPath,
   legacyAppRedirect,
@@ -85,8 +87,11 @@ function AuthenticatedShellWithProfile({
   useEffect(() => subscribeSubExpired(() => subExpiredTick((n) => n + 1)), []);
 
   useEffect(() => {
-    if (canUseCalendar) setSubExpiredBlocked(false);
-  }, [canUseCalendar]);
+    if (!profile) return;
+    if (canUseCalendar || isNeverSubscribedUser(profile)) {
+      setSubExpiredBlocked(false);
+    }
+  }, [canUseCalendar, profile]);
 
   async function retryProfile() {
     await reload();
@@ -153,14 +158,9 @@ function AuthenticatedShellWithProfile({
     return <Navigate to="/lich" replace />;
   }
 
-  const newUserCalendarTeaser =
-    isNewUserDayLuanTeaser(profile) &&
-    isCalendarBrowsePath(location.pathname);
-
   const subscriptionBlocked =
-    (!canUseCalendar || isSubExpiredBlocked()) &&
-    !isSubscriptionExemptPath(location.pathname) &&
-    !newUserCalendarTeaser;
+    (isSubscriptionLapsed(profile) || isSubExpiredBlocked()) &&
+    !isSubscriptionExemptPath(location.pathname);
 
   if (subscriptionBlocked) {
     return (

@@ -1212,7 +1212,10 @@ Deno.serve(async (req) => {
           },
         }, 400, req);
     }
-    if (!canUseCalendar(subProfile)) {
+    if (
+      !canUseCalendar(subProfile) &&
+      !isNeverSubscribedUser(subProfile)
+    ) {
       return json(
         {
           error: {
@@ -1354,7 +1357,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      if (!subscriptionActive(profile.subscription_expires_at as string | null)) {
+      if (
+        !subscriptionActive(profile.subscription_expires_at as string | null) &&
+        !isNeverSubscribedUser(profile)
+      ) {
         return json(
           {
             error: {

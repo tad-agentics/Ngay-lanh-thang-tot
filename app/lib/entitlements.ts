@@ -29,6 +29,17 @@ export function isNeverSubscribedUser(
   return profile.subscription_expires_at == null;
 }
 
+/** Đã từng có gói lịch và `subscription_expires_at` đã qua — mới hiện CSubExpired. */
+export function isSubscriptionLapsed(
+  profile: EntitlementProfile | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return (
+    profile.subscription_expires_at != null &&
+    !subscriptionActive(profile.subscription_expires_at)
+  );
+}
+
 /**
  * Teaser lịch + luận blur: chỉ user mới chưa đăng ký gói.
  * User hết hạn (`subscription_expires_at` quá khứ) → không áp dụng.

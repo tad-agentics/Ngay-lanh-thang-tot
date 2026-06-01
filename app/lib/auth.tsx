@@ -9,6 +9,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 
 import { clearPendingReferralCode } from "~/lib/pending-referral";
+import { setSubExpiredBlocked } from "~/lib/sub-expired";
 import {
   markManualSignOut,
   markSessionExpired,
@@ -64,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     markManualSignOut();
     clearPendingReferralCode();
+    setSubExpiredBlocked(false);
     await supabase.auth.signOut();
     resetManualSignOutFlag();
   }, []);

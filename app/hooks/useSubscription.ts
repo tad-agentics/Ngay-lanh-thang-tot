@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import {
   canUseCalendar,
   formatSubscriptionExpiry,
-  subscriptionActive,
+  isSubscriptionLapsed,
   subscriptionStatusLine,
 } from "~/lib/entitlements";
 import { useProfile } from "~/hooks/useProfile";
@@ -18,9 +18,7 @@ export function useSubscription() {
       error,
       reload,
       isActive: canUseCalendar(profile),
-      isExpired:
-        profile != null &&
-        !subscriptionActive(profile.subscription_expires_at),
+      isExpired: isSubscriptionLapsed(profile),
       expiresAt: profile?.subscription_expires_at ?? null,
       expiryFormatted: formatSubscriptionExpiry(
         profile?.subscription_expires_at,

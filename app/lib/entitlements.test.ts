@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isNeverSubscribedUser,
   isNewUserDayLuanTeaser,
+  isSubscriptionLapsed,
   subscriptionActive,
 } from "./entitlements";
 
@@ -16,6 +17,29 @@ describe("isNeverSubscribedUser", () => {
       isNeverSubscribedUser({
         subscription_expires_at: "2020-01-01T00:00:00Z",
       }),
+    ).toBe(false);
+  });
+});
+
+describe("isSubscriptionLapsed", () => {
+  it("false for never-subscribed", () => {
+    expect(
+      isSubscriptionLapsed({ subscription_expires_at: null }),
+    ).toBe(false);
+  });
+
+  it("true when subscription window is in the past", () => {
+    expect(
+      isSubscriptionLapsed({
+        subscription_expires_at: "2020-01-01T00:00:00Z",
+      }),
+    ).toBe(true);
+  });
+
+  it("false while subscription is active", () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    expect(
+      isSubscriptionLapsed({ subscription_expires_at: future }),
     ).toBe(false);
   });
 });
