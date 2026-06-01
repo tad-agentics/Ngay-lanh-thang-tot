@@ -51,6 +51,16 @@ export function isNewUserDayLuanTeaser(
   return isNeverSubscribedUser(profile) && !canUseCalendar(profile);
 }
 
+/** Chưa gói — luận AI miễn phí cho ngày hôm nay (Tab Lịch + `/ngay/{today}`). */
+export function neverSubFreeDayReading(
+  profile: EntitlementProfile | null | undefined,
+  dayIso: string,
+  todayIso: string,
+): boolean {
+  if (!profile || !dayIso || !todayIso) return false;
+  return isNewUserDayLuanTeaser(profile) && dayIso === todayIso;
+}
+
 function hasYearlySub(profile: EntitlementProfile): boolean {
   if (!subscriptionActive(profile.subscription_expires_at)) return false;
   const exp = new Date(profile.subscription_expires_at!);

@@ -22,17 +22,14 @@ export function useInlineDayReading({
   enabled,
   subActive,
   newUserTeaser,
-  mockInlineText,
 }: {
   iso: string;
   endpoint: "ngay-hom-nay" | "day-detail";
   batTuPayload: unknown | null;
   enabled: boolean;
   subActive: boolean;
-  /** User mới chưa từng đăng ký gói — teaser / mock, không áp dụng user hết hạn. */
+  /** User mới chưa từng đăng ký gói — teaser hôm nay; ngày khác dùng copy engine trên màn. */
   newUserTeaser: boolean;
-  /** Ngày khác: luận giả inline cố định, không gọi DeepSeek. */
-  mockInlineText?: string | null;
 }) {
   const { user } = useAuth();
   const payloadRef = useRef(batTuPayload);
@@ -53,14 +50,16 @@ export function useInlineDayReading({
     }
 
     const userId = user.id;
-    const useMock = newUserTeaser && Boolean(mockInlineText?.trim());
-    const paywall = useMock;
+    const todayIso = todayIsoInVn();
+    const freeNeverSubToday =
+      newUserTeaser &&
+      (endpoint === "ngay-hom-nay" || iso === todayIso);
 
-    if (useMock) {
-      setText(mockInlineText!.trim());
+    if (newUserTeaser && !freeNeverSubToday) {
+      setText(null);
       setLoading(false);
-      setInstantTyping(true);
-      setPaywallBlurred(true);
+      setInstantTyping(false);
+      setPaywallBlurred(false);
       return;
     }
 
@@ -86,10 +85,10 @@ export function useInlineDayReading({
     let cancelled = false;
     setInstantTyping(hasSeenInlineReading(userId, iso));
     setLoading(true);
-    setPaywallBlurred(paywall);
+    setPaywallBlurred(false);
 
     void (async () => {
-      if (newUserTeaser) {
+      if (freeNeverSubToday) {
         const r = await invokeGenerateReading({
           endpoint,
           data: payloadRef.current,
@@ -157,16 +156,7 @@ export function useInlineDayReading({
     return () => {
       cancelled = true;
     };
-  }, [
-    enabled,
-    batTuPayload,
-    user,
-    iso,
-    endpoint,
-    subActive,
-    newUserTeaser,
-    mockInlineText,
-  ]);
+  }, [enabled, batTuPayload, user, iso, endpoint, subActive, newUserTeaser]);
 
   const markTypingSeen = () => {
     if (!user?.id || !iso) return;

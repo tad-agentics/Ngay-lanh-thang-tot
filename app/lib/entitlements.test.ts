@@ -4,6 +4,7 @@ import {
   isNeverSubscribedUser,
   isNewUserDayLuanTeaser,
   isSubscriptionLapsed,
+  neverSubFreeDayReading,
   subscriptionActive,
 } from "./entitlements";
 
@@ -41,6 +42,26 @@ describe("isSubscriptionLapsed", () => {
     expect(
       isSubscriptionLapsed({ subscription_expires_at: future }),
     ).toBe(false);
+  });
+});
+
+describe("neverSubFreeDayReading", () => {
+  const neverSub = {
+    subscription_expires_at: null,
+    bazi_reading_unlocked_at: null,
+    tieu_van_reading_expires_at: null,
+  };
+
+  it("true for never-sub on today's iso", () => {
+    expect(neverSubFreeDayReading(neverSub, "2026-06-01", "2026-06-01")).toBe(
+      true,
+    );
+  });
+
+  it("false for other days", () => {
+    expect(neverSubFreeDayReading(neverSub, "2026-06-02", "2026-06-01")).toBe(
+      false,
+    );
   });
 });
 

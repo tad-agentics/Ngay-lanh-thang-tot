@@ -4,7 +4,6 @@ import { toast } from "sonner";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar } from "~/components/brand";
-import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
@@ -21,7 +20,7 @@ import {
   isNewUserDayLuanTeaser,
   isSubscriptionLapsed,
 } from "~/lib/entitlements";
-import { dayLuanOtherDayInlineMock } from "~/lib/day-luan-inline-mock";
+import { neverSubFreeDayReading } from "~/lib/entitlements";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import { CT } from "~/lib/c-tokens";
 import {
@@ -76,10 +75,10 @@ export function CDayDetailScreen() {
   const subscriptionExpired = Boolean(
     user && profile && personalized && isSubscriptionLapsed(profile),
   );
-  const inlineMockText =
-    newUserTeaser && iso && iso !== todayIsoInVn()
-      ? dayLuanOtherDayInlineMock(detail ?? undefined)
-      : null;
+  const todayIso = todayIsoInVn();
+  const neverSubTodayFree = profile
+    ? neverSubFreeDayReading(profile, iso, todayIso)
+    : false;
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
   const birthDate = birthQuery?.birth_date ?? null;
 
@@ -88,7 +87,6 @@ export function CDayDetailScreen() {
     loading: readingLoading,
     instantTyping,
     markTypingSeen,
-    paywallBlurred,
   } = useInlineDayReading({
     iso,
     endpoint: "day-detail",
@@ -96,7 +94,6 @@ export function CDayDetailScreen() {
     enabled: Boolean(detail && rawPayload && personalized && user),
     subActive,
     newUserTeaser,
-    mockInlineText: inlineMockText,
   });
 
   useEffect(() => {
@@ -255,28 +252,21 @@ export function CDayDetailScreen() {
               score={score}
               reasoning={
                 personalized ? (
-                  paywallBlurred ? (
-                    <DayLuanPaywallBlur minHeight={100}>
-                      <CTodayReasoning
-                        text={readingText}
-                        fallbackText={detail.reasonLines[0] ?? null}
-                        loading={readingLoading}
-                        instant={instantTyping}
-                        onTypingComplete={markTypingSeen}
-                        showCta={false}
-                      />
-                    </DayLuanPaywallBlur>
-                  ) : (
-                    <CTodayReasoning
-                      text={readingText}
-                      fallbackText={detail.reasonLines[0] ?? null}
-                      loading={readingLoading}
-                      instant={instantTyping}
-                      onTypingComplete={markTypingSeen}
-                      onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
-                      showCta={Boolean(user)}
-                    />
-                  )
+                  <CTodayReasoning
+                    text={readingText}
+                    fallbackText={detail.reasonLines[0] ?? null}
+                    loading={readingLoading && (subActive || neverSubTodayFree)}
+                    instant={instantTyping}
+                    onTypingComplete={markTypingSeen}
+                    onCtaClick={() =>
+                      void navigate(
+                        neverSubTodayFree
+                          ? "/dat-lich"
+                          : `/luan-ai/day-${iso}`,
+                      )
+                    }
+                    showCta={Boolean(user) && (subActive || neverSubTodayFree)}
+                  />
                 ) : null
               }
               rows={[

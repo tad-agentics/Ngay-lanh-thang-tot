@@ -169,7 +169,7 @@ export function createGenerateReadingHandler(
         }
         if (endpoint === "day-detail") {
           const dayIso = dayIsoFromDayDetailData(data);
-          if (!dayIso) {
+          if (!dayIso || dayIso !== todayIsoVietnam()) {
             return ok(null, null, req);
           }
         }

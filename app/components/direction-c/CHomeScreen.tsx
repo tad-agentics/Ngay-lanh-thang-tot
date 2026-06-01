@@ -7,7 +7,6 @@ import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
-import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
@@ -54,7 +53,6 @@ export function CHomeScreen() {
     loading: readingLoading,
     instantTyping,
     markTypingSeen,
-    paywallBlurred,
   } = useInlineDayReading({
     iso: todayIso,
     endpoint: "ngay-hom-nay",
@@ -64,7 +62,6 @@ export function CHomeScreen() {
     ),
     subActive,
     newUserTeaser,
-    mockInlineText: null,
   });
 
   const inlineFallbackText = today ? pickInlineLuanFallback(today) : "";
@@ -146,25 +143,19 @@ export function CHomeScreen() {
                   </button>
                   .
                 </p>
-              ) : !showInlineLuan ? null : paywallBlurred ? (
-                <DayLuanPaywallBlur minHeight={100}>
-                  <CTodayReasoning
-                    text={readingText}
-                    fallbackText={inlineFallbackText || null}
-                    loading={readingLoading}
-                    instant={instantTyping}
-                    onTypingComplete={markTypingSeen}
-                    showCta={false}
-                  />
-                </DayLuanPaywallBlur>
-              ) : (
+              ) : !showInlineLuan && !newUserTeaser ? null : (
                 <CTodayReasoning
                   text={readingText}
                   fallbackText={inlineFallbackText || null}
                   loading={readingLoading}
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
-                  onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
+                  onCtaClick={() =>
+                    void navigate(
+                      newUserTeaser ? "/dat-lich" : `/luan-ai/day-${todayIso}`,
+                    )
+                  }
+                  showCta={Boolean(user)}
                 />
               )
             }
