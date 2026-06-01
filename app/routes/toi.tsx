@@ -308,22 +308,8 @@ export default function ToiRoute() {
               Đọc ngay →
             </div>
           </Link>
-        ) : isActive ? (
-          <CMeLockedBaziCard />
         ) : (
-          <Link
-            to="/dat-lich"
-            className="mt-[22px] block border px-4 py-3.5 no-underline"
-            style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
-          >
-            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Luận giải Bát tự</Mono>
-            <div className="mt-1.5 font-[family-name:var(--display)] text-base font-extrabold uppercase tracking-[-0.005em]">
-              Mở khóa luận giải
-            </div>
-            <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-              Gói năm hoặc mua lẻ tại Đặt lịch
-            </div>
-          </Link>
+          <CMeLockedBaziCard />
         )}
 
         {tieuVanUnlocked ? (
@@ -354,22 +340,8 @@ export default function ToiRoute() {
               Đọc ngay →
             </div>
           </Link>
-        ) : isActive ? (
-          <CMeLockedTieuVanCard />
         ) : (
-          <Link
-            to="/dat-lich"
-            className="mt-[22px] block border px-4 py-3.5 no-underline"
-            style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
-          >
-            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Luận giải Tiểu vận</Mono>
-            <div className="mt-1.5 font-[family-name:var(--display)] text-base font-extrabold uppercase tracking-[-0.005em]">
-              Mở khóa luận giải
-            </div>
-            <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-              Gói 6 tháng/năm hoặc mua lẻ tại Đặt lịch
-            </div>
-          </Link>
+          <CMeLockedTieuVanCard />
         )}
 
         <div

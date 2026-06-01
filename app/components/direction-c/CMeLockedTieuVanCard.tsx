@@ -1,16 +1,18 @@
 import { Link } from "react-router";
 
 import { Mono } from "~/components/brand";
+import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
 import { UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — Tôi / Lịch: Tiểu vận locked card for subscribers without entitlement. */
 export function CMeLockedTieuVanCard() {
   const pkg = UI_PACKAGES.find((p) => p.sku === "luan_tieu_van");
+  const tieuVanYear = currentYearVn();
 
   return (
     <Link
-      to="/luan/mua/xac-nhan?sku=luan_tieu_van"
+      to={`/toi/luan-tieu-van?year=${tieuVanYear}`}
       className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
       style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
     >

@@ -158,8 +158,8 @@ export function CHomeScreen() {
           />
         ) : null}
 
-        {today && !showRecomputeSkeleton && subActive ? (
-          baziUnlocked ? (
+        {today && !showRecomputeSkeleton && (subActive || newUserTeaser) ? (
+          baziUnlocked && subActive ? (
             <Link
               to="/toi/luan-bat-tu"
               className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
@@ -192,8 +192,8 @@ export function CHomeScreen() {
           )
         ) : null}
 
-        {today && !showRecomputeSkeleton && subActive ? (
-          tieuVanUnlocked ? (
+        {today && !showRecomputeSkeleton && (subActive || newUserTeaser) ? (
+          tieuVanUnlocked && subActive ? (
             <Link
               to={`/toi/luan-tieu-van?year=${tieuVanYear}`}
               className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
