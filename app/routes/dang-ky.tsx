@@ -190,6 +190,15 @@ export default function DangKy() {
       .eq("id", uid);
     if (profileError) return profileError.message;
 
+    // Strip the email-verification stash from user_metadata now that the profile
+    // row is written. Fire-and-forget — failure to clean is not fatal, but keeping
+    // the fields in raw_user_meta_data causes them to (a) persist in JWTs for the
+    // account lifetime and (b) permanently shadow the profile row on future /dang-ky
+    // loads due to the "prev wins" guard ordering.
+    void supabase.auth.updateUser({
+      data: { ngay_sinh: null, gio_sinh: null, gioi_tinh: null },
+    });
+
     if (landingSignupPrefillHasAny(prefill)) {
       const pe = await applyLandingPrefillToProfile(uid, prefill, {
         skipBirthFields: true,
