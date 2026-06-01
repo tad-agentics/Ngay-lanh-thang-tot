@@ -267,12 +267,12 @@ export default function DangKy() {
     const uid = data.user?.id;
 
     if (session && uid) {
-      const { data: profileRow } = await supabase
+      const { data: profileRow, error: profileCheckError } = await supabase
         .from("profiles")
         .select("id")
         .eq("id", uid)
         .maybeSingle();
-      if (!profileRow) {
+      if (!profileRow && !profileCheckError) {
         toast.error("Tài khoản đã tạo nhưng hồ sơ chưa được khởi tạo — thử đăng nhập lại.");
         setBusy(false);
         navigate("/dang-nhap", { replace: true });
