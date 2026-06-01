@@ -41,7 +41,8 @@ export default function DangDungLichRoute() {
   const [quote, setQuote] = useState(buildingCalendarQuote(null));
   const [buildError, setBuildError] = useState<string | null>(null);
   const [retryTick, setRetryTick] = useState(0);
-  const ranRef = useRef(false);
+  /** One build per `retryTick`; must not reset when `profile` refetches (profile-refresh). */
+  const buildStartedForRetry = useRef(-1);
 
   const resetReveal = useCallback(() => {
     setDoneCount(0);
@@ -65,10 +66,11 @@ export default function DangDungLichRoute() {
       return;
     }
 
-    const body = profileToBatTuPersonQuery(profile);
+    if (buildStartedForRetry.current === retryTick) return;
+    buildStartedForRetry.current = retryTick;
 
-    if (ranRef.current) return;
-    ranRef.current = true;
+    const body = profileToBatTuPersonQuery(profile);
+    const storedLaso = profile.la_so;
 
     let cancelled = false;
     const timers: number[] = [];
@@ -77,7 +79,6 @@ export default function DangDungLichRoute() {
     timers.push(
       window.setTimeout(() => {
         if (!cancelled) {
-          ranRef.current = false;
           setBuildError("Mất quá nhiều thời gian. Vui lòng thử lại.");
           toast.error("Không lập được lịch.");
         }
@@ -90,13 +91,12 @@ export default function DangDungLichRoute() {
         void invokeBatTu<unknown>({ op: "profile", body }).catch(() => {});
 
         let tuTruPayload: unknown;
-        if (profileHasStoredLaso(profile.la_so)) {
-          tuTruPayload = profile.la_so;
+        if (profileHasStoredLaso(storedLaso)) {
+          tuTruPayload = storedLaso;
         } else {
           const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
           if (cancelled) return;
           if (!res.ok) {
-            ranRef.current = false;
             setBuildError(
               res.message ?? "Không lập được lá số. Thử lại sau vài giây.",
             );
@@ -111,7 +111,7 @@ export default function DangDungLichRoute() {
         const labels = extractTuTruPillarLabels(tuTruPayload);
         const tagline = extractMenhTagline(tuTruPayload);
         setQuote(buildingCalendarQuote(tagline));
-        window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+        // Profile refresh deferred to `/lich-da-mo` — refresh here re-ran this effect (loop).
 
         for (const { at, done, prog } of REVEAL_STEPS) {
           timers.push(
@@ -132,7 +132,6 @@ export default function DangDungLichRoute() {
         );
       } catch {
         if (!cancelled) {
-          ranRef.current = false;
           setBuildError("Đã xảy ra lỗi. Vui lòng thử lại.");
           toast.error("Không lập được lịch.");
         }
@@ -141,13 +140,21 @@ export default function DangDungLichRoute() {
 
     return () => {
       cancelled = true;
-      ranRef.current = false;
       timers.forEach(window.clearTimeout);
     };
-  }, [profile, profileLoading, navigate, retryTick]);
+  }, [
+    profileLoading,
+    navigate,
+    retryTick,
+    profile?.id,
+    profile?.ngay_sinh,
+    profile?.gio_sinh,
+    profile?.gioi_tinh,
+    profile?.onboarding_completed_at,
+  ]);
 
   function handleRetry() {
-    ranRef.current = false;
+    buildStartedForRetry.current = -1;
     resetReveal();
     setRetryTick((n) => n + 1);
   }
