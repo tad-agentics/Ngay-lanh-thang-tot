@@ -92,6 +92,7 @@ function LandingGoogleSignInButton({
   className,
   style,
   onAfterClick,
+  referralFromUrl = "",
 }: {
   className: string;
   style?: CSSProperties;
