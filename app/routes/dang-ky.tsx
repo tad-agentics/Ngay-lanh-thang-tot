@@ -183,7 +183,8 @@ export default function DangKy() {
         skipDisplayName: Boolean(fullName.trim()),
       });
       if (pe) {
-        return "Đã lưu lá số nhưng chưa áp dụng được thông tin từ trang chủ.";
+        window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+        return "Đã lưu thông tin bản mệnh nhưng chưa áp dụng được thông tin từ trang chủ.";
       }
     }
     window.dispatchEvent(new Event("ngaytot:profile-refresh"));
@@ -266,6 +267,18 @@ export default function DangKy() {
     const uid = data.user?.id;
 
     if (session && uid) {
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", uid)
+        .maybeSingle();
+      if (!profileRow) {
+        toast.error("Tài khoản đã tạo nhưng hồ sơ chưa được khởi tạo — thử đăng nhập lại.");
+        setBusy(false);
+        navigate("/dang-nhap", { replace: true });
+        return;
+      }
+
       const err = await persistBirthProfile(uid, ngayIso, gioSinh, gioiTinh);
       if (err) {
         toast.error(
