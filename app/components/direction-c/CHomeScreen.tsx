@@ -38,7 +38,7 @@ export function CHomeScreen() {
     today,
     menh,
     canBatTu,
-    rawPayload,
+    readingPayload,
     online,
     todayIso,
     recomputePending: recomputePendingFromData,
@@ -56,9 +56,9 @@ export function CHomeScreen() {
   } = useInlineDayReading({
     iso: todayIso,
     endpoint: "ngay-hom-nay",
-    batTuPayload: rawPayload,
+    batTuPayload: readingPayload,
     enabled: Boolean(
-      user && today && rawPayload && online && !showRecomputeSkeleton,
+      user && today && readingPayload && online && !showRecomputeSkeleton,
     ),
     subActive,
     newUserTeaser,

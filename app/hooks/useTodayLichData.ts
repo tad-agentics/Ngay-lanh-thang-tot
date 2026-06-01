@@ -26,6 +26,8 @@ export function useTodayLichData() {
   const [error, setError] = useState<string | null>(null);
   const [today, setToday] = useState<NgayHomNayHome | null>(null);
   const [rawPayload, setRawPayload] = useState<unknown | null>(null);
+  /** Structured context for `generate-reading` (preferred over raw ngay-hom-nay). */
+  const [readingPayload, setReadingPayload] = useState<unknown | null>(null);
 
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
   const menh = laso?.menh ?? null;
@@ -41,6 +43,7 @@ export function useTodayLichData() {
       setLoading(false);
       setToday(null);
       setRawPayload(null);
+      setReadingPayload(null);
       setError(null);
       return;
     }
@@ -48,6 +51,7 @@ export function useTodayLichData() {
       setLoading(false);
       setToday(null);
       setRawPayload(null);
+      setReadingPayload(null);
       setError(
         profile && !canBatTu
           ? "Hoàn tất lập lá số (ngày sinh và canh giờ) để mở lịch."
@@ -60,6 +64,7 @@ export function useTodayLichData() {
       setLoading(true);
       setToday(null);
       setRawPayload(null);
+      setReadingPayload(null);
       setError(null);
       return;
     }
@@ -68,6 +73,7 @@ export function useTodayLichData() {
       const cached = readCached();
       setToday(cached);
       setRawPayload(null);
+      setReadingPayload(null);
       setError(cached ? null : "Không có dữ liệu ngoại tuyến cho hôm nay.");
       setLoading(false);
       return;
@@ -79,14 +85,19 @@ export function useTodayLichData() {
 
     void (async () => {
       const body = profileToBatTuPersonQuery(profile);
-      const [homNayRes, detailRes] = await Promise.all([
+      const query = { ...body, date: todayIso };
+      const [homNayRes, detailRes, luanRes] = await Promise.all([
         invokeBatTu<unknown>({
           op: "ngay-hom-nay",
-          body: { ...body, date: todayIso },
+          body: query,
         }),
         invokeBatTu<unknown>({
           op: "day-detail",
-          body: { ...body, date: todayIso },
+          body: query,
+        }),
+        invokeBatTu<unknown>({
+          op: "day-luan-context",
+          body: query,
         }),
       ]);
       if (cancelled) return;
@@ -94,6 +105,7 @@ export function useTodayLichData() {
         setError(homNayRes.message ?? "Không tải được lịch hôm nay.");
         setToday(null);
         setRawPayload(null);
+        setReadingPayload(null);
       } else {
         let parsed = parseNgayHomNayForHome(homNayRes.data);
         if (parsed && detailRes.ok) {
@@ -101,6 +113,13 @@ export function useTodayLichData() {
         }
         setToday(parsed);
         setRawPayload(homNayRes.data);
+        setReadingPayload(
+          luanRes.ok
+            ? luanRes.data
+            : detailRes.ok
+              ? detailRes.data
+              : homNayRes.data,
+        );
         if (parsed) writeCached(parsed);
       }
       setLoading(false);
@@ -128,6 +147,7 @@ export function useTodayLichData() {
     error,
     today,
     rawPayload,
+    readingPayload,
     menh,
     scoreMethodology: today?.scoreMethodology ?? null,
     hasLaso: profile ? profileHasLaso(profile.la_so) : false,

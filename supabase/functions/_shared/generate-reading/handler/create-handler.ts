@@ -147,8 +147,13 @@ export function createGenerateReadingHandler(
       if (userErr || !uid) {
         return ok(null, null, req);
       }
+      const adminGate = createClient(gateUrl, gateService);
+      const dayIso =
+        endpoint === "ngay-hom-nay"
+          ? todayIsoVietnam()
+          : dayIsoFromDayDetailData(data);
+
       if (variant === "teaser") {
-        const adminGate = createClient(gateUrl, gateService);
         const { data: teaserProfile, error: teaserProfErr } = await adminGate
           .from("profiles")
           .select("subscription_expires_at")
@@ -168,22 +173,56 @@ export function createGenerateReadingHandler(
           return ok(null, null, req);
         }
         if (endpoint === "day-detail") {
-          const dayIso = dayIsoFromDayDetailData(data);
           if (!dayIso || dayIso !== todayIsoVietnam()) {
             return ok(null, null, req);
           }
         }
         rateLimitUserId = uid;
+      } else if (variant === "inline" && endpoint === "day-detail") {
+        const { data: inlineProfile, error: inlineProfErr } = await adminGate
+          .from("profiles")
+          .select("subscription_expires_at")
+          .eq("id", uid)
+          .maybeSingle();
+        if (inlineProfErr || !inlineProfile) {
+          console.warn(
+            "generate-reading inline day-detail denied",
+            uid,
+            inlineProfErr?.message ?? "profile_missing",
+          );
+          return ok(null, null, req);
+        }
+        if (inlineProfile.subscription_expires_at == null) {
+          if (!dayIso || dayIso !== todayIsoVietnam()) {
+            return ok(null, null, req);
+          }
+          rateLimitUserId = uid;
+        } else {
+          if (!dayIso) {
+            return ok(null, null, req);
+          }
+          const preflight = await preflightAiReadingAccess(
+            adminGate,
+            uid,
+            "day_detail",
+            dayIso,
+          );
+          if (!preflight.allowed) {
+            console.warn(
+              "generate-reading preflight denied",
+              endpoint,
+              preflight.reason,
+              uid,
+            );
+            return ok(null, null, req);
+          }
+          rateLimitUserId = uid;
+        }
       } else {
-        const dayIso =
-          endpoint === "ngay-hom-nay"
-            ? todayIsoVietnam()
-            : dayIsoFromDayDetailData(data);
         if (!dayIso) {
           return ok(null, null, req);
         }
         const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
-        const adminGate = createClient(gateUrl, gateService);
         const preflight = await preflightAiReadingAccess(
           adminGate,
           uid,

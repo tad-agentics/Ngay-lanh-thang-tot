@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "~/lib/auth";
+import { buildInlineDayReadingInvoke } from "~/lib/inline-day-reading-invoke";
 import { invokeGenerateReading } from "~/lib/generate-reading";
 import { shortenInlineReading } from "~/lib/inline-reading-text";
 import {
@@ -89,11 +90,15 @@ export function useInlineDayReading({
 
     void (async () => {
       if (freeNeverSubToday) {
-        const r = await invokeGenerateReading({
+        const genInput = buildInlineDayReadingInvoke(
           endpoint,
-          data: payloadRef.current,
-          variant: "teaser",
-        });
+          payloadRef.current,
+          "teaser",
+        );
+        let r = await invokeGenerateReading(genInput);
+        if (!r.reading && !r.transportError) {
+          r = await invokeGenerateReading(genInput);
+        }
         if (cancelled) return;
         if (r.reading) {
           setText(shortenInlineReading(r.reading));
@@ -135,11 +140,9 @@ export function useInlineDayReading({
         setPaywallBlurred(false);
         return;
       }
-      const r = await invokeGenerateReading({
-        endpoint,
-        data: payloadRef.current,
-        variant: "inline",
-      });
+      const r = await invokeGenerateReading(
+        buildInlineDayReadingInvoke(endpoint, payloadRef.current, "inline"),
+      );
       if (cancelled) return;
       if (r.reading) {
         const teaser = shortenInlineReading(r.reading);
