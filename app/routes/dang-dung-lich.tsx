@@ -73,48 +73,70 @@ export default function DangDungLichRoute() {
     let cancelled = false;
     const timers: number[] = [];
 
-    void (async () => {
-      await invokeBatTu<unknown>({ op: "profile", body });
-
-      let tuTruPayload: unknown;
-      if (profileHasStoredLaso(profile.la_so)) {
-        tuTruPayload = profile.la_so;
-      } else {
-        const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
-        if (cancelled) return;
-        if (!res.ok) {
+    // Overall watchdog: if tu-tru hasn't resolved within 25s, show retry.
+    timers.push(
+      window.setTimeout(() => {
+        if (!cancelled) {
           ranRef.current = false;
-          setBuildError(
-            res.message ?? "Không lập được lá số. Thử lại sau vài giây.",
-          );
-          toast.error("Không lập được lá số.");
-          return;
+          setBuildError("Mất quá nhiều thời gian. Vui lòng thử lại.");
+          toast.error("Không lập được lịch.");
         }
-        tuTruPayload = res.data;
-      }
+      }, 25_000),
+    );
 
-      const labels = extractTuTruPillarLabels(tuTruPayload);
-      const tagline = extractMenhTagline(tuTruPayload);
-      setQuote(buildingCalendarQuote(tagline));
-      window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+    void (async () => {
+      try {
+        // Profile sync — fire-and-forget; tu-tru receives all data in body.
+        void invokeBatTu<unknown>({ op: "profile", body }).catch(() => {});
 
-      for (const { at, done, prog } of REVEAL_STEPS) {
+        let tuTruPayload: unknown;
+        if (profileHasStoredLaso(profile.la_so)) {
+          tuTruPayload = profile.la_so;
+        } else {
+          const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
+          if (cancelled) return;
+          if (!res.ok) {
+            ranRef.current = false;
+            setBuildError(
+              res.message ?? "Không lập được lá số. Thử lại sau vài giây.",
+            );
+            toast.error("Không lập được lá số.");
+            return;
+          }
+          tuTruPayload = res.data;
+        }
+
+        if (cancelled) return;
+
+        const labels = extractTuTruPillarLabels(tuTruPayload);
+        const tagline = extractMenhTagline(tuTruPayload);
+        setQuote(buildingCalendarQuote(tagline));
+        window.dispatchEvent(new Event("ngaytot:profile-refresh"));
+
+        for (const { at, done, prog } of REVEAL_STEPS) {
+          timers.push(
+            window.setTimeout(() => {
+              if (cancelled) return;
+              setDoneCount(done);
+              setProgress(prog);
+              setPillarValues((prev) =>
+                prev.map((v, i) => (i < done ? labels[i] ?? v : v)),
+              );
+            }, at),
+          );
+        }
         timers.push(
           window.setTimeout(() => {
-            if (cancelled) return;
-            setDoneCount(done);
-            setProgress(prog);
-            setPillarValues((prev) =>
-              prev.map((v, i) => (i < done ? labels[i] ?? v : v)),
-            );
-          }, at),
+            if (!cancelled) navigate("/lich-da-mo", { replace: true });
+          }, 3400),
         );
+      } catch {
+        if (!cancelled) {
+          ranRef.current = false;
+          setBuildError("Đã xảy ra lỗi. Vui lòng thử lại.");
+          toast.error("Không lập được lịch.");
+        }
       }
-      timers.push(
-        window.setTimeout(() => {
-          if (!cancelled) navigate("/lich-da-mo", { replace: true });
-        }, 3400),
-      );
     })();
 
     return () => {
