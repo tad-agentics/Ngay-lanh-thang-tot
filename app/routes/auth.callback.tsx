@@ -7,7 +7,11 @@ import {
   CForestShell,
 } from "~/components/auth/c-auth-ui";
 import { LogoMark, Mono } from "~/components/brand";
-import { readOauthCallbackError } from "~/lib/auth-login-error";
+import {
+  AUTH_CALLBACK_VERIFY_FAILED,
+  AUTH_CALLBACK_VERIFY_TIMEOUT,
+  readOauthCallbackError,
+} from "~/lib/auth-login-error";
 import { exchangeOAuthCodeFromUrl, resolvePostLoginPath } from "~/lib/auth-post-login";
 import { supabase } from "~/lib/supabase";
 
@@ -93,7 +97,7 @@ export default function AuthCallback() {
     const resolveDestination = async () => {
       const dest = await resolvePostLoginPath();
       if (dest === "/dang-nhap") {
-        fail("Không xác minh được tài khoản Google. Thử lại.");
+        fail(AUTH_CALLBACK_VERIFY_FAILED);
         return;
       }
       goAuthed(dest);
@@ -105,7 +109,7 @@ export default function AuthCallback() {
       const exchangeError = await exchangeOAuthCodeFromUrl();
       if (!active || settled) return;
       if (exchangeError) {
-        fail("Không xác minh được Google. Thử lại.");
+        fail(AUTH_CALLBACK_VERIFY_FAILED);
         return;
       }
 
@@ -120,7 +124,7 @@ export default function AuthCallback() {
         .then(({ data, error }) => {
           if (!active || settled) return;
           if (error) {
-            fail("Không xác minh được Google. Thử lại.");
+            fail(AUTH_CALLBACK_VERIFY_FAILED);
             return;
           }
           if (data.session) {
@@ -129,7 +133,7 @@ export default function AuthCallback() {
         })
         .catch(() => {
           if (!active || settled) return;
-          fail("Không xác minh được Google. Thử lại.");
+          fail(AUTH_CALLBACK_VERIFY_FAILED);
         });
 
       const t = window.setTimeout(() => {
@@ -139,20 +143,18 @@ export default function AuthCallback() {
           .then(({ data, error }) => {
             if (!active || settled) return;
             if (error) {
-              fail("Không xác minh được Google. Thử lại.");
+              fail(AUTH_CALLBACK_VERIFY_FAILED);
               return;
             }
             if (data.session) {
               void resolveDestination();
             } else {
-              fail(
-                "Không xác minh được Google trong thời gian chờ. Thử lại.",
-              );
+              fail(AUTH_CALLBACK_VERIFY_TIMEOUT);
             }
           })
           .catch(() => {
             if (!active || settled) return;
-            fail("Không xác minh được Google. Thử lại.");
+            fail(AUTH_CALLBACK_VERIFY_FAILED);
           });
       }, SESSION_WAIT_MS);
 
@@ -195,7 +197,7 @@ export default function AuthCallback() {
         <LogoMark dark size={48} />
         <div>
           <Mono style={{ color: C.gold, fontSize: 10.5, letterSpacing: "0.22em" }}>
-            Đang xác minh Google
+            Đang xác minh tài khoản
           </Mono>
           <p
             style={{

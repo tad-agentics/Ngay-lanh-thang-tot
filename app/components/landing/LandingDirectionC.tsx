@@ -1,13 +1,18 @@
 /**
  * Direction C marketing landing — port of c-landing.jsx
  */
-import { useCallback, useState, type CSSProperties } from "react";
-import { Link } from "react-router";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
+import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { GoogleIcon } from "~/components/auth/c-auth-ui";
 import { LogoMark, Mono } from "~/components/brand";
 import { scoreColorFromPoints } from "~/components/landing/landing-c-utils";
+import { mapAuthErrorMessageVi } from "~/lib/auth-login-error";
+import {
+  referralParamFromSearchParams,
+  stashPendingReferralCode,
+} from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
 
 import "~/styles/landing-direction-c.css";
@@ -66,9 +71,10 @@ const FAQS = [
 const landingGoogleBtnClass =
   "inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-display font-bold uppercase no-underline";
 
-function useLandingGoogleSignIn() {
+function useLandingGoogleSignIn(referralFromUrl: string) {
   const [busy, setBusy] = useState(false);
   const signInGoogle = useCallback(async () => {
+    stashPendingReferralCode(referralFromUrl);
     setBusy(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -77,8 +83,8 @@ function useLandingGoogleSignIn() {
       },
     });
     setBusy(false);
-    if (error) toast.error(error.message);
-  }, []);
+    if (error) toast.error(mapAuthErrorMessageVi(error.message));
+  }, [referralFromUrl]);
   return { busy, signInGoogle };
 }
 
@@ -90,8 +96,9 @@ function LandingGoogleSignInButton({
   className: string;
   style?: CSSProperties;
   onAfterClick?: () => void;
+  referralFromUrl?: string;
 }) {
-  const { busy, signInGoogle } = useLandingGoogleSignIn();
+  const { busy, signInGoogle } = useLandingGoogleSignIn(referralFromUrl ?? "");
   return (
     <button
       type="button"
@@ -109,7 +116,13 @@ function LandingGoogleSignInButton({
   );
 }
 
-function LHeader({ onMenu }: { onMenu: () => void }) {
+function LHeader({
+  onMenu,
+  referralFromUrl,
+}: {
+  onMenu: () => void;
+  referralFromUrl: string;
+}) {
   return (
     <header
       className="sticky top-0 z-50 flex items-center justify-between"
@@ -158,6 +171,7 @@ function LHeader({ onMenu }: { onMenu: () => void }) {
         <LandingGoogleSignInButton
           className={`${landingGoogleBtnClass} px-5 py-2.5 text-xs`}
           style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em" }}
+          referralFromUrl={referralFromUrl}
         />
       </nav>
       <button
@@ -175,7 +189,15 @@ function LHeader({ onMenu }: { onMenu: () => void }) {
   );
 }
 
-function LMobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+function LMobileDrawer({
+  open,
+  onClose,
+  referralFromUrl,
+}: {
+  open: boolean;
+  onClose: () => void;
+  referralFromUrl: string;
+}) {
   if (!open) return null;
   return (
     <div
@@ -211,6 +233,7 @@ function LMobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }
             className={`${landingGoogleBtnClass} w-full py-3.5 text-[13.5px]`}
             style={{ background: T.forest, color: T.cream, letterSpacing: "0.08em" }}
             onAfterClick={onClose}
+            referralFromUrl={referralFromUrl}
           />
         </div>
       </div>
@@ -338,13 +361,29 @@ function SectionKicker({ children, dark }: { children: string; dark?: boolean })
 }
 
 export function LandingDirectionC() {
+  const [searchParams] = useSearchParams();
+  const referralFromUrl = useMemo(
+    () => referralParamFromSearchParams(searchParams),
+    [searchParams],
+  );
+  const signUpHref = useMemo(
+    () =>
+      referralFromUrl
+        ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
+        : "/dang-ky",
+    [referralFromUrl],
+  );
   const [menu, setMenu] = useState(false);
   const [faqOpen, setFaqOpen] = useState(0);
 
   return (
     <div className="ldc-root" style={{ background: T.paper, fontFamily: "var(--serif)", color: T.ink }}>
-      <LHeader onMenu={() => setMenu(true)} />
-      <LMobileDrawer open={menu} onClose={() => setMenu(false)} />
+      <LHeader onMenu={() => setMenu(true)} referralFromUrl={referralFromUrl} />
+      <LMobileDrawer
+        open={menu}
+        onClose={() => setMenu(false)}
+        referralFromUrl={referralFromUrl}
+      />
 
       {/* Hero */}
       <section className="relative overflow-hidden" style={{ background: T.paper, padding: "64px 6vw 80px" }}>
@@ -376,7 +415,7 @@ export function LandingDirectionC() {
             </div>
             <div className="mt-7 flex flex-wrap gap-3.5 items-center">
               <Link
-                to="/dang-ky"
+                to={signUpHref}
                 className="px-8 py-[18px] font-display font-bold text-[15.5px] uppercase no-underline"
                 style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em", boxShadow: "0 12px 24px rgba(29,49,41,0.18)" }}
               >
@@ -782,7 +821,7 @@ export function LandingDirectionC() {
             .
           </h2>
           <Link
-            to="/dang-ky"
+            to={signUpHref}
             className="inline-block mt-8 px-10 py-5 font-display font-bold text-base uppercase no-underline"
             style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em", boxShadow: "0 16px 32px rgba(197,165,90,0.25)" }}
           >
@@ -824,7 +863,7 @@ export function LandingDirectionC() {
           <Mono style={{ color: T.muted, fontSize: 9.5 }}>Khởi tạo nhanh chóng · Trải nghiệm ngay</Mono>
           <div className="font-display font-bold text-[13.5px] uppercase">Lịch bản mệnh Tứ Trụ</div>
         </div>
-        <Link to="/dang-ky" className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
+        <Link to={signUpHref} className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
           Bắt đầu →
         </Link>
       </div>

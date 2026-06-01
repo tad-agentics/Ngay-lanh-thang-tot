@@ -12,8 +12,12 @@ import {
   inputUnderline,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
-import { isInvalidLoginCredentials } from "~/lib/auth-login-error";
+import {
+  isInvalidLoginCredentials,
+  mapAuthErrorMessageVi,
+} from "~/lib/auth-login-error";
 import { resolvePostLoginPath } from "~/lib/auth-post-login";
+import { useAuth } from "~/lib/auth";
 import {
   appendReturnToQuery,
   returnToFromSearchParams,
@@ -27,6 +31,7 @@ import { supabase } from "~/lib/supabase";
 
 export default function DangNhapEmail() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const referralFromUrl = useMemo(
     () => referralParamFromSearchParams(searchParams),
@@ -64,6 +69,15 @@ export default function DangNhapEmail() {
     if (returnTo) stashPendingReturnTo(returnTo);
   }, [returnTo]);
 
+  useEffect(() => {
+    if (authLoading || !user) return;
+    void resolvePostLoginPath().then((dest) => {
+      if (dest !== "/dang-nhap" && dest !== "/dang-nhap/email") {
+        navigate(dest, { replace: true });
+      }
+    });
+  }, [authLoading, user, navigate]);
+
   async function signInGoogle() {
     stashPendingReferralCode(referralFromUrl);
     setBusy(true);
@@ -74,7 +88,7 @@ export default function DangNhapEmail() {
       },
     });
     setBusy(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(mapAuthErrorMessageVi(error.message));
   }
 
   async function onSubmit(e: FormEvent) {
@@ -88,9 +102,9 @@ export default function DangNhapEmail() {
     if (error) {
       setBusy(false);
       if (isInvalidLoginCredentials(error.message)) {
-        setPasswordError("Sai mật khẩu");
+        setPasswordError("Sai email hoặc mật khẩu.");
       } else {
-        toast.error(error.message);
+        toast.error(mapAuthErrorMessageVi(error.message));
       }
       return;
     }

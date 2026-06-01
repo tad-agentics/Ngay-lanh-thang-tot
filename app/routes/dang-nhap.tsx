@@ -11,6 +11,7 @@ import {
   GoogleIcon,
 } from "~/components/auth/c-auth-ui";
 import { Logo } from "~/components/brand";
+import { mapAuthErrorMessageVi } from "~/lib/auth-login-error";
 import { resolvePostLoginPath } from "~/lib/auth-post-login";
 import { useAuth } from "~/lib/auth";
 import {
@@ -80,7 +81,7 @@ export default function DangNhap() {
       },
     });
     setBusy(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(mapAuthErrorMessageVi(error.message));
   }
 
   return (

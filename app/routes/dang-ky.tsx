@@ -16,6 +16,7 @@ import { BackBar, Mono } from "~/components/brand";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import { useAuth } from "~/lib/auth";
 import { applyBirthToProfile } from "~/lib/auth-birth-sync";
+import { mapAuthErrorMessageVi } from "~/lib/auth-login-error";
 import {
   displayNameFromAuthUser,
   emailFromAuthUser,
@@ -274,7 +275,7 @@ export default function DangKy() {
     });
     if (error) {
       setBusy(false);
-      toast.error(error.message);
+      toast.error(mapAuthErrorMessageVi(error.message));
       return;
     }
 

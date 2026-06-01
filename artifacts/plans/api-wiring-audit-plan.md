@@ -2,8 +2,8 @@
 
 **Purpose:** Verify that every frontend data-flow connects to the correct backend contract (Supabase DB, RLS policies, Edge Functions, RPC, env vars). This is a functional wiring audit — not a visual/design audit.
 
-**Last updated:** 2026-05-10 (implemented)  
-**Status:** All confirmed ❌ gaps fixed. Verification checks remain for manual QA.
+**Last updated:** 2026-06-01  
+**Status:** Core wiring verified for Direction C. Auth/onboarding fixes in FE (metadata sync, callback copy, email redirect). Prod redirect URLs: see `artifacts/docs/auth-redirect-urls.md`. `weekly-summary` op retired from UI (parser only).
 
 ---
 
