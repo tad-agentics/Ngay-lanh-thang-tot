@@ -31,6 +31,7 @@ import { persistHopTuoiKetQua } from "~/lib/hop-tuoi-session";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { BAT_TU_SOURCE_TRA_CUU } from "~/lib/tra-cuu-pick";
 import { useProfile } from "~/hooks/useProfile";
+import { canUseCalendar } from "~/lib/entitlements";
 
 const HOP_OTHER_BIRTH_TIME_DEFAULT = "__default__";
 
@@ -95,6 +96,7 @@ export default function TraCuuHopTuoiRoute() {
 
   const hasLaso = profile ? profileHasLaso(profile.la_so) : false;
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
+  const calendarLocked = profile ? !canUseCalendar(profile) : false;
 
   useEffect(() => {
     if (!profileLoading && profile && !hasLaso) {
@@ -111,6 +113,10 @@ export default function TraCuuHopTuoiRoute() {
     !isPartialDdMmYyyyInput(form.ngaySinh);
 
   async function handleSubmit() {
+    if (calendarLocked) {
+      void navigate("/dat-lich");
+      return;
+    }
     if (!profile || !form.ngaySinh || !form.gioiTinh) return;
     const p1 = profileToBatTuPersonQuery(profile);
     if (!p1.birth_date) {

@@ -6,6 +6,7 @@ import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeS
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
+import { CHomeTodayLuanPaywall } from "~/components/direction-c/CHomeTodayLuanPaywall";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
@@ -22,7 +23,6 @@ import {
   isNewUserDayLuanTeaser,
   subscriptionActive,
 } from "~/lib/entitlements";
-import { pickInlineLuanFallback } from "~/lib/home-bat-tu";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
@@ -64,21 +64,18 @@ export function CHomeScreen() {
     newUserTeaser,
   });
 
-  const expectNlttLuan = newUserTeaser || subActive;
-  const engineFallbackText = today ? pickInlineLuanFallback(today) : "";
-  const inlineFallbackText = expectNlttLuan ? "" : engineFallbackText;
-  const showInlineLuan = expectNlttLuan
-    ? readingLoading ||
-      Boolean(readingText?.trim()) ||
-      Boolean(user && today)
-    : readingLoading ||
-      Boolean(readingText?.trim()) ||
-      Boolean(engineFallbackText.trim());
-  const showNlttLuanFailed =
-    expectNlttLuan &&
+  const showHomeLuanPaywall =
+    !subActive &&
     Boolean(user && today) &&
     !readingLoading &&
     !readingText?.trim();
+  const showNlttLuanFailed =
+    subActive &&
+    Boolean(user && today) &&
+    !readingLoading &&
+    !readingText?.trim();
+  const showTodayReasoning =
+    Boolean(readingLoading || readingText?.trim());
 
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
@@ -137,6 +134,10 @@ export function CHomeScreen() {
                 >
                   Luận giải đầy đủ cần kết nối lại.
                 </p>
+              ) : showHomeLuanPaywall ? (
+                <CHomeTodayLuanPaywall
+                  onDatLich={() => void navigate("/dat-lich")}
+                />
               ) : showNlttLuanFailed ? (
                 <p
                   className="px-[18px] pb-3.5 font-serif text-sm italic leading-snug"
@@ -153,17 +154,16 @@ export function CHomeScreen() {
                   </button>
                   .
                 </p>
-              ) : !showInlineLuan && !newUserTeaser ? null : (
+              ) : showTodayReasoning ? (
                 <CTodayReasoning
                   text={readingText}
-                  fallbackText={inlineFallbackText || null}
                   loading={readingLoading}
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
                   onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
                   showCta={Boolean(user)}
                 />
-              )
+              ) : null
             }
           />
         ) : null}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CPickLoadingScreen } from "~/components/direction-c/CPickLoadingScreen";
@@ -25,6 +26,7 @@ import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 import { consumeTraCuuFormPreset } from "~/lib/tra-cuu-session";
 import { consumeTraCuuIntentPreset } from "~/lib/hop-tuoi-ui";
 import { useProfile } from "~/hooks/useProfile";
+import { canUseCalendar } from "~/lib/entitlements";
 
 const CHON_NGAY_INTENT_OPTIONS = TU_TRU_INTENT_OPTIONS.filter(
   (o) => o.value !== "MAC_DINH",
@@ -65,7 +67,9 @@ function splitIntentLabel(label: string): { main: string; accent: string | null 
 }
 
 export default function TraCuuRoute() {
+  const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
+  const calendarLocked = profile ? !canUseCalendar(profile) : false;
   const { overlayOpen, slow, intentLabel, busy, startPick, cancel } =
     useTraCuuPickOverlay();
   const [rangeDays, setRangeDays] = useState<number>(30);
@@ -97,6 +101,10 @@ export default function TraCuuRoute() {
     : { main: "Chọn việc", accent: null };
 
   async function runLookup() {
+    if (calendarLocked) {
+      void navigate("/dat-lich");
+      return;
+    }
     if (!profile?.ngay_sinh) {
       toast.error("Cần ngày sinh trong hồ sơ.");
       return;
