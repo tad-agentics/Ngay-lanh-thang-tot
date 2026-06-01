@@ -128,7 +128,7 @@ async function cacheAndReturnSections(
 export async function generateLuuNienReading(
   ctx: GenerateContext,
 ): Promise<GenerateResult> {
-  const { endpoint, payload, onlyLuuNienLife, onlyLuuNienCore } = ctx;
+  const { endpoint, payload, onlyLuuNienLife, onlyLuuNienCore, admin, now, cacheKey } = ctx;
   const budget = createEdgeBudget(GENERATE_READING_EDGE_BUDGET_MS);
 
   if (onlyLuuNienLife) {

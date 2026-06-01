@@ -360,8 +360,8 @@ export async function loadBaziReadingFull(
       stored &&
       deliveryHasFullLuanSections(
         stored.sections,
-        stored.luu_nien_facts,
-        stored.phong_thuy_facts,
+        stored.luuNienFactsRaw,
+        stored.phongThuyFactsRaw,
       )
     ) {
       return deliveryToLoadResult(stored);

@@ -250,7 +250,7 @@ async function generateLaSoChiTietCombinedFallback(
     const plain = await llmCompletion(
       SYSTEM_PROMPT,
       payload,
-      512,
+      READING_MAX_TOKENS_LA_SO_PREVIEW,
       laSoCallTimeout(budget),
       { profile: LA_SO_CHI_TIET_PROFILE },
     );
