@@ -150,11 +150,7 @@ export function CHomeScreen() {
                   loading={readingLoading}
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
-                  onCtaClick={() =>
-                    void navigate(
-                      newUserTeaser ? "/dat-lich" : `/luan-ai/day-${todayIso}`,
-                    )
-                  }
+                  onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
                   showCta={Boolean(user)}
                 />
               )

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, LogoMark, Mono } from "~/components/brand";
-import { DayLuanPaywallBlur } from "~/components/direction-c/DayLuanPaywallBlur";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
@@ -18,7 +17,6 @@ import {
   formatDayIsoShort,
 } from "~/lib/day-luan-sectioned";
 import { paragraphSpansInText } from "~/lib/prose-paragraphs";
-import { splitReadingAtHalf } from "~/lib/reading-teaser";
 
 const TYPED_MS = 18;
 
@@ -242,9 +240,21 @@ function chipWasAsked(chip: string, asked: string[]): boolean {
   });
 }
 
+const chipButtonStyle = {
+  background: "#fff",
+  border: `1px solid ${CT.hairline}`,
+  color: CT.ink2,
+  cursor: "pointer",
+} as const;
+
 export function CAiTypedScreen({ iso }: { iso: string }) {
+  const navigate = useNavigate();
   const scrollRef = useRef<HTMLDivElement>(null);
   const turnEndRef = useRef<HTMLDivElement>(null);
+
+  const openPurchase = useCallback(() => {
+    navigate("/dat-lich");
+  }, [navigate]);
 
   const {
     profile,
@@ -286,10 +296,6 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const quotaRemaining = followUpRemaining;
   const quotaExhausted = quotaRemaining <= 0;
 
-  const readingSplit = useMemo(
-    () => (reading ? splitReadingAtHalf(reading) : { visible: "", locked: "" }),
-    [reading],
-  );
   const showAnchorHead = Boolean(
     reading && !readingLoading && (unlocked || paywallTeaser),
   );
@@ -336,13 +342,17 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   const submitFollowUp = useCallback(
     async (rawQuestion: string) => {
+      if (paywallTeaser) {
+        openPurchase();
+        return;
+      }
+
       const question = rawQuestion.trim();
       if (
         !question ||
         submitBusy ||
         quotaExhausted ||
         !unlocked ||
-        paywallTeaser ||
         !followUpChatEnabled
       ) {
         return;
@@ -392,6 +402,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       askFollowUp,
       compareWithTomorrow,
       followUpChatEnabled,
+      openPurchase,
       paywallTeaser,
       quotaExhausted,
       scrollToLatest,
@@ -402,6 +413,10 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   const retryFollowUp = useCallback(
     async (turnId: string, question: string) => {
+      if (paywallTeaser) {
+        openPurchase();
+        return;
+      }
       setFollowUps((prev) =>
         prev.map((t) =>
           t.id === turnId ? { ...t, loading: true, error: null, answer: null } : t,
@@ -432,7 +447,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
     },
-    [askFollowUp],
+    [askFollowUp, openPurchase, paywallTeaser],
   );
 
   const askedQuestions = [
@@ -445,6 +460,12 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   const anchorKicker =
     anchorDone || !showAnchorHead ? "NLTT luận" : "NLTT đang luận…";
+
+  const purchaseGatedChips =
+    paywallTeaser &&
+    anchorDone &&
+    followUpChatEnabled &&
+    remainingChips.length > 0;
 
   return (
     <main
@@ -522,9 +543,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                   <AnchorLoadingSkeleton />
                 ) : (
                   <TypedBody
-                    text={
-                      paywallTeaser ? readingSplit.visible : (reading ?? "")
-                    }
+                    text={reading ?? ""}
                     active={showAnchorHead && !anchorTypingDone}
                     onComplete={handleAnchorTypingComplete}
                   />
@@ -532,70 +551,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </AiAnswerRow>
             )}
 
-            {paywallTeaser && anchorDone ? (
-              <DayLuanPaywallBlur className="mt-4" minHeight={280}>
-                {readingSplit.locked ? (
-                  <AiAnswerRow kicker="NLTT luận" compact>
-                    <TypedBody
-                      text={readingSplit.locked}
-                      active={false}
-                      fontSize={14}
-                      marginTop={6}
-                    />
-                  </AiAnswerRow>
-                ) : null}
-                <DayLuanSectionedPanel
-                  rows={sectionBundle.rows}
-                  baseScore={sectionBundle.baseScore}
-                  totalScore={detail?.score ?? null}
-                  iso={iso}
-                  canChi={detail?.canChi ?? "—"}
-                  sourceLabels={resolveLuanSourceLabels(detail)}
-                />
-                {followUpChatEnabled ? (
-                  <>
-                    <div
-                      className="mt-[22px] pt-4"
-                      style={{ borderTop: `1px solid ${CT.hairline}` }}
-                    >
-                      <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Hỏi tiếp gợi ý</Mono>
-                      <div className="mt-2 flex flex-col gap-1.5">
-                        {DAY_LUAN_SUGGESTED_CHIPS.slice(0, 3).map((chip) => (
-                          <div
-                            key={chip}
-                            className="py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
-                            style={{
-                              background: "#fff",
-                              border: `1px solid ${CT.hairline}`,
-                              color: CT.ink2,
-                            }}
-                          >
-                            {chip}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div
-                      className="mt-4 flex items-center gap-2.5 py-2.5 px-3.5"
-                      style={{
-                        background: "#fff",
-                        border: `1px solid ${CT.hairline}`,
-                        borderRadius: 999,
-                      }}
-                    >
-                      <span
-                        className="flex-1 font-serif text-[13.5px] italic"
-                        style={{ color: CT.muted }}
-                      >
-                        Hỏi tiếp về ngày {dayShort}…
-                      </span>
-                    </div>
-                  </>
-                ) : null}
-              </DayLuanPaywallBlur>
-            ) : null}
-
-            {!paywallTeaser && anchorDone ? (
+            {anchorDone ? (
               <DayLuanSectionedPanel
                 rows={sectionBundle.rows}
                 baseScore={sectionBundle.baseScore}
@@ -617,59 +573,81 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
             {!paywallTeaser
               ? followUps.map((turn) => (
+                  <div
+                    key={turn.id}
+                    className="mt-[22px] pt-[18px]"
+                    style={{ borderTop: `1px solid ${CT.hairline}` }}
+                  >
+                    <QuestionBlock question={turn.question} compact />
+                    {turn.loading ? (
+                      <AiAnswerRow kicker="NLTT đang luận…" compact>
+                        <p
+                          className="font-serif text-sm mt-1"
+                          style={{ color: CT.muted, minHeight: 20 }}
+                        >
+                          <span
+                            aria-hidden
+                            style={{
+                              display: "inline-block",
+                              width: 7,
+                              height: 14,
+                              background: CT.ink,
+                              animation: "b-cursor-blink 1s steps(2) infinite",
+                            }}
+                          />
+                        </p>
+                      </AiAnswerRow>
+                    ) : turn.error ? (
+                      <button
+                        type="button"
+                        className="mt-3 font-serif text-sm text-left"
+                        style={{ color: CT.red, background: "none", border: "none", padding: 0 }}
+                        onClick={() => void retryFollowUp(turn.id, turn.question)}
+                      >
+                        {turn.error}
+                      </button>
+                    ) : turn.answer ? (
+                      <AiAnswerRow kicker="NLTT luận" compact>
+                        <TypedBody
+                          text={turn.answer}
+                          active={!turn.typingDone}
+                          fontSize={13.5}
+                          marginTop={4}
+                          onComplete={() =>
+                            setFollowUps((prev) =>
+                              prev.map((t) =>
+                                t.id === turn.id ? { ...t, typingDone: true } : t,
+                              ),
+                            )
+                          }
+                        />
+                      </AiAnswerRow>
+                    ) : null}
+                  </div>
+                ))
+              : null}
+
+            {purchaseGatedChips ? (
               <div
-                key={turn.id}
-                className="mt-[22px] pt-[18px]"
+                className="mt-[22px] pt-4"
                 style={{ borderTop: `1px solid ${CT.hairline}` }}
               >
-                <QuestionBlock question={turn.question} compact />
-                {turn.loading ? (
-                  <AiAnswerRow kicker="NLTT đang luận…" compact>
-                    <p
-                      className="font-serif text-sm mt-1"
-                      style={{ color: CT.muted, minHeight: 20 }}
+                <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Hỏi tiếp gợi ý</Mono>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  {remainingChips.map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={openPurchase}
+                      className="text-left py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
+                      style={chipButtonStyle}
                     >
-                      <span
-                        aria-hidden
-                        style={{
-                          display: "inline-block",
-                          width: 7,
-                          height: 14,
-                          background: CT.ink,
-                          animation: "b-cursor-blink 1s steps(2) infinite",
-                        }}
-                      />
-                    </p>
-                  </AiAnswerRow>
-                ) : turn.error ? (
-                  <button
-                    type="button"
-                    className="mt-3 font-serif text-sm text-left"
-                    style={{ color: CT.red, background: "none", border: "none", padding: 0 }}
-                    onClick={() => void retryFollowUp(turn.id, turn.question)}
-                  >
-                    {turn.error}
-                  </button>
-                ) : turn.answer ? (
-                  <AiAnswerRow kicker="NLTT luận" compact>
-                    <TypedBody
-                      text={turn.answer}
-                      active={!turn.typingDone}
-                      fontSize={13.5}
-                      marginTop={4}
-                      onComplete={() =>
-                        setFollowUps((prev) =>
-                          prev.map((t) =>
-                            t.id === turn.id ? { ...t, typingDone: true } : t,
-                          ),
-                        )
-                      }
-                    />
-                  </AiAnswerRow>
-                ) : null}
+                      {chip}
+                    </button>
+                  ))}
+                </div>
               </div>
-              ))
-              : null}
+            ) : null}
 
             {!paywallTeaser &&
             followUpChatEnabled &&
@@ -689,12 +667,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                       disabled={submitBusy}
                       onClick={() => void submitFollowUp(chip)}
                       className="text-left py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
-                      style={{
-                        background: "#fff",
-                        border: `1px solid ${CT.hairline}`,
-                        color: CT.ink2,
-                        cursor: "pointer",
-                      }}
+                      style={chipButtonStyle}
                     >
                       {chip}
                     </button>
@@ -732,6 +705,45 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
           </>
         ) : null}
       </div>
+
+      {paywallTeaser && followUpChatEnabled && anchorDone && !detailLoading && !detailError ? (
+        <div
+          className="px-5 pt-2 pb-[18px]"
+          style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}
+        >
+          <button
+            type="button"
+            onClick={openPurchase}
+            className="flex w-full items-center gap-2.5 py-2.5 px-3.5 text-left"
+            style={{
+              background: "#fff",
+              border: `1px solid ${CT.hairline}`,
+              borderRadius: 999,
+              cursor: "pointer",
+            }}
+          >
+            <span
+              className="flex-1 font-serif text-[13.5px] italic"
+              style={{ color: CT.muted }}
+            >
+              Hỏi tiếp về ngày {dayShort}…
+            </span>
+            <span
+              className="shrink-0 flex h-7 w-7 items-center justify-center rounded-full font-serif text-sm"
+              style={{ background: CT.forest, color: CT.gold }}
+              aria-hidden
+            >
+              ↑
+            </span>
+          </button>
+          <p
+            className="mt-[7px] px-1 text-center font-serif text-[11px] italic"
+            style={{ color: CT.muted }}
+          >
+            Đặt lịch cát tường để hỏi tiếp và chat với NLTT
+          </p>
+        </div>
+      ) : null}
 
       {!paywallTeaser &&
       followUpChatEnabled &&

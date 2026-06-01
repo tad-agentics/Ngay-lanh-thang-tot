@@ -258,13 +258,7 @@ export function CDayDetailScreen() {
                     loading={readingLoading && (subActive || neverSubTodayFree)}
                     instant={instantTyping}
                     onTypingComplete={markTypingSeen}
-                    onCtaClick={() =>
-                      void navigate(
-                        neverSubTodayFree
-                          ? "/dat-lich"
-                          : `/luan-ai/day-${iso}`,
-                      )
-                    }
+                    onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
                     showCta={Boolean(user) && (subActive || neverSubTodayFree)}
                   />
                 ) : null
