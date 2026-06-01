@@ -1,12 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { tryConsumePendingReferralClaim, getSession, from } = vi.hoisted(
-  () => ({
-    tryConsumePendingReferralClaim: vi.fn(),
-    getSession: vi.fn(),
-    from: vi.fn(),
-  }),
-);
+const {
+  tryConsumePendingReferralClaim,
+  getSession,
+  exchangeCodeForSession,
+  from,
+} = vi.hoisted(() => ({
+  tryConsumePendingReferralClaim: vi.fn(),
+  getSession: vi.fn(),
+  exchangeCodeForSession: vi.fn(),
+  from: vi.fn(),
+}));
 
 vi.mock("~/lib/referral-claim", () => ({
   tryConsumePendingReferralClaim,
@@ -14,12 +18,15 @@ vi.mock("~/lib/referral-claim", () => ({
 
 vi.mock("~/lib/supabase", () => ({
   supabase: {
-    auth: { getSession },
+    auth: { getSession, exchangeCodeForSession },
     from,
   },
 }));
 
-import { resolvePostLoginPath } from "./auth-post-login";
+import {
+  exchangeOAuthCodeFromUrl,
+  resolvePostLoginPath,
+} from "./auth-post-login";
 
 function mockProfileRow(row: {
   onboarding_completed_at: string | null;
@@ -93,5 +100,76 @@ describe("resolvePostLoginPath", () => {
 
     expect(tryConsumePendingReferralClaim).not.toHaveBeenCalled();
     expect(dest).toBe("/dang-nhap");
+  });
+});
+
+describe("exchangeOAuthCodeFromUrl", () => {
+  const prevHref = window.location.href;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    window.history.replaceState({}, "", "/auth/callback");
+  });
+
+  afterEach(() => {
+    window.history.replaceState({}, "", prevHref);
+  });
+
+  it("skips exchange when detectSessionInUrl already established a session", async () => {
+    getSession.mockResolvedValue({
+      data: { session: { access_token: "tok" } },
+      error: null,
+    });
+    window.history.replaceState(
+      {},
+      "",
+      "/auth/callback?code=already-consumed",
+    );
+
+    const err = await exchangeOAuthCodeFromUrl();
+
+    expect(err).toBeNull();
+    expect(exchangeCodeForSession).not.toHaveBeenCalled();
+  });
+
+  it("treats failed exchange as success when session exists after race", async () => {
+    getSession
+      .mockResolvedValueOnce({ data: { session: null }, error: null })
+      .mockResolvedValueOnce({
+        data: { session: { access_token: "tok" } },
+        error: null,
+      });
+    window.history.replaceState({}, "", "/auth/callback?code=pkce-1");
+    exchangeCodeForSession.mockResolvedValue({
+      error: { message: "invalid flow state" },
+    });
+
+    const err = await exchangeOAuthCodeFromUrl();
+
+    expect(err).toBeNull();
+    expect(exchangeCodeForSession).toHaveBeenCalledWith("pkce-1");
+  });
+
+  it("returns error when exchange fails and session stays empty", async () => {
+    getSession.mockResolvedValue({ data: { session: null }, error: null });
+    window.history.replaceState({}, "", "/auth/callback?code=bad");
+    exchangeCodeForSession.mockResolvedValue({
+      error: { message: "invalid grant" },
+    });
+
+    const err = await exchangeOAuthCodeFromUrl();
+
+    expect(err).toBe("invalid grant");
+  });
+
+  it("exchanges code when no session yet", async () => {
+    getSession.mockResolvedValue({ data: { session: null }, error: null });
+    window.history.replaceState({}, "", "/auth/callback?code=good");
+    exchangeCodeForSession.mockResolvedValue({ error: null });
+
+    const err = await exchangeOAuthCodeFromUrl();
+
+    expect(err).toBeNull();
+    expect(exchangeCodeForSession).toHaveBeenCalledWith("good");
   });
 });

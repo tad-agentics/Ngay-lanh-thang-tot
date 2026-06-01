@@ -26,13 +26,35 @@ export async function resolvePostLoginPath(): Promise<string> {
   return destinationAfterAuthFromProfile(prof as PostLoginProfile | null);
 }
 
-/** PKCE OAuth — exchange ?code= before reading session on /auth/callback. */
+/**
+ * PKCE callback helper for `/auth/callback` (Google OAuth + email confirm).
+ *
+ * Supabase client uses `detectSessionInUrl: true`, which may exchange `?code=`
+ * before this runs. Treat an existing session as success; after a failed manual
+ * exchange, re-check session before surfacing an error.
+ */
 export async function exchangeOAuthCodeFromUrl(): Promise<string | null> {
   if (typeof window === "undefined") return null;
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
+
+  const {
+    data: { session: existing },
+    error: sessionReadError,
+  } = await supabase.auth.getSession();
+  if (sessionReadError) return sessionReadError.message;
+  if (existing) return null;
+
+  const code = new URLSearchParams(window.location.search).get("code");
   if (!code) return null;
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  return error?.message ?? null;
+  if (!error) return null;
+
+  const {
+    data: { session: afterRace },
+    error: retryReadError,
+  } = await supabase.auth.getSession();
+  if (retryReadError) return retryReadError.message;
+  if (afterRace) return null;
+
+  return error.message;
 }
