@@ -105,6 +105,19 @@ export default function DangKy() {
     if (fromAuth) {
       setFullName((prev) => (prev.trim() ? prev : fromAuth));
     }
+    // Pre-fill birth data from signUp metadata (email-verification path: session
+    // was null at signup time so birth data was stored in user_metadata, not profile).
+    const meta = user.user_metadata ?? {};
+    if (typeof meta.ngay_sinh === "string" && meta.ngay_sinh) {
+      setNgaySinh((prev) => (prev.trim() ? prev : isoYmdToDdMmYyyyInput(meta.ngay_sinh as string)));
+    }
+    if (typeof meta.gio_sinh === "string" && meta.gio_sinh) {
+      const idx = canhPickerIndexFromGioSinh(meta.gio_sinh as string);
+      if (idx != null) setSelectedCanh((prev) => (prev == null ? idx : prev));
+    }
+    if (meta.gioi_tinh === "nam" || meta.gioi_tinh === "nu") {
+      setGioiTinh((prev) => prev ?? (meta.gioi_tinh as "nam" | "nu"));
+    }
     let cancelled = false;
     void (async () => {
       const { data } = await supabase
@@ -254,6 +267,12 @@ export default function DangKy() {
           ...(referralFromUrl
             ? { referral_code: referralFromUrl.toUpperCase() }
             : {}),
+          // Stored so the /dang-ky form can pre-fill after email verification
+          // (session is null until the user clicks the link — profile is not yet
+          // written, so birth data would be lost without this stash).
+          ngay_sinh: ngayIso,
+          gio_sinh: gioSinh,
+          gioi_tinh: gioiTinh,
         },
       },
     });
