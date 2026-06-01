@@ -1,7 +1,10 @@
 import type { GenerateReadingInput } from "~/lib/generate-reading";
 import { isLuanContextPayload } from "~/lib/luan-context";
 
-/** Prefer structured luan_context + day-detail inline (shorter prompt, today gate on server). */
+/**
+ * Prefer `day-luan-context` on `day-detail` (same engine path as `/luan-ai/day-*`).
+ * Never-sub must use `teaser` (production gate); subscribers use `inline` for shorter copy.
+ */
 export function buildInlineDayReadingInvoke(
   endpoint: "ngay-hom-nay" | "day-detail",
   data: unknown,
@@ -11,7 +14,7 @@ export function buildInlineDayReadingInvoke(
     return {
       endpoint: "day-detail",
       data,
-      variant: "inline",
+      variant: mode === "teaser" ? "teaser" : "inline",
     };
   }
   return {

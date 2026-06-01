@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useLocation } from "react-router";
 
 import { AppShellViewport } from "~/components/AppShellViewport";
@@ -15,6 +16,7 @@ type AuthenticatedMobileShellProps = {
 
 export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellProps) {
   const location = useLocation();
+  const mainScrollRef = useRef<HTMLDivElement>(null);
   const online = useOnlineStatus();
   const { offer, checking, dismiss, checkPaymentStatus } = usePaymentRecovery();
   const showNav = shouldShowNav(location.pathname);
@@ -22,9 +24,15 @@ export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellP
   const lichTab =
     location.pathname === "/lich" || location.pathname.startsWith("/lich/");
   const darkNav = !online && lichTab;
+
+  useLayoutEffect(() => {
+    mainScrollRef.current?.scrollTo(0, 0);
+  }, [location.pathname, location.search]);
+
   return (
     <AppShellViewport>
       <div
+        ref={mainScrollRef}
         className="min-h-0 flex-1 overflow-y-auto"
         style={{ paddingBottom: showNav ? 88 : 0 }}
       >

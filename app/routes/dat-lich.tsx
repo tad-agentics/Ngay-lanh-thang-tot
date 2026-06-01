@@ -28,6 +28,7 @@ export default function DatLichRoute() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { profile } = useProfile();
+  const pageScrollRef = useRef<HTMLDivElement>(null);
   const tierRefs = useRef<Partial<Record<PackageSku, HTMLDivElement | null>>>({});
 
   const planParam = searchParams.get("plan");
@@ -41,6 +42,7 @@ export default function DatLichRoute() {
   const statusLine = subscriptionStatusLine(profile);
 
   useEffect(() => {
+    pageScrollRef.current?.scrollTo(0, 0);
     if (!preselectedSku) return;
     const el = tierRefs.current[preselectedSku];
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -75,7 +77,10 @@ export default function DatLichRoute() {
         </span>
       </div>
 
-      <div className="flex-1 overflow-auto px-6 pb-[100px] pt-3.5">
+      <div
+        ref={pageScrollRef}
+        className="flex-1 overflow-auto px-6 pb-[100px] pt-3.5"
+      >
         <h1
           className="m-0 font-[family-name:var(--display)] text-[34.5px] font-extrabold uppercase leading-[0.98] tracking-[-0.015em]"
           style={{ color: CT.ink }}

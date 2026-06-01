@@ -118,9 +118,15 @@ export function useInlineDayReading({
         return;
       }
 
-      const scope = endpoint === "ngay-hom-nay" ? "home" : "day_detail";
+      const genInput = buildInlineDayReadingInvoke(
+        endpoint,
+        payloadRef.current,
+        "inline",
+      );
+      const unlockScope =
+        genInput.endpoint === "day-detail" ? "day_detail" : "home";
       const unlock = await ensureReadingUnlocked({
-        scope,
+        scope: unlockScope,
         day_iso: iso,
       });
       if (cancelled) return;
@@ -140,9 +146,7 @@ export function useInlineDayReading({
         setPaywallBlurred(false);
         return;
       }
-      const r = await invokeGenerateReading(
-        buildInlineDayReadingInvoke(endpoint, payloadRef.current, "inline"),
-      );
+      const r = await invokeGenerateReading(genInput);
       if (cancelled) return;
       if (r.reading) {
         const teaser = shortenInlineReading(r.reading);
