@@ -13,6 +13,8 @@ import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
+import { LandingPrimaryCtaLink } from "~/components/landing/LandingPrimaryCtaLink";
+import { useLandingPrimaryCta } from "~/hooks/useLandingPrimaryCta";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 import { supabase } from "~/lib/supabase";
 
@@ -121,9 +123,11 @@ function LandingGoogleSignInButton({
 function LHeader({
   onMenu,
   referralFromUrl,
+  openCalendarHref,
 }: {
   onMenu: () => void;
   referralFromUrl: string;
+  openCalendarHref: string;
 }) {
   return (
     <header
@@ -164,7 +168,7 @@ function LHeader({
           </a>
         ))}
         <Link
-          to="/dang-nhap"
+          to={openCalendarHref}
           className="font-display font-semibold text-[13.5px] uppercase no-underline"
           style={{ color: T.goldDeep, letterSpacing: "0.06em" }}
         >
@@ -195,10 +199,12 @@ function LMobileDrawer({
   open,
   onClose,
   referralFromUrl,
+  openCalendarHref,
 }: {
   open: boolean;
   onClose: () => void;
   referralFromUrl: string;
+  openCalendarHref: string;
 }) {
   if (!open) return null;
   return (
@@ -228,7 +234,12 @@ function LMobileDrawer({
           ))}
         </nav>
         <div className="mt-auto flex flex-col gap-2.5">
-          <Link to="/dang-nhap" onClick={onClose} className="text-center py-3 font-display font-semibold text-[13.5px] uppercase no-underline" style={{ color: T.goldDeep }}>
+          <Link
+            to={openCalendarHref}
+            onClick={onClose}
+            className="text-center py-3 font-display font-semibold text-[13.5px] uppercase no-underline"
+            style={{ color: T.goldDeep }}
+          >
             Mở lịch của tôi
           </Link>
           <LandingGoogleSignInButton
@@ -351,6 +362,18 @@ function LHeroStack() {
   );
 }
 
+function LandingReturningUserLink({ to }: { to: string }) {
+  return (
+    <Link
+      to={to}
+      className="font-display font-semibold text-[13.5px] uppercase no-underline"
+      style={{ color: T.goldDeep, letterSpacing: "0.06em" }}
+    >
+      Đã có tài khoản? Mở lịch →
+    </Link>
+  );
+}
+
 function SectionKicker({ children, dark }: { children: string; dark?: boolean }) {
   return (
     <div className="flex items-baseline gap-3.5 mb-8">
@@ -368,23 +391,22 @@ export function LandingDirectionC() {
     () => referralParamFromSearchParams(searchParams),
     [searchParams],
   );
-  const signUpHref = useMemo(
-    () =>
-      referralFromUrl
-        ? `/dang-ky?ref=${encodeURIComponent(referralFromUrl)}`
-        : "/dang-ky",
-    [referralFromUrl],
-  );
+  const landingCta = useLandingPrimaryCta(referralFromUrl);
   const [menu, setMenu] = useState(false);
   const [faqOpen, setFaqOpen] = useState(0);
 
   return (
     <div className="ldc-root" style={{ background: T.paper, fontFamily: "var(--serif)", color: T.ink }}>
-      <LHeader onMenu={() => setMenu(true)} referralFromUrl={referralFromUrl} />
+      <LHeader
+        onMenu={() => setMenu(true)}
+        referralFromUrl={referralFromUrl}
+        openCalendarHref={landingCta.openCalendarHref}
+      />
       <LMobileDrawer
         open={menu}
         onClose={() => setMenu(false)}
         referralFromUrl={referralFromUrl}
+        openCalendarHref={landingCta.openCalendarHref}
       />
 
       {/* Hero */}
@@ -415,17 +437,25 @@ export function LandingDirectionC() {
                 &ldquo;Nhẹ nhàng lật tờ lịch mới. Thấu suốt năng lượng ngày hôm nay để làm chủ nhân duyên, đón lành tránh dữ.&rdquo;
               </p>
             </div>
-            <div className="mt-7 flex flex-wrap gap-3.5 items-center">
-              <Link
-                to={signUpHref}
-                className="px-8 py-[18px] font-display font-bold text-[15.5px] uppercase no-underline"
-                style={{ background: T.forest, color: T.cream, letterSpacing: "0.1em", boxShadow: "0 12px 24px rgba(29,49,41,0.18)" }}
-              >
-                Khởi tạo lịch bản mệnh
-              </Link>
-              <div className="font-serif text-[13.5px] leading-snug" style={{ color: T.muted }}>
-                Khởi tạo trong 30 giây · Trải nghiệm ngay miễn phí
+            <div className="mt-7 flex flex-col gap-3.5">
+              <div className="flex flex-wrap gap-3.5 items-center">
+                <LandingPrimaryCtaLink
+                  cta={landingCta}
+                  className="px-8 py-[18px] font-display font-bold text-[15.5px] uppercase no-underline"
+                  style={{
+                    background: T.forest,
+                    color: T.cream,
+                    letterSpacing: "0.1em",
+                    boxShadow: "0 12px 24px rgba(29,49,41,0.18)",
+                  }}
+                />
+                <div className="font-serif text-[13.5px] leading-snug" style={{ color: T.muted }}>
+                  {landingCta.heroSubline}
+                </div>
               </div>
+              {landingCta.showReturningLink ? (
+                <LandingReturningUserLink to={landingCta.openCalendarHref} />
+              ) : null}
             </div>
           </div>
           <LHeroStack />
@@ -822,13 +852,21 @@ export function LandingDirectionC() {
             </span>
             .
           </h2>
-          <Link
-            to={signUpHref}
+          <LandingPrimaryCtaLink
+            cta={landingCta}
             className="inline-block mt-8 px-10 py-5 font-display font-bold text-base uppercase no-underline"
-            style={{ background: T.gold, color: T.forest, letterSpacing: "0.1em", boxShadow: "0 16px 32px rgba(197,165,90,0.25)" }}
-          >
-            Khởi tạo lịch bản mệnh →
-          </Link>
+            style={{
+              background: T.gold,
+              color: T.forest,
+              letterSpacing: "0.1em",
+              boxShadow: "0 16px 32px rgba(197,165,90,0.25)",
+            }}
+          />
+          {landingCta.showReturningLink ? (
+            <div className="mt-5">
+              <LandingReturningUserLink to={landingCta.openCalendarHref} />
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -865,9 +903,20 @@ export function LandingDirectionC() {
           <Mono style={{ color: T.muted, fontSize: 9.5 }}>Khởi tạo nhanh chóng · Trải nghiệm ngay</Mono>
           <div className="font-display font-bold text-[13.5px] uppercase">Lịch bản mệnh Tứ Trụ</div>
         </div>
-        <Link to={signUpHref} className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline" style={{ background: T.forest, color: T.cream }}>
-          Bắt đầu →
-        </Link>
+        <LandingPrimaryCtaLink
+          cta={{
+            ...landingCta,
+            primaryLabel: landingCta.disabled
+              ? "…"
+              : landingCta.showReturningLink
+                ? "Bắt đầu"
+                : landingCta.primaryLabel,
+            showPrimaryArrow:
+              !landingCta.disabled && landingCta.showReturningLink,
+          }}
+          className="px-[18px] py-3 font-display font-bold text-xs uppercase no-underline"
+          style={{ background: T.forest, color: T.cream }}
+        />
       </div>
     </div>
   );

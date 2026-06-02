@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { BirthHourCanhPicker } from "~/components/auth/BirthHourCanhPicker";
@@ -16,7 +16,10 @@ import { BackBar, Mono } from "~/components/brand";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
 import { useAuth } from "~/lib/auth";
 import { applyBirthToProfile } from "~/lib/auth-birth-sync";
-import { mapAuthErrorMessageVi } from "~/lib/auth-login-error";
+import {
+  isUserAlreadyRegistered,
+  mapAuthErrorMessageVi,
+} from "~/lib/auth-login-error";
 import {
   displayNameFromAuthUser,
   emailFromAuthUser,
@@ -37,6 +40,7 @@ import {
 } from "~/lib/landing-cta-constants";
 import { validateProfileNgaySinhIso } from "~/lib/ngay-sinh-range";
 import {
+  appendReturnToQuery,
   returnToFromSearchParams,
   stashPendingReturnTo,
 } from "~/lib/pending-return-to";
@@ -73,6 +77,12 @@ export default function DangKy() {
     () => returnToFromSearchParams(searchParams),
     [searchParams],
   );
+  const loginHref = useMemo(() => {
+    const base = referralFromUrl
+      ? `/dang-nhap?ref=${encodeURIComponent(referralFromUrl)}`
+      : "/dang-nhap";
+    return appendReturnToQuery(base, returnTo ?? "/lich");
+  }, [referralFromUrl, returnTo]);
 
   useEffect(() => {
     if (returnTo) stashPendingReturnTo(returnTo);
@@ -275,6 +285,17 @@ export default function DangKy() {
     });
     if (error) {
       setBusy(false);
+      if (isUserAlreadyRegistered(error.message)) {
+        toast.message(mapAuthErrorMessageVi(error.message));
+        const emailQ = email.trim()
+          ? `?email=${encodeURIComponent(email.trim())}`
+          : "";
+        navigate(
+          appendReturnToQuery(`/dang-nhap/email${emailQ}`, returnTo),
+          { replace: true },
+        );
+        return;
+      }
       toast.error(mapAuthErrorMessageVi(error.message));
       return;
     }
@@ -526,6 +547,25 @@ export default function DangKy() {
         >
           {busy ? "Đang lưu…" : "Hoàn tất & Dựng lịch →"}
         </button>
+        {!completingProfile ? (
+          <p
+            style={{
+              marginTop: 16,
+              textAlign: "center",
+              fontFamily: "var(--serif)",
+              fontSize: 13,
+              color: "rgba(237,231,211,0.65)",
+            }}
+          >
+            Đã có tài khoản?{" "}
+            <Link
+              to={loginHref}
+              style={{ color: C.gold, textDecoration: "none", fontWeight: 600 }}
+            >
+              Đăng nhập →
+            </Link>
+          </p>
+        ) : null}
         <div
           style={{
             marginTop: 12,

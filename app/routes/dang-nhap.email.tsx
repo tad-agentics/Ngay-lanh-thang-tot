@@ -54,7 +54,11 @@ export default function DangNhapEmail() {
     returnTo,
   );
 
-  const [email, setEmail] = useState("");
+  const emailFromUrl = useMemo(
+    () => searchParams.get("email")?.trim() ?? "",
+    [searchParams],
+  );
+  const [email, setEmail] = useState(emailFromUrl);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -68,6 +72,10 @@ export default function DangNhapEmail() {
   useEffect(() => {
     if (returnTo) stashPendingReturnTo(returnTo);
   }, [returnTo]);
+
+  useEffect(() => {
+    if (emailFromUrl) setEmail(emailFromUrl);
+  }, [emailFromUrl]);
 
   useEffect(() => {
     if (authLoading || !user) return;
