@@ -40,6 +40,7 @@ import {
 } from "~/lib/bazi-reading-session";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { canUseBaziReading } from "~/lib/entitlements";
+import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { profileHasLaso } from "~/lib/la-so-ui";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 
@@ -376,7 +377,7 @@ export function CBaziReadingScreen() {
   if (profileLoading) {
     return (
       <main className="min-h-[100svh]" style={{ background: CT.paper }}>
-        <BackBar title="Luận giải Bát Tự" />
+        <BackBar title={LUAN_LA_SO_BAT_TU_TITLE} />
         <p className="px-6 font-serif text-sm" style={{ color: CT.muted }}>
           Đang mở lá số…
         </p>
@@ -394,7 +395,7 @@ export function CBaziReadingScreen() {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title={`Luận giải Bát Tự · ${year}`}
+        title={`${LUAN_LA_SO_BAT_TU_TITLE} · ${year}`}
         endAdornment={<Mono style={{ color: CT.muted, fontSize: 9.5 }}>Học thuật cổ thư</Mono>}
       />
 

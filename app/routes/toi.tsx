@@ -18,6 +18,10 @@ import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import {
+  LUAN_LA_SO_BAT_TU_TAGLINE,
+  LUAN_LA_SO_BAT_TU_TITLE,
+} from "~/lib/luan-la-so-bat-tu-labels";
+import {
   LUAN_LUU_NIEN_NGUYET_TAGLINE,
   LUAN_LUU_NIEN_NGUYET_TITLE,
 } from "~/lib/luan-luu-nien-nguyet-labels";
@@ -300,10 +304,10 @@ export default function ToiRoute() {
               className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
               style={{ color: CT.ink }}
             >
-              Luận giải Bát tự năm
+              {LUAN_LA_SO_BAT_TU_TITLE}
             </div>
             <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-              tính cách · vận năm · phong thuỷ · quý nhân
+              {LUAN_LA_SO_BAT_TU_TAGLINE}
             </div>
             <div
               className="mt-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"

@@ -1,4 +1,5 @@
 import type { PackageSku } from "~/lib/api-types";
+import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import {
   LUAN_LUU_NIEN_NGUYET_TITLE,
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
@@ -35,7 +36,7 @@ export const PAY_CONFIRM_ADDON_META: Partial<
   Record<PackageSku, { title: string; per: string; sub: string }>
 > = {
   luan_bat_tu: {
-    title: "Luận giải Bát tự",
+    title: LUAN_LA_SO_BAT_TU_TITLE,
     per: "một lần",
     sub: "5 chương · mệnh · tính cách · quý nhân",
   },

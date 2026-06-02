@@ -1,5 +1,8 @@
 import type { PackageSku } from "~/lib/api-types";
 import {
+  LUAN_LA_SO_BAT_TU_TITLE_SHORT,
+} from "~/lib/luan-la-so-bat-tu-labels";
+import {
   LUAN_LUU_NIEN_NGUYET_TITLE,
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
 } from "~/lib/luan-luu-nien-nguyet-labels";
@@ -48,8 +51,8 @@ export const UI_PACKAGES: {
   },
   {
     sku: "luan_bat_tu",
-    title: "Luận Bát tự",
-    subtitle: "Mở khóa luận giải Bát tự đầy đủ — dùng vĩnh viễn.",
+    title: LUAN_LA_SO_BAT_TU_TITLE_SHORT,
+    subtitle: "Mở khóa luận giải lá số Bát tự đầy đủ — dùng vĩnh viễn.",
     priceLabel: "299.000₫",
     featured: false,
     kind: "addon",

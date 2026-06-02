@@ -21,6 +21,7 @@ import {
   addonSubscriptionUpsell,
   PAY_CONFIRM_ADDON_META,
 } from "~/lib/pay-confirm-ui";
+import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
@@ -57,7 +58,7 @@ export function CPaySuccessAddonScreen() {
     sku === "luan_tieu_van"
       ? `/toi/luan-tieu-van?year=${currentYearVn()}`
       : "/toi/luan-bat-tu";
-  const headlineTitle = addonMeta?.title ?? pkg?.title ?? "Luận giải Bát tự";
+  const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
 
   return (
     <div

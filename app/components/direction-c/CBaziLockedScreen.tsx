@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { BackBar, Mono } from "~/components/brand";
 import type { PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
+import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { UI_PACKAGES } from "~/lib/packages";
 
 type CBaziLockedScreenProps = {
@@ -12,7 +13,7 @@ type CBaziLockedScreenProps = {
 
 /** Direction C — Bát tự reading paywall (artboard locked variant). */
 export function CBaziLockedScreen({
-  title = "Luận giải Bát Tự · 2026",
+  title = `${LUAN_LA_SO_BAT_TU_TITLE} · 2026`,
   sku = "luan_bat_tu",
 }: CBaziLockedScreenProps) {
   const pkg = UI_PACKAGES.find((p) => p.sku === sku);
@@ -23,7 +24,7 @@ export function CBaziLockedScreen({
       className="flex min-h-[100svh] flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <BackBar title="Luận giải Bát Tự" />
+      <BackBar title={LUAN_LA_SO_BAT_TU_TITLE} />
 
       <div className="flex flex-1 flex-col px-6 pb-10 pt-2">
         <div

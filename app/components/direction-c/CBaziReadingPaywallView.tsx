@@ -23,6 +23,7 @@ import {
 } from "~/lib/bazi-reading-outline";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
+import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { createPayosCheckout } from "~/lib/payos";
 import { readPendingReferralCode } from "~/lib/pending-referral";
 import { addonSubscriptionUpsell, priceDisplay } from "~/lib/pay-confirm-ui";
@@ -204,7 +205,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
       className="relative flex min-h-[100svh] flex-col"
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
-      <BackBar title={`Luận giải Bát Tự · ${year}`} />
+      <BackBar title={`${LUAN_LA_SO_BAT_TU_TITLE} · ${year}`} />
 
       <div className="relative min-h-0 flex-1">
         <div className="h-full overflow-y-auto px-6 pb-[300px] pt-1">

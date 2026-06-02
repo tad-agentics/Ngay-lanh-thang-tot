@@ -9,6 +9,7 @@ import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import type { PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
+import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { formatSubscriptionExpiry } from "~/lib/entitlements";
 import {
   brandedSubscriptionPlanName,
@@ -170,7 +171,7 @@ export function CPaySuccessScreen() {
               className="mt-1 text-[15.5px] font-bold uppercase tracking-[-0.005em]"
               style={{ ...PAY_DISPLAY2, color: CT.ink }}
             >
-              Luận giải Bát tự năm
+              {LUAN_LA_SO_BAT_TU_TITLE}
             </div>
             <p className="mt-1 text-xs leading-snug" style={{ color: CT.ink2 }}>
               Tính cách, vận năm, phong thuỷ, quý nhân — đã mở cho bạn.

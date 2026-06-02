@@ -2,6 +2,10 @@ import { Link } from "react-router";
 
 import { Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+import {
+  LUAN_LA_SO_BAT_TU_TAGLINE,
+  LUAN_LA_SO_BAT_TU_TITLE,
+} from "~/lib/luan-la-so-bat-tu-labels";
 import { UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — Tôi tab: Bát tự locked card for monthly subscribers (CMeLocked maket). */
@@ -24,10 +28,10 @@ export function CMeLockedBaziCard() {
         className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
         style={{ color: CT.ink }}
       >
-        Luận giải Bát tự năm
+        {LUAN_LA_SO_BAT_TU_TITLE}
       </div>
       <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-        tính cách · vận năm · phong thuỷ · quý nhân
+        {LUAN_LA_SO_BAT_TU_TAGLINE}
       </div>
       <div className="mt-2.5 flex flex-wrap items-baseline gap-2">
         <span
