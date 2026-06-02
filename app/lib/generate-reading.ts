@@ -39,6 +39,14 @@ export type GenerateReadingInput = {
   tinh_cach_trait_ids?: string[];
   /** Bổ sung §03 — chỉ sinh các life_area id thiếu (gap-fill). */
   luu_nien_life_area_ids?: string[];
+  /** `van-trinh-nam` — chỉ Phần A (lưu niên năm). */
+  only_van_trinh_a?: boolean;
+  /** `van-trinh-nam` — chỉ Phần C (kết bài). */
+  only_van_trinh_c?: boolean;
+  /** `van-trinh-nam` — luận một tháng (1–12). */
+  month_num?: number;
+  /** Năm dương — cache key. */
+  flow_year?: number;
 };
 
 /** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */
@@ -133,7 +141,8 @@ function maxLaSoSectionsForEndpoint(endpoint: string): number {
   if (
     endpoint === "la-so-chi-tiet" ||
     endpoint === "luu-nien" ||
-    endpoint === "phong-thuy"
+    endpoint === "phong-thuy" ||
+    endpoint === "van-trinh-nam"
   ) {
     return MAX_LUAN_SECTION_COUNT_BAZI_BUNDLE;
   }

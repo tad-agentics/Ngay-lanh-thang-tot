@@ -14,6 +14,7 @@ import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
   canUseBaziReading,
   canUseCalendar,
+  canUseTieuVanReading,
   isNeverSubscribedUser,
   isTraCuuPickChonNgay,
 } from "../_shared/entitlements.ts";
@@ -206,6 +207,7 @@ const VALID_OPS = new Set([
   "phong-thuy",
   "la-so",
   "la-so-luu-nien",
+  "luu-nien-luan-context",
   "share",
 ]);
 
@@ -625,6 +627,32 @@ function buildUpstream(
         method: "GET",
         path: "/v1/la-so/luu-nien",
         queryKeys: ["birth_date", "birth_time", "gender", "year"],
+      };
+      break;
+
+    case "luu-nien-luan-context":
+      if (!body.birth_date) {
+        return {
+          ok: false,
+          message: "Thiếu birth_date (GET /v1/luu-nien/luan-context).",
+        };
+      }
+      if (body.birth_time === undefined || body.birth_time === null) {
+        return {
+          ok: false,
+          message: "Thiếu birth_time (GET /v1/luu-nien/luan-context).",
+        };
+      }
+      if (body.year === undefined || body.year === null) {
+        return {
+          ok: false,
+          message: "Thiếu year (GET /v1/luu-nien/luan-context).",
+        };
+      }
+      spec = {
+        method: "GET",
+        path: "/v1/luu-nien/luan-context",
+        queryKeys: ["birth_date", "birth_time", "gender", "year", "tz"],
       };
       break;
 
@@ -1289,6 +1317,34 @@ Deno.serve(async (req) => {
     }
   }
 
+  if (userId && op === "luu-nien-luan-context") {
+    const { data: tvProfile, error: tvProfErr } = await admin
+      .from("profiles")
+      .select("subscription_expires_at, tieu_van_reading_expires_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (tvProfErr || !tvProfile) {
+      return json(
+        { error: { code: "PROFILE_MISSING", message: "Chưa có hồ sơ." } },
+        400,
+        req,
+      );
+    }
+    if (!canUseTieuVanReading(tvProfile)) {
+      return json(
+        {
+          error: {
+            code: "TIEU_VAN_READING_LOCKED",
+            message:
+              "Cần mở khóa Luận giải lưu niên & lưu nguyệt hoặc gói Lịch năm để xem nội dung này.",
+          },
+        },
+        403,
+        req,
+      );
+    }
+  }
+
   if (op === "tieu-van" && userId) {
     const ymEarly = tieVanYearMonth(body);
     if (ymEarly) {
@@ -1323,6 +1379,7 @@ Deno.serve(async (req) => {
   }
   if (op === "la-so") requiresSub = null;
   if (op === "la-so-luu-nien") requiresSub = null;
+  if (op === "luu-nien-luan-context") requiresSub = null;
   /** §04 màn 18 — cùng entitlement Luận Bát Tự (`canUseBaziReading` ở trên), không thêm gate lịch. */
   if (phongThuyFull) requiresSub = null;
   if (phongThuyTeaser) requiresSub = null;

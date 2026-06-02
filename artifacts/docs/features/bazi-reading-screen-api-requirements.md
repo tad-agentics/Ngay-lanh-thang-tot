@@ -229,4 +229,22 @@ Luôn render **5 heading**; `emptyReason` khi thiếu data (REQ-FE-01 ✅).
 
 ---
 
-*Cập nhật: 2026-05-29 — OpenAPI [0.1.3](https://tu-tru-api.fly.dev/docs#/); thuật ngữ Direction C; audit FE (prose §03/§05, cache v2, REQ-BE-01).*
+## 7. Luận giải lưu niên & lưu nguyệt (Vận trình năm)
+
+**Route:** `/toi/luan-tieu-van?year=` (SKU `luan_tieu_van` — URL giữ tên cũ)  
+**FE:** `CVanTrinhNamReadingScreen`, `van-trinh-nam-load.ts`, `van_trinh_nam_deliveries`  
+**Contract:** `tu-tru-api` `GET /v1/luu-nien/luan-context` (op `luu-nien-luan-context`)  
+**LLM:** Edge `generate-reading-van-trinh-nam` (`endpoint: van-trinh-nam`) — 14 waves (Part A → 12 tháng → kết bài); B3 lịch ngày = facts FE-only.
+
+| Luồng | API / Edge |
+|-------|------------|
+| Facts + `writing_brief` | `bat-tu` → `luu-nien-luan-context` |
+| Luận prose | `generate-reading-van-trinh-nam` |
+| Instant reopen | `van_trinh_nam_deliveries` + `van-trinh-nam-delivery` |
+| Paywall teaser (âm lịch) | `la-so-luu-nien` → `month_score_values` — **không** vào bài |
+
+**Không dùng:** `tieu-van` ×12, prose `la-so/luu-nien` trong bài dài.
+
+---
+
+*Cập nhật: 2026-06-02 — §7 Vận trình năm; 2026-05-29 — OpenAPI [0.1.3](https://tu-tru-api.fly.dev/docs#/).*

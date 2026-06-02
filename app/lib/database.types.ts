@@ -279,6 +279,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      van_trinh_nam_deliveries: {
+        Row: {
+          id: string;
+          user_id: string;
+          flow_year: number;
+          birth_revision: string;
+          content_version: string;
+          engine_version: string;
+          luan_context: Json;
+          sections: Json;
+          year_can_chi: string;
+          generated_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          flow_year: number;
+          birth_revision: string;
+          content_version: string;
+          engine_version?: string;
+          luan_context: Json;
+          sections: Json;
+          year_can_chi?: string;
+          generated_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          birth_revision?: string;
+          content_version?: string;
+          engine_version?: string;
+          luan_context?: Json;
+          sections?: Json;
+          year_can_chi?: string;
+          generated_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       reading_cache: {
         Row: {
           cache_key: string;

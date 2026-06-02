@@ -8,6 +8,7 @@ export const DEEPSEEK_PRO_ENDPOINTS = new Set([
   "la-so-chi-tiet",
   "tieu-van",
   "luu-nien",
+  "van-trinh-nam",
 ]);
 
 export function llmProfileForEndpoint(endpoint: string): LlmProfile {

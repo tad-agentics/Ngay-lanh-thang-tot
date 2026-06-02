@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { requireBaziReadingAuth } from "../../bazi-reading-gate.ts";
+import { requireTieuVanReadingAuth } from "../../tieu-van-reading-gate.ts";
 import { buildDayLuanPromptContext } from "../../day-luan-prompt-context.ts";
 import {
   acquireGenerateReadingRateLimit,
@@ -97,6 +98,20 @@ export function createGenerateReadingHandler(
       endpoint === "luu-nien" && body.only_luu_nien_life === true;
     const onlyLuuNienCore =
       endpoint === "luu-nien" && body.only_luu_nien_core === true;
+    const onlyVanTrinhA =
+      endpoint === "van-trinh-nam" && body.only_van_trinh_a === true;
+    const onlyVanTrinhC =
+      endpoint === "van-trinh-nam" && body.only_van_trinh_c === true;
+    const vanTrinhMonthNum =
+      endpoint === "van-trinh-nam" && typeof body.month_num === "number"
+        ? body.month_num
+        : endpoint === "van-trinh-nam" && body.month_num != null
+          ? Number(body.month_num)
+          : 0;
+    const flowYear =
+      typeof body.flow_year === "number"
+        ? body.flow_year
+        : Number(body.flow_year) || 0;
     if (onlyLuuNienLife && onlyLuuNienCore) {
       console.warn(
         "generate-reading: only_luu_nien_life and only_luu_nien_core are mutually exclusive",
@@ -262,6 +277,21 @@ export function createGenerateReadingHandler(
       rateLimitUserId = auth.uid;
     }
 
+    if (endpoint === "van-trinh-nam") {
+      const prewarmUserId =
+        typeof body.prewarm_user_id === "string"
+          ? body.prewarm_user_id.trim()
+          : "";
+      const auth = await requireTieuVanReadingAuth(req, {
+        prewarmUserId: prewarmUserId || undefined,
+      });
+      if (!auth) {
+        console.warn("generate-reading van-trinh-nam auth denied");
+        return ok(null, null, req);
+      }
+      rateLimitUserId = auth.uid;
+    }
+
     const promptBody: Record<string, unknown> =
       endpoint === "day-detail" && data !== null && typeof data === "object"
         ? {
@@ -282,6 +312,14 @@ export function createGenerateReadingHandler(
               : {}),
             ...(luuNienLifeAreaIds.length
               ? { luu_nien_life_area_ids: luuNienLifeAreaIds }
+              : {}),
+            ...(onlyVanTrinhA ? { only_van_trinh_a: true } : {}),
+            ...(onlyVanTrinhC ? { only_van_trinh_c: true } : {}),
+            ...(vanTrinhMonthNum >= 1 && vanTrinhMonthNum <= 12
+              ? { month_num: vanTrinhMonthNum }
+              : {}),
+            ...(flowYear >= 2000 && flowYear <= 2100
+              ? { flow_year: flowYear }
               : {}),
           };
 
@@ -304,6 +342,12 @@ export function createGenerateReadingHandler(
     const supplementKey = [
       tinhCachTraitIds.length ? `tinh:${tinhCachTraitIds.join(",")}` : "",
       luuNienLifeAreaIds.length ? `life:${luuNienLifeAreaIds.join(",")}` : "",
+      onlyVanTrinhA ? "van-a" : "",
+      onlyVanTrinhC ? "van-c" : "",
+      vanTrinhMonthNum >= 1 && vanTrinhMonthNum <= 12
+        ? `van-m${vanTrinhMonthNum}`
+        : "",
+      flowYear >= 2000 ? `fy${flowYear}` : "",
     ]
       .filter(Boolean)
       .join("|");
@@ -374,6 +418,7 @@ export function createGenerateReadingHandler(
           } else if (
             endpoint === "tieu-van" ||
             endpoint === "luu-nien" ||
+            endpoint === "van-trinh-nam" ||
             endpoint === "phong-thuy"
           ) {
             if (cached.sections != null && cached.sections.length > 0) {

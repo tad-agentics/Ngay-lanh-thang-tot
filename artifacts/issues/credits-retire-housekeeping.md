@@ -55,7 +55,7 @@ Direction C is **subscription + luận add-ons** only. The credit/lượng UX an
 
 ```bash
 npx supabase db push   # or apply migration via Dashboard
-npx supabase functions deploy bat-tu reading-unlock create-share-token generate-reading-day generate-reading-la-so generate-reading-tieu-van generate-reading-luu-nien day-luan-chat
+npx supabase functions deploy bat-tu reading-unlock create-share-token generate-reading-day generate-reading-la-so generate-reading-tieu-van generate-reading-luu-nien generate-reading-van-trinh-nam van-trinh-nam-delivery day-luan-chat
 ```
 
 Vercel: deploy FE from commit with reading-unlock client changes.

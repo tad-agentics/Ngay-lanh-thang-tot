@@ -627,13 +627,13 @@ GET /v1/day-compare?birth_date=…&date_a=…&date_b=…&tz=…
 | Tên | Layer | Chu kỳ | Endpoint / Edge | Màn Direction C |
 |-----|-------|--------|-----------------|-----------------|
 | **Lưu niên** | API + Bát Tự | **Năm** (Can Chi năm × lá số) | `GET /v1/la-so/luu-nien?year=` · Gemini `luu-nien` | Direction C màn 18 §03 **Vận năm** |
-| **Tiểu vận** | API | **Tháng** (trụ tháng × lá số) | `GET /v1/tieu-van?month=` · Gemini `tieu-van` | `/toi/luan-tieu-van` |
-| **Luận giải Tiểu Vận** | Product / SKU | **Năm** (copy gói) | *Không* map 1:1 tới `tieu-van` | Gói `luan_tieu_van` — nội dung ≈ **lưu niên**, không phải vận tháng |
+| **Tiểu vận** | API | **Tháng** (trụ tháng × lá số) | `GET /v1/tieu-van?month=` · `generate-reading-tieu-van` | Legacy vận tháng (không dùng trên `/toi/luan-tieu-van`) |
+| **Luận giải lưu niên & lưu nguyệt** | Product / SKU | **Năm** | `GET /v1/luu-nien/luan-context?year=` · `generate-reading-van-trinh-nam` | `/toi/luan-tieu-van?year=` (`luan_tieu_van`) |
 | **Phong thủy năm** | API | Theo **`year=`** trên lá số | `GET /v1/phong-thuy?year=` | Màn 18 §04 — **endpoint riêng**, không nằm trong `luu-nien` |
 
 > **NLTT Edge:** prompt `generate-reading` tách rõ — `tieu-van` luận **tháng**; `luu-nien` luận **năm** (`supabase/functions/generate-reading/index.ts`).
 
-> **⚠️ Product gap (entitlement):** Gói/SKU **「Luận giải Tiểu Vận năm」** (`luan_tieu_van`, `tieu_van_reading_expires_at`) mở route `/toi/luan-tieu-van?year=` — nhưng code hiện tại gọi **`GET /v1/tieu-van`** cho **một tháng** (`month = {year}-{tháng hiện tại}`), **không** phải lưu niên 12 tháng. Để khớp copy gói + spec Direction C, cần wire **`luu-nien`** (REQ-P2-02) hoặc đổi positioning SKU.
+> **✅ Resolved (2026-06-02):** `/toi/luan-tieu-van?year=` dùng `bat-tu` op `luu-nien-luan-context` → `GET /v1/luu-nien/luan-context`, LLM `generate-reading-van-trinh-nam` (14 waves), delivery `van_trinh_nam_deliveries`. Contract: `tu-tru-api/docs/fe-van-trinh-nam.md`.
 
 **Màn 18 (`/toi/luan-bat-tu`) — spec Direction C vs FE (cập nhật 2026-05-29):**
 

@@ -11,6 +11,7 @@ import {
 import type { User } from "@supabase/supabase-js";
 
 import { useBaziReadingPrewarm } from "~/hooks/useBaziReadingPrewarm";
+import { useVanTrinhNamPrewarm } from "~/hooks/useVanTrinhNamPrewarm";
 import type { Database } from "~/lib/database.types";
 import { displayNameFromAuthUser } from "~/lib/profile-display-name";
 import { tryConsumePendingReferralClaim } from "~/lib/referral-claim";
@@ -117,9 +118,10 @@ function useProfileState(user: User): ProfileContextValue {
   );
 }
 
-function BaziReadingPrewarmEffect() {
+function ReadingPrewarmEffect() {
   const ctx = useContext(ProfileContext);
   useBaziReadingPrewarm(ctx?.profile ?? null);
+  useVanTrinhNamPrewarm(ctx?.profile ?? null);
   return null;
 }
 
@@ -133,7 +135,7 @@ export function ProfileProvider({
   const value = useProfileState(user);
   return (
     <ProfileContext.Provider value={value}>
-      <BaziReadingPrewarmEffect />
+      <ReadingPrewarmEffect />
       {children}
     </ProfileContext.Provider>
   );
