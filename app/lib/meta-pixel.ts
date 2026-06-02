@@ -1,5 +1,4 @@
 import type { PackageSku } from "~/lib/api-types";
-import { readMarketingConsent } from "~/lib/meta-pixel-consent";
 
 const envPixelId = import.meta.env.VITE_META_PIXEL_ID;
 export const META_PIXEL_ID =
@@ -7,7 +6,6 @@ export const META_PIXEL_ID =
     ? envPixelId.trim()
     : "1582170927254758";
 
-const META_PIXEL_SCRIPT_ID = "meta-pixel-sdk";
 const PURCHASE_DEDUPE_PREFIX = "ngaytot:meta_pixel_purchase:";
 
 /** List prices (VND) when `payment_orders.amount_vnd` is unavailable client-side. */
@@ -20,6 +18,7 @@ export const PACKAGE_AMOUNT_VND: Record<PackageSku, number> = {
   luan_tieu_van: 199_000,
 };
 
+/** Meta base snippet loader (fbevents.js). */
 const META_PIXEL_LOADER = `!function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -28,6 +27,13 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');`;
+
+/** Inline script body for `<head>` — matches Meta Events Manager install diagram. */
+export const META_PIXEL_HEAD_SCRIPT = `${META_PIXEL_LOADER}
+fbq('init', '${META_PIXEL_ID}');
+fbq('track', 'PageView');`;
+
+export const META_PIXEL_NOSCRIPT_IMG_URL = `https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`;
 
 declare global {
   interface Window {
@@ -40,14 +46,10 @@ export function isMetaPixelRuntimeEnabled(): boolean {
   return import.meta.env.PROD;
 }
 
+/** Alias for purchase / SPA helpers (pixel loads from head when enabled). */
 export function isMetaPixelAllowed(): boolean {
-  return (
-    isMetaPixelRuntimeEnabled() && readMarketingConsent() === "granted"
-  );
+  return isMetaPixelRuntimeEnabled();
 }
-
-let pixelLoadPromise: Promise<void> | null = null;
-let pixelInitialized = false;
 
 function waitForFbq(timeoutMs = 8000): Promise<void> {
   return new Promise((resolve) => {
@@ -67,38 +69,15 @@ function waitForFbq(timeoutMs = 8000): Promise<void> {
   });
 }
 
-/** Inject fbevents.js + `fbq('init')` once, after marketing consent. */
+/** Resolves when `fbq` is available (injected in document head on production). */
 export function ensureMetaPixelLoaded(): Promise<void> {
-  if (!isMetaPixelAllowed()) return Promise.resolve();
-  if (typeof window.fbq === "function") {
-    if (!pixelInitialized) {
-      window.fbq("init", META_PIXEL_ID);
-      pixelInitialized = true;
-    }
-    return Promise.resolve();
-  }
-  if (pixelLoadPromise) return pixelLoadPromise;
-
-  pixelLoadPromise = (async () => {
-    if (!document.getElementById(META_PIXEL_SCRIPT_ID)) {
-      const script = document.createElement("script");
-      script.id = META_PIXEL_SCRIPT_ID;
-      script.async = true;
-      script.innerHTML = META_PIXEL_LOADER;
-      document.head.appendChild(script);
-      await waitForFbq();
-    }
-    if (typeof window.fbq === "function" && !pixelInitialized) {
-      window.fbq("init", META_PIXEL_ID);
-      pixelInitialized = true;
-    }
-  })();
-
-  return pixelLoadPromise;
+  if (!isMetaPixelRuntimeEnabled()) return Promise.resolve();
+  if (typeof window.fbq === "function") return Promise.resolve();
+  return waitForFbq();
 }
 
 export function trackMetaPageView(): void {
-  if (!isMetaPixelAllowed()) return;
+  if (!isMetaPixelRuntimeEnabled()) return;
   void ensureMetaPixelLoaded().then(() => {
     if (typeof window.fbq === "function") {
       window.fbq("track", "PageView");
@@ -126,7 +105,7 @@ export function resolvePurchaseValueVnd(
 
 /** Deduped per order id in sessionStorage (webhook + poll may both mark paid). */
 export function trackMetaPurchaseOnce(args: MetaPurchaseTrackArgs): void {
-  if (!isMetaPixelAllowed() || !args.orderId) return;
+  if (!isMetaPixelRuntimeEnabled() || !args.orderId) return;
   const value = Math.round(args.valueVnd);
   if (!Number.isFinite(value) || value <= 0) return;
 
@@ -148,8 +127,4 @@ export function trackMetaPurchaseOnce(args: MetaPurchaseTrackArgs): void {
       content_type: "product",
     });
   });
-}
-
-export function metaPixelNoscriptImageUrl(): string {
-  return `https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`;
 }

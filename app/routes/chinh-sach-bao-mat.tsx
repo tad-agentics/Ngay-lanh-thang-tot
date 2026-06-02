@@ -15,7 +15,7 @@ const SECTIONS = [
   {
     title: "Cookie và đo lường quảng cáo",
     content:
-      "Chúng tôi dùng cookie cần thiết để đăng nhập và vận hành ứng dụng. Khi bạn chấp nhận trên banner cookie, chúng tôi có thể dùng Meta Pixel (Facebook) để đo lượt truy cập, tối ưu quảng cáo và ghi nhận giao dịch thanh toán thành công (sự kiện PageView, Purchase). Bạn có thể từ chối — các tính năng lịch và luận giải vẫn hoạt động. Dữ liệu do Meta xử lý theo chính sách của Meta.",
+      "Chúng tôi dùng cookie cần thiết để đăng nhập và vận hành ứng dụng. Trên môi trường production, chúng tôi nhúng Meta Pixel (Facebook) trong trang để đo lượt truy cập, tối ưu quảng cáo và ghi nhận giao dịch thanh toán thành công (sự kiện PageView, Purchase). Dữ liệu do Meta xử lý theo chính sách của Meta.",
   },
   {
     title: "Bảo mật dữ liệu",

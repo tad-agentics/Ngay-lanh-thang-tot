@@ -1,34 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-  MARKETING_CONSENT_STORAGE_KEY,
-  writeMarketingConsent,
-} from "~/lib/meta-pixel-consent";
-import {
+  META_PIXEL_HEAD_SCRIPT,
+  META_PIXEL_ID,
+  META_PIXEL_NOSCRIPT_IMG_URL,
   isMetaPixelAllowed,
   resolvePurchaseValueVnd,
   trackMetaPurchaseOnce,
 } from "~/lib/meta-pixel";
 
+describe("META_PIXEL_HEAD_SCRIPT", () => {
+  it("matches Meta install snippet with pixel id", () => {
+    expect(META_PIXEL_HEAD_SCRIPT).toContain("fbevents.js");
+    expect(META_PIXEL_HEAD_SCRIPT).toContain(`fbq('init', '${META_PIXEL_ID}')`);
+    expect(META_PIXEL_HEAD_SCRIPT).toContain("fbq('track', 'PageView')");
+    expect(META_PIXEL_NOSCRIPT_IMG_URL).toContain(META_PIXEL_ID);
+  });
+});
+
 describe("isMetaPixelAllowed", () => {
   beforeEach(() => {
-    localStorage.clear();
     vi.stubEnv("PROD", true);
   });
 
-  it("is false without consent", () => {
-    expect(isMetaPixelAllowed()).toBe(false);
-  });
-
-  it("is true when consent granted in production", () => {
-    writeMarketingConsent("granted");
+  it("is true in production", () => {
     expect(isMetaPixelAllowed()).toBe(true);
   });
 
-  it("is false when consent denied", () => {
-    writeMarketingConsent("denied");
+  it("is false in development", () => {
+    vi.stubEnv("PROD", false);
     expect(isMetaPixelAllowed()).toBe(false);
-    expect(localStorage.getItem(MARKETING_CONSENT_STORAGE_KEY)).toBe("denied");
   });
 });
 
@@ -47,7 +48,6 @@ describe("trackMetaPurchaseOnce", () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.stubEnv("PROD", true);
-    writeMarketingConsent("granted");
     window.fbq = vi.fn();
   });
 
