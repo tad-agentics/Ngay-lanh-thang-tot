@@ -140,7 +140,7 @@ describe("tieuVanSectionsFromGenerateReading", () => {
 
   it("wraps prose reading when sections empty", () => {
     const out = tieuVanSectionsFromGenerateReading(null, "  Một khối văn.  ");
-    expect(out[0]?.title).toBe("Luận giải tiểu vận");
+    expect(out[0]?.title).toBe("Luận giải lưu niên và lưu nguyệt");
     expect(out[0]?.text).toBe("Một khối văn.");
   });
 });

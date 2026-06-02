@@ -1,4 +1,8 @@
 import type { PackageSku } from "~/lib/api-types";
+import {
+  LUAN_LUU_NIEN_NGUYET_TITLE,
+  LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
+} from "~/lib/luan-luu-nien-nguyet-labels";
 import { UI_PACKAGES } from "~/lib/packages";
 
 export const PAY_CONFIRM_TIER_META: Partial<
@@ -17,7 +21,7 @@ export const PAY_CONFIRM_TIER_META: Partial<
     baseline: "797.000",
     per: "6 tháng",
     save: "tiết kiệm 298.000đ",
-    sub: "Lịch + luận Tiểu vận",
+    sub: `Lịch + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`,
   },
   goi_12thang: {
     baseline: "1.097.000",
@@ -36,9 +40,9 @@ export const PAY_CONFIRM_ADDON_META: Partial<
     sub: "5 chương · mệnh · tính cách · quý nhân",
   },
   luan_tieu_van: {
-    title: "Luận giải Tiểu Vận",
+    title: LUAN_LUU_NIEN_NGUYET_TITLE,
     per: "1 năm",
-    sub: "vận năm · phong thuỷ năm",
+    sub: "lưu niên năm · lưu nguyệt tháng",
   },
 };
 
@@ -81,7 +85,7 @@ export function addonSubscriptionUpsell(addonSku: PackageSku): {
       planSku: "goi_6thang",
       planLabel: "Lịch 6 tháng",
       priceLabel: sixMonth.priceLabel,
-      benefit: "thêm lịch cá nhân + luận Tiểu vận trong gói",
+      benefit: `thêm lịch cá nhân + ${LUAN_LUU_NIEN_NGUYET_TITLE} trong gói`,
     };
   }
   if (addonSku === "luan_bat_tu" && yearly) {
@@ -89,7 +93,7 @@ export function addonSubscriptionUpsell(addonSku: PackageSku): {
       planSku: "goi_12thang",
       planLabel: "Lịch năm",
       priceLabel: yearly.priceLabel,
-      benefit: "mở toàn bộ tính năng — lịch + luận Bát tự + Tiểu vận",
+      benefit: `mở toàn bộ tính năng — lịch + luận Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`,
     };
   }
   return null;

@@ -13,6 +13,7 @@ import {
   referralParamFromSearchParams,
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
+import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 import { supabase } from "~/lib/supabase";
 
 import "~/styles/landing-direction-c.css";
@@ -52,7 +53,7 @@ const FAQS = [
   ],
   [
     "Nên chọn gói dịch vụ nào phù hợp nhất?",
-    "Gói năm 799.000đ là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + Luận giải Tiểu Vận hằng năm. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.",
+    `Gói năm 799.000đ là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
   ],
   [
     "Tôi không am hiểu về tử vi, phong thủy có dùng được không?",
@@ -635,7 +636,7 @@ export function LandingDirectionC() {
                   </div>
                   <div className="flex items-start gap-3">
                     <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
-                    <span><strong>Luận giải Tiểu vận hằng năm:</strong> Tỏ tường vận hạn cát hung của từng tháng trong 12 tháng kế tiếp để chủ động đón lành tránh dữ.</span>
+                    <span><strong>{LUAN_LUU_NIEN_NGUYET_TITLE}:</strong> Lưu niên năm và lưu nguyệt tháng — tỏ tường vận hạn cát hung để chủ động đón lành tránh dữ.</span>
                   </div>
                   <div className="flex items-start gap-3">
                     <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
@@ -673,7 +674,7 @@ export function LandingDirectionC() {
 
                 <div className="mt-8 p-4 font-serif text-[13px] leading-relaxed rounded-[3px]" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(197,165,90,0.25)" }}>
                   <p className="m-0" style={{ color: "rgba(237,231,211,0.7)" }}>
-                    Gói dịch vụ được nhiều quý anh chị trên 30 tuổi tin dùng nhất. Đã bao gồm trọn gói dịch vụ Luận giải Bát tự và Luận giải Tiểu vận (tiết kiệm hơn 40% so với mua lẻ từng bản luận giải).
+                    {`Gói dịch vụ được nhiều quý anh chị trên 30 tuổi tin dùng nhất. Đã bao gồm trọn gói Luận giải Bát tự và ${LUAN_LUU_NIEN_NGUYET_TITLE} (tiết kiệm hơn 40% so với mua lẻ từng bản luận giải).`}
                   </p>
                 </div>
               </div>
@@ -693,7 +694,7 @@ export function LandingDirectionC() {
                   { text: "90 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
                   { text: "Điểm số cát hung & Luận giải chi tiết", ok: true },
                   { text: "Hỏi đáp AI chi tiết về ngày hôm nay", ok: true },
-                  { text: "Luận giải Tiểu vận hạn 12 tháng sắp tới", ok: false },
+                  { text: `${LUAN_LUU_NIEN_NGUYET_TITLE} (12 tháng)`, ok: false },
                   { text: "Bản Luận giải Bát tự chuyên sâu trọn đời", ok: false },
                 ]
               },
@@ -709,7 +710,7 @@ export function LandingDirectionC() {
                   { text: "180 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
                   { text: "Điểm số cát hung & Luận giải chi tiết", ok: true },
                   { text: "Hỏi đáp AI chi tiết về ngày hôm nay", ok: true },
-                  { text: "Luận giải Tiểu vận hạn 12 tháng hằng năm", ok: true },
+                  { text: LUAN_LUU_NIEN_NGUYET_TITLE, ok: true },
                   { text: "Bản Luận giải Bát tự chuyên sâu trọn đời", ok: false },
                 ]
               },

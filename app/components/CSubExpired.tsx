@@ -88,7 +88,7 @@ export function CSubExpired() {
         >
           Gia hạn để tiếp tục xem trang ngày cát lành, tra cứu vạn sự và khai mở{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
-            luận giải Bát Tự + Tiểu vận
+            luận giải Bát Tự + lưu niên & lưu nguyệt
           </strong>
           . Thông tin lá số Tứ Trụ của bản chủ vẫn được lưu trữ an toàn, không cần lập lại sau khi gia hạn.
         </p>

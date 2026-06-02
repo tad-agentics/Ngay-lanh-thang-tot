@@ -147,7 +147,7 @@ export function CPaySuccessAddonScreen() {
                   <strong className="font-semibold" style={{ color: CT.ink }}>
                     Lịch cá nhân
                   </strong>
-                  . Gói 6 tháng gồm lịch + luận Tiểu vận — chỉ thêm{" "}
+                  . Gói 6 tháng gồm lịch + luận lưu niên & lưu nguyệt — chỉ thêm{" "}
                 </>
               ) : (
                 <>

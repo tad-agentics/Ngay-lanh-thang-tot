@@ -1,4 +1,5 @@
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
+import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 
 function asRecord(x: unknown): Record<string, unknown> | null {
   if (x && typeof x === "object" && !Array.isArray(x)) {
@@ -332,5 +333,5 @@ export function tieuVanSectionsFromGenerateReading(
   if (sections && sections.length > 0) return sections;
   const text = reading?.trim();
   if (!text) return [];
-  return [{ id: "tieu_van_prose", title: "Luận giải tiểu vận", text }];
+  return [{ id: "tieu_van_prose", title: LUAN_LUU_NIEN_NGUYET_TITLE, text }];
 }

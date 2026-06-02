@@ -3,9 +3,10 @@ import { Link } from "react-router";
 import { Mono } from "~/components/brand";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
+import { LUAN_LUU_NIEN_NGUYET_TAGLINE, LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 import { UI_PACKAGES } from "~/lib/packages";
 
-/** Direction C — Tôi / Lịch: Tiểu vận locked card for subscribers without entitlement. */
+/** Direction C — Tôi / Lịch: lưu niên & lưu nguyệt locked card when addon not unlocked. */
 export function CMeLockedTieuVanCard() {
   const pkg = UI_PACKAGES.find((p) => p.sku === "luan_tieu_van");
   const tieuVanYear = currentYearVn();
@@ -26,10 +27,10 @@ export function CMeLockedTieuVanCard() {
         className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
         style={{ color: CT.ink }}
       >
-        Luận giải Tiểu vận
+        {LUAN_LUU_NIEN_NGUYET_TITLE}
       </div>
       <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-        vận hạn cát hung · phong thủy cát tường · luận giải tháng
+        {LUAN_LUU_NIEN_NGUYET_TAGLINE}
       </div>
       <div className="mt-2.5 flex flex-wrap items-baseline gap-2">
         <span

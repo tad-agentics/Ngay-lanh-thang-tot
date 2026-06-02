@@ -15,6 +15,7 @@ import {
   UI_PACKAGES,
 } from "~/lib/packages";
 import { useProfile } from "~/hooks/useProfile";
+import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 
 const SUBSCRIPTION_TIERS = UI_PACKAGES.filter((p) =>
   SUBSCRIPTION_SKUS.includes(p.sku),
@@ -229,7 +230,7 @@ export default function DatLichRoute() {
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         299k
                       </strong>{" "}
-                      + Luận giải Tiểu vận{" "}
+                      + {LUAN_LUU_NIEN_NGUYET_TITLE}{" "}
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         199k
                       </strong>
@@ -269,7 +270,7 @@ export default function DatLichRoute() {
           style={{ color: CT.muted }}
         >
           Gói 3 tháng: lịch cá nhân · tra cứu ngày tốt · hợp tuổi. Gói 6 tháng thêm
-          luận Tiểu vận. Gói năm mở full luận Bát tự và toàn bộ tính năng.
+          {LUAN_LUU_NIEN_NGUYET_TITLE}. Gói năm mở full luận Bát tự và toàn bộ tính năng.
         </p>
 
         <div

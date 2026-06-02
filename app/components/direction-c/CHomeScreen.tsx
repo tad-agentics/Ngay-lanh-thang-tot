@@ -25,6 +25,10 @@ import {
 } from "~/lib/entitlements";
 import { CT } from "~/lib/c-tokens";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
+import {
+  LUAN_LUU_NIEN_NGUYET_TAGLINE,
+  LUAN_LUU_NIEN_NGUYET_TITLE,
+} from "~/lib/luan-luu-nien-nguyet-labels";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
 
 export function CHomeScreen() {
@@ -219,10 +223,10 @@ export function CHomeScreen() {
                 className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
                 style={{ color: CT.ink }}
               >
-                Luận giải Tiểu vận {tieuVanYear}
+                {LUAN_LUU_NIEN_NGUYET_TITLE} {tieuVanYear}
               </div>
               <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-                vận hạn cát hung · phong thủy cát tường · luận giải tháng
+                {LUAN_LUU_NIEN_NGUYET_TAGLINE}
               </div>
               <div
                 className="mt-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"

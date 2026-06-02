@@ -6,6 +6,7 @@ import { CBaziReadingScreen } from "~/components/direction-c/CBaziReadingScreen"
 import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { CTieuVanLuanScreen } from "~/components/direction-c/CTieuVanLuanScreen";
 import { parseLuanContext } from "~/lib/luan-context";
+import { LUAN_LUU_NIEN_NGUYET_TITLE_SHORT } from "~/lib/luan-luu-nien-nguyet-labels";
 
 export default function LuanAiContextRoute() {
   const { context } = useParams();
@@ -21,7 +22,7 @@ export default function LuanAiContextRoute() {
     screen = "Luận Bát tự";
     body = <CBaziReadingScreen />;
   } else if (parsed.kind === "tieu-van") {
-    screen = "Luận Tiểu vận";
+    screen = LUAN_LUU_NIEN_NGUYET_TITLE_SHORT;
     body = <CTieuVanLuanScreen year={parsed.year} />;
   } else {
     screen = "Luận ngày";

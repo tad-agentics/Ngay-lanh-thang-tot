@@ -1,4 +1,8 @@
 import type { PackageSku } from "~/lib/api-types";
+import {
+  LUAN_LUU_NIEN_NGUYET_TITLE,
+  LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
+} from "~/lib/luan-luu-nien-nguyet-labels";
 
 export const SUBSCRIPTION_SKUS: PackageSku[] = [
   "goi_1thang",
@@ -28,7 +32,7 @@ export const UI_PACKAGES: {
   {
     sku: "goi_6thang",
     title: "6 tháng",
-    subtitle: "Lịch cá nhân + luận giải Tiểu vận trong gói.",
+    subtitle: `Lịch cá nhân + ${LUAN_LUU_NIEN_NGUYET_TITLE} trong gói.`,
     priceLabel: "499.000₫",
     featured: false,
     kind: "subscription",
@@ -36,7 +40,7 @@ export const UI_PACKAGES: {
   {
     sku: "goi_12thang",
     title: "1 năm",
-    subtitle: "Toàn bộ tính năng — lịch + luận Bát tự + Tiểu vận.",
+    subtitle: `Toàn bộ tính năng — lịch + luận Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}.`,
     priceLabel: "799.000₫",
     badge: "Đề xuất",
     featured: true,
@@ -52,8 +56,8 @@ export const UI_PACKAGES: {
   },
   {
     sku: "luan_tieu_van",
-    title: "Luận Tiểu vận",
-    subtitle: "Luận giải Tiểu vận 12 tháng tới.",
+    title: LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
+    subtitle: `${LUAN_LUU_NIEN_NGUYET_TITLE} — 12 tháng tới.`,
     priceLabel: "199.000₫",
     featured: false,
     kind: "addon",

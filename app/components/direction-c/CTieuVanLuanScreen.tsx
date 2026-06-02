@@ -12,6 +12,10 @@ import { invokeGenerateReading } from "~/lib/generate-reading";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 import {
+  LUAN_LUU_NIEN_NGUYET_TITLE,
+  LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
+} from "~/lib/luan-luu-nien-nguyet-labels";
+import {
   mapTieuVanPayload,
   tieuVanSectionsFromGenerateReading,
   type TieuVanUi,
@@ -93,7 +97,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
     });
     if (!res.ok) {
       setLoading(false);
-      toast.error(res.message ?? "Không tải tiểu vận.");
+      toast.error(res.message ?? `Không tải ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}.`);
       return;
     }
 
@@ -134,7 +138,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
   if (profileLoading) {
     return (
       <main className="min-h-full px-6 py-10 font-serif" style={{ background: CT.paper, color: CT.muted }}>
-        Đang đối chiếu lá số tiểu vận…
+        Đang đối chiếu lá số lưu niên & lưu nguyệt…
       </main>
     );
   }
@@ -155,7 +159,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
       style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
     >
       <BackBar
-        title={`Luận giải Tiểu vận · ${year}`}
+        title={`${LUAN_LUU_NIEN_NGUYET_TITLE} · ${year}`}
         endAdornment={<Mono style={{ color: CT.muted, fontSize: 9.5 }}>Học thuật cổ thư</Mono>}
       />
 
@@ -168,7 +172,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
           }}
         >
           <p className="font-serif text-xs leading-snug" style={{ color: CT.ink2 }}>
-            <strong style={{ color: CT.ink }}>Đã mở</strong> · vận tháng theo lá số của bạn
+            <strong style={{ color: CT.ink }}>Đã mở</strong> · lưu niên & lưu nguyệt theo lá số của bạn
           </p>
         </div>
 
@@ -213,7 +217,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
             <p className="text-sm leading-relaxed" style={{ color: CT.ink2 }}>
               Luận giải AI chưa tải xong
               {aiSections.length === 0
-                ? " — bạn vẫn xem được dữ liệu tiểu vận cơ bản bên dưới."
+                ? " — bạn vẫn xem được dữ liệu lưu niên & lưu nguyệt cơ bản bên dưới."
                 : " — một phần nội dung có thể thiếu."}
             </p>
             <button
@@ -229,7 +233,7 @@ export function CTieuVanLuanScreen({ year }: CTieuVanLuanScreenProps) {
 
         {loading ? (
           <p className="mt-8 text-sm" style={{ color: CT.muted }}>
-            Đang luận đoán cát hung tiểu vận…
+            Đang luận lưu niên & lưu nguyệt…
           </p>
         ) : sections.length === 0 ? (
           <p className="mt-8 text-sm" style={{ color: CT.muted }}>
