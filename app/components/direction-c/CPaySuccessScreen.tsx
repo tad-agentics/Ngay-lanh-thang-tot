@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import { PaySuccessStamp } from "~/components/direction-c/PayCommerceMarks";
+import { useMetaPurchaseTrack } from "~/hooks/useMetaPurchaseTrack";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
@@ -78,6 +79,14 @@ export function CPaySuccessScreen() {
   const durationLabel = subscriptionDurationLabel(sku);
   const orderRef = orderId ? formatPaymentOrderRef(orderId) : null;
   const receiptEmail = user?.email ?? "email của bạn";
+
+  useMetaPurchaseTrack(
+    paid,
+    orderId && order
+      ? { id: orderId, package_sku: order.package_sku, amount_vnd: order.amount_vnd }
+      : null,
+    planName,
+  );
 
   function showInvoiceToast(kind: "view" | "vat") {
     toast.info(

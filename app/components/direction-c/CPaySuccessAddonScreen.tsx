@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import { PaySuccessStamp } from "~/components/direction-c/PayCommerceMarks";
+import { useMetaPurchaseTrack } from "~/hooks/useMetaPurchaseTrack";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
@@ -23,8 +25,14 @@ import {
 } from "~/lib/pay-confirm-ui";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
+import { supabase } from "~/lib/supabase";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
+
+type OrderSummary = {
+  package_sku: PackageSku;
+  amount_vnd: number | null;
+};
 
 export function CPaySuccessAddonScreen() {
   const navigate = useNavigate();
@@ -39,13 +47,37 @@ export function CPaySuccessAddonScreen() {
   const { loading, reload } = useProfile();
   const pkg = UI_PACKAGES.find((p) => p.sku === sku);
   const addonMeta = PAY_CONFIRM_ADDON_META[sku];
+  const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [paid, setPaid] = useState(false);
 
   usePollPaymentOrderPaid(orderId, Boolean(orderId), {
     onPaid: async () => {
       await reload();
+      setPaid(true);
       toast.success("Đã nhận thanh toán — luận giải đã mở.");
     },
   });
+
+  useEffect(() => {
+    if (!orderId) return;
+    let cancelled = false;
+    void supabase
+      .from("payment_orders")
+      .select("package_sku, amount_vnd, status")
+      .eq("id", orderId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled || !data?.package_sku) return;
+        setOrder({
+          package_sku: data.package_sku as PackageSku,
+          amount_vnd: data.amount_vnd,
+        });
+        if (data.status === "paid") setPaid(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId]);
 
   const orderRef = orderId ? formatPaymentOrderRef(orderId) : null;
   const receiptEmail = user?.email ?? "email của bạn";
@@ -59,6 +91,14 @@ export function CPaySuccessAddonScreen() {
       ? `/toi/luan-tieu-van?year=${currentYearVn()}`
       : "/toi/luan-bat-tu";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
+
+  useMetaPurchaseTrack(
+    paid,
+    orderId && order
+      ? { id: orderId, package_sku: order.package_sku, amount_vnd: order.amount_vnd }
+      : null,
+    headlineTitle,
+  );
 
   return (
     <div

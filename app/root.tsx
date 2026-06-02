@@ -7,6 +7,10 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { MetaPixelBootstrap } from "~/components/MetaPixelBootstrap";
+import { MetaPixelConsentBanner } from "~/components/MetaPixelConsentBanner";
+import { MetaPixelNoscript } from "~/components/MetaPixelNoscript";
+import { MetaPixelRouteTracker } from "~/components/MetaPixelRouteTracker";
 import { QueryProvider } from "~/components/QueryProvider";
 import { SavedPicksGate } from "~/components/SavedPicksGate";
 import { SiteBanner } from "~/components/SiteBanner";
@@ -65,6 +69,10 @@ export default function App() {
     <QueryProvider>
       <AuthProvider>
         <SavedPicksGate>
+          <MetaPixelBootstrap />
+          <MetaPixelRouteTracker />
+          <MetaPixelNoscript />
+          <MetaPixelConsentBanner />
           <SiteBanner />
           <Outlet />
           <Toaster richColors position="top-center" />
