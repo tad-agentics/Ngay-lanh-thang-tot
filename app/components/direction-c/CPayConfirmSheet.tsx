@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import { CPayFailureSheet } from "~/components/direction-c/CPayFailureSheet";
+import { PayTrackablePrice } from "~/components/direction-c/PayTrackablePrice";
 import type {
   CreatePayosCheckoutResponse,
   PayosCheckoutQuote,
@@ -449,30 +450,17 @@ export function CPayConfirmSheet({
                   </div>
                 ) : null}
               </div>
-              <div className="text-right">
-                {tierMeta?.baseline && !hasDiscount ? (
-                  <div
-                    className="text-[12px] line-through"
-                    style={{ color: CT.muted, textDecorationThickness: 1 }}
-                  >
-                    {tierMeta.baseline}đ
-                  </div>
-                ) : null}
-                {hasDiscount ? (
-                  <div
-                    className="text-[12px] line-through tabular-nums"
-                    style={{ color: CT.muted, textDecorationThickness: 1 }}
-                  >
-                    {displayList}đ
-                  </div>
-                ) : null}
-                <div
-                  className="text-[22.5px] font-extrabold tabular-nums tracking-[-0.015em]"
-                  style={{ ...DISPLAY2, color: CT.goldDeep }}
-                >
-                  {displayFinal}đ
-                </div>
-              </div>
+              <PayTrackablePrice
+                priceLabel={pkg.priceLabel}
+                displayPrice={displayFinal}
+                valueVnd={finalAmountVnd}
+                baseline={
+                  hasDiscount
+                    ? displayList
+                    : tierMeta?.baseline ?? null
+                }
+                size="confirm"
+              />
             </div>
 
             {addonUpsell ? (

@@ -71,6 +71,39 @@ export function priceDisplay(label: string): string {
   return label.replace(/₫/g, "").trim();
 }
 
+/** Integer VND from labels like `499.000₫` — for `data-track-price-vnd` hints. */
+export function priceVndFromLabel(label: string): number {
+  const digits = label.replace(/\D/g, "");
+  if (!digits) return 0;
+  return Number.parseInt(digits, 10);
+}
+
+/** Sale amount for tracking attrs — ignores zero/invalid quote amounts. */
+export function resolveTrackableValueVnd(
+  amountVnd: number | null | undefined,
+  priceLabel: string,
+): number {
+  if (typeof amountVnd === "number" && Number.isFinite(amountVnd) && amountVnd > 0) {
+    return Math.round(amountVnd);
+  }
+  return priceVndFromLabel(priceLabel);
+}
+
+/** Screen reader summary for price column (sale + optional compare-at). */
+export function payTrackablePriceAriaLabel(args: {
+  price: string;
+  baseline?: string | null;
+  per?: string;
+}): string {
+  const sale = `${args.price} đ`;
+  if (args.baseline) {
+    const base = `Giá ${sale}, giảm từ ${args.baseline} đ`;
+    return args.per ? `${base}, ${args.per}` : base;
+  }
+  const base = `Giá ${sale}`;
+  return args.per ? `${base}, ${args.per}` : base;
+}
+
 /** Addon checkout upsell — 6 tháng = lịch + Tiểu vận; 1 năm = toàn bộ tính năng. */
 export function addonSubscriptionUpsell(addonSku: PackageSku): {
   planSku: PackageSku;

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Mono } from "~/components/brand";
+import { PayTrackablePrice } from "~/components/direction-c/PayTrackablePrice";
 import type { PackageSku } from "~/lib/api-types";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { subscriptionStatusLine } from "~/lib/entitlements";
@@ -128,7 +129,7 @@ export default function DatLichRoute() {
             const meta = TIER_META[pkg.sku];
             const hero = pkg.featured;
             const isPreselected = preselectedSku === pkg.sku;
-            const price = priceDisplay(pkg.priceLabel);
+            const tierPer = meta?.per ?? "gói";
 
             return (
               <div
@@ -171,33 +172,13 @@ export default function DatLichRoute() {
                       {meta?.sub ?? pkg.subtitle}
                     </div>
                   </div>
-                  <div className="text-right">
-                    {meta?.baseline ? (
-                      <div
-                        className="mb-0.5 font-serif text-xs line-through tabular-nums"
-                        style={{
-                          color: hero ? "rgba(237,231,211,0.55)" : CT.muted,
-                        }}
-                      >
-                        {meta.baseline}đ
-                      </div>
-                    ) : null}
-                    <div
-                      className="text-2xl font-extrabold leading-none tabular-nums tracking-[-0.015em]"
-                      style={{
-                        ...DISPLAY2,
-                        color: hero ? CT.gold : CT.goldDeep,
-                      }}
-                    >
-                      {price}
-                    </div>
-                    <div
-                      className="mt-1 font-serif text-[12px]"
-                      style={{ color: hero ? "rgba(237,231,211,0.65)" : CT.muted }}
-                    >
-                      đ · {meta?.per ?? "gói"}
-                    </div>
-                  </div>
+                  <PayTrackablePrice
+                    priceLabel={pkg.priceLabel}
+                    baseline={meta?.baseline}
+                    per={tierPer}
+                    hero={hero}
+                    size="tier"
+                  />
                 </div>
 
                 {hero ? (
@@ -294,7 +275,6 @@ export default function DatLichRoute() {
         <div className="mt-3.5 flex flex-col gap-2">
           {ADDON_PACKAGES.map((pkg) => {
             const meta = ADDON_META[pkg.sku];
-            const price = priceDisplay(pkg.priceLabel);
 
             return (
               <div
@@ -321,17 +301,11 @@ export default function DatLichRoute() {
                     Khai mở →
                   </button>
                 </div>
-                <div className="text-right">
-                  <div
-                    className="text-[17.5px] font-extrabold leading-none tabular-nums tracking-[-0.015em]"
-                    style={{ ...DISPLAY2, color: CT.goldDeep }}
-                  >
-                    {price}
-                  </div>
-                  <div className="mt-0.5 font-serif text-[11px]" style={{ color: CT.muted }}>
-                    đ · {meta?.per ?? "một lần"}
-                  </div>
-                </div>
+                <PayTrackablePrice
+                  priceLabel={pkg.priceLabel}
+                  per={meta?.per ?? "một lần"}
+                  size="addon"
+                />
               </div>
             );
           })}
