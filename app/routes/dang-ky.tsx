@@ -177,13 +177,13 @@ export default function DangKy() {
   }, [prefill.gioSinh, selectedCanh]);
 
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || busy) return;
     void resolvePostLoginPath().then((dest) => {
       if (dest !== "/dang-ky") {
         navigate(dest, { replace: true });
       }
     });
-  }, [authLoading, user, navigate]);
+  }, [authLoading, user, navigate, busy]);
 
   async function persistBirthProfile(
     uid: string,

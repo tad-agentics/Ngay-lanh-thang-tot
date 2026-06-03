@@ -21,6 +21,7 @@ import {
   sanitizeReturnTo,
 } from "~/lib/nav-config";
 import {
+  firstRunInProgressPath,
   onboardingInProgressPath,
   profileHasBirthChartInput,
   stashPendingReturnTo,
@@ -146,6 +147,17 @@ function AuthenticatedShellWithProfile({
     return (
       <Navigate to={onboardingInProgressPath(birthProfile)} replace />
     );
+  }
+
+  if (
+    profile.onboarding_completed_at == null &&
+    profileHasBirthChartInput(birthProfile) &&
+    !isOnboardingExemptPath(location.pathname)
+  ) {
+    const firstRunPath = firstRunInProgressPath(birthProfile);
+    if (location.pathname !== firstRunPath) {
+      return <Navigate to={firstRunPath} replace />;
+    }
   }
 
   if (

@@ -2,9 +2,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import {
   appendReturnToQuery,
+  clearFirstRunBuildDone,
   consumePendingReturnTo,
   destinationAfterAuth,
   destinationAfterOnboarding,
+  firstRunInProgressPath,
+  markFirstRunBuildDone,
   onboardingInProgressPath,
   readPendingReturnTo,
   returnToFromSearchParams,
@@ -14,6 +17,7 @@ import {
 describe("pending-return-to", () => {
   beforeEach(() => {
     sessionStorage.clear();
+    clearFirstRunBuildDone();
   });
 
   it("reads return_to and legacy returnTo query params", () => {
@@ -44,6 +48,19 @@ describe("pending-return-to", () => {
     stashPendingReturnTo("/lich/thang");
     expect(destinationAfterAuth(false, true)).toBe("/dang-dung-lich");
     expect(destinationAfterOnboarding()).toBe("/lich/thang");
+  });
+
+  it("routes to reveal when build animation already finished", () => {
+    markFirstRunBuildDone();
+    expect(destinationAfterAuth(false, true)).toBe("/lich-da-mo");
+    expect(
+      firstRunInProgressPath({
+        onboarding_completed_at: null,
+        ngay_sinh: "1990-01-01",
+        gio_sinh: "05:00:00",
+        gioi_tinh: "nam",
+      }),
+    ).toBe("/lich-da-mo");
   });
 
   it("sends incomplete birth chart input to dang-ky", () => {

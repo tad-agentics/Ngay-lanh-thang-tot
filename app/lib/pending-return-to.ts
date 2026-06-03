@@ -1,6 +1,8 @@
 import { sanitizeReturnTo } from "~/lib/nav-config";
 
 const STORAGE_KEY = "ngaytot:return_to";
+/** Set when `/dang-dung-lich` animation finishes; cleared on reveal CTA. */
+const FIRST_RUN_BUILD_KEY = "ngaytot:first_run_build_done";
 
 export function returnToFromSearchParams(
   params: URLSearchParams,
@@ -58,11 +60,44 @@ export function profileHasBirthChartInput(
   return hasBirthDate && hasGioSinh && profileHasGioiTinh(prof);
 }
 
+export function markFirstRunBuildDone(): void {
+  try {
+    sessionStorage.setItem(FIRST_RUN_BUILD_KEY, "1");
+  } catch {
+    /* private mode / SSR */
+  }
+}
+
+export function clearFirstRunBuildDone(): void {
+  try {
+    sessionStorage.removeItem(FIRST_RUN_BUILD_KEY);
+  } catch {
+    /* private mode / SSR */
+  }
+}
+
+export function hasFirstRunBuildDone(): boolean {
+  try {
+    return sessionStorage.getItem(FIRST_RUN_BUILD_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 /** Route for users still in first-run (before `onboarding_completed_at`). */
 export function onboardingInProgressPath(
   prof: PostLoginProfile | null | undefined,
 ): "/dang-ky" | "/dang-dung-lich" {
   return profileHasBirthChartInput(prof) ? "/dang-dung-lich" : "/dang-ky";
+}
+
+/** Building screen → reveal → app; honors session flag if build already finished. */
+export function firstRunInProgressPath(
+  prof: PostLoginProfile | null | undefined,
+): "/dang-ky" | "/dang-dung-lich" | "/lich-da-mo" {
+  if (!profileHasBirthChartInput(prof)) return "/dang-ky";
+  if (hasFirstRunBuildDone()) return "/lich-da-mo";
+  return "/dang-dung-lich";
 }
 
 /** After login — keep pending return_to through first-run if onboarding incomplete. */
@@ -71,7 +106,9 @@ export function destinationAfterAuth(
   hasBirthChartInput = true,
 ): string {
   if (!hasBirthChartInput) return "/dang-ky";
-  if (!onboardingComplete) return "/dang-dung-lich";
+  if (!onboardingComplete) {
+    return hasFirstRunBuildDone() ? "/lich-da-mo" : "/dang-dung-lich";
+  }
   return consumePendingReturnTo() ?? "/lich";
 }
 
@@ -79,14 +116,14 @@ export function destinationAfterAuthFromProfile(
   prof: PostLoginProfile | null | undefined,
 ): string {
   const onboardingComplete = prof?.onboarding_completed_at != null;
-  return destinationAfterAuth(
-    onboardingComplete,
-    profileHasBirthChartInput(prof),
-  );
+  if (!profileHasBirthChartInput(prof)) return "/dang-ky";
+  if (!onboardingComplete) return firstRunInProgressPath(prof);
+  return consumePendingReturnTo() ?? "/lich";
 }
 
 /** After first-run reveal CTA — honor stashed deep link from anon visit. */
 export function destinationAfterOnboarding(): string {
+  clearFirstRunBuildDone();
   return consumePendingReturnTo() ?? "/lich";
 }
 

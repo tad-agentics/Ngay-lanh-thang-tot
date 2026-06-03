@@ -14,6 +14,8 @@ import {
   profileHasStoredLaso,
 } from "~/lib/la-so-ui";
 import {
+  hasFirstRunBuildDone,
+  markFirstRunBuildDone,
   onboardingInProgressPath,
   profileHasBirthChartInput,
 } from "~/lib/pending-return-to";
@@ -63,6 +65,11 @@ export default function DangDungLichRoute() {
     };
     if (!profileHasBirthChartInput(birthProfile)) {
       navigate(onboardingInProgressPath(birthProfile), { replace: true });
+      return;
+    }
+
+    if (hasFirstRunBuildDone()) {
+      navigate("/lich-da-mo", { replace: true });
       return;
     }
 
@@ -127,7 +134,10 @@ export default function DangDungLichRoute() {
         }
         timers.push(
           window.setTimeout(() => {
-            if (!cancelled) navigate("/lich-da-mo", { replace: true });
+            if (!cancelled) {
+              markFirstRunBuildDone();
+              navigate("/lich-da-mo", { replace: true });
+            }
           }, 3400),
         );
       } catch {
@@ -142,16 +152,7 @@ export default function DangDungLichRoute() {
       cancelled = true;
       timers.forEach(window.clearTimeout);
     };
-  }, [
-    profileLoading,
-    navigate,
-    retryTick,
-    profile?.id,
-    profile?.ngay_sinh,
-    profile?.gio_sinh,
-    profile?.gioi_tinh,
-    profile?.onboarding_completed_at,
-  ]);
+  }, [profileLoading, navigate, retryTick, profile?.id]);
 
   function handleRetry() {
     buildStartedForRetry.current = -1;

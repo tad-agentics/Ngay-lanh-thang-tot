@@ -9,7 +9,7 @@ import { Logo, Mono } from "~/components/brand";
 import { useAuth } from "~/lib/auth";
 import { CT } from "~/lib/c-tokens";
 import {
-  onboardingInProgressPath,
+  firstRunInProgressPath,
   profileHasBirthChartInput,
 } from "~/lib/pending-return-to";
 import { supabase } from "~/lib/supabase";
@@ -37,10 +37,7 @@ export default function SplashRoute() {
       if (data?.onboarding_completed_at && profileHasBirthChartInput(data)) {
         navigate("/lich", { replace: true });
       } else {
-        navigate(
-          onboardingInProgressPath(data ?? null),
-          { replace: true },
-        );
+        navigate(firstRunInProgressPath(data ?? null), { replace: true });
       }
     })();
 
