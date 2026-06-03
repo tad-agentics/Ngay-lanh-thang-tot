@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { parseDayDetailForView } from "~/lib/day-detail-view";
 import {
   buildCalendarDaysForMonth,
+  buildCalendarLockedDayTeaser,
   buildHomeInlineFallback,
   formatLichThangMonthKey,
   mergeDayDetailScoreIntoHome,
@@ -199,11 +201,36 @@ describe("mergeDayDetailScoreIntoHome", () => {
   });
 });
 
+describe("buildCalendarLockedDayTeaser", () => {
+  it("teases đặt lịch instead of engine score breakdown", () => {
+    const detail = parseDayDetailForView({
+      score: 46,
+      good_for: ["Ký kết"],
+      avoid_for: ["Khởi sự lớn"],
+      reason_vi:
+        "Ngày Hắc Đạo (Chu Tước), sao Đẩu (tốt) trừ 4 điểm. Ảnh hưởng này được tính cho mục đích sự kiện chung.",
+    });
+    expect(detail).not.toBeNull();
+    const line = buildCalendarLockedDayTeaser(detail!);
+    expect(line).not.toContain("trừ 4 điểm");
+    expect(line).not.toContain("sự kiện chung");
+    expect(line).toMatch(/hỏi tiếp|đặt lịch|NLTT/i);
+  });
+});
+
 describe("isEngineScoreBreakdownLine", () => {
   it("flags trực + điểm breakdown copy", () => {
     expect(
       isEngineScoreBreakdownLine(
         "Trực Trừ cộng 29 điểm trong tổng điểm ngày. Với lá số của bạn, Trực này hỗ trợ việc sự kiện chung.",
+      ),
+    ).toBe(true);
+  });
+
+  it("flags hắc đạo + sao điểm helper copy", () => {
+    expect(
+      isEngineScoreBreakdownLine(
+        "Ngày Hắc Đạo (Chu Tước), sao Đẩu (tốt) trừ 4 điểm. Ảnh hưởng này được tính cho mục đích sự kiện chung.",
       ),
     ).toBe(true);
   });

@@ -21,7 +21,10 @@ import {
   isSubscriptionLapsed,
 } from "~/lib/entitlements";
 import { neverSubFreeDayReading } from "~/lib/entitlements";
-import { pickDayDetailInlineLuanFallback } from "~/lib/home-bat-tu";
+import {
+  buildCalendarLockedDayTeaser,
+  pickDayDetailInlineLuanFallback,
+} from "~/lib/home-bat-tu";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import { CT } from "~/lib/c-tokens";
 import {
@@ -84,7 +87,9 @@ export function CDayDetailScreen() {
   const expectNlttLuan = subActive || neverSubTodayFree;
   const dayEngineFallback =
     detail && !expectNlttLuan
-      ? pickDayDetailInlineLuanFallback(detail) || null
+      ? calendarLocked
+        ? buildCalendarLockedDayTeaser(detail)
+        : pickDayDetailInlineLuanFallback(detail) || null
       : null;
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
   const birthDate = birthQuery?.birth_date ?? null;

@@ -1,4 +1,5 @@
 import type { CalendarDay, DayType } from "~/lib/api-types";
+import { verdictLabelFromScore } from "~/lib/c-score";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
 import {
   extractChiLabelsFromGioSlots,
@@ -465,6 +466,48 @@ export function pickDayDetailInlineLuanFallback(
   return pickInlineSummaryFromDayDetail(detail);
 }
 
+/** One-line upsell under lịch tờ when user chưa có gói — gợi bấm 「Hỏi tiếp」→ `/dat-lich`. */
+export function buildCalendarLockedDayTeaser(
+  detail: NonNullable<ReturnType<typeof parseDayDetailForView>>,
+): string {
+  const score = detail.score;
+  const verdict =
+    score != null && Number.isFinite(score)
+      ? verdictLabelFromScore(score)
+      : detail.grade?.trim() || "Ngày này";
+
+  const good =
+    detail.goodFor[0]?.trim() || detail.catThanLabels[0]?.trim() || "";
+  const avoid =
+    detail.avoidFor[0]?.trim() || detail.hungSatLabels[0]?.trim() || "";
+
+  if (score != null && score >= 70 && good) {
+    return `${verdict} — có thể thuận cho ${teaserLcFirst(good)}; đặt lịch để NLTT luận sâu hơn cho riêng bạn.`;
+  }
+
+  if (score != null && score < 55) {
+    if (avoid) {
+      return `${verdict}: nên cẩn trọng ${teaserLcFirst(avoid)} — hỏi tiếp để biết việc quan trọng có nên dời.`;
+    }
+    return `${verdict} theo lá số bạn — một câu hỏi tiếp sẽ rõ hơn con số trên lịch.`;
+  }
+
+  if (good && avoid) {
+    return `Ngày vừa thuận ${teaserLcFirst(good)}, vừa cần tránh ${teaserLcFirst(avoid)} — xem luận riêng để chọn việc nên làm.`;
+  }
+
+  if (good) {
+    return `${verdict}: có thể ưu tiên ${teaserLcFirst(good)} — mở lịch cá nhân để xem đủ luận ngày này.`;
+  }
+
+  return `${verdict} trên lịch của bạn — đặt lịch cát tường để hỏi tiếp và nhận luận đầy đủ.`;
+}
+
+function teaserLcFirst(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toLowerCase() + s.slice(1);
+}
+
 function pickInlineSummaryFromDayDetail(
   detail: NonNullable<ReturnType<typeof parseDayDetailForView>>,
 ): string {
@@ -497,8 +540,12 @@ export function isEngineScoreBreakdownLine(line: string): boolean {
   if (!t) return false;
   if (isScoreMethodologyBoilerplate(t)) return true;
   if (/cộng\s+[\d.]+\s*điểm/i.test(t)) return true;
+  if (/trừ\s+[\d.]+\s*điểm/i.test(t)) return true;
   if (/tổng\s+điểm\s+ngày/i.test(t)) return true;
   if (/trong\s+tổng\s+điểm/i.test(t)) return true;
+  if (/ảnh hưởng này được tính/i.test(t)) return true;
+  if (/mục đích sự kiện chung/i.test(t)) return true;
+  if (/^ngày\s+hắc\s+đạo.*\bsao\b/i.test(t)) return true;
   if (/^trực\s+.+\s+cộng\s+/iu.test(t)) return true;
   if (/mọi ngày (bắt đầu|đều có).*nền/i.test(t)) return true;
   return false;
