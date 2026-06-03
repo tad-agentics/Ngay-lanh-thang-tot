@@ -4,7 +4,7 @@ import { Mono } from "~/components/brand";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
 import { LUAN_LUU_NIEN_NGUYET_TAGLINE, LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
-import { UI_PACKAGES } from "~/lib/packages";
+import { catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — Tôi / Lịch: lưu niên & lưu nguyệt locked card when addon not unlocked. */
 export function CMeLockedTieuVanCard() {
@@ -37,7 +37,7 @@ export function CMeLockedTieuVanCard() {
           className="font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
           style={{ color: CT.goldDeep }}
         >
-          {pkg?.priceLabel ?? "199.000₫"}
+          {pkg?.priceLabel ?? catalogPriceLabel("luan_tieu_van")}
         </span>
         <span className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
           · hoặc kèm gói 6 tháng / năm

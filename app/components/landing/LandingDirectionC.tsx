@@ -17,7 +17,13 @@ import {
 import { LandingPrimaryCtaLink } from "~/components/landing/LandingPrimaryCtaLink";
 import { useLandingPrimaryCta } from "~/hooks/useLandingPrimaryCta";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
+import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
 import { supabase } from "~/lib/supabase";
+import {
+  formatVndDigits,
+  formatVndPriceDisplay,
+  VND_CURRENCY_SUFFIX,
+} from "~/lib/vnd-format";
 
 import "~/styles/landing-direction-c.css";
 
@@ -56,7 +62,7 @@ const FAQS = [
   ],
   [
     "Nên chọn gói dịch vụ nào phù hợp nhất?",
-    `Gói năm 799.000 đ là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
+    `Gói năm ${formatVndPriceDisplay(PACKAGE_AMOUNT_VND.goi_12thang)} là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
   ],
   [
     "Tôi không am hiểu về tử vi, phong thủy có dùng được không?",
@@ -692,14 +698,14 @@ export function LandingDirectionC() {
                   <Mono style={{ color: T.gold, fontSize: 10.5, letterSpacing: "0.18em" }}>CHI PHÍ ĐỒNG HÀNH</Mono>
                   <div className="flex items-baseline gap-1.5 mt-2">
                     <span className="ldc-hero-price font-display font-extrabold leading-[0.85] tabular-nums" style={{ fontSize: 72.5, color: T.gold, letterSpacing: "-0.03em" }}>
-                      799.000
+                      {formatVndDigits(PACKAGE_AMOUNT_VND.goi_12thang)}
                     </span>
                     <span className="font-display font-bold text-[24.5px]" style={{ color: T.gold }}>
-                      đ
+                      {VND_CURRENCY_SUFFIX.trim()}
                     </span>
                   </div>
                   <div className="mt-3 inline-block px-3 py-1 font-mono text-[10.5px] font-bold uppercase tracking-wider rounded-[2px]" style={{ background: "rgba(197,165,90,0.12)", color: T.gold }}>
-                    TIẾT KIỆM 298.000 đ · TỐI ƯU TRỌN VẸN
+                    TIẾT KIỆM {formatVndPriceDisplay(298_000)} · TỐI ƯU TRỌN VẸN
                   </div>
                 </div>
 
@@ -715,10 +721,10 @@ export function LandingDirectionC() {
           <div className="ldc-other-tiers mt-8 grid gap-6" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
             {[
               {
-                sku: "goi_1thang",
+                sku: "goi_1thang" as const,
                 name: "Gói Trải Nghiệm",
                 duration: "3 tháng",
-                price: "299.000",
+                priceVnd: PACKAGE_AMOUNT_VND.goi_1thang,
                 per: "3 tháng",
                 desc: "Phù hợp cho quý anh chị bước đầu trải nghiệm sự xoay vần của năng lượng hằng ngày ứng với bản mệnh Tứ Trụ.",
                 features: [
@@ -730,12 +736,12 @@ export function LandingDirectionC() {
                 ]
               },
               {
-                sku: "goi_6thang",
+                sku: "goi_6thang" as const,
                 name: "Gói Bán Niên",
                 duration: "6 tháng",
-                price: "499.000",
+                priceVnd: PACKAGE_AMOUNT_VND.goi_6thang,
                 per: "6 tháng",
-                save: "Tiết kiệm 100.000 đ",
+                save: `Tiết kiệm ${formatVndPriceDisplay(100_000)}`,
                 desc: "Đầy đủ lịch bản mệnh nửa năm, kết hợp luận giải vận hạn chi tiết để chủ động mưu sự đại sự hanh thông.",
                 features: [
                   { text: "180 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
@@ -788,10 +794,10 @@ export function LandingDirectionC() {
                   </div>
                   <div className="text-right">
                     <div className="font-display font-extrabold text-[26.5px] tabular-nums" style={{ color: T.goldDeep }}>
-                      {t.price}
+                      {formatVndPriceDisplay(t.priceVnd)}
                     </div>
                     <div className="font-serif text-[11.5px]" style={{ color: T.muted }}>
-                      đ · sử dụng trong {t.per}
+                      sử dụng trong {t.per}
                     </div>
                   </div>
                 </div>

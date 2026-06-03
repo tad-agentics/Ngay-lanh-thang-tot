@@ -13,7 +13,7 @@ import {
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
 } from "~/lib/luan-luu-nien-nguyet-labels";
 import { profileHasLaso } from "~/lib/la-so-ui";
-import { UI_PACKAGES } from "~/lib/packages";
+import { catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — lưu niên & lưu nguyệt paywall (addon `luan_tieu_van`). */
 export function CTieuVanLockedScreen({ year }: { year: number }) {
@@ -64,7 +64,7 @@ export function CTieuVanLockedScreen({ year }: { year: number }) {
             className="mt-2.5 font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
             style={{ color: CT.goldDeep }}
           >
-            {pkg?.priceLabel ?? "199.000₫"}
+            {pkg?.priceLabel ?? catalogPriceLabel("luan_tieu_van")}
             <span className="ml-2 font-serif text-[11.5px] font-normal" style={{ color: CT.muted }}>
               · hoặc kèm gói năm
             </span>

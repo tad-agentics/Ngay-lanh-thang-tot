@@ -80,7 +80,7 @@ export function TraCuuMethodologyCollapsible({
               >
                 <span>{w.labelVi}</span>
                 <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
-                  {w.maxPoints > 0 ? `${w.maxPoints} đ` : "—"}
+                  {w.maxPoints > 0 ? `${w.maxPoints} điểm` : "—"}
                 </Mono>
               </li>
             ))}

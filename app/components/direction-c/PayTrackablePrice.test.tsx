@@ -13,7 +13,7 @@ function groupNamed(label: string) {
 }
 
 describe("PayTrackablePrice", () => {
-  it("renders sale amount with đ suffix for Meta-readable DOM", () => {
+  it("renders sale amount with Intl ₫ for Meta-readable DOM", () => {
     render(
       <PayTrackablePrice
         priceLabel="299.000₫"

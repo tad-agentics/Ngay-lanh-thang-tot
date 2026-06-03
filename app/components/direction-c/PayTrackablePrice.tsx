@@ -19,7 +19,7 @@ type PayTrackablePriceProps = {
   valueVnd?: number;
   /** Compare-at (strikethrough) — after sale price in DOM; decorative when parent `aria-label` is set. */
   baseline?: string | null;
-  /** e.g. `6 tháng` → line `đ · 6 tháng` */
+  /** e.g. `6 tháng` → subtitle under price */
   per?: string;
   hero?: boolean;
   size?: "tier" | "addon" | "confirm";

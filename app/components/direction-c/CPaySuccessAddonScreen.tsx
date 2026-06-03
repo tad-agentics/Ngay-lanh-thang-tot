@@ -28,7 +28,7 @@ import {
   PAY_CONFIRM_ADDON_META,
 } from "~/lib/pay-confirm-ui";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
-import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
+import { ADDON_SKUS, catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
 
@@ -75,7 +75,8 @@ export function CPaySuccessAddonScreen() {
       ? `/toi/luan-tieu-van?year=${currentYearVn()}`
       : "/toi/luan-bat-tu";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
-  const catalogPriceLabel = pkg?.priceLabel ?? "299.000₫";
+  const catalogPriceLabelText =
+    pkg?.priceLabel ?? catalogPriceLabel(sku ?? "luan_bat_tu");
   const { sku: chargeSku, charge } = useOrderChargeAmounts(order, orderIdFromUrl);
   const listBaseline =
     charge?.hasDiscount && charge.listVnd != null
@@ -155,7 +156,7 @@ export function CPaySuccessAddonScreen() {
                 </div>
               </div>
               <PayTrackablePrice
-                priceLabel={catalogPriceLabel}
+                priceLabel={catalogPriceLabelText}
                 valueVnd={charge.finalVnd}
                 baseline={listBaseline}
                 size="confirm"

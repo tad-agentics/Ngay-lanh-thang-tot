@@ -4,7 +4,7 @@ import { BackBar, Mono } from "~/components/brand";
 import type { PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
-import { UI_PACKAGES } from "~/lib/packages";
+import { catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 type CBaziLockedScreenProps = {
   title?: string;
@@ -51,7 +51,7 @@ export function CBaziLockedScreen({
               className="font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
               style={{ color: CT.goldDeep }}
             >
-              {pkg?.priceLabel ?? "299.000₫"}
+              {pkg?.priceLabel ?? catalogPriceLabel(sku)}
             </span>
             <span className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
               · hoặc miễn phí với Lịch năm

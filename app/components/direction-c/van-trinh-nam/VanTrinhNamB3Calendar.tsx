@@ -23,7 +23,7 @@ function DayRow({
         {row.date_vi}
       </p>
       <p className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
-        {row.can_chi} · {row.grade} · {row.score}đ
+        {row.can_chi} · {row.grade} · {row.score} điểm
       </p>
     </Link>
   );

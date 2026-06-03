@@ -23,7 +23,7 @@ import {
   PAY_MONO,
   subscriptionDurationLabel,
 } from "~/lib/pay-commerce-ui";
-import { SUBSCRIPTION_SKUS, UI_PACKAGES } from "~/lib/packages";
+import { catalogPriceLabel, SUBSCRIPTION_SKUS, UI_PACKAGES } from "~/lib/packages";
 
 export function CPaySuccessScreen() {
   const navigate = useNavigate();
@@ -53,8 +53,8 @@ export function CPaySuccessScreen() {
     ? brandedSubscriptionPlanName(sku, profile?.la_so)
     : null;
   const durationLabel = sku ? subscriptionDurationLabel(sku) : null;
-  const catalogPriceLabel = sku
-    ? (UI_PACKAGES.find((p) => p.sku === sku)?.priceLabel ?? "799.000₫")
+  const catalogPriceLabelText = sku
+    ? (UI_PACKAGES.find((p) => p.sku === sku)?.priceLabel ?? catalogPriceLabel(sku))
     : null;
   const listBaseline =
     charge?.hasDiscount && charge.listVnd != null
@@ -137,9 +137,9 @@ export function CPaySuccessScreen() {
                   {durationLabel}
                 </div>
               </div>
-              {catalogPriceLabel ? (
+              {catalogPriceLabelText ? (
                 <PayTrackablePrice
-                  priceLabel={catalogPriceLabel}
+                  priceLabel={catalogPriceLabelText}
                   valueVnd={charge.finalVnd}
                   baseline={listBaseline}
                   size="confirm"

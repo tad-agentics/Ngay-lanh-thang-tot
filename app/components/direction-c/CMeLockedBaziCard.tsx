@@ -6,7 +6,7 @@ import {
   LUAN_LA_SO_BAT_TU_TAGLINE,
   LUAN_LA_SO_BAT_TU_TITLE,
 } from "~/lib/luan-la-so-bat-tu-labels";
-import { UI_PACKAGES } from "~/lib/packages";
+import { catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — Tôi tab: Bát tự locked card for monthly subscribers (CMeLocked maket). */
 export function CMeLockedBaziCard() {
@@ -38,7 +38,7 @@ export function CMeLockedBaziCard() {
           className="font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
           style={{ color: CT.goldDeep }}
         >
-          {pkg?.priceLabel ?? "299.000₫"}
+          {pkg?.priceLabel ?? catalogPriceLabel("luan_bat_tu")}
         </span>
         <span className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
           · hoặc miễn phí với Lịch năm
