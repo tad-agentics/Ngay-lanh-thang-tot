@@ -6,8 +6,7 @@ import {
   sanitizeNlttLuanProse,
   splitNlttLuanParagraphs,
 } from "~/lib/nltt-luan-prose";
-
-const TYPING_MS_PER_CHAR = 18;
+import { NLTT_TYPING_MS_PER_CHAR } from "~/lib/nltt-typing";
 
 /** Logo + 「NLTT luận」 kicker — cùng pattern `CTodayReasoning` / `CAiTypedScreen`. */
 export function CBaziNlttLuanRow({
@@ -120,7 +119,7 @@ function CBaziNlttLuanTypingBody({
 
   useEffect(() => {
     if (loading || instant || !fullText || n >= fullText.length) return;
-    const id = window.setTimeout(() => setN((prev) => prev + 1), TYPING_MS_PER_CHAR);
+    const id = window.setTimeout(() => setN((prev) => prev + 1), NLTT_TYPING_MS_PER_CHAR);
     return () => window.clearTimeout(id);
   }, [n, fullText, loading, instant]);
 

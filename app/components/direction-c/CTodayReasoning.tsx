@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { LogoMark, Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+import { NLTT_TYPING_MS_PER_CHAR } from "~/lib/nltt-typing";
 
 const DEFAULT_SOURCES = ["Hiệp Kỷ Biện Phương", "Ngọc Hạp Thông Thư"] as const;
 
@@ -47,7 +48,7 @@ export function CTodayReasoning({
 
   useEffect(() => {
     if (loading || instant || !fullText || n >= fullText.length) return;
-    const id = window.setTimeout(() => setN((prev) => prev + 1), 18);
+    const id = window.setTimeout(() => setN((prev) => prev + 1), NLTT_TYPING_MS_PER_CHAR);
     return () => window.clearTimeout(id);
   }, [n, fullText, loading, instant]);
 

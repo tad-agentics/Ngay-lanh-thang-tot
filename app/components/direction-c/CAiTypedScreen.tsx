@@ -16,9 +16,8 @@ import {
   DAY_LUAN_SUGGESTED_CHIPS,
   formatDayIsoShort,
 } from "~/lib/day-luan-sectioned";
+import { NLTT_TYPING_MS_PER_CHAR } from "~/lib/nltt-typing";
 import { paragraphSpansInText } from "~/lib/prose-paragraphs";
-
-const TYPED_MS = 18;
 
 type FollowUpTurn = {
   id: string;
@@ -94,7 +93,7 @@ function TypedBody({
           onCompleteRef.current();
         }
       }
-    }, TYPED_MS);
+    }, NLTT_TYPING_MS_PER_CHAR);
     return () => window.clearInterval(id);
   }, [text, active]);
 
