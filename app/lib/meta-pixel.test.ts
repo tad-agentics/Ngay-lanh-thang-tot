@@ -46,6 +46,17 @@ describe("resolvePurchaseValueVnd", () => {
     expect(resolvePurchaseValueVnd(269_100, "goi_1thang")).toBe(269_100);
   });
 
+  it("uses discount breakdown when amount_vnd missing", () => {
+    expect(
+      resolvePurchaseValueVnd(null, "goi_12thang", {
+        discountBreakdown: {
+          list_amount_vnd: 799_000,
+          amount_vnd: 7_990,
+        },
+      }),
+    ).toBe(7_990);
+  });
+
   it("falls back to catalog price", () => {
     expect(resolvePurchaseValueVnd(null, "luan_bat_tu")).toBe(299_000);
   });

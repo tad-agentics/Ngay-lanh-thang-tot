@@ -12,6 +12,9 @@ export type PendingPaymentSession = {
   flow: PendingPaymentFlow;
   checkoutUrl: string;
   createdAt: string;
+  /** Final charge after coupon/referral (for thank-you / Meta before poll). */
+  amountVnd?: number;
+  listAmountVnd?: number;
 };
 
 export function paymentFlowForSku(sku: PackageSku): PendingPaymentFlow {
@@ -74,7 +77,16 @@ export function readPendingPayment(): PendingPaymentSession | null {
     ) {
       return null;
     }
-    return parsed;
+    const amountVnd =
+      typeof parsed.amountVnd === "number" && Number.isFinite(parsed.amountVnd)
+        ? Math.round(parsed.amountVnd)
+        : undefined;
+    const listAmountVnd =
+      typeof parsed.listAmountVnd === "number" &&
+      Number.isFinite(parsed.listAmountVnd)
+        ? Math.round(parsed.listAmountVnd)
+        : undefined;
+    return { ...parsed, amountVnd, listAmountVnd };
   } catch {
     return null;
   }

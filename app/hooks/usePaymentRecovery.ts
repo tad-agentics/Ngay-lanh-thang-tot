@@ -39,7 +39,7 @@ async function fetchPendingOrderForUser(
     const { data } = await supabase
       .from("payment_orders")
       .select(
-        "id, package_sku, status, checkout_url, amount_vnd, provider_order_code, raw_request, created_at",
+        "id, package_sku, status, checkout_url, amount_vnd, list_amount_vnd, provider_order_code, raw_request, created_at",
       )
       .eq("id", preferredOrderId)
       .eq("user_id", userId)
@@ -52,7 +52,7 @@ async function fetchPendingOrderForUser(
   const { data: rows } = await supabase
     .from("payment_orders")
     .select(
-      "id, package_sku, status, checkout_url, amount_vnd, provider_order_code, raw_request, created_at",
+      "id, package_sku, status, checkout_url, amount_vnd, list_amount_vnd, provider_order_code, raw_request, created_at",
     )
     .eq("user_id", userId)
     .eq("status", "pending")
@@ -127,6 +127,8 @@ export function usePaymentRecovery() {
         flow: next.flow,
         checkoutUrl: checkout.checkout_url,
         createdAt: row.created_at,
+        amountVnd: row.amount_vnd ?? undefined,
+        listAmountVnd: row.list_amount_vnd ?? undefined,
       });
     }
   }, [user?.id, location.pathname]);

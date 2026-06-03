@@ -275,6 +275,8 @@ export async function createPayosCheckout(
       flow: paymentFlowForSku(req.package_sku),
       checkoutUrl: data.checkout_url,
       createdAt: new Date().toISOString(),
+      amountVnd: quote?.amount_vnd ?? transfer?.amount_vnd,
+      listAmountVnd: quote?.list_amount_vnd,
     });
     return { ok: true, data };
   }

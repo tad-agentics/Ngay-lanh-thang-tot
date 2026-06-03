@@ -7,6 +7,8 @@ export type PaymentSuccessOrder = {
   id: string;
   package_sku: PackageSku;
   amount_vnd: number | null;
+  list_amount_vnd: number | null;
+  discount_breakdown: unknown;
   status: string;
 };
 
@@ -33,7 +35,7 @@ export function usePaymentSuccessOrder(
     async function loadById(id: string): Promise<PaymentSuccessOrder | null> {
       const { data } = await supabase
         .from("payment_orders")
-        .select("id, package_sku, amount_vnd, status")
+        .select("id, package_sku, amount_vnd, list_amount_vnd, discount_breakdown, status")
         .eq("id", id)
         .maybeSingle();
       if (!data?.package_sku) return null;
@@ -44,7 +46,7 @@ export function usePaymentSuccessOrder(
       if (!userId) return null;
       let q = supabase
         .from("payment_orders")
-        .select("id, package_sku, amount_vnd, status")
+        .select("id, package_sku, amount_vnd, list_amount_vnd, discount_breakdown, status")
         .eq("user_id", userId)
         .eq("status", "paid")
         .order("created_at", { ascending: false })

@@ -13,10 +13,11 @@ import { useAuth } from "~/lib/auth";
 import { CT } from "~/lib/c-tokens";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { formatSubscriptionExpiry } from "~/lib/entitlements";
-import { resolvePurchaseValueVnd } from "~/lib/meta-pixel";
+import { useOrderChargeAmounts } from "~/hooks/useOrderChargeAmounts";
 import {
   brandedSubscriptionPlanName,
   formatPaymentOrderRef,
+  formatVndDigits,
   PAY_DISPLAY,
   PAY_DISPLAY2,
   PAY_MONO,
@@ -47,7 +48,7 @@ export function CPaySuccessScreen() {
   });
 
   const exp = formatSubscriptionExpiry(profile?.subscription_expires_at);
-  const sku = order?.package_sku;
+  const { sku, charge } = useOrderChargeAmounts(order, orderIdFromUrl);
   const planName = sku
     ? brandedSubscriptionPlanName(sku, profile?.la_so)
     : null;
@@ -55,18 +56,20 @@ export function CPaySuccessScreen() {
   const catalogPriceLabel = sku
     ? (UI_PACKAGES.find((p) => p.sku === sku)?.priceLabel ?? "799.000₫")
     : null;
-  const paidAmountVnd =
-    sku != null ? resolvePurchaseValueVnd(order?.amount_vnd, sku) : null;
+  const listBaseline =
+    charge?.hasDiscount && charge.listVnd != null
+      ? formatVndDigits(charge.listVnd)
+      : null;
   const orderRef = order?.id ? formatPaymentOrderRef(order.id) : null;
   const receiptEmail = user?.email ?? "email của bạn";
 
   useMetaPurchaseTrack(
     paid,
-    trackingOrderId && order
+    trackingOrderId && order && charge
       ? {
           id: trackingOrderId,
           package_sku: order.package_sku,
-          amount_vnd: order.amount_vnd,
+          amount_vnd: charge.finalVnd,
         }
       : null,
     planName ?? undefined,
@@ -120,7 +123,7 @@ export function CPaySuccessScreen() {
           )}
         </p>
 
-        {order && planName && durationLabel ? (
+        {(order || charge) && planName && durationLabel && charge ? (
           <div
             className="mt-7 w-full max-w-[320px] border px-[18px] py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
@@ -134,10 +137,11 @@ export function CPaySuccessScreen() {
                   {durationLabel}
                 </div>
               </div>
-              {paidAmountVnd != null && catalogPriceLabel ? (
+              {catalogPriceLabel ? (
                 <PayTrackablePrice
                   priceLabel={catalogPriceLabel}
-                  valueVnd={paidAmountVnd}
+                  valueVnd={charge.finalVnd}
+                  baseline={listBaseline}
                   size="confirm"
                   metaEventSetupId="meta-purchase-value"
                 />

@@ -14,6 +14,7 @@ export type PaymentOrderRecoveryRow = {
   status: string;
   checkout_url: string | null;
   amount_vnd: number | null;
+  list_amount_vnd?: number | null;
   provider_order_code: string | null;
   raw_request: unknown;
   created_at: string;

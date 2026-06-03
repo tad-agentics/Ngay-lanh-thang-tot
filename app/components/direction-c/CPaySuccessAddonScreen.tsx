@@ -13,9 +13,10 @@ import { useAuth } from "~/lib/auth";
 import type { PackageSku } from "~/lib/api-types";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
-import { resolvePurchaseValueVnd } from "~/lib/meta-pixel";
+import { useOrderChargeAmounts } from "~/hooks/useOrderChargeAmounts";
 import {
   formatPaymentOrderRef,
+  formatVndDigits,
   formatVndPriceDisplay,
   PAY_DISPLAY,
   PAY_DISPLAY2,
@@ -75,16 +76,19 @@ export function CPaySuccessAddonScreen() {
       : "/toi/luan-bat-tu";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
   const catalogPriceLabel = pkg?.priceLabel ?? "299.000₫";
-  const paidAmountVnd =
-    sku != null ? resolvePurchaseValueVnd(order?.amount_vnd, sku) : null;
+  const { charge } = useOrderChargeAmounts(order, orderIdFromUrl);
+  const listBaseline =
+    charge?.hasDiscount && charge.listVnd != null
+      ? formatVndDigits(charge.listVnd)
+      : null;
 
   useMetaPurchaseTrack(
     paid,
-    trackingOrderId && order
+    trackingOrderId && order && charge
       ? {
           id: trackingOrderId,
           package_sku: order.package_sku,
-          amount_vnd: order.amount_vnd,
+          amount_vnd: charge.finalVnd,
         }
       : null,
     headlineTitle,
@@ -136,7 +140,7 @@ export function CPaySuccessAddonScreen() {
           )}
         </p>
 
-        {order ? (
+        {(order || charge) && charge ? (
           <div
             className="mt-7 w-full max-w-[320px] border px-4 py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
@@ -150,14 +154,13 @@ export function CPaySuccessAddonScreen() {
                   {addonMeta?.per ?? "một lần"}
                 </div>
               </div>
-              {paidAmountVnd != null ? (
-                <PayTrackablePrice
-                  priceLabel={catalogPriceLabel}
-                  valueVnd={paidAmountVnd}
-                  size="confirm"
-                  metaEventSetupId="meta-purchase-value"
-                />
-              ) : null}
+              <PayTrackablePrice
+                priceLabel={catalogPriceLabel}
+                valueVnd={charge.finalVnd}
+                baseline={listBaseline}
+                size="confirm"
+                metaEventSetupId="meta-purchase-value"
+              />
             </div>
             {orderRef ? (
               <div

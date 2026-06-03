@@ -1,4 +1,8 @@
 import type { PackageSku } from "~/lib/api-types";
+import { resolveOrderChargeAmounts } from "~/lib/payment-order-charge";
+import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
+
+export { PACKAGE_AMOUNT_VND };
 
 const envPixelId = import.meta.env.VITE_META_PIXEL_ID;
 export const META_PIXEL_ID =
@@ -7,16 +11,6 @@ export const META_PIXEL_ID =
     : "1582170927254758";
 
 const PURCHASE_DEDUPE_PREFIX = "ngaytot:meta_pixel_purchase:";
-
-/** List prices (VND) when `payment_orders.amount_vnd` is unavailable client-side. */
-export const PACKAGE_AMOUNT_VND: Record<PackageSku, number> = {
-  le: 16_000,
-  goi_1thang: 299_000,
-  goi_6thang: 499_000,
-  goi_12thang: 799_000,
-  luan_bat_tu: 299_000,
-  luan_tieu_van: 199_000,
-};
 
 /** Meta base snippet loader (fbevents.js). */
 const META_PIXEL_LOADER = `!function(f,b,e,v,n,t,s)
@@ -100,15 +94,28 @@ export function formatMetaEventSetupValue(amountVnd: number): string {
   return String(Math.round(amountVnd));
 }
 
+export type ResolvePurchaseValueOpts = {
+  listAmountVnd?: number | null;
+  discountBreakdown?: unknown;
+  pendingAmountVnd?: number | null;
+  pendingListAmountVnd?: number | null;
+};
+
 export function resolvePurchaseValueVnd(
   amountVnd: number | null | undefined,
   packageSku: PackageSku,
+  opts?: ResolvePurchaseValueOpts,
 ): number | null {
-  if (typeof amountVnd === "number" && Number.isFinite(amountVnd) && amountVnd > 0) {
-    return Math.round(amountVnd);
-  }
-  const fallback = PACKAGE_AMOUNT_VND[packageSku];
-  return fallback > 0 ? fallback : null;
+  return (
+    resolveOrderChargeAmounts({
+      packageSku,
+      amountVnd,
+      listAmountVnd: opts?.listAmountVnd,
+      discountBreakdown: opts?.discountBreakdown,
+      pendingAmountVnd: opts?.pendingAmountVnd,
+      pendingListAmountVnd: opts?.pendingListAmountVnd,
+    })?.finalVnd ?? null
+  );
 }
 
 /** Deduped per order id in sessionStorage (webhook + poll may both mark paid). */
