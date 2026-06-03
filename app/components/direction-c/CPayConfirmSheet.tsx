@@ -27,7 +27,10 @@ import {
   formatCheckoutCountdownMs,
   PAY_CHECKOUT_TIMEOUT_MS,
 } from "~/lib/pay-checkout-timeout";
-import { brandedSubscriptionPlanName } from "~/lib/pay-commerce-ui";
+import {
+  brandedSubscriptionPlanName,
+  formatVndDigits,
+} from "~/lib/pay-commerce-ui";
 import { formatVnd, payosBankLabel } from "~/lib/payos-display";
 import { UI_PACKAGES } from "~/lib/packages";
 
@@ -81,10 +84,6 @@ export type PayCheckoutCodes = {
   couponCode?: string;
   referralCode?: string;
 };
-
-function formatPriceDigits(vnd: number): string {
-  return new Intl.NumberFormat("vi-VN").format(vnd);
-}
 
 function copyText(label: string, text: string) {
   void navigator.clipboard.writeText(text).then(
@@ -151,9 +150,9 @@ export function CPayConfirmSheet({
     payload?.quote?.amount_vnd ??
     null;
   const displayList =
-    listAmountVnd != null ? formatPriceDigits(listAmountVnd) : catalogPrice;
+    listAmountVnd != null ? formatVndDigits(listAmountVnd) : catalogPrice;
   const displayFinal =
-    finalAmountVnd != null ? formatPriceDigits(finalAmountVnd) : catalogPrice;
+    finalAmountVnd != null ? formatVndDigits(finalAmountVnd) : catalogPrice;
   const hasDiscount =
     listAmountVnd != null &&
     finalAmountVnd != null &&
@@ -411,7 +410,7 @@ export function CPayConfirmSheet({
                         <strong style={{ color: CT.ink }}>
                           {quote.coupon_code}
                         </strong>
-                        : −{formatPriceDigits(quote.coupon_discount_vnd)}đ
+                        : −{formatVndDigits(quote.coupon_discount_vnd)}đ
                       </li>
                     ) : null}
                     {quote.checkout_referral_code ? (
@@ -421,7 +420,7 @@ export function CPayConfirmSheet({
                           {quote.checkout_referral_code}
                         </strong>
                         {quote.referral_discount_vnd > 0
-                          ? ` (−${formatPriceDigits(quote.referral_discount_vnd)}đ)`
+                          ? ` (−${formatVndDigits(quote.referral_discount_vnd)}đ)`
                           : " — người mời nhận thưởng khi thanh toán thành công"}
                       </li>
                     ) : null}

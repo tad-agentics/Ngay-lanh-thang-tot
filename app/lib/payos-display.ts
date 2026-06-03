@@ -17,6 +17,8 @@ export function payosBankLabel(bankBin: string | null): string {
   return BIN_LABELS[bankBin] ?? `Ngân hàng (BIN ${bankBin})`;
 }
 
+import { formatVndPriceDisplay } from "~/lib/pay-commerce-ui";
+
 export function formatVnd(amount: number): string {
-  return `${new Intl.NumberFormat("vi-VN").format(amount)}đ`;
+  return formatVndPriceDisplay(amount);
 }

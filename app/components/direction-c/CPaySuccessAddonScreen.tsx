@@ -1,19 +1,22 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import { PaySuccessStamp } from "~/components/direction-c/PayCommerceMarks";
+import { PayTrackablePrice } from "~/components/direction-c/PayTrackablePrice";
 import { useMetaPurchaseTrack } from "~/hooks/useMetaPurchaseTrack";
+import { usePaymentSuccessOrder } from "~/hooks/usePaymentSuccessOrder";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import type { PackageSku } from "~/lib/api-types";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
+import { resolvePurchaseValueVnd } from "~/lib/meta-pixel";
 import {
   formatPaymentOrderRef,
-  formatVndThousands,
+  formatVndPriceDisplay,
   PAY_DISPLAY,
   PAY_DISPLAY2,
   PAY_MONO,
@@ -25,65 +28,45 @@ import {
 } from "~/lib/pay-confirm-ui";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
-import { supabase } from "~/lib/supabase";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
-
-type OrderSummary = {
-  package_sku: PackageSku;
-  amount_vnd: number | null;
-};
 
 export function CPaySuccessAddonScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("order_id");
+  const orderIdFromUrl = searchParams.get("order_id");
   const skuParam = searchParams.get("sku");
-  const sku: PackageSku =
+  const skuFromUrl: PackageSku =
     skuParam && VALID_SKUS.has(skuParam as PackageSku)
       ? (skuParam as PackageSku)
       : "luan_bat_tu";
   const { user } = useAuth();
   const { loading, reload } = useProfile();
+  const { order, paid: paidFromOrder, trackingOrderId } = usePaymentSuccessOrder(
+    orderIdFromUrl,
+    user?.id,
+    { packageSkus: ADDON_SKUS },
+  );
+  const [paidOverride, setPaidOverride] = useState(false);
+  const paid = paidFromOrder || paidOverride;
+
+  const sku = order?.package_sku ?? skuFromUrl;
   const pkg = UI_PACKAGES.find((p) => p.sku === sku);
   const addonMeta = PAY_CONFIRM_ADDON_META[sku];
-  const [order, setOrder] = useState<OrderSummary | null>(null);
-  const [paid, setPaid] = useState(false);
 
-  usePollPaymentOrderPaid(orderId, Boolean(orderId), {
+  usePollPaymentOrderPaid(trackingOrderId, Boolean(trackingOrderId), {
     onPaid: async () => {
       await reload();
-      setPaid(true);
+      setPaidOverride(true);
       toast.success("Đã nhận thanh toán — luận giải đã mở.");
     },
   });
 
-  useEffect(() => {
-    if (!orderId) return;
-    let cancelled = false;
-    void supabase
-      .from("payment_orders")
-      .select("package_sku, amount_vnd, status")
-      .eq("id", orderId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled || !data?.package_sku) return;
-        setOrder({
-          package_sku: data.package_sku as PackageSku,
-          amount_vnd: data.amount_vnd,
-        });
-        if (data.status === "paid") setPaid(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [orderId]);
-
-  const orderRef = orderId ? formatPaymentOrderRef(orderId) : null;
+  const orderRef = order?.id ? formatPaymentOrderRef(order.id) : null;
   const receiptEmail = user?.email ?? "email của bạn";
-  const subscriptionUpsell = addonSubscriptionUpsell(sku);
+  const subscriptionUpsell = sku ? addonSubscriptionUpsell(sku) : null;
   const upsellDelta = subscriptionUpsell
-    ? subscriptionUpsellDeltaVnd(sku, subscriptionUpsell.planSku)
+    ? subscriptionUpsellDeltaVnd(sku!, subscriptionUpsell.planSku)
     : null;
 
   const ctaTo =
@@ -91,11 +74,18 @@ export function CPaySuccessAddonScreen() {
       ? `/toi/luan-tieu-van?year=${currentYearVn()}`
       : "/toi/luan-bat-tu";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
+  const catalogPriceLabel = pkg?.priceLabel ?? "299.000₫";
+  const paidAmountVnd =
+    sku != null ? resolvePurchaseValueVnd(order?.amount_vnd, sku) : null;
 
   useMetaPurchaseTrack(
     paid,
-    orderId && order
-      ? { id: orderId, package_sku: order.package_sku, amount_vnd: order.amount_vnd }
+    trackingOrderId && order
+      ? {
+          id: trackingOrderId,
+          package_sku: order.package_sku,
+          amount_vnd: order.amount_vnd,
+        }
       : null,
     headlineTitle,
   );
@@ -146,27 +136,42 @@ export function CPaySuccessAddonScreen() {
           )}
         </p>
 
-        {orderRef ? (
+        {order ? (
           <div
             className="mt-7 w-full max-w-[320px] border px-4 py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
           >
-            <div className="flex justify-between text-[13px]" style={{ color: CT.ink2 }}>
-              <span>{headlineTitle}</span>
-              <span>{addonMeta?.per ?? "một lần"}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 text-left">
+                <div className="text-[13px]" style={{ color: CT.ink2 }}>
+                  {headlineTitle}
+                </div>
+                <div className="mt-0.5 text-[12px]" style={{ color: CT.muted }}>
+                  {addonMeta?.per ?? "một lần"}
+                </div>
+              </div>
+              {paidAmountVnd != null ? (
+                <PayTrackablePrice
+                  priceLabel={catalogPriceLabel}
+                  valueVnd={paidAmountVnd}
+                  size="confirm"
+                />
+              ) : null}
             </div>
-            <div
-              className="mt-1.5 flex justify-between text-[13px]"
-              style={{ color: CT.ink2 }}
-            >
-              <span>Mã giao dịch</span>
-              <span
-                className="text-[11.5px] tracking-[0.04em]"
-                style={{ ...PAY_MONO, color: CT.muted }}
+            {orderRef ? (
+              <div
+                className="mt-1.5 flex justify-between text-[13px]"
+                style={{ color: CT.ink2 }}
               >
-                {orderRef}
-              </span>
-            </div>
+                <span>Mã giao dịch</span>
+                <span
+                  className="text-[11.5px] tracking-[0.04em]"
+                  style={{ ...PAY_MONO, color: CT.muted }}
+                >
+                  {orderRef}
+                </span>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -197,7 +202,7 @@ export function CPaySuccessAddonScreen() {
                 </>
               )}
               <strong className="font-bold" style={{ ...PAY_DISPLAY2, color: CT.goldDeep }}>
-                {formatVndThousands(upsellDelta)}
+                {formatVndPriceDisplay(upsellDelta)}
               </strong>
               .
             </p>

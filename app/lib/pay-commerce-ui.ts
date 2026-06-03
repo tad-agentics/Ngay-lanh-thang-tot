@@ -132,6 +132,16 @@ export function yearlyPlanUpsellDeltaVnd(addonSku: PackageSku): number | null {
   return subscriptionUpsellDeltaVnd(addonSku, YEARLY_SKU);
 }
 
+export function formatVndDigits(amount: number): string {
+  return new Intl.NumberFormat("vi-VN").format(amount);
+}
+
+/** Visible VND price: grouped digits + `đ` (Meta Event Setup, receipts). */
+export function formatVndPriceDisplay(amount: number): string {
+  return `${formatVndDigits(amount)}đ`;
+}
+
+/** @deprecated Prefer `formatVndPriceDisplay`. */
 export function formatVndThousands(amount: number): string {
-  return `${new Intl.NumberFormat("vi-VN").format(amount)}đ`;
+  return formatVndPriceDisplay(amount);
 }

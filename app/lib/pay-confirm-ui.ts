@@ -71,6 +71,15 @@ export function priceDisplay(label: string): string {
   return label.replace(/₫/g, "").trim();
 }
 
+/** Catalog label or digit string → `299.000đ` for DOM / Meta Event Setup. */
+export function formatLabelWithCurrency(labelOrDigits: string): string {
+  const t = labelOrDigits.trim();
+  if (!t) return "";
+  if (t.endsWith("đ")) return t;
+  const digits = priceDisplay(t);
+  return digits ? `${digits}đ` : "";
+}
+
 /** Integer VND from labels like `499.000₫` — for `data-track-price-vnd` hints. */
 export function priceVndFromLabel(label: string): number {
   const digits = label.replace(/\D/g, "");

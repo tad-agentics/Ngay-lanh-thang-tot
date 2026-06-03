@@ -1,5 +1,7 @@
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
+import { formatVndPriceDisplay } from "~/lib/pay-commerce-ui";
 import {
+  formatLabelWithCurrency,
   payTrackablePriceAriaLabel,
   priceDisplay,
   resolveTrackableValueVnd,
@@ -37,6 +39,21 @@ const SIZE = {
   },
 } as const;
 
+function visiblePriceText(
+  priceLabel: string,
+  displayPrice: string | undefined,
+  valueVndProp: number | undefined,
+): string {
+  if (
+    typeof valueVndProp === "number" &&
+    Number.isFinite(valueVndProp) &&
+    valueVndProp > 0
+  ) {
+    return formatVndPriceDisplay(Math.round(valueVndProp));
+  }
+  return formatLabelWithCurrency(displayPrice ?? priceLabel);
+}
+
 /**
  * Price column for `/dat-lich` and pay confirm.
  * Sale amount is first in DOM (Meta Event Setup); compare-at follows as decorative.
@@ -51,13 +68,14 @@ export function PayTrackablePrice({
   hero = false,
   size = "tier",
 }: PayTrackablePriceProps) {
-  const price = displayPrice ?? priceDisplay(priceLabel);
+  const priceDigits = displayPrice ?? priceDisplay(priceLabel);
+  const price = visiblePriceText(priceLabel, displayPrice, valueVndProp);
   const valueVnd = resolveTrackableValueVnd(valueVndProp, priceLabel);
   const classes = SIZE[size];
   const muted = hero ? "rgba(237,231,211,0.65)" : CT.muted;
   const baselineMuted = hero ? "rgba(237,231,211,0.55)" : CT.muted;
   const priceColor = hero ? CT.gold : CT.goldDeep;
-  const ariaLabel = payTrackablePriceAriaLabel({ price, baseline, per });
+  const ariaLabel = payTrackablePriceAriaLabel({ price: priceDigits, baseline, per });
 
   return (
     <div
@@ -71,11 +89,10 @@ export function PayTrackablePrice({
         data-track-price-vnd={valueVnd}
       >
         {price}
-        {size === "confirm" ? "đ" : null}
       </div>
       {per ? (
         <div className={classes.per} style={{ color: muted }} aria-hidden="true">
-          đ · {per}
+          {per}
         </div>
       ) : null}
       {baseline ? (
@@ -84,7 +101,7 @@ export function PayTrackablePrice({
           style={{ color: baselineMuted, textDecorationThickness: 1 }}
           aria-hidden="true"
         >
-          {baseline}đ
+          {formatLabelWithCurrency(baseline)}
         </div>
       ) : null}
     </div>

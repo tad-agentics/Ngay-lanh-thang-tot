@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   brandedSubscriptionPlanName,
   formatPaymentOrderRef,
+  formatVndDigits,
+  formatVndPriceDisplay,
   subscriptionDurationLabel,
   yearCanChiFromLaSo,
   subscriptionUpsellDeltaVnd,
@@ -43,5 +45,11 @@ describe("pay-commerce-ui", () => {
 
   it("computes 6-month upsell delta for Tiểu vận addon", () => {
     expect(subscriptionUpsellDeltaVnd("luan_tieu_van", "goi_6thang")).toBe(300_000);
+  });
+
+  it("formats VND as grouped digits plus đ", () => {
+    expect(formatVndDigits(299_000)).toBe("299.000");
+    expect(formatVndPriceDisplay(299_000)).toBe("299.000đ");
+    expect(formatVndPriceDisplay(1_097_000)).toBe("1.097.000đ");
   });
 });

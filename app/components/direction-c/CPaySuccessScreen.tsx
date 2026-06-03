@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 import { Mono } from "~/components/brand";
 import { PaySuccessStamp } from "~/components/direction-c/PayCommerceMarks";
+import { PayTrackablePrice } from "~/components/direction-c/PayTrackablePrice";
 import { useMetaPurchaseTrack } from "~/hooks/useMetaPurchaseTrack";
+import { usePaymentSuccessOrder } from "~/hooks/usePaymentSuccessOrder";
 import { usePollPaymentOrderPaid } from "~/hooks/usePollPaymentOrderPaid";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
-import type { PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
 import { formatSubscriptionExpiry } from "~/lib/entitlements";
+import { resolvePurchaseValueVnd } from "~/lib/meta-pixel";
 import {
   brandedSubscriptionPlanName,
   formatPaymentOrderRef,
@@ -20,64 +22,54 @@ import {
   PAY_MONO,
   subscriptionDurationLabel,
 } from "~/lib/pay-commerce-ui";
-import { supabase } from "~/lib/supabase";
-
-type OrderSummary = {
-  package_sku: PackageSku;
-  amount_vnd: number | null;
-};
+import { SUBSCRIPTION_SKUS, UI_PACKAGES } from "~/lib/packages";
 
 export function CPaySuccessScreen() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get("order_id");
+  const orderIdFromUrl = searchParams.get("order_id");
   const { user } = useAuth();
   const { profile, loading, reload } = useProfile();
-  const [order, setOrder] = useState<OrderSummary | null>(null);
-  const [paid, setPaid] = useState(false);
+  const { order, paid: paidFromOrder, trackingOrderId } = usePaymentSuccessOrder(
+    orderIdFromUrl,
+    user?.id,
+    { packageSkus: SUBSCRIPTION_SKUS },
+  );
+  const [paidOverride, setPaidOverride] = useState(false);
+  const paid = paidFromOrder || paidOverride;
 
-  usePollPaymentOrderPaid(orderId, Boolean(orderId), {
+  usePollPaymentOrderPaid(trackingOrderId, Boolean(trackingOrderId), {
     onPaid: async () => {
       await reload();
-      setPaid(true);
+      setPaidOverride(true);
       toast.success("Đã nhận thanh toán — lịch đã được gia hạn.");
     },
   });
 
-  useEffect(() => {
-    if (!orderId) return;
-    let cancelled = false;
-    void supabase
-      .from("payment_orders")
-      .select("package_sku, amount_vnd, status")
-      .eq("id", orderId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (cancelled || !data?.package_sku) return;
-        setOrder({
-          package_sku: data.package_sku as PackageSku,
-          amount_vnd: data.amount_vnd,
-        });
-        if (data.status === "paid") setPaid(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [orderId]);
-
   const exp = formatSubscriptionExpiry(profile?.subscription_expires_at);
-  const sku = order?.package_sku ?? "goi_12thang";
-  const planName = brandedSubscriptionPlanName(sku, profile?.la_so);
-  const durationLabel = subscriptionDurationLabel(sku);
-  const orderRef = orderId ? formatPaymentOrderRef(orderId) : null;
+  const sku = order?.package_sku;
+  const planName = sku
+    ? brandedSubscriptionPlanName(sku, profile?.la_so)
+    : null;
+  const durationLabel = sku ? subscriptionDurationLabel(sku) : null;
+  const catalogPriceLabel = sku
+    ? (UI_PACKAGES.find((p) => p.sku === sku)?.priceLabel ?? "799.000₫")
+    : null;
+  const paidAmountVnd =
+    sku != null ? resolvePurchaseValueVnd(order?.amount_vnd, sku) : null;
+  const orderRef = order?.id ? formatPaymentOrderRef(order.id) : null;
   const receiptEmail = user?.email ?? "email của bạn";
 
   useMetaPurchaseTrack(
     paid,
-    orderId && order
-      ? { id: orderId, package_sku: order.package_sku, amount_vnd: order.amount_vnd }
+    trackingOrderId && order
+      ? {
+          id: trackingOrderId,
+          package_sku: order.package_sku,
+          amount_vnd: order.amount_vnd,
+        }
       : null,
-    planName,
+    planName ?? undefined,
   );
 
   function showInvoiceToast(kind: "view" | "vat") {
@@ -128,27 +120,42 @@ export function CPaySuccessScreen() {
           )}
         </p>
 
-        {orderRef ? (
+        {order && planName && durationLabel ? (
           <div
             className="mt-7 w-full max-w-[320px] border px-[18px] py-3.5 text-left"
             style={{ borderColor: CT.hairline, background: "#fff" }}
           >
-            <div className="flex justify-between text-[13px]" style={{ color: CT.ink2 }}>
-              <span>{planName}</span>
-              <span>{durationLabel}</span>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 text-left">
+                <div className="text-[13px]" style={{ color: CT.ink2 }}>
+                  {planName}
+                </div>
+                <div className="mt-0.5 text-[12px]" style={{ color: CT.muted }}>
+                  {durationLabel}
+                </div>
+              </div>
+              {paidAmountVnd != null && catalogPriceLabel ? (
+                <PayTrackablePrice
+                  priceLabel={catalogPriceLabel}
+                  valueVnd={paidAmountVnd}
+                  size="confirm"
+                />
+              ) : null}
             </div>
-            <div
-              className="mt-1.5 flex justify-between text-[13px]"
-              style={{ color: CT.ink2 }}
-            >
-              <span>Mã giao dịch</span>
-              <span
-                className="text-[11.5px] tracking-[0.04em]"
-                style={{ ...PAY_MONO, color: CT.muted }}
+            {orderRef ? (
+              <div
+                className="mt-1.5 flex justify-between text-[13px]"
+                style={{ color: CT.ink2 }}
               >
-                {orderRef}
-              </span>
-            </div>
+                <span>Mã giao dịch</span>
+                <span
+                  className="text-[11.5px] tracking-[0.04em]"
+                  style={{ ...PAY_MONO, color: CT.muted }}
+                >
+                  {orderRef}
+                </span>
+              </div>
+            ) : null}
           </div>
         ) : null}
 

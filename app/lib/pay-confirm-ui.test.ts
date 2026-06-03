@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatLabelWithCurrency,
   payTrackablePriceAriaLabel,
   priceVndFromLabel,
   resolveTrackableValueVnd,
 } from "~/lib/pay-confirm-ui";
+
+describe("formatLabelWithCurrency", () => {
+  it("appends đ to catalog labels and digit strings", () => {
+    expect(formatLabelWithCurrency("299.000₫")).toBe("299.000đ");
+    expect(formatLabelWithCurrency("299.000")).toBe("299.000đ");
+    expect(formatLabelWithCurrency("299.000đ")).toBe("299.000đ");
+    expect(formatLabelWithCurrency("")).toBe("");
+  });
+});
 
 describe("priceVndFromLabel", () => {
   it("parses dotted VND labels", () => {
