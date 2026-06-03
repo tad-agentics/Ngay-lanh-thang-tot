@@ -14,6 +14,7 @@ import {
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
 import { applyLandingPrefillToProfile } from "~/lib/apply-landing-prefill-profile";
+import { authCallbackRedirectUrl } from "~/lib/auth-callback-url";
 import { useAuth } from "~/lib/auth";
 import { applyBirthToProfile } from "~/lib/auth-birth-sync";
 import {
@@ -268,7 +269,7 @@ export default function DangKy() {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: authCallbackRedirectUrl(),
         data: {
           ...(fullName.trim() ? { full_name: fullName.trim() } : {}),
           ...(referralFromUrl
@@ -297,6 +298,7 @@ export default function DangKy() {
         return;
       }
       toast.error(mapAuthErrorMessageVi(error.message));
+      setBusy(false);
       return;
     }
 
@@ -329,10 +331,16 @@ export default function DangKy() {
       toast.success("Đã tạo tài khoản.");
       navigate("/dang-dung-lich", { replace: true });
     } else {
+      const emailQ = email.trim()
+        ? `?email=${encodeURIComponent(email.trim())}&confirm=pending`
+        : "?confirm=pending";
       toast.success(
-        "Đã gửi email xác nhận (nếu bật). Mở link trong thư rồi đăng nhập.",
+        "Đã gửi email xác nhận. Mở link trong hộp thư (kiểm tra cả thư rác) rồi đăng nhập.",
       );
-      navigate("/dang-nhap", { replace: true });
+      navigate(
+        appendReturnToQuery(`/dang-nhap/email${emailQ}`, returnTo),
+        { replace: true },
+      );
     }
     setBusy(false);
   }

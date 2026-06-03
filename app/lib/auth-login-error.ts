@@ -49,7 +49,24 @@ export function mapAuthErrorMessageVi(message: string): string {
   if (m.includes("signup is disabled")) {
     return "Đăng ký tạm khóa. Liên hệ hỗ trợ.";
   }
+  if (m.includes("expired") || m.includes("otp_expired")) {
+    return "Link đã hết hạn. Vào đăng nhập email và chọn Gửi lại email xác nhận.";
+  }
+  if (
+    m.includes("invalid flow state") ||
+    m.includes("invalid grant") ||
+    m.includes("token") && m.includes("invalid")
+  ) {
+    return "Link không hợp lệ hoặc đã dùng. Thử Gửi lại email xác nhận.";
+  }
   return message;
+}
+
+/** `/auth/callback` — prefer mapped Supabase message, else generic copy. */
+export function mapAuthCallbackErrorVi(message: string): string {
+  const mapped = mapAuthErrorMessageVi(message);
+  if (mapped !== message) return mapped;
+  return AUTH_CALLBACK_VERIFY_FAILED;
 }
 
 export function readOauthCallbackError(): string | null {

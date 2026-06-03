@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  AUTH_CALLBACK_VERIFY_FAILED,
   isEmailNotConfirmed,
   isInvalidLoginCredentials,
   isUserAlreadyRegistered,
+  mapAuthCallbackErrorVi,
   mapAuthErrorMessageVi,
   readOauthCallbackError,
 } from "./auth-login-error";
@@ -23,6 +25,17 @@ describe("auth-login-error", () => {
   it("detects email not confirmed and duplicate user", () => {
     expect(isEmailNotConfirmed("Email not confirmed")).toBe(true);
     expect(isUserAlreadyRegistered("User already registered")).toBe(true);
+  });
+
+  it("maps expired OTP for callback", () => {
+    expect(mapAuthErrorMessageVi("otp_expired")).toContain("hết hạn");
+    expect(mapAuthCallbackErrorVi("otp_expired")).toContain("hết hạn");
+  });
+
+  it("falls back to generic callback message for unknown errors", () => {
+    expect(mapAuthCallbackErrorVi("some unknown xyz")).toBe(
+      AUTH_CALLBACK_VERIFY_FAILED,
+    );
   });
 
   it("reads oauth error from search params", () => {

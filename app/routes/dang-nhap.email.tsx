@@ -12,6 +12,8 @@ import {
   inputUnderline,
 } from "~/components/auth/c-auth-ui";
 import { BackBar, Mono } from "~/components/brand";
+import { authCallbackRedirectUrl } from "~/lib/auth-callback-url";
+import { resendSignupConfirmationEmail } from "~/lib/auth-email-confirm";
 import {
   isInvalidLoginCredentials,
   mapAuthErrorMessageVi,
@@ -28,6 +30,8 @@ import {
   stashPendingReferralCode,
 } from "~/lib/pending-referral";
 import { supabase } from "~/lib/supabase";
+
+const CONFIRM_PENDING_TOAST_KEY = "ngaytot:confirm-pending-toast-shown";
 
 export default function DangNhapEmail() {
   const navigate = useNavigate();
@@ -62,6 +66,21 @@ export default function DangNhapEmail() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const confirmPending = searchParams.get("confirm") === "pending";
+  const [resendBusy, setResendBusy] = useState(false);
+
+  useEffect(() => {
+    if (!confirmPending) return;
+    try {
+      if (sessionStorage.getItem(CONFIRM_PENDING_TOAST_KEY) === "1") return;
+      sessionStorage.setItem(CONFIRM_PENDING_TOAST_KEY, "1");
+    } catch {
+      /* private mode */
+    }
+    toast.message(
+      "Mở link xác nhận trong email (kiểm tra cả thư rác), sau đó đăng nhập bằng mật khẩu vừa tạo.",
+    );
+  }, [confirmPending]);
 
   useEffect(() => {
     if (searchParams.get("reason") === "expired") {
@@ -92,7 +111,7 @@ export default function DangNhapEmail() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: authCallbackRedirectUrl(),
       },
     });
     setBusy(false);
@@ -121,6 +140,17 @@ export default function DangNhapEmail() {
     const dest = await resolvePostLoginPath();
     navigate(dest, { replace: true });
     setBusy(false);
+  }
+
+  async function onResendConfirmation() {
+    setResendBusy(true);
+    const result = await resendSignupConfirmationEmail(email);
+    setResendBusy(false);
+    if (result.ok) {
+      toast.success("Đã gửi lại email xác nhận.");
+    } else {
+      toast.error(result.message);
+    }
   }
 
   return (
@@ -179,6 +209,48 @@ export default function DangNhapEmail() {
         >
           Lá số và lịch cá nhân của bản chủ được lưu trữ an toàn — đăng nhập để tiếp tục xem ngày cát lành hôm nay.
         </p>
+
+        {confirmPending ? (
+          <div
+            style={{
+              marginTop: 18,
+              padding: "12px 14px",
+              border: "1px solid rgba(197,165,90,0.45)",
+              background: "rgba(197,165,90,0.12)",
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontFamily: "var(--serif)",
+                fontSize: 13.5,
+                color: "rgba(237,231,211,0.85)",
+                lineHeight: 1.55,
+              }}
+            >
+              Chúng tôi đã gửi email xác nhận. Mở link trong thư, sau đó quay lại đây để đăng nhập.
+            </p>
+            <button
+              type="button"
+              disabled={resendBusy || !email.trim()}
+              onClick={() => void onResendConfirmation()}
+              style={{
+                marginTop: 10,
+                padding: 0,
+                border: "none",
+                background: "none",
+                cursor: resendBusy || !email.trim() ? "default" : "pointer",
+                fontFamily: "var(--serif)",
+                fontSize: 13,
+                color: C.gold,
+                textDecoration: "underline",
+                opacity: resendBusy || !email.trim() ? 0.5 : 1,
+              }}
+            >
+              {resendBusy ? "Đang gửi lại…" : "Gửi lại email xác nhận"}
+            </button>
+          </div>
+        ) : null}
 
         <div
           style={{

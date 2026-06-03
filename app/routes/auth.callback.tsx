@@ -10,9 +10,13 @@ import { LogoMark, Mono } from "~/components/brand";
 import {
   AUTH_CALLBACK_VERIFY_FAILED,
   AUTH_CALLBACK_VERIFY_TIMEOUT,
+  mapAuthCallbackErrorVi,
   readOauthCallbackError,
 } from "~/lib/auth-login-error";
-import { exchangeOAuthCodeFromUrl, resolvePostLoginPath } from "~/lib/auth-post-login";
+import {
+  completeAuthCallbackFromUrl,
+  resolvePostLoginPath,
+} from "~/lib/auth-post-login";
 import { supabase } from "~/lib/supabase";
 
 const SESSION_WAIT_MS = 15_000;
@@ -106,10 +110,10 @@ export default function AuthCallback() {
     let cleanup: (() => void) | undefined;
 
     void (async () => {
-      const exchangeError = await exchangeOAuthCodeFromUrl();
+      const exchangeError = await completeAuthCallbackFromUrl();
       if (!active || settled) return;
       if (exchangeError) {
-        fail(AUTH_CALLBACK_VERIFY_FAILED);
+        fail(mapAuthCallbackErrorVi(exchangeError));
         return;
       }
 

@@ -12,6 +12,7 @@ import {
 } from "~/components/auth/c-auth-ui";
 import { Logo } from "~/components/brand";
 import { mapAuthErrorMessageVi } from "~/lib/auth-login-error";
+import { authCallbackRedirectUrl } from "~/lib/auth-callback-url";
 import { resolvePostLoginPath } from "~/lib/auth-post-login";
 import { useAuth } from "~/lib/auth";
 import {
@@ -77,7 +78,7 @@ export default function DangNhap() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: authCallbackRedirectUrl(),
       },
     });
     setBusy(false);

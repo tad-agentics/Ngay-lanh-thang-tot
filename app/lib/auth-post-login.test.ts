@@ -5,12 +5,14 @@ const {
   syncSignupBirthMetadataToProfile,
   getSession,
   exchangeCodeForSession,
+  verifyOtp,
   from,
 } = vi.hoisted(() => ({
   tryConsumePendingReferralClaim: vi.fn(),
   syncSignupBirthMetadataToProfile: vi.fn(),
   getSession: vi.fn(),
   exchangeCodeForSession: vi.fn(),
+  verifyOtp: vi.fn(),
   from: vi.fn(),
 }));
 
@@ -24,12 +26,13 @@ vi.mock("~/lib/auth-birth-sync", () => ({
 
 vi.mock("~/lib/supabase", () => ({
   supabase: {
-    auth: { getSession, exchangeCodeForSession },
+    auth: { getSession, exchangeCodeForSession, verifyOtp },
     from,
   },
 }));
 
 import {
+  completeAuthCallbackFromUrl,
   exchangeOAuthCodeFromUrl,
   resolvePostLoginPath,
 } from "./auth-post-login";
@@ -131,11 +134,12 @@ describe("resolvePostLoginPath", () => {
   });
 });
 
-describe("exchangeOAuthCodeFromUrl", () => {
+describe("completeAuthCallbackFromUrl", () => {
   const prevHref = window.location.href;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    verifyOtp.mockResolvedValue({ error: null });
     window.history.replaceState({}, "", "/auth/callback");
   });
 
@@ -154,14 +158,49 @@ describe("exchangeOAuthCodeFromUrl", () => {
       "/auth/callback?code=already-consumed",
     );
 
-    const err = await exchangeOAuthCodeFromUrl();
+    const err = await completeAuthCallbackFromUrl();
 
     expect(err).toBeNull();
+    expect(exchangeCodeForSession).not.toHaveBeenCalled();
+    expect(verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it("rejects token_hash without a valid type", async () => {
+    getSession.mockResolvedValue({ data: { session: null }, error: null });
+    window.history.replaceState({}, "", "/auth/callback?token_hash=abc");
+
+    const err = await completeAuthCallbackFromUrl();
+
+    expect(err).toContain("Link xác nhận không hợp lệ");
+    expect(verifyOtp).not.toHaveBeenCalled();
+  });
+
+  it("verifies email signup token_hash before PKCE code", async () => {
+    getSession
+      .mockResolvedValueOnce({ data: { session: null }, error: null })
+      .mockResolvedValueOnce({
+        data: { session: { access_token: "tok" } },
+        error: null,
+      });
+    window.history.replaceState(
+      {},
+      "",
+      "/auth/callback?token_hash=abc&type=signup&code=ignored",
+    );
+
+    const err = await completeAuthCallbackFromUrl();
+
+    expect(err).toBeNull();
+    expect(verifyOtp).toHaveBeenCalledWith({
+      token_hash: "abc",
+      type: "signup",
+    });
     expect(exchangeCodeForSession).not.toHaveBeenCalled();
   });
 
   it("treats failed exchange as success when session exists after race", async () => {
     getSession
+      .mockResolvedValueOnce({ data: { session: null }, error: null })
       .mockResolvedValueOnce({ data: { session: null }, error: null })
       .mockResolvedValueOnce({
         data: { session: { access_token: "tok" } },
@@ -172,7 +211,7 @@ describe("exchangeOAuthCodeFromUrl", () => {
       error: { message: "invalid flow state" },
     });
 
-    const err = await exchangeOAuthCodeFromUrl();
+    const err = await completeAuthCallbackFromUrl();
 
     expect(err).toBeNull();
     expect(exchangeCodeForSession).toHaveBeenCalledWith("pkce-1");
@@ -185,7 +224,7 @@ describe("exchangeOAuthCodeFromUrl", () => {
       error: { message: "invalid grant" },
     });
 
-    const err = await exchangeOAuthCodeFromUrl();
+    const err = await completeAuthCallbackFromUrl();
 
     expect(err).toBe("invalid grant");
   });
@@ -195,9 +234,20 @@ describe("exchangeOAuthCodeFromUrl", () => {
     window.history.replaceState({}, "", "/auth/callback?code=good");
     exchangeCodeForSession.mockResolvedValue({ error: null });
 
-    const err = await exchangeOAuthCodeFromUrl();
+    const err = await completeAuthCallbackFromUrl();
 
     expect(err).toBeNull();
     expect(exchangeCodeForSession).toHaveBeenCalledWith("good");
+  });
+});
+
+describe("exchangeOAuthCodeFromUrl alias", () => {
+  it("delegates to completeAuthCallbackFromUrl", async () => {
+    getSession.mockResolvedValue({
+      data: { session: { access_token: "tok" } },
+      error: null,
+    });
+    const err = await exchangeOAuthCodeFromUrl();
+    expect(err).toBeNull();
   });
 });

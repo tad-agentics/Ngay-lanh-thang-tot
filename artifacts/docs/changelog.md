@@ -36,6 +36,7 @@
 | Lưu niên vs tiểu vận | Split Edge: `generate-reading-luu-nien` (`endpoint: luu-nien`, §03 vận năm); `generate-reading-tieu-van` chỉ `tieu-van` (vận tháng). Prompts/parsers tách `luu-nien-core` / `tieu-van`. Deploy: `generate-reading-luu-nien` + `generate-reading-tieu-van`. | No | Yes | — |
 | Credits / lượng (runtime) | Retired pivot credit window + `deduct_credits` on `bat-tu`, `reading-unlock`, `create-share-token`, `generate-reading-guards`. New signups `credits_balance=0`. Removed dead `app/lib/constants.ts`. Migration `20260531210000`. Deploy: `db push` + deploy `bat-tu`, `reading-unlock`, `create-share-token`, `generate-reading-*`, `day-luan-chat`. | No | Yes | — |
 | Vận trình năm (lưu niên & lưu nguyệt) | `/toi/luan-tieu-van?year=` full parity Bát tự: `luu-nien-luan-context`, `generate-reading-van-trinh-nam`, `van_trinh_nam_deliveries` + `van-trinh-nam-delivery` EF, `CVanTrinhNamReadingScreen` (14-wave load, B3 calendar, chart). Deploy: `db push` migrations `20260602140000` + `20260602150000` (RLS) + `bat-tu` `van-trinh-nam-delivery` `generate-reading-van-trinh-nam`. Audit fix: gap-fill waves, per-chapter retry, engine invalidation, full prewarm, paywall teaser chart, sticky month nav. | No | Yes | — |
+| Email signup PKCE | `/auth/callback` handles `token_hash` + `verifyOtp`; template `supabase/templates/confirmation.html`; resend on `/dang-nhap/email?confirm=pending`. **Production:** copy template + enable SMTP in Supabase Dashboard (`artifacts/docs/auth-redirect-urls.md`). | No | Partial | — |
 
 ## Resolved
 

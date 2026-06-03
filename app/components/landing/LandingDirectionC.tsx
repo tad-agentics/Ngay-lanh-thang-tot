@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { GoogleIcon } from "~/components/auth/c-auth-ui";
 import { LogoMark, Mono } from "~/components/brand";
 import { scoreColorFromPoints } from "~/components/landing/landing-c-utils";
+import { authCallbackRedirectUrl } from "~/lib/auth-callback-url";
 import { mapAuthErrorMessageVi } from "~/lib/auth-login-error";
 import {
   referralParamFromSearchParams,
@@ -82,7 +83,7 @@ function useLandingGoogleSignIn(referralFromUrl: string) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: authCallbackRedirectUrl(),
       },
     });
     setBusy(false);
