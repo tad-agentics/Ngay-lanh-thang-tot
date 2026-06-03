@@ -30,6 +30,8 @@ import {
 import {
   brandedSubscriptionPlanName,
   formatVndDigits,
+  formatVndPriceDisplay,
+  withVndCurrency,
 } from "~/lib/pay-commerce-ui";
 import { formatVnd, payosBankLabel } from "~/lib/payos-display";
 import { UI_PACKAGES } from "~/lib/packages";
@@ -300,11 +302,12 @@ export function CPayConfirmSheet({
     variant === "subscription"
       ? "Hoàn tiền 7 ngày · không tự gia hạn"
       : "Hoàn tiền 7 ngày · giao dịch một lần";
+  const displayFinalWithCurrency = withVndCurrency(displayFinal);
   const primaryLabel = payload
-    ? `Tôi đã chuyển khoản ${displayFinal}đ`
+    ? `Tôi đã chuyển khoản ${displayFinalWithCurrency}`
     : busy || quoting
       ? "Đang tạo lệnh thanh toán…"
-      : `Xác nhận · thanh toán ${displayFinal}đ`;
+      : `Xác nhận · thanh toán ${displayFinalWithCurrency}`;
 
   if (!open && !failureOpen) return null;
 
@@ -410,7 +413,7 @@ export function CPayConfirmSheet({
                         <strong style={{ color: CT.ink }}>
                           {quote.coupon_code}
                         </strong>
-                        : −{formatVndDigits(quote.coupon_discount_vnd)}đ
+                        : −{formatVndPriceDisplay(quote.coupon_discount_vnd)}
                       </li>
                     ) : null}
                     {quote.checkout_referral_code ? (
@@ -420,7 +423,7 @@ export function CPayConfirmSheet({
                           {quote.checkout_referral_code}
                         </strong>
                         {quote.referral_discount_vnd > 0
-                          ? ` (−${formatVndDigits(quote.referral_discount_vnd)}đ)`
+                          ? ` (−${formatVndPriceDisplay(quote.referral_discount_vnd)})`
                           : " — người mời nhận thưởng khi thanh toán thành công"}
                       </li>
                     ) : null}
@@ -452,13 +455,14 @@ export function CPayConfirmSheet({
               <PayTrackablePrice
                 priceLabel={pkg.priceLabel}
                 displayPrice={displayFinal}
-                valueVnd={finalAmountVnd}
+                valueVnd={finalAmountVnd ?? undefined}
                 baseline={
                   hasDiscount
                     ? displayList
                     : tierMeta?.baseline ?? null
                 }
                 size="confirm"
+                metaEventSetupId="meta-checkout-value"
               />
             </div>
 
@@ -473,7 +477,8 @@ export function CPayConfirmSheet({
               >
                 Đổi sang{" "}
                 <strong className="font-semibold" style={{ color: CT.ink }}>
-                  {addonUpsell.planLabel} {priceDisplay(addonUpsell.priceLabel)}đ
+                  {addonUpsell.planLabel}{" "}
+                  {withVndCurrency(priceDisplay(addonUpsell.priceLabel))}
                 </strong>{" "}
                 để {addonUpsell.benefit}.{" "}
                 <Link

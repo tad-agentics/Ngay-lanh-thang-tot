@@ -5,6 +5,7 @@ import { PayTrackablePrice } from "~/components/direction-c/PayTrackablePrice";
 import type { PackageSku } from "~/lib/api-types";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
 import { subscriptionStatusLine } from "~/lib/entitlements";
+import { withVndCurrency } from "~/lib/pay-commerce-ui";
 import {
   PAY_CONFIRM_ADDON_META,
   PAY_CONFIRM_TIER_META,
@@ -238,7 +239,7 @@ export default function DatLichRoute() {
                   }}
                 >
                   {hero
-                    ? `Đăng ký lịch năm — ${priceDisplay(pkg.priceLabel)}đ`
+                    ? `Đăng ký lịch năm — ${withVndCurrency(priceDisplay(pkg.priceLabel))}`
                     : "Đăng ký gói này"}
                 </button>
               </div>
@@ -325,7 +326,7 @@ export default function DatLichRoute() {
           >
             Mở lẻ cả hai bản luận giải ={" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.ink }}>
-              498.000đ
+              {withVndCurrency("498.000")}
             </strong>{" "}
             — nhưng <strong className="font-semibold">không kèm Lịch cát tường</strong>.
           </div>
@@ -335,11 +336,11 @@ export default function DatLichRoute() {
           >
             Gói năm{" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.goldDeep }}>
-              799.000đ
+              {withVndCurrency("799.000")}
             </strong>{" "}
             đã tích hợp trọn vẹn cả hai bản luận + lịch cả năm — tiết kiệm ngay{" "}
             <strong className="font-semibold" style={{ color: CT.greenMute }}>
-              298.000đ
+              {withVndCurrency("298.000")}
             </strong>{" "}
             so với mua lẻ từng phần.
           </div>

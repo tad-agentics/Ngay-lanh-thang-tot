@@ -5,6 +5,7 @@ import {
   formatPaymentOrderRef,
   formatVndDigits,
   formatVndPriceDisplay,
+  withVndCurrency,
   subscriptionDurationLabel,
   yearCanChiFromLaSo,
   subscriptionUpsellDeltaVnd,
@@ -47,9 +48,11 @@ describe("pay-commerce-ui", () => {
     expect(subscriptionUpsellDeltaVnd("luan_tieu_van", "goi_6thang")).toBe(300_000);
   });
 
-  it("formats VND as grouped digits plus đ", () => {
+  it("formats VND as grouped digits plus spaced đ", () => {
     expect(formatVndDigits(299_000)).toBe("299.000");
-    expect(formatVndPriceDisplay(299_000)).toBe("299.000đ");
-    expect(formatVndPriceDisplay(1_097_000)).toBe("1.097.000đ");
+    expect(formatVndPriceDisplay(299_000)).toBe("299.000 đ");
+    expect(formatVndPriceDisplay(1_097_000)).toBe("1.097.000 đ");
+    expect(withVndCurrency("299.000")).toBe("299.000 đ");
+    expect(withVndCurrency("")).toBe("");
   });
 });

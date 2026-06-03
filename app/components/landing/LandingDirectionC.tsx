@@ -56,7 +56,7 @@ const FAQS = [
   ],
   [
     "Nên chọn gói dịch vụ nào phù hợp nhất?",
-    `Gói năm 799.000đ là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
+    `Gói năm 799.000 đ là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
   ],
   [
     "Tôi không am hiểu về tử vi, phong thủy có dùng được không?",
@@ -699,7 +699,7 @@ export function LandingDirectionC() {
                     </span>
                   </div>
                   <div className="mt-3 inline-block px-3 py-1 font-mono text-[10.5px] font-bold uppercase tracking-wider rounded-[2px]" style={{ background: "rgba(197,165,90,0.12)", color: T.gold }}>
-                    TIẾT KIỆM 298.000Đ · TỐI ƯU TRỌN VẸN
+                    TIẾT KIỆM 298.000 đ · TỐI ƯU TRỌN VẸN
                   </div>
                 </div>
 
@@ -735,7 +735,7 @@ export function LandingDirectionC() {
                 duration: "6 tháng",
                 price: "499.000",
                 per: "6 tháng",
-                save: "Tiết kiệm 100.000đ",
+                save: "Tiết kiệm 100.000 đ",
                 desc: "Đầy đủ lịch bản mệnh nửa năm, kết hợp luận giải vận hạn chi tiết để chủ động mưu sự đại sự hanh thông.",
                 features: [
                   { text: "180 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },

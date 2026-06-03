@@ -1,7 +1,7 @@
+import { MetaEventSetupValue } from "~/components/direction-c/MetaEventSetupValue";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
-import { formatVndPriceDisplay } from "~/lib/pay-commerce-ui";
+import { formatVndDigits } from "~/lib/pay-commerce-ui";
 import {
-  formatLabelWithCurrency,
   payTrackablePriceAriaLabel,
   priceDisplay,
   resolveTrackableValueVnd,
@@ -19,6 +19,13 @@ type PayTrackablePriceProps = {
   per?: string;
   hero?: boolean;
   size?: "tier" | "addon" | "confirm";
+  /** Integer layer for Meta Event Setup (off only if no price shown). */
+  metaEventSetup?: boolean;
+  /**
+   * Thank-you / confirm sheet: set so marketing can use Event Setup UI picker on the **visible price**.
+   * Clicks map to digits-only text (`799000`), not `799.000 đ`.
+   */
+  metaEventSetupId?: string;
 };
 
 const SIZE = {
@@ -39,7 +46,7 @@ const SIZE = {
   },
 } as const;
 
-function visiblePriceText(
+function visibleAmountDigits(
   priceLabel: string,
   displayPrice: string | undefined,
   valueVndProp: number | undefined,
@@ -49,15 +56,24 @@ function visiblePriceText(
     Number.isFinite(valueVndProp) &&
     valueVndProp > 0
   ) {
-    return formatVndPriceDisplay(Math.round(valueVndProp));
+    return formatVndDigits(Math.round(valueVndProp));
   }
-  return formatLabelWithCurrency(displayPrice ?? priceLabel);
+  return priceDisplay(displayPrice ?? priceLabel);
+}
+
+function FormattedVnd({ digits }: { digits: string }) {
+  return (
+    <>
+      {digits}
+      {" "}
+      <span>đ</span>
+    </>
+  );
 }
 
 /**
- * Price column for `/dat-lich` and pay confirm.
- * Sale amount is first in DOM (Meta Event Setup); compare-at follows as decorative.
- * `data-track-price-vnd` is for GTM/manual mapping — not a documented Meta attribute.
+ * Price column for `/dat-lich`, pay confirm, thank-you receipt.
+ * With `metaEventSetupId`, Event Setup UI picker: click the visible price → value `799000`, currency VND.
  */
 export function PayTrackablePrice({
   priceLabel,
@@ -67,15 +83,19 @@ export function PayTrackablePrice({
   per,
   hero = false,
   size = "tier",
+  metaEventSetup = true,
+  metaEventSetupId,
 }: PayTrackablePriceProps) {
   const priceDigits = displayPrice ?? priceDisplay(priceLabel);
-  const price = visiblePriceText(priceLabel, displayPrice, valueVndProp);
+  const amountDigits = visibleAmountDigits(priceLabel, displayPrice, valueVndProp);
+  const baselineDigits = baseline ? priceDisplay(baseline) : null;
   const valueVnd = resolveTrackableValueVnd(valueVndProp, priceLabel);
   const classes = SIZE[size];
   const muted = hero ? "rgba(237,231,211,0.65)" : CT.muted;
   const baselineMuted = hero ? "rgba(237,231,211,0.55)" : CT.muted;
   const priceColor = hero ? CT.gold : CT.goldDeep;
   const ariaLabel = payTrackablePriceAriaLabel({ price: priceDigits, baseline, per });
+  const formatted = <FormattedVnd digits={amountDigits} />;
 
   return (
     <div
@@ -84,11 +104,17 @@ export function PayTrackablePrice({
       aria-label={ariaLabel}
     >
       <div
-        className={classes.price}
+        className={`${classes.price} relative`}
         style={{ ...DISPLAY2, color: priceColor }}
         data-track-price-vnd={valueVnd}
       >
-        {price}
+        {metaEventSetup ? (
+          <MetaEventSetupValue valueVnd={valueVnd} id={metaEventSetupId}>
+            {formatted}
+          </MetaEventSetupValue>
+        ) : (
+          <span aria-hidden="true">{formatted}</span>
+        )}
       </div>
       {per ? (
         <div className={classes.per} style={{ color: muted }} aria-hidden="true">
@@ -101,7 +127,7 @@ export function PayTrackablePrice({
           style={{ color: baselineMuted, textDecorationThickness: 1 }}
           aria-hidden="true"
         >
-          {formatLabelWithCurrency(baseline)}
+          <FormattedVnd digits={baselineDigits ?? ""} />
         </div>
       ) : null}
     </div>

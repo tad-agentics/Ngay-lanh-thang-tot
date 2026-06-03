@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
+  formatMetaEventSetupValue,
   META_PIXEL_HEAD_SCRIPT,
   META_PIXEL_ID,
   META_PIXEL_NOSCRIPT_IMG_URL,
@@ -30,6 +31,13 @@ describe("isMetaPixelAllowed", () => {
   it("is false in development", () => {
     vi.stubEnv("PROD", false);
     expect(isMetaPixelAllowed()).toBe(false);
+  });
+});
+
+describe("formatMetaEventSetupValue", () => {
+  it("returns digits only without locale separators", () => {
+    expect(formatMetaEventSetupValue(299_000)).toBe("299000");
+    expect(formatMetaEventSetupValue(1_097_000)).toBe("1097000");
   });
 });
 

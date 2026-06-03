@@ -92,6 +92,14 @@ export type MetaPurchaseTrackArgs = {
   contentIds?: string[];
 };
 
+/**
+ * Digits only for Meta Event Setup DOM picker.
+ * Do not use locale strings like `299.000 đ` — Meta parses `.` as a decimal point (→ 299).
+ */
+export function formatMetaEventSetupValue(amountVnd: number): string {
+  return String(Math.round(amountVnd));
+}
+
 export function resolvePurchaseValueVnd(
   amountVnd: number | null | undefined,
   packageSku: PackageSku,

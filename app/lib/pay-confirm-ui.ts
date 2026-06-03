@@ -21,13 +21,13 @@ export const PAY_CONFIRM_TIER_META: Partial<
   goi_6thang: {
     baseline: "797.000",
     per: "6 tháng",
-    save: "tiết kiệm 298.000đ",
+    save: "tiết kiệm 298.000 đ",
     sub: `Lịch + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`,
   },
   goi_12thang: {
     baseline: "1.097.000",
     per: "cả năm",
-    save: "tiết kiệm 298.000đ",
+    save: "tiết kiệm 298.000 đ",
     sub: "Toàn bộ tính năng",
   },
 };
@@ -71,13 +71,14 @@ export function priceDisplay(label: string): string {
   return label.replace(/₫/g, "").trim();
 }
 
-/** Catalog label or digit string → `299.000đ` for DOM / Meta Event Setup. */
+/** Catalog label or digit string → `299.000 đ` (currency spaced from digits). */
 export function formatLabelWithCurrency(labelOrDigits: string): string {
   const t = labelOrDigits.trim();
   if (!t) return "";
-  if (t.endsWith("đ")) return t;
+  if (/\d\s+đ$/u.test(t)) return t;
+  if (t.endsWith("đ")) return `${t.slice(0, -1).trimEnd()} đ`;
   const digits = priceDisplay(t);
-  return digits ? `${digits}đ` : "";
+  return digits ? `${digits} đ` : "";
 }
 
 /** Integer VND from labels like `499.000₫` — for `data-track-price-vnd` hints. */
@@ -104,9 +105,9 @@ export function payTrackablePriceAriaLabel(args: {
   baseline?: string | null;
   per?: string;
 }): string {
-  const sale = `${args.price} đ`;
+  const sale = formatLabelWithCurrency(args.price);
   if (args.baseline) {
-    const base = `Giá ${sale}, giảm từ ${args.baseline} đ`;
+    const base = `Giá ${sale}, giảm từ ${formatLabelWithCurrency(args.baseline)}`;
     return args.per ? `${base}, ${args.per}` : base;
   }
   const base = `Giá ${sale}`;

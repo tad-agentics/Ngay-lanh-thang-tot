@@ -9,9 +9,10 @@ import {
 
 describe("formatLabelWithCurrency", () => {
   it("appends đ to catalog labels and digit strings", () => {
-    expect(formatLabelWithCurrency("299.000₫")).toBe("299.000đ");
-    expect(formatLabelWithCurrency("299.000")).toBe("299.000đ");
-    expect(formatLabelWithCurrency("299.000đ")).toBe("299.000đ");
+    expect(formatLabelWithCurrency("299.000₫")).toBe("299.000 đ");
+    expect(formatLabelWithCurrency("299.000")).toBe("299.000 đ");
+    expect(formatLabelWithCurrency("299.000đ")).toBe("299.000 đ");
+    expect(formatLabelWithCurrency("299.000 đ")).toBe("299.000 đ");
     expect(formatLabelWithCurrency("")).toBe("");
   });
 });

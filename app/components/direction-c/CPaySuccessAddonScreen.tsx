@@ -155,6 +155,7 @@ export function CPaySuccessAddonScreen() {
                   priceLabel={catalogPriceLabel}
                   valueVnd={paidAmountVnd}
                   size="confirm"
+                  metaEventSetupId="meta-purchase-value"
                 />
               ) : null}
             </div>
