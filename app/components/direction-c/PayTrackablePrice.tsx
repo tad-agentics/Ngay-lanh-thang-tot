@@ -1,6 +1,6 @@
 import { MetaEventSetupValue } from "~/components/direction-c/MetaEventSetupValue";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
-import { formatVndDigits } from "~/lib/pay-commerce-ui";
+import { formatVndDigits, withVndCurrency } from "~/lib/pay-commerce-ui";
 import {
   payTrackablePriceAriaLabel,
   priceDisplay,
@@ -112,7 +112,12 @@ export function PayTrackablePrice({
         data-track-price-vnd={valueVnd}
       >
         {metaEventSetup ? (
-          <MetaEventSetupValue valueVnd={valueVnd} id={metaEventSetupId}>
+          <MetaEventSetupValue
+            valueVnd={valueVnd}
+            id={metaEventSetupId}
+            formattedDisplay={withVndCurrency(amountDigits)}
+            style={{ color: priceColor }}
+          >
             {formatted}
           </MetaEventSetupValue>
         ) : (

@@ -1,48 +1,47 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { formatMetaEventSetupValue } from "~/lib/meta-pixel";
 
 type MetaEventSetupValueProps = {
   valueVnd: number;
-  /** Formatted price overlay (e.g. `799.000 đ`) — not used for Meta text. */
-  children: ReactNode;
+  /** Formatted overlay for list mode (e.g. `799.000 đ`) — not used for Meta text in picker mode. */
+  children?: ReactNode;
   /**
    * Stable id for Event Setup UI picker (`#meta-purchase-value`, `#meta-checkout-value`).
-   * Transparent integer layer sits under the visible price; clicks on the price hit this node.
+   * DOM text is digits-only (`799000`); `đ` is a separate aria-hidden node.
    */
   id?: string;
+  /** Tooltip + human-readable hint (picker mode). */
+  formattedDisplay?: string;
+  style?: CSSProperties;
 };
 
 /**
- * Meta Event Setup reads the **clicked element's text**.
- * Picker mode: marketing clicks the visible price; DOM value is digits-only (`799000`).
+ * Meta Event Setup reads the **clicked element's text** (digits only — no `299.000`).
+ * Picker mode (`id`): one visible integer node for marketing to click on `/thanh-cong`.
  */
 export function MetaEventSetupValue({
   valueVnd,
   children,
   id,
+  formattedDisplay,
+  style,
 }: MetaEventSetupValueProps) {
   const text = formatMetaEventSetupValue(valueVnd);
 
   if (id) {
     return (
-      <span className="relative inline-grid">
+      <span className="inline-flex items-baseline justify-end whitespace-nowrap" style={style}>
         <span
           id={id}
           data-meta-event-setup-value={text}
           data-track-price-vnd={valueVnd}
-          className="col-start-1 row-start-1 inline-block whitespace-nowrap"
-          style={{ color: "transparent" }}
-          aria-hidden="true"
+          title={formattedDisplay}
+          className="tabular-nums"
         >
           {text}
         </span>
-        <span
-          className="pointer-events-none col-start-1 row-start-1 inline-flex items-baseline justify-end whitespace-nowrap"
-          aria-hidden="true"
-        >
-          {children}
-        </span>
+        <span aria-hidden="true"> đ</span>
       </span>
     );
   }

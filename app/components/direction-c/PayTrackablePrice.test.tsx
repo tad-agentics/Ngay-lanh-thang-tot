@@ -21,8 +21,8 @@ describe("PayTrackablePrice", () => {
     expect(document.getElementById("meta-event-setup-value")).toBeNull();
   });
 
-  it("picker mode: id on price area with integer text", () => {
-    const { container } = render(
+  it("picker mode: id on digits-only node (Meta Event Setup)", () => {
+    render(
       <PayTrackablePrice
         priceLabel="299.000₫"
         valueVnd={299_000}
@@ -30,12 +30,9 @@ describe("PayTrackablePrice", () => {
         metaEventSetupId="meta-purchase-value"
       />,
     );
-    expect(document.getElementById("meta-purchase-value")?.textContent).toBe(
-      "299000",
-    );
-    expect(container.textContent?.replace(/\s+/g, " ").trim()).toContain(
-      "299.000 đ",
-    );
+    const node = document.getElementById("meta-purchase-value");
+    expect(node?.textContent).toBe("299000");
+    expect(node?.getAttribute("title")).toBe("299.000 đ");
   });
 
   it("omits Meta node when metaEventSetup is false", () => {
