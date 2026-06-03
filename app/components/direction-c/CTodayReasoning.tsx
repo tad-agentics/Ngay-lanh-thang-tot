@@ -17,6 +17,8 @@ export type CTodayReasoningProps = {
   ctaLabel?: string;
   onCtaClick?: () => void;
   showCta?: boolean;
+  /** When true, CTA shows after engine tóm tắt (not only NLTT luận). Used for đặt lịch upsell. */
+  showCtaWithEngineFallback?: boolean;
 };
 
 export function CTodayReasoning({
@@ -29,6 +31,7 @@ export function CTodayReasoning({
   ctaLabel = "Hỏi tiếp về ngày này",
   onCtaClick,
   showCta = true,
+  showCtaWithEngineFallback = false,
 }: CTodayReasoningProps) {
   const aiText = (text ?? "").trim();
   const engineFallback = (fallbackText ?? "").trim();
@@ -145,7 +148,10 @@ export function CTodayReasoning({
               ))}
             </div>
           ) : null}
-          {done && showCta && onCtaClick && isAiLuan ? (
+          {done &&
+          showCta &&
+          onCtaClick &&
+          (isAiLuan || showCtaWithEngineFallback) ? (
             <button
               type="button"
               onClick={onCtaClick}

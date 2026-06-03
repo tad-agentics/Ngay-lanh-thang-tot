@@ -72,6 +72,7 @@ export function CDayDetailScreen() {
   );
   const personalized = Boolean(birthQuery?.birth_date);
   const subActive = profile ? canUseCalendar(profile) : false;
+  const calendarLocked = Boolean(user && profile && !subActive);
   const newUserTeaser = profile ? isNewUserDayLuanTeaser(profile) : false;
   const subscriptionExpired = Boolean(
     user && profile && personalized && isSubscriptionLapsed(profile),
@@ -264,8 +265,11 @@ export function CDayDetailScreen() {
                     loading={readingLoading && expectNlttLuan}
                     instant={instantTyping}
                     onTypingComplete={markTypingSeen}
-                    onCtaClick={() => void navigate(`/luan-ai/day-${iso}`)}
-                    showCta={Boolean(user) && expectNlttLuan}
+                    onCtaClick={() =>
+                      void navigate(calendarLocked ? "/dat-lich" : `/luan-ai/day-${iso}`)
+                    }
+                    showCta={Boolean(user) && (expectNlttLuan || calendarLocked)}
+                    showCtaWithEngineFallback={calendarLocked}
                   />
                 ) : null
               }

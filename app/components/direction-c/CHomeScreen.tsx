@@ -18,6 +18,7 @@ import { useAuth } from "~/lib/auth";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import {
   canUseBaziReading,
+  canUseCalendar,
   canUseTieuVanReading,
   hasYearlySubscription,
   isNewUserDayLuanTeaser,
@@ -54,6 +55,7 @@ export function CHomeScreen() {
 
   const showRecomputeSkeleton = recomputePending || recomputePendingFromData;
   const subActive = subscriptionActive(profile?.subscription_expires_at ?? null);
+  const calendarLocked = Boolean(user && profile && !canUseCalendar(profile));
   const newUserTeaser = isNewUserDayLuanTeaser(profile);
 
   const {
@@ -168,8 +170,11 @@ export function CHomeScreen() {
                   loading={readingLoading}
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
-                  onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
+                  onCtaClick={() =>
+                    void navigate(calendarLocked ? "/dat-lich" : `/luan-ai/day-${todayIso}`)
+                  }
                   showCta={Boolean(user)}
+                  showCtaWithEngineFallback={calendarLocked}
                 />
               ) : null
             }
