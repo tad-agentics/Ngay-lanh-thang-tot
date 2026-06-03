@@ -4,6 +4,7 @@ import {
   LUAN_LUU_NIEN_NGUYET_TITLE,
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
 } from "~/lib/luan-luu-nien-nguyet-labels";
+import { formatVndPriceDisplay } from "~/lib/vnd-format";
 import { UI_PACKAGES } from "~/lib/packages";
 
 export const PAY_CONFIRM_TIER_META: Partial<
@@ -21,13 +22,13 @@ export const PAY_CONFIRM_TIER_META: Partial<
   goi_6thang: {
     baseline: "797.000",
     per: "6 tháng",
-    save: "tiết kiệm 298.000 đ",
+    save: "tiết kiệm 298.000 ₫",
     sub: `Lịch + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`,
   },
   goi_12thang: {
     baseline: "1.097.000",
     per: "cả năm",
-    save: "tiết kiệm 298.000 đ",
+    save: "tiết kiệm 298.000 ₫",
     sub: "Toàn bộ tính năng",
   },
 };
@@ -71,14 +72,13 @@ export function priceDisplay(label: string): string {
   return label.replace(/₫/g, "").trim();
 }
 
-/** Catalog label or digit string → `299.000 đ` (currency spaced from digits). */
+/** Catalog label or digit string → `299.000 ₫` (Intl currency). */
 export function formatLabelWithCurrency(labelOrDigits: string): string {
-  const t = labelOrDigits.trim();
-  if (!t) return "";
-  if (/\d\s+đ$/u.test(t)) return t;
-  if (t.endsWith("đ")) return `${t.slice(0, -1).trimEnd()} đ`;
-  const digits = priceDisplay(t);
-  return digits ? `${digits} đ` : "";
+  const digits = labelOrDigits.replace(/\D/g, "");
+  if (!digits) return "";
+  const amount = Number.parseInt(digits, 10);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return formatVndPriceDisplay(amount);
 }
 
 /** Integer VND from labels like `499.000₫` — for `data-track-price-vnd` hints. */

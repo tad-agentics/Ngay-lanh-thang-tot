@@ -1,6 +1,10 @@
 import { MetaEventSetupValue } from "~/components/direction-c/MetaEventSetupValue";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
-import { formatVndDigits, withVndCurrency } from "~/lib/pay-commerce-ui";
+import {
+  formatVndDigits,
+  formatVndPriceDisplay,
+  withVndCurrency,
+} from "~/lib/pay-commerce-ui";
 import {
   payTrackablePriceAriaLabel,
   priceDisplay,
@@ -23,7 +27,7 @@ type PayTrackablePriceProps = {
   metaEventSetup?: boolean;
   /**
    * Thank-you / confirm sheet: set so marketing can use Event Setup UI picker on the **visible price**.
-   * Clicks map to digits-only text (`799000`), not `799.000 đ`.
+   * Clicks map to digits-only text (`799000`); visible layer uses Intl `₫`.
    */
   metaEventSetupId?: string;
 };
@@ -61,14 +65,20 @@ function visibleAmountDigits(
   return priceDisplay(displayPrice ?? priceLabel);
 }
 
-function FormattedVnd({ digits }: { digits: string }) {
-  return (
-    <>
-      {digits}
-      {" "}
-      <span>đ</span>
-    </>
-  );
+function FormattedVnd({
+  digits,
+  amountVnd,
+}: {
+  digits: string;
+  amountVnd?: number;
+}) {
+  const display =
+    typeof amountVnd === "number" &&
+    Number.isFinite(amountVnd) &&
+    amountVnd > 0
+      ? formatVndPriceDisplay(amountVnd)
+      : withVndCurrency(digits);
+  return <span>{display}</span>;
 }
 
 /**
@@ -98,7 +108,9 @@ export function PayTrackablePrice({
     baseline: baselineDigits,
     per,
   });
-  const formatted = <FormattedVnd digits={amountDigits} />;
+  const formatted = (
+    <FormattedVnd digits={amountDigits} amountVnd={valueVnd} />
+  );
 
   return (
     <div

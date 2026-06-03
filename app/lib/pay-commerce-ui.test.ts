@@ -12,6 +12,11 @@ import {
   yearlyPlanUpsellDeltaVnd,
 } from "~/lib/pay-commerce-ui";
 
+/** Intl vi-VN may use NBSP before ₫. */
+function normVnd(s: string): string {
+  return s.replace(/\u00a0/g, " ");
+}
+
 describe("pay-commerce-ui", () => {
   it("formats order ref with NLTT prefix", () => {
     expect(formatPaymentOrderRef("a1b2c3d4-e5f6-7890-abcd-ef1234567890")).toMatch(
@@ -48,11 +53,12 @@ describe("pay-commerce-ui", () => {
     expect(subscriptionUpsellDeltaVnd("luan_tieu_van", "goi_6thang")).toBe(300_000);
   });
 
-  it("formats VND as grouped digits plus spaced đ", () => {
+  it("formats VND via Intl currency (₫ symbol)", () => {
     expect(formatVndDigits(299_000)).toBe("299.000");
-    expect(formatVndPriceDisplay(299_000)).toBe("299.000 đ");
-    expect(formatVndPriceDisplay(1_097_000)).toBe("1.097.000 đ");
-    expect(withVndCurrency("299.000")).toBe("299.000 đ");
+    expect(normVnd(formatVndPriceDisplay(299_000))).toBe("299.000 ₫");
+    expect(normVnd(formatVndPriceDisplay(1_097_000))).toBe("1.097.000 ₫");
+    expect(normVnd(formatVndPriceDisplay(7_990))).toBe("7.990 ₫");
+    expect(normVnd(withVndCurrency("299.000"))).toBe("299.000 ₫");
     expect(withVndCurrency("")).toBe("");
   });
 });

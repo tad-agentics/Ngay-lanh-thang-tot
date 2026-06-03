@@ -88,7 +88,8 @@ export type MetaPurchaseTrackArgs = {
 
 /**
  * Digits only for Meta Event Setup DOM picker.
- * Do not use locale strings like `299.000 đ` — Meta parses `.` as a decimal point (→ 299).
+ * Do not use dotted amounts without Intl currency — Meta may parse `.` as decimal.
+ * Visible prices use `formatVndPriceDisplay` (`299.000 ₫`); picker id stays digits-only.
  */
 export function formatMetaEventSetupValue(amountVnd: number): string {
   return String(Math.round(amountVnd));

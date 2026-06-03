@@ -3,6 +3,15 @@ import { describe, expect, it } from "vitest";
 
 import { PayTrackablePrice } from "~/components/direction-c/PayTrackablePrice";
 
+function normVnd(s: string): string {
+  return s.replace(/\u00a0/g, " ");
+}
+
+function groupNamed(label: string) {
+  return (_: string, el: Element) =>
+    normVnd(el.getAttribute("aria-label") ?? "") === normVnd(label);
+}
+
 describe("PayTrackablePrice", () => {
   it("renders sale amount with đ suffix for Meta-readable DOM", () => {
     render(
@@ -12,8 +21,8 @@ describe("PayTrackablePrice", () => {
         size="confirm"
       />,
     );
-    const group = screen.getByRole("group", { name: "Giá 299.000 đ" });
-    expect(group.textContent?.replace(/\s+/g, " ").trim()).toContain("299.000 đ");
+    const group = screen.getByRole("group", { name: groupNamed("Giá 299.000 ₫") });
+    expect(normVnd(group.textContent ?? "")).toContain("299.000 ₫");
     expect(screen.getByText("299000")).toBeTruthy();
     expect(
       document.querySelector("[data-meta-event-setup-value='299000']"),
@@ -32,7 +41,7 @@ describe("PayTrackablePrice", () => {
     );
     const node = document.getElementById("meta-purchase-value");
     expect(node?.textContent).toBe("299000");
-    expect(node?.getAttribute("title")).toBe("299.000 đ");
+    expect(normVnd(node?.getAttribute("title") ?? "")).toBe("299.000 ₫");
   });
 
   it("omits Meta node when metaEventSetup is false", () => {
@@ -51,8 +60,8 @@ describe("PayTrackablePrice", () => {
 
   it("formats catalog label when valueVnd is omitted", () => {
     render(<PayTrackablePrice priceLabel="499.000₫" size="tier" />);
-    const group = screen.getByRole("group", { name: "Giá 499.000 đ" });
-    expect(group.textContent?.replace(/\s+/g, " ").trim()).toContain("499.000 đ");
+    const group = screen.getByRole("group", { name: groupNamed("Giá 499.000 ₫") });
+    expect(normVnd(group.textContent ?? "")).toContain("499.000 ₫");
   });
 
   it("aria-label matches visible sale digits when displayPrice and valueVnd align", () => {
@@ -64,7 +73,9 @@ describe("PayTrackablePrice", () => {
         size="confirm"
       />,
     );
-    expect(screen.getByRole("group", { name: "Giá 269.100 đ" })).toBeTruthy();
+    expect(
+      screen.getByRole("group", { name: groupNamed("Giá 269.100 ₫") }),
+    ).toBeTruthy();
   });
 
   it("aria-label follows valueVnd when it overrides displayPrice for visible amount", () => {
@@ -77,7 +88,7 @@ describe("PayTrackablePrice", () => {
       />,
     );
     const group = container.querySelector('[role="group"]');
-    expect(group?.getAttribute("aria-label")).toBe("Giá 299.000 đ");
-    expect(group?.textContent?.replace(/\s+/g, " ").trim()).toContain("299.000 đ");
+    expect(normVnd(group?.getAttribute("aria-label") ?? "")).toBe("Giá 299.000 ₫");
+    expect(normVnd(group?.textContent ?? "")).toContain("299.000 ₫");
   });
 });

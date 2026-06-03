@@ -132,23 +132,13 @@ export function yearlyPlanUpsellDeltaVnd(addonSku: PackageSku): number | null {
   return subscriptionUpsellDeltaVnd(addonSku, YEARLY_SKU);
 }
 
-/** Spaced đ suffix — currency symbol separate from amount (Direction C / copy rules). */
-export const VND_CURRENCY_SUFFIX = " đ";
-
-export function formatVndDigits(amount: number): string {
-  return new Intl.NumberFormat("vi-VN").format(amount);
-}
-
-/** Grouped digits string (no currency) → `299.000 đ`. */
-export function withVndCurrency(digits: string): string {
-  const d = digits.trim();
-  return d ? `${d}${VND_CURRENCY_SUFFIX}` : "";
-}
-
-/** Visible VND price: grouped digits + spaced `đ` (Meta Event Setup, receipts). */
-export function formatVndPriceDisplay(amount: number): string {
-  return `${formatVndDigits(amount)}${VND_CURRENCY_SUFFIX}`;
-}
+export {
+  formatVndDigits,
+  formatVndPriceDisplay,
+  VND_CURRENCY_FORMAT,
+  VND_CURRENCY_SUFFIX,
+  withVndCurrency,
+} from "~/lib/vnd-format";
 
 /** @deprecated Prefer `formatVndPriceDisplay`. */
 export function formatVndThousands(amount: number): string {
