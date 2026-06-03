@@ -65,14 +65,6 @@ export function CPaySuccessScreen() {
     };
   }, [orderId]);
 
-  useEffect(() => {
-    if (!paid) return;
-    const t = window.setTimeout(() => {
-      navigate("/lich", { replace: true });
-    }, 3000);
-    return () => window.clearTimeout(t);
-  }, [paid, navigate]);
-
   const exp = formatSubscriptionExpiry(profile?.subscription_expires_at);
   const sku = order?.package_sku ?? "goi_12thang";
   const planName = brandedSubscriptionPlanName(sku, profile?.la_so);
@@ -135,11 +127,6 @@ export function CPaySuccessScreen() {
             "Đang chờ PayOS xác nhận — có thể mất vài phút."
           )}
         </p>
-        {paid ? (
-          <p className="mt-1.5 text-[12.5px]" style={{ color: CT.muted }}>
-            Tự chuyển về lịch sau 3 giây.
-          </p>
-        ) : null}
 
         {orderRef ? (
           <div
