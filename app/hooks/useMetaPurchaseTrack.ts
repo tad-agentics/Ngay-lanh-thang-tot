@@ -1,35 +1,35 @@
 import { useEffect, useRef } from "react";
 
 import type { PackageSku } from "~/lib/api-types";
-import {
-  resolvePurchaseValueVnd,
-  trackMetaPurchaseOnce,
-} from "~/lib/meta-pixel";
+import { trackMetaPurchaseOnce } from "~/lib/meta-pixel";
+
+/** Pre-resolved charge (e.g. from `useOrderChargeAmounts`) — coupon-aware. */
+export type MetaPurchaseTrackPayload = {
+  orderId: string;
+  packageSku: PackageSku;
+  valueVnd: number;
+};
 
 export function useMetaPurchaseTrack(
   paid: boolean,
-  order:
-    | {
-        id: string;
-        package_sku: PackageSku;
-        amount_vnd: number | null;
-      }
-    | null
-    | undefined,
+  payload: MetaPurchaseTrackPayload | null | undefined,
   contentName?: string,
 ) {
   const firedRef = useRef(false);
+  const orderId = payload?.orderId;
+  const packageSku = payload?.packageSku;
+  const valueVnd = payload?.valueVnd;
 
   useEffect(() => {
-    if (!paid || !order?.id || firedRef.current) return;
-    const valueVnd = resolvePurchaseValueVnd(order.amount_vnd, order.package_sku);
-    if (valueVnd == null) return;
+    if (!paid || !orderId || firedRef.current) return;
+    const value = Math.round(valueVnd ?? 0);
+    if (!Number.isFinite(value) || value <= 0 || !packageSku) return;
     firedRef.current = true;
     trackMetaPurchaseOnce({
-      orderId: order.id,
-      valueVnd,
+      orderId,
+      valueVnd: value,
       contentName,
-      contentIds: [order.package_sku],
+      contentIds: [packageSku],
     });
-  }, [paid, order, contentName]);
+  }, [paid, orderId, packageSku, valueVnd, contentName]);
 }

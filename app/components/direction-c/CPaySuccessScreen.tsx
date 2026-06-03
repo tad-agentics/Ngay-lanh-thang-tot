@@ -65,11 +65,11 @@ export function CPaySuccessScreen() {
 
   useMetaPurchaseTrack(
     paid,
-    trackingOrderId && order && charge
+    trackingOrderId && sku && charge
       ? {
-          id: trackingOrderId,
-          package_sku: order.package_sku,
-          amount_vnd: charge.finalVnd,
+          orderId: trackingOrderId,
+          packageSku: sku,
+          valueVnd: charge.finalVnd,
         }
       : null,
     planName ?? undefined,

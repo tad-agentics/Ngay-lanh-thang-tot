@@ -76,7 +76,7 @@ export function CPaySuccessAddonScreen() {
       : "/toi/luan-bat-tu";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
   const catalogPriceLabel = pkg?.priceLabel ?? "299.000₫";
-  const { charge } = useOrderChargeAmounts(order, orderIdFromUrl);
+  const { sku: chargeSku, charge } = useOrderChargeAmounts(order, orderIdFromUrl);
   const listBaseline =
     charge?.hasDiscount && charge.listVnd != null
       ? formatVndDigits(charge.listVnd)
@@ -84,11 +84,11 @@ export function CPaySuccessAddonScreen() {
 
   useMetaPurchaseTrack(
     paid,
-    trackingOrderId && order && charge
+    trackingOrderId && chargeSku && charge
       ? {
-          id: trackingOrderId,
-          package_sku: order.package_sku,
-          amount_vnd: charge.finalVnd,
+          orderId: trackingOrderId,
+          packageSku: chargeSku,
+          valueVnd: charge.finalVnd,
         }
       : null,
     headlineTitle,
