@@ -86,7 +86,6 @@ export function PayTrackablePrice({
   metaEventSetup = true,
   metaEventSetupId,
 }: PayTrackablePriceProps) {
-  const priceDigits = displayPrice ?? priceDisplay(priceLabel);
   const amountDigits = visibleAmountDigits(priceLabel, displayPrice, valueVndProp);
   const baselineDigits = baseline ? priceDisplay(baseline) : null;
   const valueVnd = resolveTrackableValueVnd(valueVndProp, priceLabel);
@@ -94,7 +93,11 @@ export function PayTrackablePrice({
   const muted = hero ? "rgba(237,231,211,0.65)" : CT.muted;
   const baselineMuted = hero ? "rgba(237,231,211,0.55)" : CT.muted;
   const priceColor = hero ? CT.gold : CT.goldDeep;
-  const ariaLabel = payTrackablePriceAriaLabel({ price: priceDigits, baseline, per });
+  const ariaLabel = payTrackablePriceAriaLabel({
+    price: amountDigits,
+    baseline: baselineDigits,
+    per,
+  });
   const formatted = <FormattedVnd digits={amountDigits} />;
 
   return (

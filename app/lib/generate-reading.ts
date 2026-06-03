@@ -316,6 +316,26 @@ export function coalesceGenerateReadingSections(
   ]);
 }
 
+/** Gộp wave luận theo `id` (upsert incoming lên base). */
+export function mergeLaSoChiTietSectionsById(
+  existing: LaSoChiTietSection[],
+  incoming: LaSoChiTietSection[] | null | undefined,
+): LaSoChiTietSection[] {
+  if (!incoming?.length) return existing;
+  const byId = new Map(existing.map((s) => [s.id, s]));
+  for (const s of incoming) {
+    byId.set(s.id, s);
+  }
+  return [...byId.values()];
+}
+
+/** `sections` + JSON envelope trong `reading` từ một lần gọi generate-reading. */
+export function laSoSectionsFromGenerateReadingResponse(
+  res: Pick<GenerateReadingResponse, "sections" | "reading">,
+): LaSoChiTietSection[] {
+  return coalesceGenerateReadingSections(res.sections, res.reading);
+}
+
 type GenerateReadingErrorBody = {
   error?: { code?: string; message?: string };
   error_code?: string;

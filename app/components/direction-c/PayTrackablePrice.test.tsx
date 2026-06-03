@@ -57,4 +57,30 @@ describe("PayTrackablePrice", () => {
     const group = screen.getByRole("group", { name: "Giá 499.000 đ" });
     expect(group.textContent?.replace(/\s+/g, " ").trim()).toContain("499.000 đ");
   });
+
+  it("aria-label matches visible sale digits when displayPrice and valueVnd align", () => {
+    render(
+      <PayTrackablePrice
+        priceLabel="299.000₫"
+        displayPrice="269.100"
+        valueVnd={269_100}
+        size="confirm"
+      />,
+    );
+    expect(screen.getByRole("group", { name: "Giá 269.100 đ" })).toBeTruthy();
+  });
+
+  it("aria-label follows valueVnd when it overrides displayPrice for visible amount", () => {
+    const { container } = render(
+      <PayTrackablePrice
+        priceLabel="299.000₫"
+        displayPrice="269.100"
+        valueVnd={299_000}
+        size="confirm"
+      />,
+    );
+    const group = container.querySelector('[role="group"]');
+    expect(group?.getAttribute("aria-label")).toBe("Giá 299.000 đ");
+    expect(group?.textContent?.replace(/\s+/g, " ").trim()).toContain("299.000 đ");
+  });
 });

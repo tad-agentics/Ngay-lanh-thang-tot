@@ -32,13 +32,6 @@ export type VanTrinhNamDisplayBlock =
       prose: string;
       luanLoading: boolean;
       luanFailed: boolean;
-    }
-  | {
-      kind: "mechanics";
-      key: "mechanics";
-      index: number;
-      title: string;
-      ctx: VanTrinhNamLuanContext;
     };
 
 function sectionMap(sections: LaSoChiTietSection[]): Map<string, string> {
@@ -103,15 +96,6 @@ export function buildVanTrinhNamDisplayBlocks(opts: {
     prose: closingText,
     luanLoading: chapterLoad.closing === "loading" && !closingText,
     luanFailed: chapterLoad.closing === "failed" && !closingText,
-  });
-  idx += 1;
-
-  blocks.push({
-    kind: "mechanics",
-    key: "mechanics",
-    index: idx,
-    title: "Thuật ngữ & cơ chế",
-    ctx,
   });
 
   return blocks;

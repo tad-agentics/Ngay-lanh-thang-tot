@@ -390,7 +390,7 @@ export function CVanTrinhNamReadingScreen({
         if (b.kind === "part_a") return true;
         if (b.kind === "month") return true;
         if (b.kind === "closing") return Boolean(b.prose) || b.luanLoading;
-        return b.kind === "mechanics";
+        return false;
       }) ?? false,
     [blocks],
   );

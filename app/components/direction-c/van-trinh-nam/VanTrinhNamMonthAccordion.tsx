@@ -5,7 +5,7 @@ import {
 } from "~/components/direction-c/CBaziNlttLuanRow";
 import { Mono } from "~/components/brand";
 import { VanTrinhNamB3Calendar } from "~/components/direction-c/van-trinh-nam/VanTrinhNamB3Calendar";
-import { CT } from "~/lib/c-tokens";
+import { CT, DISPLAY } from "~/lib/c-tokens";
 import {
   proseForMonth,
   type VanTrinhNamDisplayBlock,
@@ -18,11 +18,13 @@ import {
 export function VanTrinhNamMonthAccordion({
   block,
   year,
+  headingId,
   instantProse,
   onRetryLuan,
 }: {
   block: Extract<VanTrinhNamDisplayBlock, { kind: "month" }>;
   year: number;
+  headingId: string;
   instantProse?: boolean;
   onRetryLuan?: () => void;
 }) {
@@ -43,18 +45,40 @@ export function VanTrinhNamMonthAccordion({
       style={{ borderColor: CT.hairline, background: "#fff" }}
       open={n <= 2}
     >
-      <summary className="cursor-pointer list-none font-[family-name:var(--display-2)] text-sm font-bold uppercase tracking-tight">
-        <span style={{ color: CT.ink }}>{month.title_vi}</span>
-        <span className="ml-2 font-serif text-[11px] font-normal normal-case" style={{ color: CT.muted }}>
-          {month.b1_month_theme.luu_nguyet_display}
-          {arch ? ` · ${arch}` : ""}
-        </span>
+      <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <div
+          className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b pb-1.5"
+          style={{ borderColor: CT.ink }}
+        >
+          <span
+            className="font-mono text-[11.5px] shrink-0"
+            style={{ color: CT.goldDeep, letterSpacing: "0.18em" }}
+          >
+            {String(block.index).padStart(2, "0")}
+          </span>
+          <span
+            id={headingId}
+            className="text-lg font-extrabold uppercase tracking-tight shrink-0"
+            style={{ ...DISPLAY, color: CT.ink }}
+          >
+            {month.title_vi}
+          </span>
+          <span
+            className="font-serif text-[11px] font-normal normal-case min-w-0"
+            style={{ color: CT.muted }}
+          >
+            {month.b1_month_theme.luu_nguyet_display}
+            {arch ? ` · ${arch}` : ""}
+          </span>
+          <Mono
+            className="ml-auto shrink-0 text-[9px] max-sm:w-full max-sm:ml-0"
+            style={{ color: CT.muted }}
+          >
+            {month.solar_range}
+          </Mono>
+        </div>
       </summary>
       <div className="mt-2 pb-2">
-        <Mono className="text-[9px]" style={{ color: CT.muted }}>
-          {month.solar_range}
-        </Mono>
-
         {theme ? (
           <CBaziNlttLuanProse text={theme} instant={instantProse} compact />
         ) : loading ? (

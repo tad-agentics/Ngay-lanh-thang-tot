@@ -4,8 +4,9 @@ import type { Profile } from "~/lib/profile-context";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import {
-  coalesceGenerateReadingSections,
   invokeGenerateReadingWithRetry,
+  laSoSectionsFromGenerateReadingResponse,
+  mergeLaSoChiTietSectionsById,
   type LaSoChiTietSection,
 } from "~/lib/generate-reading";
 import {
@@ -74,7 +75,7 @@ function mergeSections(
   base: LaSoChiTietSection[],
   incoming: LaSoChiTietSection[] | null,
 ): LaSoChiTietSection[] {
-  return coalesceGenerateReadingSections(base, incoming);
+  return mergeLaSoChiTietSectionsById(base, incoming);
 }
 
 async function wavePartA(
@@ -86,7 +87,7 @@ async function wavePartA(
     data: { luan_context: ctx, flow_year: year },
     only_van_trinh_a: true,
   });
-  return gen.sections ?? [];
+  return laSoSectionsFromGenerateReadingResponse(gen);
 }
 
 async function waveMonth(
@@ -99,7 +100,7 @@ async function waveMonth(
     data: { luan_context: ctx, flow_year: year },
     month_num: monthNum,
   });
-  return gen.sections ?? [];
+  return laSoSectionsFromGenerateReadingResponse(gen);
 }
 
 async function waveClosing(
@@ -111,7 +112,7 @@ async function waveClosing(
     data: { luan_context: ctx, flow_year: year },
     only_van_trinh_c: true,
   });
-  return gen.sections ?? [];
+  return laSoSectionsFromGenerateReadingResponse(gen);
 }
 
 async function invokeWaveTarget(

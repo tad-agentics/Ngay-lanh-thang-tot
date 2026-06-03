@@ -1,8 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("~/lib/supabase", () => ({
+  supabase: {
+    auth: { getSession: vi.fn() },
+    functions: { invoke: vi.fn() },
+  },
+}));
 
 import {
   coalesceGenerateReadingSections,
   expandEmbeddedSectionsEnvelope,
+  laSoSectionsFromGenerateReadingResponse,
+  mergeLaSoChiTietSectionsById,
   parseSectionsEnvelopeFromReadingJson,
 } from "~/lib/generate-reading";
 
@@ -34,6 +43,30 @@ describe("expandEmbeddedSectionsEnvelope", () => {
     ]);
     expect(out[0]?.id).toBe("phong_thuy_huong");
     expect(out[0]?.text).toContain("Đông Nam");
+  });
+});
+
+describe("mergeLaSoChiTietSectionsById", () => {
+  it("merges waves by section id (van-trinh-nam load)", () => {
+    const merged = mergeLaSoChiTietSectionsById(
+      [{ id: "a1_hook", title: "A1", text: "x".repeat(100) }],
+      [{ id: "b1_theme", title: "B1", text: "Tháng một." }],
+    );
+    expect(merged).toHaveLength(2);
+    expect(merged.map((s) => s.id).sort()).toEqual(["a1_hook", "b1_theme"]);
+  });
+});
+
+describe("laSoSectionsFromGenerateReadingResponse", () => {
+  it("reads sections from reading JSON envelope", () => {
+    const json = JSON.stringify({
+      sections: [{ id: "a1_hook", title: "Hook", text: "Nội dung đủ dài." }],
+    });
+    const out = laSoSectionsFromGenerateReadingResponse({
+      sections: null,
+      reading: json,
+    });
+    expect(out[0]?.id).toBe("a1_hook");
   });
 });
 
