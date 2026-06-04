@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { CTieuVanLockedScreen } from "~/components/direction-c/CTieuVanLockedScreen";
+import { ReadingLoadFallback } from "~/components/direction-c/ReadingLoadFallback";
 import { CVanTrinhNamChapter } from "~/components/direction-c/CVanTrinhNamChapter";
 import { VanTrinhNamMonthNav } from "~/components/direction-c/van-trinh-nam/VanTrinhNamMonthNav";
 import { CBaziReadingLoadProgress } from "~/components/direction-c/CBaziReadingLoadProgress";
@@ -9,7 +10,8 @@ import { BackBar, Mono } from "~/components/brand";
 import { useProfile } from "~/hooks/useProfile";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { canUseTieuVanReading } from "~/lib/entitlements";
-import { profileHasLaso, laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
   LUAN_LUU_NIEN_NGUYET_TITLE,
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
@@ -28,7 +30,6 @@ import {
   deliveryToLoadResult,
   deriveVanTrinhChapterLoadState,
   fetchVanTrinhNamContext,
-  fetchVanTrinhNamDelivery,
   loadVanTrinhNamFull,
   loadVanTrinhNamRetryWaves,
   persistVanTrinhNamDelivery,
@@ -45,6 +46,10 @@ import {
   parseYearFromSearch,
 } from "~/lib/van-trinh-nam-session";
 import type { VanTrinhNamDisplayBlock } from "~/lib/van-trinh-nam-outline";
+import {
+  fetchVanTrinhNamDelivery,
+  vanTrinhNamDeliveryIsComplete,
+} from "~/lib/van-trinh-nam-delivery";
 
 type CVanTrinhNamReadingScreenProps = {
   year?: number;
@@ -64,11 +69,12 @@ export function CVanTrinhNamReadingScreen({
     createInitialVanTrinhChapterLoadState(),
   );
   const [yearCanChiLabel, setYearCanChiLabel] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const genRef = useRef(0);
   const needsVisibleResumeRef = useRef(false);
   const resumeLoadRef = useRef<(() => Promise<void>) | null>(null);
   const runFullLoadRef = useRef<
-    (opts?: { force?: boolean }) => Promise<void>
+    (opts?: { screenPriority?: boolean; resetSections?: boolean }) => Promise<void>
   >(null);
   const partialLoadRef = useRef<
     (ctx: VanTrinhNamLuanContext, blockKey: string) => Promise<void>
@@ -79,6 +85,9 @@ export function CVanTrinhNamReadingScreen({
   const loadSectionsRef = useRef<LaSoChiTietSection[]>([]);
 
   const unlocked = canUseTieuVanReading(profile);
+  const birthReady = Boolean(
+    profile && profileToBatTuPersonQuery(profile).birth_date,
+  );
   const reveal = profile?.la_so ? laSoJsonToRevealProps(profile.la_so) : null;
 
   const loadProgress = useMemo(() => {
@@ -88,126 +97,175 @@ export function CVanTrinhNamReadingScreen({
 
   useEffect(() => {
     if (profileLoading || !profile) return;
-    if (!unlocked || !profileHasLaso(profile.la_so)) {
+    if (!unlocked) {
       setGenerating(false);
       setInstantProse(false);
+      setBlocks(null);
+      return;
+    }
+
+    const body = profileToBatTuPersonQuery(profile);
+    if (!body.birth_date) {
+      setGenerating(false);
+      setBlocks(null);
       return;
     }
 
     let cancelled = false;
+    setLoadError(null);
 
     cancelVanTrinhNamPrewarm(profile, year);
 
     void (async () => {
-      const [ctxEarly, dbDeliveryRaw] = await Promise.all([
-        fetchVanTrinhNamContext(profile, year),
-        fetchVanTrinhNamDelivery(profile, year),
-      ]);
-      if (cancelled) return;
+      try {
+        let partialHydrated = false;
+        const [ctxEarly, dbDeliveryRaw] = await Promise.all([
+          fetchVanTrinhNamContext(profile, year),
+          fetchVanTrinhNamDelivery(profile, year, { allowIncomplete: true }),
+        ]);
+        if (cancelled) return;
 
-      const dbDelivery =
-        dbDeliveryRaw &&
-        (!ctxEarly ||
-          dbDeliveryRaw.engineVersion === ctxEarly.meta.engine_version)
-          ? dbDeliveryRaw
-          : null;
+        const dbDelivery =
+          dbDeliveryRaw &&
+          (!ctxEarly ||
+            dbDeliveryRaw.engineVersion === ctxEarly.meta.engine_version)
+            ? dbDeliveryRaw
+            : null;
 
-      if (dbDelivery) {
-        loadCtxRef.current = dbDelivery.luanContext;
-        loadSectionsRef.current = dbDelivery.sections;
-        const fromDb = deliveryToLoadResult(dbDelivery);
-        const rev = vanTrinhNamCacheRevision(
-          profile,
-          year,
-          fromDb.engineVersion,
-        );
-        setYearCanChiLabel(fromDb.yearCanChi);
-        setInstantProse(true);
-        setGenerating(false);
-        setChapterLoad(
-          deriveVanTrinhChapterLoadState(fromDb.sections, {
-            bundleFinished: true,
-          }),
-        );
-        setBlocks(
-          buildVanTrinhNamDisplayBlocks({
-            ctx: fromDb.luanContext,
-            sections: fromDb.sections,
-            chapterLoad: deriveVanTrinhChapterLoadState(fromDb.sections, {
-              bundleFinished: true,
+        if (dbDelivery) {
+          loadCtxRef.current = dbDelivery.luanContext;
+          loadSectionsRef.current = dbDelivery.sections;
+          const fromDb = deliveryToLoadResult(dbDelivery);
+          const rev = vanTrinhNamCacheRevision(
+            profile,
+            year,
+            fromDb.engineVersion,
+          );
+          const dbComplete = vanTrinhNamDeliveryIsComplete(
+            fromDb.sections,
+            fromDb.luanContext,
+          );
+          const chapterLoad = deriveVanTrinhChapterLoadState(fromDb.sections, {
+            bundleFinished: dbComplete,
+          });
+          setYearCanChiLabel(fromDb.yearCanChi);
+          setChapterLoad(chapterLoad);
+          setBlocks(
+            buildVanTrinhNamDisplayBlocks({
+              ctx: fromDb.luanContext,
+              sections: fromDb.sections,
+              chapterLoad,
             }),
-          }),
-        );
-        persistVanTrinhNamSession(profile.id, rev, fromDb);
-        return;
+          );
+          partialHydrated = true;
+          if (dbComplete) {
+            setInstantProse(true);
+            setGenerating(false);
+            persistVanTrinhNamSession(profile.id, rev, fromDb);
+            return;
+          }
+          setInstantProse(true);
+          setGenerating(true);
+        }
+
+        const sessionRevision = ctxEarly
+          ? vanTrinhNamCacheRevision(profile, year, ctxEarly.meta.engine_version)
+          : vanTrinhNamCacheRevision(profile, year, "0");
+
+        const cached = readVanTrinhNamSession(profile.id, sessionRevision);
+        if (cached) {
+          loadCtxRef.current = cached.luanContext;
+          loadSectionsRef.current = cached.sections;
+        }
+        if (cached && cachedSessionIsComplete(cached)) {
+          setYearCanChiLabel(cached.yearCanChi);
+          setInstantProse(true);
+          setGenerating(false);
+          const load = deriveVanTrinhChapterLoadState(cached.sections, {
+            bundleFinished: true,
+          });
+          setChapterLoad(load);
+          setBlocks(
+            buildVanTrinhNamDisplayBlocks({
+              ctx: cached.luanContext,
+              sections: cached.sections,
+              chapterLoad: load,
+            }),
+          );
+          return;
+        }
+
+        if (cached && cached.sections.length > 0 && !partialHydrated) {
+          partialHydrated = true;
+          const partialLoad = deriveVanTrinhChapterLoadState(cached.sections, {
+            bundleFinished: false,
+          });
+          setYearCanChiLabel(cached.yearCanChi);
+          setChapterLoad(partialLoad);
+          setBlocks(
+            buildVanTrinhNamDisplayBlocks({
+              ctx: cached.luanContext,
+              sections: cached.sections,
+              chapterLoad: partialLoad,
+            }),
+          );
+          setGenerating(true);
+        }
+
+        let ctx = ctxEarly ?? loadCtxRef.current;
+        if (!ctx) {
+          setLoadError(
+            "Không tải được vận trình năm. Kiểm tra kết nối và thử lại.",
+          );
+          setGenerating(false);
+          return;
+        }
+
+        loadCtxRef.current = ctx;
+        const rev3 = sessionRevision;
+        const partialSections = loadSectionsRef.current.length
+          ? loadSectionsRef.current
+          : (cached?.sections ?? []);
+        loadSectionsRef.current = partialSections;
+        if (!partialHydrated) {
+          setYearCanChiLabel(
+            ctx.part_a.hook_year.year_can_chi || String(ctx.meta.year),
+          );
+          setInstantProse(false);
+          const partialLoad = deriveVanTrinhChapterLoadState(partialSections, {
+            bundleFinished: false,
+          });
+          setChapterLoad(partialLoad);
+          setBlocks(buildVanTrinhNamSkeletonBlocks(ctx));
+          setGenerating(true);
+        }
+
+        await runFullLoad(ctx, rev3, partialSections, { screenPriority: true });
+      } catch {
+        if (!cancelled) {
+          setLoadError("Không tải được luận giải. Thử lại sau.");
+          setGenerating(false);
+        }
       }
-
-      const sessionRevision = ctxEarly
-        ? vanTrinhNamCacheRevision(profile, year, ctxEarly.meta.engine_version)
-        : vanTrinhNamCacheRevision(profile, year, "0");
-
-      const cached = readVanTrinhNamSession(profile.id, sessionRevision);
-      if (cached) {
-        loadCtxRef.current = cached.luanContext;
-        loadSectionsRef.current = cached.sections;
-      }
-      if (cached && cachedSessionIsComplete(cached)) {
-        setYearCanChiLabel(cached.yearCanChi);
-        setInstantProse(true);
-        setGenerating(false);
-        const load = deriveVanTrinhChapterLoadState(cached.sections, {
-          bundleFinished: true,
-        });
-        setChapterLoad(load);
-        setBlocks(
-          buildVanTrinhNamDisplayBlocks({
-            ctx: cached.luanContext,
-            sections: cached.sections,
-            chapterLoad: load,
-          }),
-        );
-        return;
-      }
-
-      const ctx = ctxEarly;
-      if (!ctx) {
-        setGenerating(false);
-        return;
-      }
-
-      loadCtxRef.current = ctx;
-      const rev3 = sessionRevision;
-      const partialSections = cached?.sections ?? [];
-      loadSectionsRef.current = partialSections;
-      setYearCanChiLabel(
-        ctx.part_a.hook_year.year_can_chi || String(ctx.meta.year),
-      );
-      setInstantProse(false);
-      const partialLoad = deriveVanTrinhChapterLoadState(partialSections, {
-        bundleFinished: false,
-      });
-      setChapterLoad(partialLoad);
-      setBlocks(
-        buildVanTrinhNamDisplayBlocks({
-          ctx,
-          sections: partialSections,
-          chapterLoad: partialLoad,
-        }),
-      );
-      setGenerating(true);
-
-      await runFullLoad(ctx, rev3, partialSections);
     })();
 
     async function runFullLoad(
       ctx: NonNullable<Awaited<ReturnType<typeof fetchVanTrinhNamContext>>>,
       sessionRevision: string,
       existingSections: LaSoChiTietSection[] = [],
+      opts?: { screenPriority?: boolean; resetSections?: boolean },
     ) {
-      if (fullLoadInFlightRef.current) return;
+      if (!profile) return;
+      if (fullLoadInFlightRef.current && opts?.screenPriority) {
+        fullLoadInFlightRef.current = false;
+      }
+      if (fullLoadInFlightRef.current && !opts?.screenPriority) return;
+
       fullLoadInFlightRef.current = true;
       const gen = ++genRef.current;
+      setLoadError(null);
       setVanTrinhNamScreenLoadActive(true);
+      setGenerating(true);
       try {
         const full = await loadVanTrinhNamFull(profile, year, ctx, {
           existingSections,
@@ -252,6 +310,18 @@ export function CVanTrinhNamReadingScreen({
         needsVisibleResumeRef.current = Boolean(
           full.networkInterrupted && !cachedSessionIsComplete(full),
         );
+        if (
+          !cachedSessionIsComplete(full) &&
+          full.sections.length === 0
+        ) {
+          setLoadError(
+            "Luận giải chưa được tạo — có thể do giới hạn tải. Thử lại sau vài phút.",
+          );
+        }
+      } catch {
+        if (gen === genRef.current && !cancelled) {
+          setLoadError("Không tải được luận giải. Thử lại sau.");
+        }
       } finally {
         fullLoadInFlightRef.current = false;
         if (gen === genRef.current) {
@@ -265,6 +335,7 @@ export function CVanTrinhNamReadingScreen({
       ctx: VanTrinhNamLuanContext,
       blockKey: string,
     ) {
+      if (!profile) return;
       const target = blockKeyToVanTrinhWaveTarget(blockKey);
       if (!target) return;
       const sessionRevision = vanTrinhNamCacheRevision(
@@ -325,22 +396,28 @@ export function CVanTrinhNamReadingScreen({
     runFullLoadRef.current = async (opts) => {
       const ctx =
         loadCtxRef.current ?? (await fetchVanTrinhNamContext(profile, year));
-      if (!ctx) return;
+      if (!ctx) {
+        setLoadError(
+          "Không tải được vận trình năm. Kiểm tra kết nối và thử lại.",
+        );
+        setGenerating(false);
+        return;
+      }
       loadCtxRef.current = ctx;
       const rev = vanTrinhNamCacheRevision(profile, year, ctx.meta.engine_version);
-      if (opts?.force) {
-        fullLoadInFlightRef.current = false;
-      }
-      const existing = opts?.force ? [] : loadSectionsRef.current;
-      await runFullLoad(ctx, rev, existing);
+      const existing = opts?.resetSections ? [] : loadSectionsRef.current;
+      await runFullLoad(ctx, rev, existing, {
+        screenPriority: opts?.screenPriority,
+      });
     };
     resumeLoadRef.current = () =>
-      runFullLoadRef.current?.({ force: false }) ?? Promise.resolve();
+      runFullLoadRef.current?.({ screenPriority: true }) ?? Promise.resolve();
 
     partialLoadRef.current = runPartialLoad;
 
     return () => {
       cancelled = true;
+      fullLoadInFlightRef.current = false;
       setVanTrinhNamScreenLoadActive(false);
       resumeLoadRef.current = null;
       runFullLoadRef.current = null;
@@ -366,8 +443,9 @@ export function CVanTrinhNamReadingScreen({
 
   const retryLoad = useCallback(() => {
     if (!profile || !unlocked) return;
+    setLoadError(null);
     setInstantProse(false);
-    void runFullLoadRef.current?.({ force: true });
+    void runFullLoadRef.current?.({ screenPriority: true, resetSections: true });
   }, [profile, unlocked]);
 
   const retryChapter = useCallback(
@@ -458,20 +536,13 @@ export function CVanTrinhNamReadingScreen({
           />
         ) : null}
 
-        {!hasContent && !generating && blocks ? (
-          <div className="mt-8 text-center">
-            <p className="font-serif text-sm" style={{ color: CT.muted }}>
-              Chưa có nội dung. Thử tải lại sau.
-            </p>
-            <button
-              type="button"
-              onClick={retryLoad}
-              className="mt-4 px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider"
-              style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
-            >
-              Tải lại
-            </button>
-          </div>
+        {loadError && !generating && !hasContent ? (
+          <ReadingLoadFallback message={loadError} onRetry={retryLoad} />
+        ) : !hasContent && !generating && blocks ? (
+          <ReadingLoadFallback
+            message="Chưa có nội dung. Thử tải lại sau."
+            onRetry={retryLoad}
+          />
         ) : blocks ? (
           <>
             {blocks.some((b) => b.kind === "month") ? (
@@ -491,7 +562,16 @@ export function CVanTrinhNamReadingScreen({
           <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
             Đang tải vận trình năm…
           </p>
-        ) : null}
+        ) : birthReady ? (
+          <ReadingLoadFallback
+            message="Chưa tải được luận giải. Thử tải lại sau."
+            onRetry={retryLoad}
+          />
+        ) : (
+          <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
+            Cần ngày giờ sinh trong hồ sơ để luận lưu niên & lưu nguyệt.
+          </p>
+        )}
       </div>
     </main>
   );

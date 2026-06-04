@@ -4,6 +4,7 @@ import { BackBar, Mono } from "~/components/brand";
 import { CBaziReadingChapter } from "~/components/direction-c/CBaziReadingChapter";
 import { CBaziReadingLoadProgress } from "~/components/direction-c/CBaziReadingLoadProgress";
 import { CBaziReadingPaywallView } from "~/components/direction-c/CBaziReadingPaywallView";
+import { ReadingLoadFallback } from "~/components/direction-c/ReadingLoadFallback";
 import type { LaSoJson } from "~/lib/api-types";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
@@ -33,19 +34,23 @@ import {
 } from "~/lib/bazi-reading-outline";
 import type { LaSoChiTietSection } from "~/lib/generate-reading";
 import {
+  type BaziReadingSessionData,
   baziReadingCacheRevision,
   currentYearVn,
   persistBaziReadingSession,
   readBaziReadingSession,
 } from "~/lib/bazi-reading-session";
-import { CT, DISPLAY2 } from "~/lib/c-tokens";
+import { CT } from "~/lib/c-tokens";
 import { canUseBaziReading } from "~/lib/entitlements";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
-import { profileHasLaso } from "~/lib/la-so-ui";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 
+type CachedChapterInput = BaziReadingSessionData & {
+  phongThuyFetchError?: string | null;
+};
+
 function buildChaptersFromLoadResult(
-  partial: BaziReadingLoadResult,
+  partial: CachedChapterInput,
   profileLaSo: LaSoJson | null,
   options?: {
     chapterLoad?: BaziChapterLoadState;
@@ -58,7 +63,7 @@ function buildChaptersFromLoadResult(
     luuNienFactsRaw: partial.luuNienFactsRaw,
     phongThuyFactsRaw: partial.phongThuyFactsRaw,
     yearCanChi: partial.yearCanChi,
-    phongThuyFetchError: partial.phongThuyFetchError,
+    phongThuyFetchError: partial.phongThuyFetchError ?? null,
     chapterLoad: options?.chapterLoad,
   });
 }
@@ -99,14 +104,14 @@ function persistPartialBaziSession(
 }
 
 function applyCachedChapters(
-  fromCache: BaziReadingLoadResult,
+  fromCache: CachedChapterInput,
   profileLaSo: LaSoJson | null,
 ): BaziDisplayChapter[] {
   return buildChaptersFromLoadResult(fromCache, profileLaSo, {
     chapterLoad: deriveChapterLoadState(fromCache.sections, {
       luuNienFactsRaw: fromCache.luuNienFactsRaw,
       phongThuyFactsRaw: fromCache.phongThuyFactsRaw,
-      phongThuyFetchError: fromCache.phongThuyFetchError,
+      phongThuyFetchError: fromCache.phongThuyFetchError ?? null,
       bundleFinished: true,
     }),
     instantProse: true,
@@ -123,6 +128,7 @@ export function CBaziReadingScreen() {
     createInitialChapterLoadState(),
   );
   const [yearCanChiLabel, setYearCanChiLabel] = useState("");
+  const [loadError, setLoadError] = useState<string | null>(null);
   const genRef = useRef(0);
   const factsRef = useRef<BaziReadingFactsBundle | null>(null);
   const partialLoadRef = useRef<BaziReadingLoadResult | null>(null);
@@ -133,27 +139,33 @@ export function CBaziReadingScreen() {
   const runFullLoadRef = useRef<
     (
       preloadedFacts?: BaziReadingFactsBundle,
-      opts?: { force?: boolean },
+      opts?: { screenPriority?: boolean; forceRegenerate?: boolean },
     ) => Promise<void>
   >(null);
   const unlocked = canUseBaziReading(profile);
   const year = currentYearVn();
+  const birthReady = Boolean(
+    profile && profileToBatTuPersonQuery(profile).birth_date,
+  );
 
   useEffect(() => {
     if (profileLoading || !profile) return;
-    if (!unlocked || !profileHasLaso(profile.la_so)) {
+    if (!unlocked) {
       setGenerating(false);
       setInstantProse(false);
+      setChapters(null);
       return;
     }
 
     const body = profileToBatTuPersonQuery(profile);
     if (!body.birth_date) {
       setGenerating(false);
+      setChapters(null);
       return;
     }
 
     let cancelled = false;
+    setLoadError(null);
     cancelBaziReadingPrewarm(profile, year);
     const profileLaSo = (profile.la_so as LaSoJson) ?? null;
     const sessionRevision = baziReadingCacheRevision(profile, year);
@@ -164,78 +176,154 @@ export function CBaziReadingScreen() {
     const dbPromise = fetchBaziReadingDelivery(profile, year);
 
     void (async () => {
-      const [dbDelivery, factsEarly] = await Promise.all([
-        dbPromise,
-        factsPromise,
-      ]);
-      if (cancelled) return;
+      try {
+        let partialHydrated = false;
+        const [dbDelivery, factsEarly] = await Promise.all([
+          dbPromise,
+          factsPromise,
+        ]);
+        if (cancelled) return;
 
-      if (dbDelivery) {
-        const fromDb = deliveryToLoadResult(dbDelivery);
+        if (factsEarly) {
+          factsRef.current = factsEarly;
+        }
+
+        if (dbDelivery) {
+          const fromDb = deliveryToLoadResult(dbDelivery);
+          if (
+            cachedDeliveryIsComplete(
+              fromDb.sections,
+              fromDb.luuNienFactsRaw,
+              fromDb.phongThuyFactsRaw,
+            )
+          ) {
+            setYearCanChiLabel(fromDb.yearCanChi);
+            setInstantProse(true);
+            setGenerating(false);
+            setChapters(applyCachedChapters(fromDb, profileLaSo));
+            return;
+          }
+          if (fromDb.sections.length > 0) {
+            partialHydrated = true;
+            const partialLoad = deriveChapterLoadState(fromDb.sections, {
+              luuNienFactsRaw: fromDb.luuNienFactsRaw,
+              phongThuyFactsRaw: fromDb.phongThuyFactsRaw,
+              bundleFinished: false,
+            });
+            setYearCanChiLabel(fromDb.yearCanChi);
+            setChapterLoad(partialLoad);
+            setChapters(
+              buildChaptersFromLoadResult(fromDb, profileLaSo, {
+                chapterLoad: partialLoad,
+                instantProse: true,
+              }),
+            );
+            setGenerating(true);
+          }
+        }
+
+        const cached = readBaziReadingSession(profile.id, sessionRevision);
         if (
+          cached &&
           cachedDeliveryIsComplete(
-            fromDb.sections,
-            fromDb.luuNienFactsRaw,
-            fromDb.phongThuyFactsRaw,
+            cached.sections,
+            cached.luuNienFactsRaw,
+            cached.phongThuyFactsRaw,
           )
         ) {
-          setYearCanChiLabel(fromDb.yearCanChi);
+          setYearCanChiLabel(cached.yearCanChi);
           setInstantProse(true);
           setGenerating(false);
-          setChapters(applyCachedChapters(fromDb, profileLaSo));
+          setChapters(chaptersFromSession(cached, profileLaSo));
           return;
         }
-      }
 
-      const cached = readBaziReadingSession(profile.id, sessionRevision);
-      if (
-        cached &&
-        cachedDeliveryIsComplete(
-          cached.sections,
-          cached.luuNienFactsRaw,
-          cached.phongThuyFactsRaw,
-        )
-      ) {
-        setYearCanChiLabel(cached.yearCanChi);
-        setInstantProse(true);
-        setGenerating(false);
-        setChapters(chaptersFromSession(cached, profileLaSo));
-        return;
-      }
+        if (cached && cached.sections.length > 0 && !partialHydrated) {
+          partialHydrated = true;
+          const partialLoad = deriveChapterLoadState(cached.sections, {
+            luuNienFactsRaw: cached.luuNienFactsRaw,
+            phongThuyFactsRaw: cached.phongThuyFactsRaw,
+            bundleFinished: false,
+          });
+          setYearCanChiLabel(cached.yearCanChi);
+          setChapterLoad(partialLoad);
+          setChapters(
+            buildChaptersFromLoadResult(cached, profileLaSo, {
+              chapterLoad: partialLoad,
+              instantProse: true,
+            }),
+          );
+          setGenerating(true);
+        }
 
-      const facts = factsEarly;
-      if (facts) {
-        factsRef.current = facts;
-        setYearCanChiLabel(facts.yearCanChi);
-        setInstantProse(false);
-        setChapterLoad(createInitialChapterLoadState());
-        setChapters(buildBaziSkeletonChapters(facts));
-        setGenerating(true);
-      }
+        const facts = factsEarly;
+        if (facts && !partialHydrated) {
+          setYearCanChiLabel(facts.yearCanChi);
+          setInstantProse(false);
+          setChapterLoad(createInitialChapterLoadState());
+          setChapters(buildBaziSkeletonChapters(facts));
+          setGenerating(true);
+        }
 
-      await runFullLoad(facts ?? undefined);
+        await runFullLoad(facts ?? undefined, { screenPriority: true });
+      } catch {
+        if (!cancelled) {
+          setLoadError("Không tải được luận giải. Thử lại sau.");
+          setGenerating(false);
+        }
+      }
     })();
 
     async function runFullLoad(
       preloadedFacts?: BaziReadingFactsBundle,
-      opts?: { force?: boolean },
+      opts?: { screenPriority?: boolean; forceRegenerate?: boolean },
     ) {
-      if (fullLoadInFlightRef.current && !opts?.force) return;
+      if (!profile) return;
+      if (fullLoadInFlightRef.current && opts?.screenPriority) {
+        fullLoadInFlightRef.current = false;
+      }
+      if (fullLoadInFlightRef.current && !opts?.screenPriority) return;
+
       fullLoadInFlightRef.current = true;
       const gen = ++genRef.current;
       if (cancelled) {
         fullLoadInFlightRef.current = false;
         return;
       }
+      setLoadError(null);
       setInstantProse(false);
       setGenerating(true);
       setBaziReadingScreenLoadActive(true);
-      let full: BaziReadingLoadResult;
+
+      let full: BaziReadingLoadResult | undefined;
       try {
+        let facts = preloadedFacts ?? factsRef.current ?? undefined;
+        if (!facts) {
+          facts =
+            (await fetchBaziReadingFactsBundle(profile, year, {
+              silentPhongThuyToast: true,
+            })) ?? undefined;
+          if (cancelled || gen !== genRef.current) {
+            if (gen === genRef.current) setGenerating(false);
+            return;
+          }
+          if (!facts) {
+            setLoadError(
+              "Không tải được lá số hoặc dữ liệu năm. Kiểm tra kết nối và thử lại.",
+            );
+            setGenerating(false);
+            return;
+          }
+          factsRef.current = facts;
+          setYearCanChiLabel(facts.yearCanChi);
+          setChapterLoad(createInitialChapterLoadState());
+          setChapters(buildBaziSkeletonChapters(facts));
+        }
+
         full = await loadBaziReadingFull(profile, year, {
-          forceRegenerate: opts?.force === true,
+          forceRegenerate: opts?.forceRegenerate === true,
           loadSource: "screen",
-          preloadedFacts: preloadedFacts ?? factsRef.current ?? undefined,
+          preloadedFacts: facts,
           onProgress: (partial, nextChapterLoad) => {
             if (cancelled || gen !== genRef.current) return;
             partialLoadRef.current = partial;
@@ -250,13 +338,24 @@ export function CBaziReadingScreen() {
             );
           },
         });
+      } catch {
+        if (gen === genRef.current && !cancelled) {
+          setLoadError("Không tải được luận giải. Thử lại sau.");
+          setGenerating(false);
+        }
+        return;
       } finally {
         fullLoadInFlightRef.current = false;
         if (gen === genRef.current) {
           setBaziReadingScreenLoadActive(false);
         }
       }
-      if (cancelled || gen !== genRef.current) return;
+
+      if (cancelled || gen !== genRef.current || !full) {
+        if (gen === genRef.current) setGenerating(false);
+        return;
+      }
+
       partialLoadRef.current = full;
       const finishedLoad = deriveChapterLoadState(full.sections, {
         luuNienFactsRaw: full.luuNienFactsRaw,
@@ -274,6 +373,17 @@ export function CBaziReadingScreen() {
       );
       if (full.sections.length > 0) {
         persistPartialBaziSession(profile.id, sessionRevision, full);
+      } else {
+        const laSo = full.laSoDisplay ?? profileLaSo;
+        const hasLaSo =
+          laSo != null &&
+          typeof laSo === "object" &&
+          Object.keys(laSo as object).length > 0;
+        if (!hasLaSo) {
+          setLoadError(
+            "Luận giải chưa được tạo — có thể do giới hạn tải. Thử lại sau vài phút.",
+          );
+        }
       }
       needsVisibleResumeRef.current = Boolean(
         full.networkInterrupted &&
@@ -291,6 +401,7 @@ export function CBaziReadingScreen() {
 
     return () => {
       cancelled = true;
+      fullLoadInFlightRef.current = false;
       setBaziReadingScreenLoadActive(false);
       resumeLoadRef.current = null;
       runFullLoadRef.current = null;
@@ -319,6 +430,7 @@ export function CBaziReadingScreen() {
 
   const retryLoad = () => {
     if (!profile || !unlocked) return;
+    setLoadError(null);
     setInstantProse(false);
     void (async () => {
       const facts =
@@ -330,7 +442,10 @@ export function CBaziReadingScreen() {
         setChapterLoad(createInitialChapterLoadState());
         setChapters(buildBaziSkeletonChapters(facts));
       }
-      await runFullLoadRef.current?.(facts ?? undefined, { force: true });
+      await runFullLoadRef.current?.(facts ?? undefined, {
+        screenPriority: true,
+        forceRegenerate: true,
+      });
     })();
   };
 
@@ -420,20 +535,13 @@ export function CBaziReadingScreen() {
 
         {loadProgress ? <CBaziReadingLoadProgress progress={loadProgress} /> : null}
 
-        {!hasContent && !generating && chapters ? (
-          <div className="mt-8 text-center">
-            <p className="font-serif text-sm" style={{ color: CT.muted }}>
-              Chưa có nội dung. Thử tải lại sau.
-            </p>
-            <button
-              type="button"
-              onClick={retryLoad}
-              className="mt-4 px-5 py-2.5 text-xs font-extrabold uppercase tracking-wider"
-              style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
-            >
-              Tải lại
-            </button>
-          </div>
+        {loadError && !generating && !hasContent ? (
+          <ReadingLoadFallback message={loadError} onRetry={retryLoad} />
+        ) : !hasContent && !generating && chapters ? (
+          <ReadingLoadFallback
+            message="Chưa có nội dung. Thử tải lại sau."
+            onRetry={retryLoad}
+          />
         ) : chapters ? (
           <>
             {chapters.map((ch) =>
@@ -453,7 +561,16 @@ export function CBaziReadingScreen() {
           <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
             Đang tải bảng lá số và dữ liệu năm…
           </p>
-        ) : null}
+        ) : birthReady ? (
+          <ReadingLoadFallback
+            message="Chưa tải được luận giải. Thử tải lại sau."
+            onRetry={retryLoad}
+          />
+        ) : (
+          <p className="mt-8 font-serif text-sm" style={{ color: CT.muted }}>
+            Cần ngày giờ sinh trong hồ sơ để luận giải lá số.
+          </p>
+        )}
       </div>
     </main>
   );

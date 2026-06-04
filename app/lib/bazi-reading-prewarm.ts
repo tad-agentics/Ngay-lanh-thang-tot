@@ -7,8 +7,8 @@ import {
   baziReadingCacheRevision,
   currentYearVn,
 } from "~/lib/bazi-reading-session";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { canUseBaziReading } from "~/lib/entitlements";
-import { profileHasLaso } from "~/lib/la-so-ui";
 import {
   isBaziReadingScreenLoadActive,
   setBaziReadingScreenLoadActive,
@@ -69,7 +69,8 @@ export function scheduleBaziReadingPrewarm(
   options?: ScheduleBaziPrewarmOptions,
 ): void {
   if (options?.skipWhenScreenLoading || isBaziReadingScreenLoadActive()) return;
-  if (!canUseBaziReading(profile) || !profileHasLaso(profile.la_so)) return;
+  if (!canUseBaziReading(profile)) return;
+  if (!profileToBatTuPersonQuery(profile).birth_date) return;
 
   const year = options?.year ?? currentYearVn();
   const key = prewarmStorageKey(profile, year);

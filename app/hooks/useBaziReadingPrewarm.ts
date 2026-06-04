@@ -6,8 +6,8 @@ import {
   scheduleBaziReadingPrewarm,
 } from "~/lib/bazi-reading-prewarm";
 import { currentYearVn } from "~/lib/bazi-reading-session";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { canUseBaziReading } from "~/lib/entitlements";
-import { profileHasLaso } from "~/lib/la-so-ui";
 import type { Profile } from "~/lib/profile-context";
 
 /** Nền sinh luận Bát Tự khi user đã unlock — trừ khi đang ở màn luận (loader riêng). */
@@ -16,7 +16,11 @@ export function useBaziReadingPrewarm(profile: Profile | null): void {
   const onLuanScreen = location.pathname === "/toi/luan-bat-tu";
 
   useEffect(() => {
-    if (!profile || !canUseBaziReading(profile) || !profileHasLaso(profile.la_so)) {
+    if (
+      !profile ||
+      !canUseBaziReading(profile) ||
+      !profileToBatTuPersonQuery(profile).birth_date
+    ) {
       return;
     }
     const year = currentYearVn();

@@ -13,8 +13,8 @@ import {
   currentYearVn,
   vanTrinhNamBirthRevision,
 } from "~/lib/van-trinh-nam-session";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { canUseTieuVanReading } from "~/lib/entitlements";
-import { profileHasLaso } from "~/lib/la-so-ui";
 import { isVanTrinhNamScreenLoadActive } from "~/lib/van-trinh-nam-load-coord";
 import type { Profile } from "~/lib/profile-context";
 
@@ -59,7 +59,8 @@ export function scheduleVanTrinhNamPrewarm(
   options?: ScheduleVanTrinhNamPrewarmOptions,
 ): void {
   if (options?.skipWhenScreenLoading || isVanTrinhNamScreenLoadActive()) return;
-  if (!canUseTieuVanReading(profile) || !profileHasLaso(profile.la_so)) return;
+  if (!canUseTieuVanReading(profile)) return;
+  if (!profileToBatTuPersonQuery(profile).birth_date) return;
 
   const year = options?.year ?? currentYearVn();
   const key = prewarmStorageKey(profile, year);

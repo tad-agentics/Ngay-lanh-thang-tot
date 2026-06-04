@@ -47,7 +47,7 @@ function rowToDelivery(
 export async function fetchVanTrinhNamDelivery(
   profile: Profile,
   flowYear: number,
-  opts?: { liveEngineVersion?: string },
+  opts?: { liveEngineVersion?: string; allowIncomplete?: boolean },
 ): Promise<VanTrinhNamDeliveryRecord | null> {
   const birthRevision = vanTrinhNamBirthRevision(profile);
   const { data, error } = await supabase
@@ -73,6 +73,7 @@ export async function fetchVanTrinhNamDelivery(
     return null;
   }
   if (
+    !opts?.allowIncomplete &&
     !vanTrinhNamDeliveryIsComplete(delivery.sections, delivery.luanContext)
   ) {
     return null;
