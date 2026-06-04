@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "~/lib/auth";
 import { buildInlineDayReadingInvoke } from "~/lib/inline-day-reading-invoke";
-import { invokeGenerateReading } from "~/lib/generate-reading";
+import { invokeGenerateReadingWithRetry } from "~/lib/generate-reading";
 import { shortenInlineReading } from "~/lib/inline-reading-text";
 import {
   ensureReadingUnlocked,
@@ -95,10 +95,7 @@ export function useInlineDayReading({
           payloadRef.current,
           "teaser",
         );
-        let r = await invokeGenerateReading(genInput);
-        if (!r.reading && !r.transportError) {
-          r = await invokeGenerateReading(genInput);
-        }
+        const r = await invokeGenerateReadingWithRetry(genInput);
         if (cancelled) return;
         if (r.reading) {
           setText(shortenInlineReading(r.reading));
@@ -146,7 +143,7 @@ export function useInlineDayReading({
         setPaywallBlurred(false);
         return;
       }
-      const r = await invokeGenerateReading(genInput);
+      const r = await invokeGenerateReadingWithRetry(genInput);
       if (cancelled) return;
       if (r.reading) {
         const teaser = shortenInlineReading(r.reading);
