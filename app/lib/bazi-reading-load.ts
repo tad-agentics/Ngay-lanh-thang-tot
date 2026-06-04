@@ -364,7 +364,7 @@ export async function loadBaziReadingFull(
         stored.phongThuyFactsRaw,
       )
     ) {
-      return deliveryToLoadResult(stored);
+      return { ...deliveryToLoadResult(stored), phongThuyFetchError: null };
     }
   }
 

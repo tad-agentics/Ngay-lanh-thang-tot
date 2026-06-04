@@ -13,7 +13,7 @@ vi.mock("~/lib/meta-pixel", () => ({
 describe("useMetaPurchaseTrack", () => {
   beforeEach(() => {
     trackMetaPurchaseOnce.mockClear();
-    vi.stubEnv("PROD", "true");
+    vi.stubEnv("PROD", true);
   });
 
   afterEach(() => {

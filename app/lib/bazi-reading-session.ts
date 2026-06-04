@@ -12,8 +12,14 @@ export type BaziReadingSessionData = {
   phongThuyFactsRaw: unknown | null;
 };
 
+/** Trường sinh dùng để hash revision — chỉ phụ thuộc dữ liệu sinh, không cả Profile. */
+type BaziReadingBirthFields = Pick<
+  Profile,
+  "ngay_sinh" | "gio_sinh" | "gioi_tinh" | "birth_data_locked_at"
+>;
+
 /** Hash hồ sơ sinh — khớp `bazi_reading_deliveries.birth_revision`. */
-export function baziReadingBirthRevision(p: Profile): string {
+export function baziReadingBirthRevision(p: BaziReadingBirthFields): string {
   return [
     p.ngay_sinh ?? "",
     p.gio_sinh ?? "",
@@ -22,7 +28,10 @@ export function baziReadingBirthRevision(p: Profile): string {
   ].join("\x1e");
 }
 
-export function baziReadingCacheRevision(p: Profile, year?: number): string {
+export function baziReadingCacheRevision(
+  p: BaziReadingBirthFields,
+  year?: number,
+): string {
   const y =
     year ??
     Number.parseInt(

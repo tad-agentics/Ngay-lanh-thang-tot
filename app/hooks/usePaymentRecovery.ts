@@ -207,11 +207,13 @@ export function usePaymentRecovery() {
           offer.packageSku,
           checkout,
         );
-        navigate(target.pathname, {
-          replace: true,
-          search: target.search,
-          state: target.state,
-        });
+        navigate(
+          { pathname: target.pathname, search: target.search },
+          {
+            replace: true,
+            state: target.state,
+          },
+        );
         return;
       }
 

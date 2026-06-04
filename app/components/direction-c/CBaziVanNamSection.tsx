@@ -53,7 +53,7 @@ export function CBaziVanNamSection({
   emptyReason,
   onRetryLuan,
 }: CBaziVanNamSectionProps) {
-  const areas =
+  const areas: LuuNienLifeAreaView[] =
     lifeAreas.length > 0
       ? lifeAreas
       : (facts?.lifeAreas.map((a) => ({ ...a, luan: "" })) ?? []);

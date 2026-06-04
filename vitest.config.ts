@@ -7,5 +7,9 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["app/**/*.test.ts", "app/**/*.test.tsx"],
+    env: {
+      VITE_SUPABASE_URL: "http://localhost:54321",
+      VITE_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",
+    },
   },
 });

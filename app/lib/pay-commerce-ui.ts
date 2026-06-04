@@ -139,8 +139,3 @@ export {
   VND_CURRENCY_SUFFIX,
   withVndCurrency,
 } from "~/lib/vnd-format";
-
-/** @deprecated Prefer `formatVndPriceDisplay`. */
-export function formatVndThousands(amount: number): string {
-  return formatVndPriceDisplay(amount);
-}

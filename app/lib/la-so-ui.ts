@@ -138,7 +138,7 @@ function mergeDaiVanParentCurrent(
   const hasFlat =
     pickStr(flatCurrent, ["display", "label", "name", "ten", "pillar"]) !==
       "—" || pickDaiVanCurrentYearsFromObject(flatCurrent) !== "—";
-  if (!hasFlat) return parentObj;
+  if (!hasFlat) return parentObj ?? { current: flatCurrent };
   if (!parentObj) return { current: flatCurrent };
   const cur = asRecord(parentObj.current);
   if (!cur) return { ...parentObj, current: flatCurrent };

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
+import { CSubExpired } from "~/components/CSubExpired";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar } from "~/components/brand";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";

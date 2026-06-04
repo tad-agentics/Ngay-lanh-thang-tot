@@ -178,6 +178,11 @@ export interface Database {
           credits_to_add: number | null;
           subscription_months: number | null;
           amount_vnd: number | null;
+          list_amount_vnd: number | null;
+          coupon_code: string | null;
+          checkout_referral_code: string | null;
+          referrer_profile_id: string | null;
+          discount_breakdown: Json | null;
           checkout_url: string | null;
           expires_at: string | null;
           raw_request: Json | null;

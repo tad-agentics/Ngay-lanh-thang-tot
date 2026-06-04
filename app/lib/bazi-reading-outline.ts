@@ -17,6 +17,7 @@ import {
   mergeLuuNienLifeAreasWithLuan,
   type LuuNienLifeAreaView,
 } from "~/lib/luu-nien-life-ui";
+import type { PersonalityTraitView } from "~/lib/personality-traits-ui";
 import {
   hasTinhCachDisplayLuanFromSections,
   hasTinhCachLuanFromSections,

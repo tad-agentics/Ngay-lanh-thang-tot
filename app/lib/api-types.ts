@@ -192,6 +192,7 @@ export type BatTuOperation =
   | "lich-thang"
   | "day-detail"
   | "day-luan-context"
+  | "luu-nien-luan-context"
   | "day-compare"
   | "convert-date"
   | "la-so"
