@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { requireAuthenticatedUser } from "../../auth-user.ts";
 import { requireBaziReadingAuth } from "../../bazi-reading-gate.ts";
-import { requireTieuVanReadingAuth } from "../../tieu-van-reading-gate.ts";
+import { requireTieuVanReadingAuth, userHasTieuVanReadingAccess } from "../../tieu-van-reading-gate.ts";
 import { buildDayLuanPromptContext } from "../../day-luan-prompt-context.ts";
 import {
   acquireGenerateReadingRateLimit,
@@ -9,6 +10,7 @@ import {
 } from "../../generate-reading-guards.ts";
 import { isLuanContextPayload } from "../../luan-context.ts";
 import { corsHeadersForRequest } from "../../cors.ts";
+import { trackProfileEngagement } from "../../user-engagement.ts";
 import {
   endpointCacheVersion,
   GLOBAL_LLM_VER,
@@ -146,6 +148,16 @@ export function createGenerateReadingHandler(
 
     let rateLimitUserId: string | null = null;
 
+    if (endpoint === "tieu-van") {
+      const tieuAuth = await requireAuthenticatedUser(req);
+      if (tieuAuth) {
+        rateLimitUserId = tieuAuth.uid;
+        if (await userHasTieuVanReadingAccess(tieuAuth.admin, tieuAuth.uid)) {
+          trackProfileEngagement(tieuAuth.admin, tieuAuth.uid, "tieu_van_luan");
+        }
+      }
+    }
+
     if (endpoint === "ngay-hom-nay" || endpoint === "day-detail") {
       const gateUrl = Deno.env.get("SUPABASE_URL");
       const gateAnon = Deno.env.get("SUPABASE_ANON_KEY");
@@ -275,6 +287,13 @@ export function createGenerateReadingHandler(
         return ok(null, null, req);
       }
       rateLimitUserId = auth.uid;
+      if (
+        endpoint === "la-so-chi-tiet" &&
+        !preview &&
+        !prewarmUserId
+      ) {
+        trackProfileEngagement(auth.admin, auth.uid, "bazi_luan");
+      }
     }
 
     if (endpoint === "van-trinh-nam") {

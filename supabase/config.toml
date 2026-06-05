@@ -472,6 +472,7 @@ verify_jwt = false
 [functions.admin-site-banner]
 verify_jwt = false
 
+# Deploy from admin-ngaylanhthangtot repo (legacy copy may remain here).
 [functions.admin-users]
 verify_jwt = false
 

@@ -25,6 +25,9 @@ export interface Database {
           subscription_expires_at: string | null;
           bazi_reading_unlocked_at: string | null;
           tieu_van_reading_expires_at: string | null;
+          bazi_luan_click_count: number;
+          tieu_van_luan_click_count: number;
+          day_luan_follow_up_click_count: number;
           la_so_recompute_status: "pending" | "ready" | "failed" | null;
           birth_edit_count: number;
           birth_edit_window_start: string | null;
@@ -48,6 +51,9 @@ export interface Database {
           subscription_expires_at?: string | null;
           bazi_reading_unlocked_at?: string | null;
           tieu_van_reading_expires_at?: string | null;
+          bazi_luan_click_count?: number;
+          tieu_van_luan_click_count?: number;
+          day_luan_follow_up_click_count?: number;
           la_so_recompute_status?: "pending" | "ready" | "failed" | null;
           birth_edit_count?: number;
           birth_edit_window_start?: string | null;
@@ -71,6 +77,9 @@ export interface Database {
           subscription_expires_at?: string | null;
           bazi_reading_unlocked_at?: string | null;
           tieu_van_reading_expires_at?: string | null;
+          bazi_luan_click_count?: number;
+          tieu_van_luan_click_count?: number;
+          day_luan_follow_up_click_count?: number;
           la_so_recompute_status?: "pending" | "ready" | "failed" | null;
           birth_edit_count?: number;
           birth_edit_window_start?: string | null;

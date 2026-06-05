@@ -57,6 +57,7 @@ Timestamp phải **lớn hơn** migration mới nhất trên remote (xem `npx su
 | `20260531220000_admin_dashboard_stats_rpc.sql` | RPC aggregate dashboard |
 | `20260531230000_admin_day_luan_ask_counts.sql` | RPC đếm hỏi AI luận ngày |
 | `20260531150000_checkout_discounts.sql` | Bảng `discount_coupons` |
+| `20260605120000_profile_engagement_click_counts.sql` | Cột engagement lifetime trên `profiles` + RPC `increment_profile_engagement` |
 
 **RPC chỉ cho admin** — mẫu bắt buộc:
 
@@ -108,15 +109,16 @@ verify_jwt = false
 
 (`verify_jwt = false` vì JWT được verify thủ công trong `requireAdmin` + check `ADMIN_EMAILS`.)
 
-**Functions admin hiện deploy từ repo này:**
+**Functions admin deploy từ repo này:**
 
 - `admin-dashboard-stats`
 - `admin-site-banner`
-- `admin-users`
 - `admin-user-entitlements`
 - `admin-orders`
 - `admin-referrals`
 - `admin-coupons`
+
+**`admin-users` deploy từ repo admin** (`admin-ngaylanhthangtot`) — không deploy từ repo app (tránh ghi đè bản admin).
 
 **Functions chỉ có bản sao trên repo admin** (deploy từ admin repo nếu dùng): `admin-config`, `admin-user-actions` — ưu tiên gom về repo app khi sửa.
 
@@ -129,9 +131,24 @@ npx supabase migration list --linked
 # Apply lên remote (prod/staging đã link)
 npx supabase db push --linked
 
-# Deploy function vừa sửa / thêm
-npx supabase functions deploy admin-users admin-coupons \
+# Deploy function vừa sửa / thêm (admin EF từ repo app)
+npx supabase functions deploy \
+  admin-dashboard-stats \
+  admin-site-banner \
+  admin-user-entitlements \
+  admin-orders \
+  admin-referrals \
+  admin-coupons \
   --project-ref hptovpbiwvtngorhdhhm
+
+# Edge có user engagement tracking (deploy sau khi merge migration)
+npx supabase functions deploy \
+  day-luan-chat \
+  generate-reading-la-so \
+  generate-reading-tieu-van \
+  generate-reading-luu-nien \
+  --project-ref hptovpbiwvtngorhdhhm \
+  --no-verify-jwt
 ```
 
 **Thứ tự an toàn:** `db push` trước (RPC/bảng), rồi `functions deploy` (code gọi RPC).
@@ -156,10 +173,10 @@ Contract JSON nên ghi trong comment đầu file Edge Function hoặc PR descrip
 
 ## 3. Tính năng chỉ cần Edge (không migration)
 
-Ví dụ: mở rộng `admin-users` SELECT thêm cột có sẵn.
+Ví dụ: mở rộng admin user search SELECT thêm cột có sẵn trên `profiles`.
 
-1. Sửa `supabase/functions/admin-users/index.ts`
-2. `npx supabase functions deploy admin-users --project-ref hptovpbiwvtngorhdhhm`
+1. Sửa `admin-users` trên repo **admin-ngaylanhthangtot**
+2. `npx supabase functions deploy admin-users --project-ref hptovpbiwvtngorhdhhm` (từ admin repo)
 3. Cập nhật type + UI admin
 
 Nếu aggregate nặng (tránh paginate cả bảng), thêm RPC ở bước 1.
@@ -174,7 +191,7 @@ Logic nghiệp vụ **không** nằm admin repo:
 |-------|------------|-------|
 | Coupon checkout | `payos-create-checkout` + `discount_coupons` | `admin-coupons` CRUD |
 | Giảm giá khi trả tiền | `create_checkout_payment_order` | — |
-| Hỏi AI luận ngày | `day-luan-chat` | `admin-users` + RPC `admin_day_luan_ask_counts` |
+| Hỏi AI luận ngày | `day-luan-chat` (+ `increment_profile_engagement` server-side) | Admin `/users` (repo admin) |
 
 App user chỉ gửi `coupon_code`; validate 100% server.
 

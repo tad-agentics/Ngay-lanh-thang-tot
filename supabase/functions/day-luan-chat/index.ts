@@ -25,6 +25,7 @@ import {
   acquireGenerateReadingRateLimit,
   preflightAiReadingAccess,
 } from "../_shared/generate-reading-guards.ts";
+import { trackProfileEngagement } from "../_shared/user-engagement.ts";
 import { stableStringify } from "../_shared/generate-reading/core/cache.ts";
 import {
   DAY_DETAIL_REQUEST_TIMEOUT_MS,
@@ -494,6 +495,8 @@ Deno.serve(async (req) => {
         req,
       );
     }
+
+    trackProfileEngagement(admin, user.id, "day_luan_follow_up");
 
     const history = storedMessages;
     const anchor = String(thread.anchor_reading ?? "");
