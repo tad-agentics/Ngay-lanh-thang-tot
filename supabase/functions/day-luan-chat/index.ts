@@ -2,6 +2,7 @@
  * Server-stored day luận follow-up threads (phương án B).
  * - open: freeze luan_context + anchor; return thread_id + prior messages
  * - ask: idempotent append Q/A + LLM (client idempotency_key per submit)
+ * - cta_click: admin engagement — user bấm CTA "Hỏi tiếp về ngày này"
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -137,6 +138,11 @@ Deno.serve(async (req) => {
 
   const action = typeof body.action === "string" ? body.action.trim() : "";
   const admin = createClient(supabaseUrl, serviceKey);
+
+  if (action === "cta_click") {
+    trackProfileEngagement(admin, user.id, "day_luan_follow_up");
+    return json({ ok: true }, 200, req);
+  }
 
   if (action === "open") {
     const dayIso = parseDayIso(body.day_iso);
@@ -496,8 +502,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    trackProfileEngagement(admin, user.id, "day_luan_follow_up");
-
     const history = storedMessages;
     const anchor = String(thread.anchor_reading ?? "");
     const chatMessages = buildDayDetailFollowUpMessages(
@@ -612,7 +616,7 @@ Deno.serve(async (req) => {
     {
       ok: false,
       error_code: "BAD_REQUEST",
-      message: 'action phải là "open" hoặc "ask".',
+      message: 'action phải là "open", "ask" hoặc "cta_click".',
     },
     400,
     req,

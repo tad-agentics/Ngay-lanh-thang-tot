@@ -9,7 +9,7 @@ comment on column public.profiles.bazi_luan_click_count is
 comment on column public.profiles.tieu_van_luan_click_count is
   'Số lần user bấm/mở luận tiểu vận tháng (có quyền).';
 comment on column public.profiles.day_luan_follow_up_click_count is
-  'Số lần user bấm gửi hỏi thêm trong luận ngày (sau rate limit).';
+  'Số lần user bấm CTA "Hỏi tiếp về ngày này" (lifetime).';
 
 create or replace function public.increment_profile_engagement(
   p_user_id uuid,
