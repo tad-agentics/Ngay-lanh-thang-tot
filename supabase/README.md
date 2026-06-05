@@ -4,8 +4,8 @@ Hướng dẫn triển khai **schema, migration và Edge Functions admin** cho p
 
 | Repo | Vai trò |
 |------|---------|
-| **Ngay-lanh-thang-tot** (repo này) | `supabase/migrations/`, hầu hết `admin-*` Edge Functions, RPC/RLS |
-| **admin-ngaylanhthangtot** | Chỉ UI; gọi HTTP tới EF; **không** có `migrations/` |
+| **Ngay-lanh-thang-tot** (repo này) | `supabase/migrations/`, RPC/RLS, hầu hết `admin-*` Edge Functions |
+| **admin-ngaylanhthangtot** | UI admin + deploy `admin-dashboard-stats`, `admin-users`, `admin-config`, `admin-user-actions` |
 
 Project prod: `hptovpbiwvtngorhdhhm`
 
@@ -111,16 +111,20 @@ verify_jwt = false
 
 **Functions admin deploy từ repo này:**
 
-- `admin-dashboard-stats`
 - `admin-site-banner`
 - `admin-user-entitlements`
 - `admin-orders`
 - `admin-referrals`
 - `admin-coupons`
 
-**`admin-users` deploy từ repo admin** (`admin-ngaylanhthangtot`) — không deploy từ repo app (tránh ghi đè bản admin).
+**Deploy từ repo admin** (`admin-ngaylanhthangtot`) — không deploy từ repo app (tránh ghi đè):
 
-**Functions chỉ có bản sao trên repo admin** (deploy từ admin repo nếu dùng): `admin-config`, `admin-user-actions` — ưu tiên gom về repo app khi sửa.
+- `admin-dashboard-stats` (canonical; có cache 60s in-memory)
+- `admin-users`
+- `admin-config`
+- `admin-user-actions`
+
+Bản sao `supabase/functions/admin-dashboard-stats/` trong repo app **deprecated** — xem `README.md` trong thư mục đó.
 
 ### Bước 3 — Apply DB + deploy
 
@@ -131,9 +135,8 @@ npx supabase migration list --linked
 # Apply lên remote (prod/staging đã link)
 npx supabase db push --linked
 
-# Deploy function vừa sửa / thêm (admin EF từ repo app)
+# Deploy function vừa sửa / thêm (admin EF từ repo app — KHÔNG gồm admin-dashboard-stats)
 npx supabase functions deploy \
-  admin-dashboard-stats \
   admin-site-banner \
   admin-user-entitlements \
   admin-orders \
@@ -236,6 +239,6 @@ Lỗi thường gặp:
 ## 7. Tài liệu liên quan
 
 - Handoff admin tổng quan: `artifacts/docs/admin-dashboard-context.md`
-- Repo admin deploy UI: `../admin-ngaylanhthangtot/supabase/functions/README.md` (chỉ 2 EF local)
+- Repo admin deploy EF + UI: `../admin-ngaylanhthangtot/supabase/functions/README.md` (`admin-dashboard-stats`, `admin-users`, …)
 
 **Nguyên tắc:** một database, **một thư mục migration** — luôn là repo app này.

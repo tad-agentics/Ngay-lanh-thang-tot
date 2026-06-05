@@ -1,4 +1,5 @@
 /**
+ * @deprecated Deploy from admin-ngaylanhthangtot — see README.md in this folder.
  * Admin dashboard aggregates — service_role + ADMIN_EMAILS.
  * Uses admin_dashboard_stats_snapshot() RPC (single DB round-trip).
  */

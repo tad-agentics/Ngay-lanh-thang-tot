@@ -41,7 +41,7 @@ Chi tiết pivot: `artifacts/plans/direction-c-pivot-plan.md` · credits retire:
 
 | Thành phần | Trạng thái | Ghi chú |
 |------------|------------|---------|
-| `admin-dashboard-stats` | **Có** (Direction C v2) | KPI + chart 12 tháng; deploy `23825d3+` |
+| `admin-dashboard-stats` | **Có** (Direction C v2) | KPI + chart 12 tháng; **deploy từ repo admin** (cache 60s); RPC migration ở repo app |
 | `admin-site-banner` | **Có** | GET/PUT `app_config.site_banner` |
 | `admin-users` / search | **Chưa** | CS phải vào Supabase Table Editor |
 | `admin-user-entitlements` PATCH | **Chưa** | Gia hạn sub / mở luận thủ công |
@@ -379,7 +379,8 @@ Webhook: `payos-webhook` → ghi entitlement + ledger (legacy credit path chỉ 
 
 ```bash
 npx supabase db push
-npx supabase functions deploy admin-dashboard-stats admin-site-banner
+npx supabase functions deploy admin-site-banner
+# admin-dashboard-stats: deploy từ admin-ngaylanhthangtot (không deploy từ repo app)
 # Sau khi thêm EF mới:
 # npx supabase functions deploy admin-users admin-user-entitlements admin-orders
 npx supabase gen types typescript --linked > app/lib/database.types.ts
