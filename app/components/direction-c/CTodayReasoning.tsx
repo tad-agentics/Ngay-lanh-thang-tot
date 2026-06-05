@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LogoMark, Mono } from "~/components/brand";
+import { trackDayLuanFollowUpCtaClick } from "~/lib/day-luan-chat";
 import { CT } from "~/lib/c-tokens";
 import { NLTT_TYPING_MS_PER_CHAR } from "~/lib/nltt-typing";
 
@@ -154,7 +155,10 @@ export function CTodayReasoning({
           (isAiLuan || showCtaWithEngineFallback) ? (
             <button
               type="button"
-              onClick={onCtaClick}
+              onClick={() => {
+                trackDayLuanFollowUpCtaClick();
+                onCtaClick?.();
+              }}
               style={{
                 marginTop: 10,
                 display: "flex",

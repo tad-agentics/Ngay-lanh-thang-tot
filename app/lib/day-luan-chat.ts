@@ -78,6 +78,11 @@ export type DayLuanChatOpenResult =
     }
   | { ok: false; code: string; message: string };
 
+/** Fire-and-forget: bấm CTA đỏ "Hỏi tiếp về ngày này" trên lịch / chi tiết ngày. */
+export function trackDayLuanFollowUpCtaClick(): void {
+  void invokeDayLuanChat({ action: "cta_click" });
+}
+
 export async function invokeDayLuanChatOpen(
   input: DayLuanChatOpenInput,
 ): Promise<DayLuanChatOpenResult> {
