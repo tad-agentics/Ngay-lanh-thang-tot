@@ -1,49 +1,37 @@
 import type { Profile } from "~/lib/profile-context";
+import {
+  type ProfileEntitlements,
+  canUseBaziReading as coreCanUseBaziReading,
+  canUseCalendar as coreCanUseCalendar,
+  canUseTieuVanReading as coreCanUseTieuVanReading,
+  isCalendarTeaserEligible as coreIsCalendarTeaserEligible,
+  isNeverSubscribedUser as coreIsNeverSubscribedUser,
+  isSubscriptionLapsed as coreIsSubscriptionLapsed,
+  subscriptionActive,
+} from "../../shared/entitlements-core.ts";
 
-export function subscriptionActive(
-  expires: string | null | undefined,
-): boolean {
-  if (!expires) return false;
-  return new Date(expires) > new Date();
-}
-
-export type EntitlementProfile = Pick<
-  Profile,
-  | "subscription_expires_at"
-  | "bazi_reading_unlocked_at"
-  | "tieu_van_reading_expires_at"
->;
+export { subscriptionActive };
+export type { ProfileEntitlements };
+export type EntitlementProfile = ProfileEntitlements;
 
 export function canUseCalendar(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  return subscriptionActive(profile.subscription_expires_at);
+  return coreCanUseCalendar(profile);
 }
 
-/** Chưa từng có `subscription_expires_at` — khác user đã mua gói rồi hết hạn. */
 export function isNeverSubscribedUser(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  return profile.subscription_expires_at == null;
+  return coreIsNeverSubscribedUser(profile);
 }
 
-/** Đã từng có gói lịch và `subscription_expires_at` đã qua — mới hiện CSubExpired. */
 export function isSubscriptionLapsed(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  return (
-    profile.subscription_expires_at != null &&
-    !subscriptionActive(profile.subscription_expires_at)
-  );
+  return coreIsSubscriptionLapsed(profile);
 }
 
-/**
- * Teaser lịch + luận blur: chỉ user mới chưa đăng ký gói.
- * User hết hạn (`subscription_expires_at` quá khứ) → không áp dụng.
- */
 export function isNewUserDayLuanTeaser(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
@@ -51,15 +39,12 @@ export function isNewUserDayLuanTeaser(
   return isNeverSubscribedUser(profile) && !canUseCalendar(profile);
 }
 
-/** Lịch teaser: user mới chưa gói hoặc đã hết hạn (duyệt /lich, /ngay/*). */
 export function isCalendarTeaserEligible(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  return isNeverSubscribedUser(profile) || isSubscriptionLapsed(profile);
+  return coreIsCalendarTeaserEligible(profile);
 }
 
-/** Chưa gói — luận AI miễn phí cho ngày hôm nay (Tab Lịch + `/ngay/{today}`). */
 export function neverSubFreeDayReading(
   profile: EntitlementProfile | null | undefined,
   dayIso: string,
@@ -69,28 +54,16 @@ export function neverSubFreeDayReading(
   return isNewUserDayLuanTeaser(profile) && dayIso === todayIso;
 }
 
-function hasYearlySub(profile: EntitlementProfile): boolean {
-  if (!subscriptionActive(profile.subscription_expires_at)) return false;
-  const exp = new Date(profile.subscription_expires_at!);
-  const months = (exp.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30);
-  return months >= 11;
-}
-
 export function canUseBaziReading(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  if (hasYearlySub(profile)) return true;
-  return profile.bazi_reading_unlocked_at != null;
+  return coreCanUseBaziReading(profile);
 }
 
 export function canUseTieuVanReading(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
-  if (!profile) return false;
-  if (hasYearlySub(profile)) return true;
-  if (!profile.tieu_van_reading_expires_at) return false;
-  return new Date(profile.tieu_van_reading_expires_at) > new Date();
+  return coreCanUseTieuVanReading(profile);
 }
 
 /** DD.MM.YYYY in Asia/Ho_Chi_Minh — no time component (Direction C N2). */
@@ -143,5 +116,8 @@ export function hasYearlySubscription(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
   if (!profile) return false;
-  return hasYearlySub(profile);
+  if (!subscriptionActive(profile.subscription_expires_at)) return false;
+  const exp = new Date(profile.subscription_expires_at!);
+  const months = (exp.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30);
+  return months >= 11;
 }

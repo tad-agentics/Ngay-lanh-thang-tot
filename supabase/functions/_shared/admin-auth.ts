@@ -3,6 +3,11 @@
  */
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeadersForRequest } from "./cors.ts";
+import {
+  redisGetString,
+  redisRestConfigured,
+  redisSetNxEx,
+} from "./redis-cache.ts";
 
 export type AdminAuthOk = {
   admin: SupabaseClient;
@@ -41,7 +46,7 @@ export function isUuid(value: string): boolean {
   return UUID_RE.test(value.trim());
 }
 
-function allowAdminRate(email: string): boolean {
+function allowAdminRateInMemory(email: string): boolean {
   const now = Date.now();
   const prev = rateBuckets.get(email) ?? [];
   const recent = prev.filter((t) => now - t < RATE_WINDOW_MS);
@@ -49,6 +54,21 @@ function allowAdminRate(email: string): boolean {
   recent.push(now);
   rateBuckets.set(email, recent);
   return true;
+}
+
+async function allowAdminRate(email: string): Promise<boolean> {
+  const normalized = email.toLowerCase();
+  if (!redisRestConfigured()) {
+    return allowAdminRateInMemory(normalized);
+  }
+  const windowSec = Math.ceil(RATE_WINDOW_MS / 1000);
+  for (let i = 0; i < RATE_MAX_REQUESTS; i++) {
+    const key = `admin_rl:v1:${normalized}:${i}`;
+    const acquired = await redisSetNxEx(key, "1", windowSec);
+    if (acquired) return true;
+  }
+  await redisGetString(`admin_rl:v1:${normalized}:0`);
+  return false;
 }
 
 export async function requireAdmin(
@@ -120,7 +140,7 @@ export async function requireAdmin(
     );
   }
 
-  if (!allowAdminRate(email)) {
+  if (!(await allowAdminRate(email))) {
     return adminJson(
       cors,
       {
