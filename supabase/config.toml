@@ -499,3 +499,9 @@ verify_jwt = false
 # Ops — verify PayOS Edge secrets are configured (no values exposed).
 [functions.payos-config-health]
 verify_jwt = false
+
+[functions.generate-reading-van-trinh-nam]
+verify_jwt = false
+
+[functions.van-trinh-nam-delivery]
+verify_jwt = false

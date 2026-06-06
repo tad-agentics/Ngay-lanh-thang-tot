@@ -1,6 +1,22 @@
 import { corsHeadersForRequest } from "../../cors.ts";
 import type { LaSoChiTietSection } from "./types.ts";
 
+export function rateLimited(req: Request): Response {
+  return new Response(
+    JSON.stringify({
+      reading: null,
+      error: { code: "RATE_LIMIT_UNAVAILABLE", message: "Thử lại sau vài giây." },
+    }),
+    {
+      status: 503,
+      headers: {
+        ...corsHeadersForRequest(req),
+        "Content-Type": "application/json",
+      },
+    },
+  );
+}
+
 export function ok(
   reading: string | null,
   sections: LaSoChiTietSection[] | null | undefined,

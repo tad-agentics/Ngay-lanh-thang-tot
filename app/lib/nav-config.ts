@@ -62,12 +62,12 @@ export const SUBSCRIPTION_EXEMPT_PATHS = new Set([
   "/offline",
 ]);
 
-/** Lịch + chi tiết ngày + luận AI — user chưa gói vẫn duyệt (luận bị blur). */
+/** Lịch + chi tiết ngày + luận ngày — teaser khi chưa gói hoặc hết hạn (luận bị blur). */
 export function isCalendarBrowsePath(pathname: string): boolean {
   const p = normalizePath(pathname);
   if (p === "/lich" || p.startsWith("/lich/")) return true;
   if (p.startsWith("/ngay/")) return true;
-  if (p.startsWith("/luan-ai/")) return true;
+  if (p.startsWith("/luan-ai/day-")) return true;
   return false;
 }
 

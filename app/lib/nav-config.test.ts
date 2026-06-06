@@ -46,6 +46,8 @@ describe("nav-config (Direction C)", () => {
     expect(isCalendarBrowsePath("/lich/thang")).toBe(true);
     expect(isCalendarBrowsePath("/ngay/2026-05-30")).toBe(true);
     expect(isCalendarBrowsePath("/luan-ai/day-2026-05-30")).toBe(true);
+    expect(isCalendarBrowsePath("/luan-ai/bazi-year")).toBe(false);
+    expect(isCalendarBrowsePath("/luan-ai/tieu-van-2026")).toBe(false);
     expect(isCalendarBrowsePath("/tra-cuu")).toBe(false);
   });
 

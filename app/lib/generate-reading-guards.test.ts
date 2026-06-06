@@ -88,11 +88,11 @@ describe("acquireGenerateReadingRateLimit", () => {
     );
   });
 
-  it("fails open when NX returns false but GET finds no key (Redis error)", async () => {
+  it("fails closed when NX misses and GET finds no key (Redis outage)", async () => {
     redisSetNxEx.mockResolvedValue(false);
     redisGetString.mockResolvedValue(null);
 
-    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(true);
+    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(false);
   });
 });
 

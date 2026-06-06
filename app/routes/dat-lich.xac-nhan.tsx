@@ -9,6 +9,10 @@ import {
 import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
+import {
+  resolvePurchaseValueVnd,
+  trackMetaInitiateCheckoutOnce,
+} from "~/lib/meta-pixel";
 import { createPayosCheckout } from "~/lib/payos";
 import { readPendingReferralCode } from "~/lib/pending-referral";
 import { SUBSCRIPTION_SKUS, UI_PACKAGES } from "~/lib/packages";
@@ -44,6 +48,14 @@ export default function DatLichXacNhanRoute() {
 
   async function startCheckout(codes: PayCheckoutCodes) {
     if (!pkg) return;
+    const valueVnd = resolvePurchaseValueVnd(null, pkg.sku);
+    if (valueVnd) {
+      trackMetaInitiateCheckoutOnce({
+        packageSku: pkg.sku,
+        valueVnd,
+        contentName: pkg.title,
+      });
+    }
     setBusy(true);
     const origin = window.location.origin;
     const result = await createPayosCheckout({

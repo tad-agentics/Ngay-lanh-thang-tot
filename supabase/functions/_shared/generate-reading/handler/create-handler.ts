@@ -1,7 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { requireAuthenticatedUser } from "../../auth-user.ts";
 import { requireBaziReadingAuth } from "../../bazi-reading-gate.ts";
-import { requireTieuVanReadingAuth, userHasTieuVanReadingAccess } from "../../tieu-van-reading-gate.ts";
+import { requireTieuVanReadingAuth } from "../../tieu-van-reading-gate.ts";
 import { buildDayLuanPromptContext } from "../../day-luan-prompt-context.ts";
 import {
   acquireGenerateReadingRateLimit,
@@ -22,7 +21,7 @@ import {
 import { readCachedBody, sha256Prefix16, stableStringify } from "../core/cache.ts";
 import { MAX_BODY_CHARS } from "../core/config.ts";
 import { dayIsoFromDayDetailData, todayIsoVietnam } from "../core/dates.ts";
-import { ok } from "../core/response.ts";
+import { ok, rateLimited } from "../core/response.ts";
 import type { GenerateReadingFn, LaSoChiTietSection } from "../core/types.ts";
 
 function parseStringIdArray(v: unknown): string[] {
@@ -149,13 +148,13 @@ export function createGenerateReadingHandler(
     let rateLimitUserId: string | null = null;
 
     if (endpoint === "tieu-van") {
-      const tieuAuth = await requireAuthenticatedUser(req);
-      if (tieuAuth) {
-        rateLimitUserId = tieuAuth.uid;
-        if (await userHasTieuVanReadingAccess(tieuAuth.admin, tieuAuth.uid)) {
-          trackProfileEngagement(tieuAuth.admin, tieuAuth.uid, "tieu_van_luan");
-        }
+      const auth = await requireTieuVanReadingAuth(req);
+      if (!auth) {
+        console.warn("generate-reading tieu-van auth denied");
+        return ok(null, null, req);
       }
+      rateLimitUserId = auth.uid;
+      trackProfileEngagement(auth.admin, auth.uid, "tieu_van_luan");
     }
 
     if (endpoint === "ngay-hom-nay" || endpoint === "day-detail") {
@@ -519,7 +518,7 @@ export function createGenerateReadingHandler(
           rateLimitUserId,
           question ? "follow-up" : "primary",
         );
-        return ok(null, null, req);
+        return rateLimited(req);
       }
     }
 

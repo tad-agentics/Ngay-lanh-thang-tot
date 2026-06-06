@@ -9,7 +9,8 @@
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "test": "vitest run",
-    "lint:design": "bash scripts/check-forbidden-patterns.sh"
+    "lint:design": "bash scripts/check-forbidden-patterns.sh",
+    "check:edge-config": "npx tsx scripts/ops/verify-edge-config-sync.ts"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",

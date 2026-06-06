@@ -15,6 +15,7 @@ import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { consumeAuthRedirectReason } from "~/lib/auth-session-redirect";
 import {
+  isCalendarBrowsePath,
   isOnboardingExemptPath,
   isSubscriptionExemptPath,
   legacyAppRedirect,
@@ -170,9 +171,12 @@ function AuthenticatedShellWithProfile({
     return <Navigate to="/lich" replace />;
   }
 
+  const onCalendarBrowse = isCalendarBrowsePath(location.pathname);
   const subscriptionBlocked =
-    (isSubscriptionLapsed(profile) || isSubExpiredBlocked()) &&
-    !isSubscriptionExemptPath(location.pathname);
+    (isSubscriptionLapsed(profile) ||
+      (isSubExpiredBlocked() && !onCalendarBrowse)) &&
+    !isSubscriptionExemptPath(location.pathname) &&
+    !onCalendarBrowse;
 
   if (subscriptionBlocked) {
     return (

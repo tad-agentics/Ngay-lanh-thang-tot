@@ -11,6 +11,7 @@ export const META_PIXEL_ID =
     : "1582170927254758";
 
 const PURCHASE_DEDUPE_PREFIX = "ngaytot:meta_pixel_purchase:";
+const INITIATE_CHECKOUT_DEDUPE_PREFIX = "ngaytot:meta_pixel_initiate_checkout:";
 
 /** Meta base snippet loader (fbevents.js). */
 const META_PIXEL_LOADER = `!function(f,b,e,v,n,t,s)
@@ -86,6 +87,12 @@ export type MetaPurchaseTrackArgs = {
   contentIds?: string[];
 };
 
+export type MetaInitiateCheckoutTrackArgs = {
+  packageSku: PackageSku;
+  valueVnd: number;
+  contentName?: string;
+};
+
 /**
  * Digits only for Meta Event Setup DOM picker.
  * Do not use dotted amounts without Intl currency — Meta may parse `.` as decimal.
@@ -117,6 +124,36 @@ export function resolvePurchaseValueVnd(
       pendingListAmountVnd: opts?.pendingListAmountVnd,
     })?.finalVnd ?? null
   );
+}
+
+/** Deduped per checkout session in sessionStorage. */
+export function trackMetaInitiateCheckoutOnce(
+  args: MetaInitiateCheckoutTrackArgs,
+): void {
+  if (!isMetaPixelRuntimeEnabled()) return;
+  const value = Math.round(args.valueVnd);
+  if (!Number.isFinite(value) || value <= 0) return;
+
+  const dedupeKey =
+    INITIATE_CHECKOUT_DEDUPE_PREFIX + args.packageSku + ":" + String(value);
+  try {
+    if (sessionStorage.getItem(dedupeKey) === "1") return;
+    sessionStorage.setItem(dedupeKey, "1");
+  } catch {
+    /* private mode */
+  }
+
+  void ensureMetaPixelLoaded().then(() => {
+    if (typeof window.fbq !== "function") return;
+    window.fbq("track", "InitiateCheckout", {
+      value,
+      currency: "VND",
+      content_name: args.contentName,
+      content_ids: [args.packageSku],
+      content_type: "product",
+      num_items: 1,
+    });
+  });
 }
 
 /** Deduped per order id in sessionStorage (webhook + poll may both mark paid). */

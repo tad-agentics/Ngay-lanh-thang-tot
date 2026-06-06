@@ -27,6 +27,23 @@ export function isNeverSubscribedUser(
   return profile.subscription_expires_at == null;
 }
 
+/** Đã từng có gói và subscription_expires_at đã qua. */
+export function isSubscriptionLapsed(
+  profile: ProfileEntitlements,
+): boolean {
+  return (
+    profile.subscription_expires_at != null &&
+    !subscriptionActive(profile.subscription_expires_at)
+  );
+}
+
+/** Lịch teaser: user mới chưa gói hoặc đã hết hạn (duyệt /lich, /ngay/*). */
+export function isCalendarTeaserEligible(
+  profile: ProfileEntitlements,
+): boolean {
+  return isNeverSubscribedUser(profile) || isSubscriptionLapsed(profile);
+}
+
 export function isTraCuuPickChonNgay(
   op: string,
   body: Record<string, unknown>,

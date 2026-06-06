@@ -7,7 +7,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { runBaziReadingPrewarm } from "../_shared/bazi-reading-prewarm/run.ts";
 import { currentYearVn } from "../_shared/bazi-reading-prewarm/profile-bat-tu.ts";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
-import { isServiceRoleBearer } from "../_shared/internal-service-auth.ts";
+import {
+  isServiceRoleBearer,
+  prewarmUserIdFromBody,
+} from "../_shared/internal-service-auth.ts";
 
 function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
@@ -46,7 +49,8 @@ Deno.serve(async (req) => {
   }
 
   const userId =
-    typeof body.user_id === "string" ? body.user_id.trim() : "";
+    prewarmUserIdFromBody(body) ??
+    (typeof body.user_id === "string" ? body.user_id.trim() : "");
   if (!userId) {
     return json({ ok: false, error_code: "BAD_REQUEST" }, 400, req);
   }

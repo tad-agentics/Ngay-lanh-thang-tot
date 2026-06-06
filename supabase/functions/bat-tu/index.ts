@@ -15,6 +15,7 @@ import {
   canUseBaziReading,
   canUseCalendar,
   canUseTieuVanReading,
+  isCalendarTeaserEligible,
   isNeverSubscribedUser,
   isTraCuuPickChonNgay,
 } from "../_shared/entitlements.ts";
@@ -1210,7 +1211,7 @@ Deno.serve(async (req) => {
       }
       if (
         !canUseCalendar(subProfile) &&
-        !isNeverSubscribedUser(subProfile)
+        !isCalendarTeaserEligible(subProfile)
       ) {
         return json(
           {
@@ -1242,7 +1243,7 @@ Deno.serve(async (req) => {
     }
     if (
       !canUseCalendar(subProfile) &&
-      !isNeverSubscribedUser(subProfile)
+      !isCalendarTeaserEligible(subProfile)
     ) {
       return json(
         {
@@ -1416,7 +1417,7 @@ Deno.serve(async (req) => {
 
       if (
         !subscriptionActive(profile.subscription_expires_at as string | null) &&
-        !isNeverSubscribedUser(profile)
+        !isCalendarTeaserEligible(profile)
       ) {
         return json(
           {

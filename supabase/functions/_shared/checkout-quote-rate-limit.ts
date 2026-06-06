@@ -1,4 +1,4 @@
-import { redisGetString, redisSetNxEx } from "./redis-cache.ts";
+import { redisGetString, redisRestConfigured, redisSetNxEx } from "./redis-cache.ts";
 
 const CHECKOUT_QUOTE_RATE_WINDOW_SEC = 3;
 
@@ -9,9 +9,11 @@ const CHECKOUT_QUOTE_RATE_WINDOW_SEC = 3;
 export async function acquireCheckoutQuoteRateLimit(
   userId: string,
 ): Promise<boolean> {
+  if (!redisRestConfigured()) return true;
+
   const key = `checkout_quote_rl:v1:${userId}`;
   const acquired = await redisSetNxEx(key, "1", CHECKOUT_QUOTE_RATE_WINDOW_SEC);
   if (acquired) return true;
-  const held = await redisGetString(key);
-  return held == null;
+  await redisGetString(key);
+  return false;
 }

@@ -7,6 +7,7 @@ import {
   META_PIXEL_NOSCRIPT_IMG_URL,
   isMetaPixelAllowed,
   resolvePurchaseValueVnd,
+  trackMetaInitiateCheckoutOnce,
   trackMetaPurchaseOnce,
 } from "~/lib/meta-pixel";
 
@@ -59,6 +60,33 @@ describe("resolvePurchaseValueVnd", () => {
 
   it("falls back to catalog price", () => {
     expect(resolvePurchaseValueVnd(null, "luan_bat_tu")).toBe(299_000);
+  });
+});
+
+describe("trackMetaInitiateCheckoutOnce", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    vi.stubEnv("PROD", true);
+    window.fbq = vi.fn();
+  });
+
+  it("fires InitiateCheckout once per sku session", async () => {
+    trackMetaInitiateCheckoutOnce({
+      packageSku: "goi_1thang",
+      valueVnd: 299_000,
+      contentName: "3 tháng",
+    });
+    await Promise.resolve();
+    trackMetaInitiateCheckoutOnce({
+      packageSku: "goi_1thang",
+      valueVnd: 299_000,
+      contentName: "3 tháng",
+    });
+    await Promise.resolve();
+    const calls = vi
+      .mocked(window.fbq!)
+      .mock.calls.filter((c) => c[0] === "track" && c[1] === "InitiateCheckout");
+    expect(calls).toHaveLength(1);
   });
 });
 

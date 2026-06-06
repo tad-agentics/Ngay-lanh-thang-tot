@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  isCalendarTeaserEligible,
   isNeverSubscribedUser,
   isNewUserDayLuanTeaser,
   isSubscriptionLapsed,
@@ -55,6 +56,39 @@ describe("isSubscriptionLapsed", () => {
     const future = new Date(Date.now() + 86_400_000).toISOString();
     expect(
       isSubscriptionLapsed({
+        subscription_expires_at: future,
+        bazi_reading_unlocked_at: null,
+        tieu_van_reading_expires_at: null,
+      }),
+    ).toBe(false);
+  });
+});
+
+describe("isCalendarTeaserEligible", () => {
+  it("true for never-subscribed", () => {
+    expect(
+      isCalendarTeaserEligible({
+        subscription_expires_at: null,
+        bazi_reading_unlocked_at: null,
+        tieu_van_reading_expires_at: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("true for lapsed subscription", () => {
+    expect(
+      isCalendarTeaserEligible({
+        subscription_expires_at: "2020-01-01T00:00:00Z",
+        bazi_reading_unlocked_at: null,
+        tieu_van_reading_expires_at: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("false while subscription is active", () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    expect(
+      isCalendarTeaserEligible({
         subscription_expires_at: future,
         bazi_reading_unlocked_at: null,
         tieu_van_reading_expires_at: null,

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
-import { CSubExpired } from "~/components/CSubExpired";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar } from "~/components/brand";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
@@ -19,7 +18,6 @@ import { parseDayDetailForView } from "~/lib/day-detail-view";
 import {
   canUseCalendar,
   isNewUserDayLuanTeaser,
-  isSubscriptionLapsed,
 } from "~/lib/entitlements";
 import { neverSubFreeDayReading } from "~/lib/entitlements";
 import {
@@ -78,9 +76,6 @@ export function CDayDetailScreen() {
   const subActive = profile ? canUseCalendar(profile) : false;
   const calendarLocked = Boolean(user && profile && !subActive);
   const newUserTeaser = profile ? isNewUserDayLuanTeaser(profile) : false;
-  const subscriptionExpired = Boolean(
-    user && profile && personalized && isSubscriptionLapsed(profile),
-  );
   const todayIso = todayIsoInVn();
   const neverSubTodayFree = profile
     ? neverSubFreeDayReading(profile, iso, todayIso)
@@ -209,10 +204,6 @@ export function CDayDetailScreen() {
     } else {
       toast.error(r.error ?? "Không lưu được.");
     }
-  }
-
-  if (!profileLoading && subscriptionExpired) {
-    return <CSubExpired />;
   }
 
   return (

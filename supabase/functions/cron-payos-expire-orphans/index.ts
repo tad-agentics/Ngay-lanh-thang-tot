@@ -5,6 +5,7 @@
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { verifyCronAuth } from "../_shared/cron-auth.ts";
 import { PAY_CHECKOUT_TIMEOUT_MS } from "../_shared/pay-checkout-timeout.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -13,14 +14,6 @@ function json(body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-}
-
-function verifyCronAuth(req: Request): boolean {
-  const secret = Deno.env.get("CRON_SECRET");
-  if (!secret) return true;
-  const h = req.headers.get("Authorization");
-  const token = h?.startsWith("Bearer ") ? h.slice(7).trim() : null;
-  return token === secret;
 }
 
 Deno.serve(async (req) => {

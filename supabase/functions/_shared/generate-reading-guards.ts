@@ -4,7 +4,7 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-import { redisGetString, redisSetNxEx } from "./redis-cache.ts";
+import { redisGetString, redisRestConfigured, redisSetNxEx } from "./redis-cache.ts";
 
 const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
 const RATE_LIMIT_WINDOW_SEC = 10;
@@ -79,12 +79,15 @@ export function generateReadingRateLimitScope(
 /**
  * Fixed window: at most one generate-reading LLM path per user per window.
  * Follow-ups use a separate key so the initial day luận does not block chat 10s.
- * @returns true when the caller may proceed (slot acquired or Redis unavailable).
+ * @returns true when the caller may proceed (slot acquired).
+ * Fail-closed when Redis is configured but unavailable; fail-open only when Redis unset (local dev).
  */
 export async function acquireGenerateReadingRateLimit(
   userId: string,
   opts?: { followUp?: boolean; /** Per-endpoint/subset — Bát Tự bundle gọi song song. */ scope?: string },
 ): Promise<boolean> {
+  if (!redisRestConfigured()) return true;
+
   const followUp = opts?.followUp === true;
   const scope = (opts?.scope ?? "default").trim() || "default";
   const key = followUp
@@ -96,5 +99,5 @@ export async function acquireGenerateReadingRateLimit(
   const acquired = await redisSetNxEx(key, "1", windowSec);
   if (acquired) return true;
   const held = await redisGetString(key);
-  return held == null;
+  return false;
 }

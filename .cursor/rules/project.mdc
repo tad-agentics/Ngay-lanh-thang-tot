@@ -21,7 +21,9 @@ Vietnamese B2C PWA: **subscription calendar** (“Lịch ngày lành cho riêng 
 
 ## Not building (out of scope)
 
-Generative chatbot; raw almanac tables as primary UI; marketplace thầy; community/UGC; AI-personalized push; non-Vi locale; admin dashboard; credit gifting; offline engine; auto-recurring subscriptions; **self-serve birth-data edit** (birth-data is set once at onboarding — no edit form anywhere in the app); **multi-person stored "family profiles"** (dropped in Direction B — not built at all).
+Generative chatbot; raw almanac tables as primary UI; marketplace thầy; community/UGC; AI-personalized push; non-Vi locale; admin dashboard; credit gifting; offline engine; auto-recurring subscriptions; **multi-person stored "family profiles"** (dropped in Direction B — not built at all).
+
+**Birth-data edit (Direction C ADR):** `/toi/sua-ho-so` allows limited recompute via `bat-tu` `recompute-la-so` — max **2 edits / 30 days** (`birth_edit_*` + `app_config.birth_edit_max_per_30d`). Not unlimited self-serve.
 
 ## LLM / AI Reading (first-class feature)
 

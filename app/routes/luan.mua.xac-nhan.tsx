@@ -10,6 +10,10 @@ import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScr
 import type { CreatePayosCheckoutResponse, PackageSku } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
 import { ADDON_SKUS, UI_PACKAGES } from "~/lib/packages";
+import {
+  resolvePurchaseValueVnd,
+  trackMetaInitiateCheckoutOnce,
+} from "~/lib/meta-pixel";
 import { createPayosCheckout } from "~/lib/payos";
 import { readPendingReferralCode } from "~/lib/pending-referral";
 
@@ -49,7 +53,15 @@ export default function LuanMuaXacNhanRoute() {
   }, [restoredCheckout]);
 
   async function startCheckout(codes: PayCheckoutCodes) {
-    if (!sku) return;
+    if (!sku || !pkg) return;
+    const valueVnd = resolvePurchaseValueVnd(null, sku);
+    if (valueVnd) {
+      trackMetaInitiateCheckoutOnce({
+        packageSku: sku,
+        valueVnd,
+        contentName: pkg.title,
+      });
+    }
     setBusy(true);
     const origin = window.location.origin;
     const result = await createPayosCheckout({

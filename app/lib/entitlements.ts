@@ -51,6 +51,14 @@ export function isNewUserDayLuanTeaser(
   return isNeverSubscribedUser(profile) && !canUseCalendar(profile);
 }
 
+/** Lịch teaser: user mới chưa gói hoặc đã hết hạn (duyệt /lich, /ngay/*). */
+export function isCalendarTeaserEligible(
+  profile: EntitlementProfile | null | undefined,
+): boolean {
+  if (!profile) return false;
+  return isNeverSubscribedUser(profile) || isSubscriptionLapsed(profile);
+}
+
 /** Chưa gói — luận AI miễn phí cho ngày hôm nay (Tab Lịch + `/ngay/{today}`). */
 export function neverSubFreeDayReading(
   profile: EntitlementProfile | null | undefined,
