@@ -23,7 +23,7 @@ import { tryReadingCacheHit } from "../core/cache-persist.ts";
 import { sha256Prefix16, stableStringify } from "../core/cache.ts";
 import { MAX_BODY_CHARS } from "../core/config.ts";
 import { dayIsoFromDayDetailData, todayIsoVietnam } from "../core/dates.ts";
-import { ok, rateLimited } from "../core/response.ts";
+import { ok } from "../core/response.ts";
 import type { GenerateReadingFn, LaSoChiTietSection } from "../core/types.ts";
 
 function parseStringIdArray(v: unknown): string[] {
@@ -455,7 +455,8 @@ export function createGenerateReadingHandler(
           rateLimitUserId,
           question ? "follow-up" : "primary",
         );
-        return rateLimited(req);
+        // HTTP 200 + reading null — FE retries after RATE_LIMIT_RETRY_MS (not 503).
+        return ok(null, null, req);
       }
     }
 

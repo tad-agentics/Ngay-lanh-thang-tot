@@ -342,6 +342,11 @@ type GenerateReadingErrorBody = {
   message?: string;
 };
 
+export function isGenerateReadingRateLimitedBody(body: unknown): boolean {
+  const parsed = parseGenerateReadingError(body);
+  return parsed?.code === "RATE_LIMIT_UNAVAILABLE";
+}
+
 function parseGenerateReadingError(
   body: unknown,
 ): { code: string; message: string } | null {
@@ -395,6 +400,10 @@ function shouldRetryNetwork(res: GenerateReadingResponse): boolean {
   return res.transportError === "network_interrupted";
 }
 
+function shouldRetryGatewayTimeout(res: GenerateReadingResponse): boolean {
+  return res.transportError === "gateway_timeout";
+}
+
 /**
  * Gọi Edge luận giải; retry khi 200 rỗng (rate limit) hoặc mạng tab bị ngắt.
  */
@@ -406,6 +415,15 @@ export async function invokeGenerateReadingWithRetry(
   if (shouldRetryRateLimitEmpty(res)) {
     await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
     res = await invokeGenerateReading(input);
+  }
+
+  if (shouldRetryGatewayTimeout(res)) {
+    await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+    res = await invokeGenerateReading(input);
+    if (shouldRetryRateLimitEmpty(res)) {
+      await new Promise((resolve) => setTimeout(resolve, RATE_LIMIT_RETRY_MS));
+      res = await invokeGenerateReading(input);
+    }
   }
 
   for (const waitMs of NETWORK_RETRY_DELAYS_MS) {
@@ -450,6 +468,9 @@ export async function invokeGenerateReading(
       if (error instanceof FunctionsHttpError) {
         try {
           const body = (await error.context.json()) as unknown;
+          if (isGenerateReadingRateLimitedBody(body)) {
+            return { ...EMPTY_GENERATE_READING };
+          }
           const parsed = parseGenerateReadingError(body);
           if (parsed) {
             handleGenerateReadingErrorCode(parsed.code);
@@ -471,6 +492,9 @@ export async function invokeGenerateReading(
       };
     }
     if (data && typeof data === "object" && !Array.isArray(data)) {
+      if (isGenerateReadingRateLimitedBody(data)) {
+        return { ...EMPTY_GENERATE_READING };
+      }
       const parsedErr = parseGenerateReadingError(data);
       if (parsedErr) {
         handleGenerateReadingErrorCode(parsedErr.code);

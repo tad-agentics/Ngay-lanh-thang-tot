@@ -1,6 +1,7 @@
 import { corsHeadersForRequest } from "../../cors.ts";
 import type { LaSoChiTietSection } from "./types.ts";
 
+/** @deprecated Prefer `ok(null, null, req)` — client retries empty 200 bodies. */
 export function rateLimited(req: Request): Response {
   return new Response(
     JSON.stringify({
@@ -8,7 +9,7 @@ export function rateLimited(req: Request): Response {
       error: { code: "RATE_LIMIT_UNAVAILABLE", message: "Thử lại sau vài giây." },
     }),
     {
-      status: 503,
+      status: 200,
       headers: {
         ...corsHeadersForRequest(req),
         "Content-Type": "application/json",

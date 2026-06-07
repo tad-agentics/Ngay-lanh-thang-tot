@@ -128,6 +128,7 @@ export function CDayDetailScreen() {
   const {
     text: readingText,
     loading: readingLoading,
+    failed: readingFailed,
     instantTyping,
     markTypingSeen,
   } = useInlineDayReading({
@@ -138,6 +139,22 @@ export function CDayDetailScreen() {
     enabled: Boolean(subActive && detail && personalized && user),
     subActive,
   });
+
+  const inlineLuanPending =
+    subActive && inlineReadingPending && !readingText?.trim();
+  const showInlineLuanFailed =
+    subActive &&
+    personalized &&
+    Boolean(inlineReadingPayload) &&
+    !inlineReadingPending &&
+    !readingLoading &&
+    readingFailed;
+  const showDayReasoning = Boolean(
+    readingLoading ||
+      readingText?.trim() ||
+      dayEngineFallback ||
+      inlineLuanPending,
+  );
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
   const nextIso = iso ? addDaysToIso(iso, 1) : "";
@@ -257,25 +274,49 @@ export function CDayDetailScreen() {
               score={score}
               reasoning={
                 personalized ? (
-                  <CTodayReasoning
-                    text={readingText}
-                    fallbackText={dayEngineFallback}
-                    loading={
-                      (readingLoading && subActive) ||
-                      (subActive && inlineReadingPending)
-                    }
-                    instant={instantTyping}
-                    onTypingComplete={markTypingSeen}
-                    onCtaClick={() =>
-                      void navigate(
-                        calendarLocked && iso !== todayIso
-                          ? "/dat-lich"
-                          : `/luan-ai/day-${iso}`,
-                      )
-                    }
-                    showCta={Boolean(user) && (subActive || calendarLocked)}
-                    showCtaWithEngineFallback={calendarLocked}
-                  />
+                  !online ? (
+                    <p
+                      className="px-[18px] pb-3.5 font-serif text-xs italic leading-snug"
+                      style={{ color: CT.muted }}
+                    >
+                      Luận giải đầy đủ cần kết nối lại.
+                    </p>
+                  ) : showInlineLuanFailed ? (
+                    <p
+                      className="px-[18px] pb-3.5 font-serif text-sm italic leading-snug"
+                      style={{ color: CT.muted }}
+                    >
+                      Chưa tạo được luận giải NLTT cho ngày này. Tải lại trang hoặc mở{" "}
+                      <button
+                        type="button"
+                        className="cursor-pointer border-none bg-transparent p-0 font-serif italic underline"
+                        style={{ color: CT.goldDeep }}
+                        onClick={() => void navigate(`/luan-ai/day-${iso}`)}
+                      >
+                        luận chi tiết
+                      </button>
+                      .
+                    </p>
+                  ) : showDayReasoning ? (
+                    <CTodayReasoning
+                      text={readingText}
+                      fallbackText={dayEngineFallback}
+                      loading={
+                        (readingLoading && subActive) || inlineLuanPending
+                      }
+                      instant={instantTyping}
+                      onTypingComplete={markTypingSeen}
+                      onCtaClick={() =>
+                        void navigate(
+                          calendarLocked && iso !== todayIso
+                            ? "/dat-lich"
+                            : `/luan-ai/day-${iso}`,
+                        )
+                      }
+                      showCta={Boolean(user) && (subActive || calendarLocked)}
+                      showCtaWithEngineFallback={calendarLocked}
+                    />
+                  ) : null
                 ) : null
               }
               rows={[

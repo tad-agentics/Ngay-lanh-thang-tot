@@ -70,6 +70,7 @@ export function CHomeScreen() {
   const {
     text: readingText,
     loading: readingLoading,
+    failed: readingFailed,
     instantTyping,
     markTypingSeen,
   } = useInlineDayReading({
@@ -90,7 +91,7 @@ export function CHomeScreen() {
     Boolean(user && today && inlineReadingPayload) &&
     !inlineReadingPending &&
     !readingLoading &&
-    !readingText?.trim();
+    readingFailed;
   const calendarTeaserPending =
     calendarLocked && detailLoading && !dayEngineFallback;
   const showTodayReasoning = Boolean(

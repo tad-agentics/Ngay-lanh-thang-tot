@@ -1,13 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "~/lib/auth";
 import { buildInlineDayReadingInvoke } from "~/lib/inline-day-reading-invoke";
+import {
+  clearInlineReadingFailCooldown,
+  inlineReadingRunKey,
+  isInlineReadingFailCooldown,
+  markInlineReadingFailCooldown,
+  runInlineReadingDeduped,
+} from "~/lib/inline-day-reading-coord";
 import { invokeGenerateReadingWithRetry } from "~/lib/generate-reading";
 import { shortenInlineReading } from "~/lib/inline-reading-text";
 import {
   ensureReadingUnlocked,
   isReadingUnlockGranted,
 } from "~/lib/reading-unlock";
+import { stableStringify } from "~/lib/stable-stringify";
 import {
   hasSeenInlineReading,
   markInlineReadingSeen,
@@ -33,42 +41,60 @@ export function useInlineDayReading({
   subActive: boolean;
 }) {
   const { user } = useAuth();
+  const userId = user?.id;
   const payloadRef = useRef(batTuPayload);
   payloadRef.current = batTuPayload;
 
+  const payloadHash = useMemo(
+    () => (batTuPayload != null ? stableStringify(batTuPayload) : ""),
+    [batTuPayload],
+  );
+
   const [text, setText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [instantTyping, setInstantTyping] = useState(false);
   const [paywallBlurred, setPaywallBlurred] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !iso || !user || !subActive) {
+    if (!enabled || !iso || !userId || !subActive) {
       setText(null);
       setLoading(false);
+      setFailed(false);
       setInstantTyping(false);
       setPaywallBlurred(false);
       return;
     }
 
-    const userId = user.id;
-
     const cached = readTodayAiReadingCache(userId, iso);
     if (cached) {
+      clearInlineReadingFailCooldown(userId, iso);
       setText(shortenInlineReading(cached));
       setLoading(false);
+      setFailed(false);
       setInstantTyping(true);
       setPaywallBlurred(false);
       return;
     }
 
-    if (!batTuPayload) {
+    if (!payloadHash) {
       if (payloadPending) {
         setLoading(true);
+        setFailed(false);
         setPaywallBlurred(false);
         return;
       }
       setText(null);
       setLoading(false);
+      setFailed(false);
+      setInstantTyping(hasSeenInlineReading(userId, iso));
+      setPaywallBlurred(false);
+      return;
+    }
+
+    if (isInlineReadingFailCooldown(userId, iso)) {
+      setLoading(false);
+      setFailed(true);
       setInstantTyping(hasSeenInlineReading(userId, iso));
       setPaywallBlurred(false);
       return;
@@ -77,9 +103,12 @@ export function useInlineDayReading({
     let cancelled = false;
     setInstantTyping(hasSeenInlineReading(userId, iso));
     setLoading(true);
+    setFailed(false);
     setPaywallBlurred(false);
 
-    void (async () => {
+    const runKey = inlineReadingRunKey(userId, iso, endpoint, payloadHash);
+
+    void runInlineReadingDeduped(runKey, async () => {
       const genInput = buildInlineDayReadingInvoke(
         endpoint,
         payloadRef.current,
@@ -91,54 +120,76 @@ export function useInlineDayReading({
         scope: unlockScope,
         day_iso: iso,
       });
-      if (cancelled) return;
 
       if (!unlock.ok || !isReadingUnlockGranted(unlock)) {
-        setText(null);
-        setLoading(false);
-        setPaywallBlurred(false);
-        return;
+        return { text: null, failed: true };
       }
 
       const cachedAgain = readTodayAiReadingCache(userId, iso);
       if (cachedAgain) {
-        setText(shortenInlineReading(cachedAgain));
-        setLoading(false);
-        setInstantTyping(true);
-        setPaywallBlurred(false);
-        return;
+        clearInlineReadingFailCooldown(userId, iso);
+        return { text: shortenInlineReading(cachedAgain), failed: false };
       }
+
       const r = await invokeGenerateReadingWithRetry(genInput);
-      if (cancelled) return;
       if (r.reading) {
         const teaser = shortenInlineReading(r.reading);
-        setText(teaser);
+        clearInlineReadingFailCooldown(userId, iso);
         writeTodayAiReadingSession(userId, iso, teaser);
-        setInstantTyping(false);
-      } else {
-        setText((prev) => prev);
+        return { text: teaser, failed: false };
       }
-      setPaywallBlurred(false);
-      setLoading(false);
-    })();
+
+      if (r.transportError) {
+        markInlineReadingFailCooldown(userId, iso);
+      }
+      return { text: null, failed: true };
+    })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.text) {
+          setText(result.text);
+          setInstantTyping(false);
+          setFailed(false);
+        } else if (result.failed) {
+          setText((prev) => prev);
+          setFailed(true);
+        }
+        setPaywallBlurred(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPaywallBlurred(false);
+        setLoading(false);
+        setFailed(true);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, batTuPayload, payloadPending, user, iso, endpoint, subActive]);
+  }, [
+    enabled,
+    payloadHash,
+    payloadPending,
+    userId,
+    iso,
+    endpoint,
+    subActive,
+  ]);
 
   const markTypingSeen = () => {
-    if (!user?.id || !iso) return;
-    markInlineReadingSeen(user.id, iso);
+    if (!userId || !iso) return;
+    markInlineReadingSeen(userId, iso);
     setInstantTyping(true);
   };
 
   return {
     text,
     loading,
+    failed,
     instantTyping,
     markTypingSeen,
-    canAskFollowUp: Boolean(user) && subActive,
+    canAskFollowUp: Boolean(userId) && subActive,
     paywallBlurred: paywallBlurred && Boolean(text || loading),
   };
 }
