@@ -7,6 +7,11 @@ import {
   persistBaziReadingDelivery,
 } from "~/lib/bazi-reading-delivery";
 import type { Profile } from "~/lib/profile-context";
+import {
+  baziReadingCacheRevision,
+  persistBaziPaywallTeaserSession,
+  readBaziPaywallTeaserSession,
+} from "~/lib/bazi-reading-session";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import {
@@ -260,6 +265,34 @@ export async function loadBaziPaywallBundle(
     menhOverview,
     menhGenFailed: !menhOverview,
   };
+}
+
+/**
+ * Paywall teaser với session cache — non-buyer mở `/toi/luan-bat-tu` nhiều lần
+ * (hoặc sau prewarm trên `/toi`) không gọi lại Edge. Server `reading_cache` (7d)
+ * lo phần cross-session; sessionStorage lo phần re-mount trong phiên.
+ */
+export async function loadBaziPaywallBundleCached(
+  profile: Profile,
+): Promise<BaziPaywallBundle> {
+  const revision = baziReadingCacheRevision(profile);
+  const cached = readBaziPaywallTeaserSession(profile.id, revision);
+  if (cached) {
+    return {
+      laSoDisplay: cached.laSoDisplay,
+      menhOverview: cached.menhOverview,
+      menhGenFailed: false,
+    };
+  }
+
+  const bundle = await loadBaziPaywallBundle(profile);
+  if (bundle.menhOverview) {
+    persistBaziPaywallTeaserSession(profile.id, revision, {
+      menhOverview: bundle.menhOverview,
+      laSoDisplay: bundle.laSoDisplay,
+    });
+  }
+  return bundle;
 }
 
 /** @deprecated Dùng `loadBaziPaywallBundle`. */

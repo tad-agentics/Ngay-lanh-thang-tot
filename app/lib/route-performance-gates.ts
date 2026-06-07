@@ -17,6 +17,12 @@ export function routeUsesBaziPrewarm(pathname: string): boolean {
   return false;
 }
 
+/** Non-buyer teaser prewarm — chỉ trang hub `/toi` (tiền đề tới paywall Bát Tự). */
+export function routeUsesBaziTeaserPrewarm(pathname: string): boolean {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  return p === "/toi";
+}
+
 export function routeUsesVanTrinhNamPrewarm(pathname: string): boolean {
   if (!TIEU_VAN_LUAN_ENABLED) return false;
   const p = pathname.replace(/\/+$/, "") || "/";

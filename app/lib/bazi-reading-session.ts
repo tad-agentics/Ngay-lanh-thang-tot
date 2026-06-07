@@ -118,6 +118,63 @@ export function persistBaziReadingSession(
   }
 }
 
+/** Paywall teaser (§01 mệnh tổng quan) — chỉ menh + lá số hiển thị, cho non-buyer. */
+const BAZI_PAYWALL_TEASER_SESSION = "bazi-paywall-teaser:";
+
+export type BaziPaywallTeaserSession = {
+  menhOverview: string;
+  laSoDisplay: LaSoJson | null;
+};
+
+function paywallTeaserSessionKey(profileId: string): string {
+  return `${BAZI_PAYWALL_TEASER_SESSION}${profileId}`;
+}
+
+export function readBaziPaywallTeaserSession(
+  profileId: string,
+  revision: string,
+): BaziPaywallTeaserSession | null {
+  try {
+    const raw = sessionStorage.getItem(paywallTeaserSessionKey(profileId));
+    if (!raw) return null;
+    const o = JSON.parse(raw) as {
+      v?: number;
+      revision?: string;
+      menhOverview?: string;
+      laSoDisplay?: LaSoJson | null;
+    };
+    if (o.v !== 1 || o.revision !== revision) return null;
+    if (typeof o.menhOverview !== "string" || !o.menhOverview) return null;
+    return {
+      menhOverview: o.menhOverview,
+      laSoDisplay: o.laSoDisplay ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function persistBaziPaywallTeaserSession(
+  profileId: string,
+  revision: string,
+  data: BaziPaywallTeaserSession,
+): void {
+  if (!data.menhOverview) return;
+  try {
+    sessionStorage.setItem(
+      paywallTeaserSessionKey(profileId),
+      JSON.stringify({
+        v: 1,
+        revision,
+        menhOverview: data.menhOverview,
+        laSoDisplay: data.laSoDisplay,
+      }),
+    );
+  } catch {
+    /* quota / private mode */
+  }
+}
+
 export function currentYearVn(): number {
   const y = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Ho_Chi_Minh",

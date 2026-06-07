@@ -16,7 +16,7 @@ import {
   baziPaywallLockedChapters,
   type BaziPaywallLockedChapter,
 } from "~/lib/bazi-paywall-mock";
-import { loadBaziPaywallBundle } from "~/lib/bazi-reading-load";
+import { loadBaziPaywallBundleCached } from "~/lib/bazi-reading-load";
 import {
   baziOutlineSections,
   fallbackFlowYearCanChiLabel,
@@ -153,7 +153,7 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     setMenhLoading(true);
     setMenhGenFailed(false);
     void (async () => {
-      const paywall = await loadBaziPaywallBundle(profile);
+      const paywall = await loadBaziPaywallBundleCached(profile);
       if (gen !== genRef.current) return;
       const label = fallbackFlowYearCanChiLabel(year);
       if (label) setYearCanChi(label);
