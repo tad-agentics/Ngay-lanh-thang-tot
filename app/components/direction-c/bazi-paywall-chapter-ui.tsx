@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { Mono } from "~/components/brand";
 import { CBaziPhongThuySection } from "~/components/direction-c/CBaziPhongThuySection";
 import { CBaziQuyNhanSection } from "~/components/direction-c/CBaziQuyNhanSection";
 import { CBaziTinhCachSection } from "~/components/direction-c/CBaziTinhCachSection";
