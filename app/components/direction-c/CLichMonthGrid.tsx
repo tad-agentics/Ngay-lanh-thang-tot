@@ -168,26 +168,22 @@ export function CLichMonthGrid({
               <div
                 style={{
                   marginTop: 2,
-                  height: 12,
-                  flexShrink: 0,
-                  lineHeight: 1,
-                  fontFamily: "var(--serif)",
-                  fontSize: 11.5,
-                  color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
-                }}
-              >
-                {c.otherMonth ? "·" : lunarDay ?? "·"}
-              </div>
-              <div
-                style={{
-                  flex: 1,
-                  minHeight: 6,
                   display: "flex",
-                  alignItems: "flex-end",
-                  justifyContent: "center",
-                  paddingBottom: 2,
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 2,
                 }}
               >
+                <span
+                  style={{
+                    lineHeight: 1,
+                    fontFamily: "var(--serif)",
+                    fontSize: 11.5,
+                    color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
+                  }}
+                >
+                  {c.otherMonth ? "·" : lunarDay ?? "·"}
+                </span>
                 {!c.otherMonth && c.score != null ? (
                   <span
                     style={{

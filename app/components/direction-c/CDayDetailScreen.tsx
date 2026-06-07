@@ -253,6 +253,7 @@ export function CDayDetailScreen() {
                 yearCanChiFromLunarDisplay(detail.lunarDate) ||
                   (detail.canChi !== "—" ? detail.canChi : null),
               )}
+              showTodayBadge={iso === todayIso}
               dayNumber={dayNumberFromIso(iso)}
               weekday={weekdayFromIso(iso)}
               lunarLine={

@@ -3,10 +3,10 @@ import { Link, useSearchParams } from "react-router";
 
 import { Mono } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
+import { CLichDayMonthDivider } from "~/components/direction-c/CLichDayMonthDivider";
 import { CLichMonthCalendarSection } from "~/components/direction-c/CLichMonthCalendarSection";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
-import { LichMonthMenhSubline } from "~/components/direction-c/LichMonthMenhSubline";
 import { LichSelectedDayCard } from "~/components/direction-c/LichSelectedDayCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
@@ -35,7 +35,6 @@ import {
   LUAN_LUU_NIEN_NGUYET_TAGLINE,
   LUAN_LUU_NIEN_NGUYET_TITLE,
 } from "~/lib/luan-luu-nien-nguyet-labels";
-import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 export function CHomeScreen() {
@@ -145,19 +144,6 @@ export function CHomeScreen() {
     online,
   });
 
-  const menh = useMemo(() => {
-    const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
-    return laso?.menh ?? "bạn";
-  }, [profile]);
-
-  const mastheadSubline = canBatTu ? (
-    <LichMonthMenhSubline
-      lunarMonthLabel={monthThang.lunarMonthLabel}
-      menh={menh}
-      refreshing={monthThang.refreshing}
-    />
-  ) : undefined;
-
   const showRecomputeSkeleton = recomputePending || dayRecomputePending;
   const tieuVanUnlocked = canUseTieuVanReading(profile);
   const yearlySub = hasYearlySubscription(profile);
@@ -204,12 +190,12 @@ export function CHomeScreen() {
 
         {showDayBlock && !showRecomputeSkeleton ? (
           <div ref={dayCardRef}>
-            <LichSelectedDayCard
-              iso={selectedIso}
-              dayData={dayData}
-              mastheadSubline={mastheadSubline}
-            />
+            <LichSelectedDayCard iso={selectedIso} dayData={dayData} />
           </div>
+        ) : null}
+
+        {showDayBlock && canBatTu && !showRecomputeSkeleton ? (
+          <CLichDayMonthDivider />
         ) : null}
 
         {canBatTu && !showRecomputeSkeleton ? (

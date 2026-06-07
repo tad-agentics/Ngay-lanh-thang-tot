@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -33,14 +33,9 @@ type NgayNavState = {
 type LichSelectedDayCardProps = {
   iso: string;
   dayData: LichDayData;
-  mastheadSubline?: ReactNode;
 };
 
-export function LichSelectedDayCard({
-  iso,
-  dayData,
-  mastheadSubline,
-}: LichSelectedDayCardProps) {
+export function LichSelectedDayCard({ iso, dayData }: LichSelectedDayCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { savePick, updatePick, picks } = useSavedPicks();
@@ -238,7 +233,7 @@ export function LichSelectedDayCard({
     <>
       <LichToPageCard
         {...cardProps}
-        mastheadSubline={mastheadSubline}
+        showTodayBadge={isToday}
         footer={saveDayFooter}
         reasoning={
           !online ? (

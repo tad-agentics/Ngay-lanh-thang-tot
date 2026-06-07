@@ -9,10 +9,30 @@ export type LichRow = {
   color: string;
 };
 
+function LichTodayBadge() {
+  return (
+    <span
+      className="shrink-0 uppercase"
+      style={{
+        padding: "3px 10px",
+        borderRadius: 9999,
+        background: CT.forest,
+        color: CT.cream,
+        fontFamily: "var(--display-2)",
+        fontWeight: 800,
+        fontSize: 9.5,
+        letterSpacing: "0.14em",
+        lineHeight: 1.2,
+      }}
+    >
+      Hôm nay
+    </span>
+  );
+}
+
 export type LichToPageCardProps = {
   masthead: string;
-  /** Lunar month + bản mệnh — shown below masthead in header strip. */
-  mastheadSubline?: ReactNode;
+  showTodayBadge?: boolean;
   dayNumber: string;
   weekday: string;
   lunarLine: ReactNode;
@@ -29,7 +49,7 @@ export type LichToPageCardProps = {
 
 export function LichToPageCard({
   masthead,
-  mastheadSubline,
+  showTodayBadge,
   dayNumber,
   weekday,
   lunarLine,
@@ -54,29 +74,22 @@ export function LichToPageCard({
         overflow: "hidden",
       }}
     >
-      <div style={{ padding: "12px 18px 6px" }}>
+      <div
+        className="flex items-center justify-between gap-3"
+        style={{ padding: "12px 18px 6px" }}
+      >
         <span
           style={{
             fontFamily: "var(--serif)",
             fontSize: 13.5,
             color: "var(--muted)",
+            lineHeight: 1.35,
+            minWidth: 0,
           }}
         >
           {masthead}
         </span>
-        {mastheadSubline ? (
-          <div
-            style={{
-              marginTop: 6,
-              fontFamily: "var(--serif)",
-              fontSize: 13,
-              color: "var(--muted)",
-              lineHeight: 1.5,
-            }}
-          >
-            {mastheadSubline}
-          </div>
-        ) : null}
+        {showTodayBadge ? <LichTodayBadge /> : null}
       </div>
 
       <div

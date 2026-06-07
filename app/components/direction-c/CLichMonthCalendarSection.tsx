@@ -40,7 +40,7 @@ export function CLichMonthCalendarSection({
   const showInitialLoading = loading && days.length === 0 && !showRecomputeSkeleton;
 
   return (
-    <section className="mt-6">
+    <section>
       <div
         className="grid grid-cols-3 items-end"
         style={{ columnGap: 14 }}
