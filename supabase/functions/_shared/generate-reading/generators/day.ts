@@ -80,8 +80,9 @@ export async function generateDayReading(
     typeof ctx.promptBody.question === "string"
       ? ctx.promptBody.question
       : "";
+  const rawVariant = ctx.promptBody.variant;
   const variant =
-    ctx.promptBody.variant === "inline" ? "inline" : "";
+    rawVariant === "inline" || rawVariant === "teaser" ? rawVariant : "";
 
   let reading: string | null;
   if (endpoint === "hop-tuoi") {
@@ -116,13 +117,13 @@ export async function generateDayReading(
         DAY_DETAIL_REQUEST_TIMEOUT_MS,
         { profile: "flash", disableThinking: true },
       );
-    } else if (variant === "inline") {
+    } else if (variant === "inline" || variant === "teaser") {
       reading = await llmCompletion(
         INLINE_LICH_TO_SYSTEM,
         payload,
         READING_MAX_TOKENS_INLINE_LICH_TO,
         DAY_DETAIL_REQUEST_TIMEOUT_MS,
-        { profile: "flash" },
+        { profile: "flash", disableThinking: true },
       );
     } else {
       const anchorOpts = { profile: "flash" as const, disableThinking: true };

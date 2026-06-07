@@ -321,13 +321,17 @@ export function createGenerateReadingHandler(
               ? data
               : buildDayLuanPromptContext(data),
             ...(question ? { question } : {}),
-            ...(variant === "inline" ? { variant: "inline" } : {}),
+            ...(variant === "inline" || variant === "teaser"
+              ? { variant }
+              : {}),
           }
         : {
             endpoint,
             data,
             ...(question ? { question } : {}),
-            ...(variant === "inline" ? { variant: "inline" } : {}),
+            ...(variant === "inline" || variant === "teaser"
+              ? { variant }
+              : {}),
             ...(tinhCachTraitIds.length
               ? { tinh_cach_trait_ids: tinhCachTraitIds }
               : {}),

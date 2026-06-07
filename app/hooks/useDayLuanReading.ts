@@ -6,7 +6,7 @@ import { useAuth } from "~/lib/auth";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { baziReadingBirthRevision } from "~/lib/bazi-reading-session";
-import { canUseCalendar } from "~/lib/entitlements";
+import { canUseCalendar, canPeekTodayLuanReading } from "~/lib/entitlements";
 import {
   clearInlineReadingFailCooldown,
   isInlineReadingFailCooldown,
@@ -66,6 +66,9 @@ export function useDayLuanReading(iso: string) {
   const subActive = canUseCalendar(profile);
   /** Chưa có gói lịch (never-sub + lapsed) — cùng gate mua gói trên `/luan-ai`. */
   const calendarTeaserUser = Boolean(profile && !subActive);
+  const todayIso = todayIsoInVn();
+  /** Never-sub / lapsed: chỉ sinh luận teaser khi xem đúng ngày hôm nay (VN). */
+  const todayFreePeek = canPeekTodayLuanReading(profile, iso, todayIso);
 
   const batTuQuery = profile ? profileToBatTuPersonQuery(profile) : null;
   const batTuBody =
@@ -167,6 +170,13 @@ export function useDayLuanReading(iso: string) {
     ) {
       return;
     }
+    if (calendarTeaserUser && !todayFreePeek) {
+      setReading(null);
+      setReadingLoading(false);
+      setReadingFailed(false);
+      setUnlocked(false);
+      return;
+    }
     const gen = ++loadGenRef.current;
     setReading(null);
     setReadingFailed(false);
@@ -206,6 +216,8 @@ export function useDayLuanReading(iso: string) {
     detailError,
     luanContext,
     subActive,
+    calendarTeaserUser,
+    todayFreePeek,
     loadReading,
     iso,
     userId,
@@ -415,6 +427,7 @@ export function useDayLuanReading(iso: string) {
 
   const retryReading = useCallback(async () => {
     if (!luanContext) return;
+    if (calendarTeaserUser && !todayFreePeek) return;
     const gen = ++loadGenRef.current;
     setReading(null);
     setReadingFailed(false);
@@ -436,7 +449,7 @@ export function useDayLuanReading(iso: string) {
     }
     setUnlocked(true);
     await loadReading(luanContext, "full", gen, iso);
-  }, [luanContext, subActive, iso, loadReading]);
+  }, [luanContext, subActive, calendarTeaserUser, todayFreePeek, iso, loadReading]);
 
   return {
     profile,
@@ -453,6 +466,7 @@ export function useDayLuanReading(iso: string) {
     unlockBusy,
     subActive,
     calendarTeaserUser,
+    todayFreePeek,
     unlockAndLoad,
     retryReading,
     askFollowUp,
