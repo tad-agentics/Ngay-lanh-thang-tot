@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
-import { CTopStrip } from "~/components/brand";
 import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { CTraCuuDayScreen } from "~/components/direction-c/tra-cuu/CTraCuuDayScreen";
 import { CTraCuuEntryScreen } from "~/components/direction-c/tra-cuu/CTraCuuEntryScreen";
@@ -293,8 +292,6 @@ export function CTraCuuFlow({
         className="relative flex min-h-full flex-col"
         style={{ background: CT.paper, color: CT.ink, fontFamily: "var(--serif)" }}
       >
-        <CTopStrip />
-
         {screen === "entry" ? (
           <CTraCuuEntryScreen
             profile={profile}
