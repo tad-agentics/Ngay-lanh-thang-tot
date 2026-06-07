@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-import { Mono } from "~/components/brand";
 import { CBaziPhongThuySection } from "~/components/direction-c/CBaziPhongThuySection";
 import { CBaziQuyNhanSection } from "~/components/direction-c/CBaziQuyNhanSection";
 import { CBaziTinhCachSection } from "~/components/direction-c/CBaziTinhCachSection";
@@ -95,10 +94,8 @@ export function BaziPaywallLockedSectionBody({
 /** Home `/lich` — blur gợi mở + CTA giữa khối, viền vàng như nút. */
 export function CBaziLockedChaptersHomeTeaser({
   yearCanChi,
-  priceLabel,
 }: {
   yearCanChi: string;
-  priceLabel: string;
 }) {
   return (
     <div className="relative mt-3 min-h-[116px] overflow-hidden">
@@ -130,39 +127,17 @@ export function CBaziLockedChaptersHomeTeaser({
           }}
         >
           <p
-            className="mb-1.5 font-serif text-[10.5px] leading-snug"
+            className="mb-1 font-serif text-[10.5px] leading-snug"
             style={{ color: CT.muted }}
           >
             {LUAN_LA_SO_BAT_TU_TAGLINE}
           </p>
-          <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-sm" style={{ color: CT.muted }}>
-                ○
-              </span>
-              <Mono
-                className="font-bold uppercase tracking-[0.06em]"
-                style={{ color: CT.ink, fontSize: 10 }}
-              >
-                Chưa mở khoá
-              </Mono>
-            </div>
-            <span
-              className="font-[family-name:var(--display-2)] text-[13.5px] font-bold tabular-nums"
-              style={{ color: CT.goldDeep }}
-            >
-              {priceLabel}
-            </span>
-            <span
-              className="font-[family-name:var(--display-2)] text-[13px] font-bold uppercase tracking-[0.08em]"
-              style={{ color: CT.goldDeep }}
-            >
-              →
-            </span>
-          </div>
-          <p className="mt-1 font-serif text-[10.5px]" style={{ color: CT.muted }}>
-            hoặc miễn phí với Lịch năm
-          </p>
+          <span
+            className="font-[family-name:var(--display-2)] text-[13px] font-bold uppercase tracking-[0.1em]"
+            style={{ color: CT.goldDeep }}
+          >
+            →
+          </span>
         </div>
       </div>
     </div>

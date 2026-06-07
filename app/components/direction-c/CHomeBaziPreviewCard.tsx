@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 
 import { Mono } from "~/components/brand";
+import { CBaziAddonPriceBadge } from "~/components/direction-c/CBaziAddonPriceBadge";
 import { CBaziLockedChaptersHomeTeaser } from "~/components/direction-c/bazi-paywall-chapter-ui";
 import { CBaziNguHanhBars } from "~/components/direction-c/CBaziNguHanhBars";
 import { useBaziPaywallMenhTeaser } from "~/hooks/useBaziPaywallMenhTeaser";
@@ -62,14 +63,9 @@ export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
         className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
         style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
       >
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm" style={{ color: CT.muted }}>
-            ○
-          </span>
-          <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
-        </div>
+        <CBaziAddonPriceBadge priceLabel={priceLabel} />
         <div
-          className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
+          className="pr-[46%] font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
           style={{ color: CT.ink }}
         >
           {LUAN_LA_SO_BAT_TU_TITLE}
@@ -92,8 +88,9 @@ export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
       className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
       style={{ background: "#fff", borderColor: CT.hairline, color: CT.ink }}
     >
+      <CBaziAddonPriceBadge priceLabel={priceLabel} />
       <div
-        className="font-[family-name:var(--display)] text-[17px] font-extrabold uppercase tracking-[-0.01em]"
+        className="pr-[46%] font-[family-name:var(--display)] text-[17px] font-extrabold uppercase tracking-[-0.01em]"
         style={{ color: CT.ink }}
       >
         {LUAN_LA_SO_BAT_TU_TITLE}
@@ -139,10 +136,7 @@ export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
         </p>
       ) : null}
 
-      <CBaziLockedChaptersHomeTeaser
-        yearCanChi={yearCanChi}
-        priceLabel={priceLabel}
-      />
+      <CBaziLockedChaptersHomeTeaser yearCanChi={yearCanChi} />
     </Link>
   );
 }
