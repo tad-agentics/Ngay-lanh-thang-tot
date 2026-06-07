@@ -49,18 +49,35 @@ export function CLichMonthCalendarSection({
           type="button"
           aria-label="Tháng trước"
           onClick={() => onShiftMonth(-1)}
-          className="justify-self-start"
+          className="flex min-h-[44px] max-w-full items-center justify-self-start gap-1.5 border-none bg-transparent text-left"
           style={{
             color: CT.goldDeep,
-            fontFamily: "var(--serif)",
-            fontSize: 20.5,
-            background: "none",
-            border: "none",
             cursor: "pointer",
             padding: 0,
           }}
         >
-          ‹
+          <span
+            aria-hidden
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 15.5,
+              lineHeight: 1,
+            }}
+          >
+            ‹
+          </span>
+          <span
+            style={{
+              fontFamily: "var(--display-2)",
+              fontWeight: 700,
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              lineHeight: 1.15,
+            }}
+          >
+            Tháng trước
+          </span>
         </button>
         <div
           className="text-center"
@@ -80,18 +97,35 @@ export function CLichMonthCalendarSection({
           type="button"
           aria-label="Tháng sau"
           onClick={() => onShiftMonth(1)}
-          className="justify-self-end"
+          className="flex min-h-[44px] max-w-full items-center justify-self-end gap-1.5 border-none bg-transparent text-right"
           style={{
             color: CT.goldDeep,
-            fontFamily: "var(--serif)",
-            fontSize: 20.5,
-            background: "none",
-            border: "none",
             cursor: "pointer",
             padding: 0,
           }}
         >
-          ›
+          <span
+            style={{
+              fontFamily: "var(--display-2)",
+              fontWeight: 700,
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              lineHeight: 1.15,
+            }}
+          >
+            Tháng sau
+          </span>
+          <span
+            aria-hidden
+            style={{
+              fontFamily: "var(--serif)",
+              fontSize: 15.5,
+              lineHeight: 1,
+            }}
+          >
+            ›
+          </span>
         </button>
       </div>
 
