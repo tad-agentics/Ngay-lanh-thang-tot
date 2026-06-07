@@ -22,6 +22,7 @@ import {
 } from "~/lib/home-bat-tu";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import { CT } from "~/lib/c-tokens";
+import { buildLichNenTranhRows } from "~/lib/lich-nen-tranh-rows";
 import {
   dayNumberFromIso,
   mastheadFromIso,
@@ -149,11 +150,18 @@ export function CDayDetailScreen() {
     !inlineReadingPending &&
     !readingLoading &&
     readingFailed;
+  const followUpPrompt =
+    Boolean(user) &&
+    !readingLoading &&
+    !readingText?.trim() &&
+    !dayEngineFallback &&
+    !inlineLuanPending;
   const showDayReasoning = Boolean(
     readingLoading ||
       readingText?.trim() ||
       dayEngineFallback ||
-      inlineLuanPending,
+      inlineLuanPending ||
+      followUpPrompt,
   );
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
@@ -313,35 +321,28 @@ export function CDayDetailScreen() {
                             : `/luan-ai/day-${iso}`,
                         )
                       }
-                      showCta={Boolean(user) && (subActive || calendarLocked)}
-                      showCtaWithEngineFallback={calendarLocked}
+                      emptyPrompt={
+                        followUpPrompt
+                          ? "Bạn định làm việc cụ thể trong ngày này? Hỏi NLTT xem ngày này có phù hợp không."
+                          : undefined
+                      }
+                      showCta={Boolean(user)}
+                      showCtaWithEngineFallback
                     />
                   ) : null
                 ) : null
               }
-              rows={[
-                {
-                  key: "Nên",
-                  value:
-                    detail.goodFor.length > 0
-                      ? detail.goodFor.join(", ")
-                      : detail.catThanLabels.join(", ") || "—",
-                  color: CT.forest,
-                },
-                {
-                  key: "Tránh",
-                  value:
-                    detail.avoidFor.length > 0
-                      ? detail.avoidFor.join(", ")
-                      : detail.hungSatLabels.join(", ") || "—",
-                  color: CT.red,
-                },
-                {
-                  key: "Giờ tốt",
-                  value: detail.gioTot || "—",
-                  color: CT.goldDeep,
-                },
-              ]}
+              rows={buildLichNenTranhRows({
+                goodFor:
+                  detail.goodFor.length > 0
+                    ? detail.goodFor
+                    : detail.catThanLabels,
+                avoidFor:
+                  detail.avoidFor.length > 0
+                    ? detail.avoidFor
+                    : detail.hungSatLabels,
+                gioTot: detail.gioTot || "—",
+              })}
               prevLabel={
                 prevIso
                   ? `${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm trước`

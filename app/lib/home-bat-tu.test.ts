@@ -138,7 +138,10 @@ describe("parseNgayHomNayForHome", () => {
     expect(v!.saoXauCsv).toContain("Nguyệt Kỵ");
     const card = ngayHomNayToLichCard(v!, null, "2026-05-01");
     expect(card.rows.find((r) => r.key === "Nên")?.value).toContain("Sao Giác");
-    expect(card.rows.find((r) => r.key === "Tránh")?.value).toContain("Nguyệt Kỵ");
+    expect(card.rows.find((r) => r.key === "Tránh")?.value).toContain("hỏi tiếp");
+    expect(card.rows.find((r) => r.key === "Tránh")?.value).not.toContain(
+      "Nguyệt Kỵ",
+    );
   });
 });
 

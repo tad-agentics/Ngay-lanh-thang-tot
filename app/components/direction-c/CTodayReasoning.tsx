@@ -18,8 +18,10 @@ export type CTodayReasoningProps = {
   ctaLabel?: string;
   onCtaClick?: () => void;
   showCta?: boolean;
-  /** When true, CTA shows after engine tóm tắt (not only NLTT luận). Used for đặt lịch upsell. */
+  /** When true, CTA shows after engine tóm tắt (not only NLTT luận). */
   showCtaWithEngineFallback?: boolean;
+  /** Shown when no luận/fallback yet — pairs with CTA for logged-in follow-up. */
+  emptyPrompt?: string | null;
 };
 
 export function CTodayReasoning({
@@ -33,10 +35,12 @@ export function CTodayReasoning({
   onCtaClick,
   showCta = true,
   showCtaWithEngineFallback = false,
+  emptyPrompt,
 }: CTodayReasoningProps) {
   const aiText = (text ?? "").trim();
   const engineFallback = (fallbackText ?? "").trim();
-  const fullText = aiText || engineFallback;
+  const promptOnly = (emptyPrompt ?? "").trim();
+  const fullText = aiText || engineFallback || promptOnly;
   const isAiLuan = Boolean(aiText);
   const [n, setN] = useState(0);
   const typingDoneRef = useRef(false);
@@ -63,6 +67,8 @@ export function CTodayReasoning({
   }, [loading, fullText, n, onTypingComplete]);
 
   if (!fullText && !loading) return null;
+
+  const isPromptOnly = !aiText && !engineFallback && Boolean(promptOnly);
 
   const done = !loading && fullText.length > 0 && n >= fullText.length;
   const visible = loading
@@ -97,7 +103,9 @@ export function CTodayReasoning({
               : done
                 ? isAiLuan
                   ? "NLTT luận"
-                  : "Tóm tắt ngày"
+                  : isPromptOnly
+                    ? "Gợi ý"
+                    : "Tóm tắt ngày"
                 : isAiLuan
                   ? "NLTT đang luận…"
                   : "Đang tải…"}
@@ -107,7 +115,7 @@ export function CTodayReasoning({
               marginTop: 4,
               marginBottom: 0,
               fontFamily: "var(--serif)",
-              fontStyle: "italic",
+              fontStyle: isPromptOnly ? "normal" : "italic",
               fontSize: 14,
               lineHeight: 1.6,
               color: CT.ink2,

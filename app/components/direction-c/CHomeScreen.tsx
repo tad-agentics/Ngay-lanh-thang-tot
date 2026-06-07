@@ -94,12 +94,20 @@ export function CHomeScreen() {
     readingFailed;
   const calendarTeaserPending =
     calendarLocked && detailLoading && !dayEngineFallback;
+  const followUpPrompt =
+    Boolean(user) &&
+    !readingLoading &&
+    !readingText?.trim() &&
+    !dayEngineFallback &&
+    !calendarTeaserPending &&
+    !inlineLuanPending;
   const showTodayReasoning = Boolean(
     readingLoading ||
       readingText?.trim() ||
       dayEngineFallback ||
       calendarTeaserPending ||
-      inlineLuanPending,
+      inlineLuanPending ||
+      followUpPrompt,
   );
 
   const prevIso = addDaysToIso(todayIso, -1);
@@ -187,8 +195,13 @@ export function CHomeScreen() {
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
                   onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
-                  showCta={Boolean(user) && (subActive || calendarLocked)}
-                  showCtaWithEngineFallback={calendarLocked}
+                  emptyPrompt={
+                    followUpPrompt
+                      ? "Bạn định làm việc cụ thể hôm nay? Hỏi NLTT xem ngày này có phù hợp không."
+                      : undefined
+                  }
+                  showCta={Boolean(user)}
+                  showCtaWithEngineFallback
                 />
               ) : null
             }

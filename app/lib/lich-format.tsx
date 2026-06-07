@@ -5,6 +5,7 @@ import { yearCanChiFromLunarDisplay } from "~/lib/home-bat-tu";
 import { CT } from "~/lib/c-tokens";
 import { scoreFromDayType, verdictLabelFromScore } from "~/lib/c-score";
 import type { LichRow } from "~/components/direction-c/LichToPageCard";
+import { buildLichNenTranhRows } from "~/lib/lich-nen-tranh-rows";
 
 const WEEKDAY_VI = [
   "Chủ Nhật",
@@ -68,14 +69,18 @@ export function ngayHomNayToLichCard(
       ? data.yearCanChi
       : yearCanChiFromLunarDisplay(data.lunarLabel) || null;
 
-  const nen =
+  const goodFor =
     data.goodForChips.length > 0
-      ? data.goodForChips.join(", ")
-      : data.saoTotCsv || "—";
-  const tranh =
+      ? data.goodForChips
+      : data.saoTotCsv && data.saoTotCsv !== "—"
+        ? data.saoTotCsv.split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
+  const avoidFor =
     data.avoidForChips.length > 0
-      ? data.avoidForChips.join(", ")
-      : data.saoXauCsv || "—";
+      ? data.avoidForChips
+      : data.saoXauCsv && data.saoXauCsv !== "—"
+        ? data.saoXauCsv.split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
   const gio =
     data.gioTotDisplay && data.gioTotDisplay !== "—"
       ? data.gioTotDisplay
@@ -106,10 +111,6 @@ export function ngayHomNayToLichCard(
     verdictSub: menh ? <>cho bản mệnh {menh}</> : null,
     score: displayScore,
     quote: data.homeSummaryLine || null,
-    rows: [
-      { key: "Nên", value: nen, color: CT.forest },
-      { key: "Tránh", value: tranh, color: CT.red },
-      { key: "Giờ tốt", value: gio, color: CT.goldDeep },
-    ],
+    rows: buildLichNenTranhRows({ goodFor, avoidFor, gioTot: gio }),
   };
 }
