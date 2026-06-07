@@ -203,38 +203,11 @@ export function LichSelectedDayCard({ iso, dayData }: LichSelectedDayCardProps) 
 
   if (!cardProps) return null;
 
-  const saveDayFooter =
-    user && personalized && (detail || cardFromToday) ? (
-      <button
-        type="button"
-        disabled={saving}
-        onClick={() => setMarkSheetOpen(true)}
-        className="flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
-        style={{
-          padding: 12,
-          background: savedPick ? "transparent" : CT.forest,
-          color: savedPick ? CT.goldDeep : CT.cream,
-          fontFamily: "var(--display-2)",
-          fontWeight: 800,
-          fontSize: 12.5,
-          letterSpacing: "0.08em",
-          border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
-        }}
-      >
-        {savedPick
-          ? "Sửa đánh dấu"
-          : saving
-            ? "Đang lưu…"
-            : "Lưu ngày lành · nhắc trước 1 ngày"}
-      </button>
-    ) : undefined;
-
   return (
     <>
       <LichToPageCard
         {...cardProps}
         showTodayBadge={isToday}
-        footer={saveDayFooter}
         reasoning={
           !online ? (
             <p
@@ -308,6 +281,31 @@ export function LichSelectedDayCard({ iso, dayData }: LichSelectedDayCardProps) 
             </div>
           ) : null}
         </div>
+      ) : null}
+
+      {user && personalized && (detail || cardFromToday) ? (
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => setMarkSheetOpen(true)}
+          className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
+          style={{
+            padding: 12,
+            background: savedPick ? "transparent" : CT.forest,
+            color: savedPick ? CT.goldDeep : CT.cream,
+            fontFamily: "var(--display-2)",
+            fontWeight: 800,
+            fontSize: 12.5,
+            letterSpacing: "0.08em",
+            border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
+          }}
+        >
+          {savedPick
+            ? "Sửa đánh dấu"
+            : saving
+              ? "Đang lưu…"
+              : "Lưu ngày lành · nhắc trước 1 ngày"}
+        </button>
       ) : null}
 
       <CSavedPickMarkSheet

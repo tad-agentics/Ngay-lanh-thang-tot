@@ -42,8 +42,8 @@ export function CLichMonthCalendarSection({
   return (
     <section>
       <div
-        className="grid grid-cols-3 items-end"
-        style={{ columnGap: 14 }}
+        className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end"
+        style={{ columnGap: 10 }}
       >
         <button
           type="button"
@@ -70,9 +70,9 @@ export function CLichMonthCalendarSection({
             style={{
               fontFamily: "var(--display-2)",
               fontWeight: 700,
-              fontSize: 11,
+              fontSize: "clamp(8.5px, 2.4vw, 11px)",
               textTransform: "uppercase",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.05em",
               lineHeight: 1.15,
             }}
           >
@@ -80,15 +80,16 @@ export function CLichMonthCalendarSection({
           </span>
         </button>
         <div
-          className="text-center"
+          className="px-1 text-center"
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
-            fontSize: 28.5,
+            fontSize: "clamp(20px, 5.8vw, 28.5px)",
             color: CT.ink,
             lineHeight: 1,
             textTransform: "uppercase",
             letterSpacing: "-0.01em",
+            whiteSpace: "nowrap",
           }}
         >
           Tháng {month} · {year}
@@ -108,9 +109,9 @@ export function CLichMonthCalendarSection({
             style={{
               fontFamily: "var(--display-2)",
               fontWeight: 700,
-              fontSize: 11,
+              fontSize: "clamp(8.5px, 2.4vw, 11px)",
               textTransform: "uppercase",
-              letterSpacing: "0.06em",
+              letterSpacing: "0.05em",
               lineHeight: 1.15,
             }}
           >

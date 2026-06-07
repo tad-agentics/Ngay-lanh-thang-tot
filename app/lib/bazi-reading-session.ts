@@ -176,6 +176,84 @@ export function persistBaziPaywallTeaserSession(
   }
 }
 
+const BAZI_PAYWALL_TEASER_LOCAL = "bazi-paywall-teaser-local:";
+
+function paywallTeaserLocalKey(profileId: string): string {
+  return `${BAZI_PAYWALL_TEASER_LOCAL}${profileId}`;
+}
+
+function parsePaywallTeaserPayload(
+  raw: string,
+  revision: string,
+): BaziPaywallTeaserSession | null {
+  const o = JSON.parse(raw) as {
+    v?: number;
+    revision?: string;
+    menhOverview?: string;
+    laSoDisplay?: LaSoJson | null;
+  };
+  if (o.v !== 1 || o.revision !== revision) return null;
+  if (typeof o.menhOverview !== "string" || !o.menhOverview) return null;
+  return {
+    menhOverview: o.menhOverview,
+    laSoDisplay: o.laSoDisplay ?? null,
+  };
+}
+
+export function readBaziPaywallTeaserLocal(
+  profileId: string,
+  revision: string,
+): BaziPaywallTeaserSession | null {
+  try {
+    const raw = localStorage.getItem(paywallTeaserLocalKey(profileId));
+    if (!raw) return null;
+    return parsePaywallTeaserPayload(raw, revision);
+  } catch {
+    return null;
+  }
+}
+
+export function persistBaziPaywallTeaserLocal(
+  profileId: string,
+  revision: string,
+  data: BaziPaywallTeaserSession,
+): void {
+  if (!data.menhOverview) return;
+  try {
+    localStorage.setItem(
+      paywallTeaserLocalKey(profileId),
+      JSON.stringify({
+        v: 1,
+        revision,
+        menhOverview: data.menhOverview,
+        laSoDisplay: data.laSoDisplay,
+      }),
+    );
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+/** Session first, then localStorage — instant teaser on /toi without skeleton. */
+export function readBaziPaywallTeaserCache(
+  profileId: string,
+  revision: string,
+): BaziPaywallTeaserSession | null {
+  return (
+    readBaziPaywallTeaserSession(profileId, revision) ??
+    readBaziPaywallTeaserLocal(profileId, revision)
+  );
+}
+
+export function persistBaziPaywallTeaserCache(
+  profileId: string,
+  revision: string,
+  data: BaziPaywallTeaserSession,
+): void {
+  persistBaziPaywallTeaserSession(profileId, revision, data);
+  persistBaziPaywallTeaserLocal(profileId, revision, data);
+}
+
 export function currentYearVn(): number {
   const y = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Ho_Chi_Minh",

@@ -47,14 +47,14 @@ type CHomeBaziPreviewCardProps = {
 export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
   const pkg = UI_PACKAGES.find((p) => p.sku === "luan_bat_tu");
   const yearCanChi = fallbackFlowYearCanChiLabel(currentYearVn()) ?? "";
-  const { menhProse, menhLoading, laSoDisplay } = useBaziPaywallMenhTeaser(profile);
+  const { menhProse, laSoDisplay } = useBaziPaywallMenhTeaser(profile);
 
   const laSo = laSoDisplay ?? ((profile.la_so as LaSoJson | null) ?? null);
   const reveal = laSo ? laSoJsonToRevealProps(laSo) : null;
   const tagline = laSo ? extractMenhTagline(laSo) : null;
   const priceLabel = pkg?.priceLabel ?? catalogPriceLabel("luan_bat_tu");
   const prosePreview = menhProse ? truncateMenhProsePreview(menhProse, 3) : null;
-  const proseFallback = !prosePreview && !menhLoading ? tagline : null;
+  const proseFallback = !prosePreview && tagline ? tagline : null;
 
   if (!profileHasLaso(profile.la_so) || !reveal) {
     return (
@@ -105,22 +105,7 @@ export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
         <CBaziNguHanhBars nguHanh={detail.nguHanh} variant="compact" />
       ) : null}
 
-      {menhLoading ? (
-        <div className="mt-3 space-y-2" aria-busy aria-label="Đang tải luận tổng quan">
-          <div
-            className="h-3 w-full rounded-sm"
-            style={{ background: "rgba(154,124,34,0.12)" }}
-          />
-          <div
-            className="h-3 w-[92%] rounded-sm"
-            style={{ background: "rgba(154,124,34,0.10)" }}
-          />
-          <div
-            className="h-3 w-[78%] rounded-sm"
-            style={{ background: "rgba(154,124,34,0.08)" }}
-          />
-        </div>
-      ) : prosePreview ? (
+      {prosePreview ? (
         <p
           className="mt-3 font-serif text-[13px] italic leading-[1.65]"
           style={{ color: CT.ink2 }}

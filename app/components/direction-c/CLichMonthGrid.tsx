@@ -60,146 +60,136 @@ export function CLichMonthGrid({
     <div
       role="grid"
       aria-label={`Lịch tháng ${month} năm ${year}`}
-      style={{ marginTop: 22 }}
+      className="mt-[22px] w-full min-w-0"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+      }}
     >
-      <div
-        role="row"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, 1fr)",
-        }}
-      >
-        {WEEKDAY_SHORT.map((d, i) => (
-          <div
-            key={d}
-            role="columnheader"
-            aria-label={d}
+      {WEEKDAY_SHORT.map((d, i) => (
+        <div
+          key={`hdr-${d}`}
+          role="columnheader"
+          aria-label={d}
+          className="min-w-0"
+          style={{
+            textAlign: "center",
+            fontFamily: "var(--mono)",
+            fontSize: 9.5,
+            color: i === 6 ? CT.red : "var(--muted)",
+            letterSpacing: "0.08em",
+            padding: "4px 0",
+          }}
+        >
+          {d}
+        </div>
+      ))}
+
+      {cells.map((c, i) => {
+        const isSelected = Boolean(c.iso && c.iso === selectedIso);
+        const todayYear = Number(todayIso.slice(0, 4));
+        const isToday =
+          c.iso === todayIso ||
+          (c.d === Number(todayIso.slice(8, 10)) &&
+            !c.otherMonth &&
+            year === todayYear &&
+            month === Number(todayIso.slice(5, 7)));
+        const lunarDay = c.otherMonth ? null : c.lunarDay ?? null;
+        const clickable = Boolean(c.iso && !c.otherMonth);
+
+        return (
+          <button
+            key={i}
+            type="button"
+            role="gridcell"
+            disabled={!clickable}
+            aria-selected={isSelected}
+            aria-current={isToday ? "date" : undefined}
+            aria-label={
+              c.iso
+                ? `Ngày ${c.d}${isSelected ? ", đang chọn" : ""}${isToday ? ", hôm nay" : ""}`
+                : undefined
+            }
+            onClick={() => {
+              if (c.iso) onSelectDay(c.iso);
+            }}
+            className="min-w-0 w-full border-none bg-transparent p-0"
             style={{
-              textAlign: "center",
-              fontFamily: "var(--mono)",
-              fontSize: 9.5,
-              color: i === 6 ? CT.red : "var(--muted)",
-              letterSpacing: "0.08em",
-              padding: "4px 0",
+              padding: "5px 0 6px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              cursor: clickable ? "pointer" : "default",
             }}
           >
-            {d}
-          </div>
-        ))}
-      </div>
-      <div
-        role="row"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, 1fr)",
-        }}
-      >
-        {cells.map((c, i) => {
-          const isSelected = Boolean(c.iso && c.iso === selectedIso);
-          const todayYear = Number(todayIso.slice(0, 4));
-          const isToday =
-            c.iso === todayIso ||
-            (c.d === Number(todayIso.slice(8, 10)) &&
-              !c.otherMonth &&
-              year === todayYear &&
-              month === Number(todayIso.slice(5, 7)));
-          const lunarDay = c.otherMonth ? null : c.lunarDay ?? null;
-          const clickable = Boolean(c.iso && !c.otherMonth);
-
-          return (
-            <button
-              key={i}
-              type="button"
-              role="gridcell"
-              disabled={!clickable}
-              aria-selected={isSelected}
-              aria-current={isToday ? "date" : undefined}
-              aria-label={
-                c.iso
-                  ? `Ngày ${c.d}${isSelected ? ", đang chọn" : ""}${isToday ? ", hôm nay" : ""}`
-                  : undefined
-              }
-              onClick={() => {
-                if (c.iso) onSelectDay(c.iso);
-              }}
-              className="border-none bg-transparent p-0"
+            <div
               style={{
-                aspectRatio: "1 / 1",
-                padding: "4px 0 3px",
+                width: "clamp(24px, 7vw, 29px)",
+                height: "clamp(24px, 7vw, 29px)",
+                flexShrink: 0,
+                borderRadius: "50%",
+                background: isSelected ? CT.forest : "transparent",
+                boxShadow:
+                  isToday && !isSelected
+                    ? `inset 0 0 0 1.5px ${CT.forest}`
+                    : undefined,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "var(--display-2)",
+                  fontWeight: isSelected || isToday ? 800 : 600,
+                  fontSize: "clamp(13px, 3.6vw, 16.5px)",
+                  color: isSelected
+                    ? CT.cream
+                    : c.otherMonth
+                      ? "rgba(154,124,34,0.3)"
+                      : CT.ink,
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {c.d}
+              </span>
+            </div>
+            <div
+              style={{
+                marginTop: 3,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                cursor: clickable ? "pointer" : "default",
+                gap: 2,
+                minHeight: 11,
               }}
             >
-              <div
+              <span
                 style={{
-                  width: 29,
-                  height: 29,
-                  flexShrink: 0,
-                  borderRadius: "50%",
-                  background: isSelected ? CT.forest : "transparent",
-                  boxShadow:
-                    isToday && !isSelected
-                      ? `inset 0 0 0 1.5px ${CT.forest}`
-                      : undefined,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  lineHeight: 1,
+                  fontFamily: "var(--serif)",
+                  fontSize: "clamp(8.5px, 2.4vw, 11.5px)",
+                  color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
                 }}
               >
+                {c.otherMonth ? "·" : lunarDay ?? "·"}
+              </span>
+              {!c.otherMonth && c.score != null ? (
                 <span
                   style={{
-                    fontFamily: "var(--display-2)",
-                    fontWeight: isSelected || isToday ? 800 : 600,
-                    fontSize: 16.5,
-                    color: isSelected
-                      ? CT.cream
-                      : c.otherMonth
-                        ? "rgba(154,124,34,0.3)"
-                        : CT.ink,
-                    lineHeight: 1,
-                    fontVariantNumeric: "tabular-nums",
+                    width: 4,
+                    height: 4,
+                    flexShrink: 0,
+                    borderRadius: "50%",
+                    background: scoreDotColor(c.score),
                   }}
-                >
-                  {c.d}
-                </span>
-              </div>
-              <div
-                style={{
-                  marginTop: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
-                <span
-                  style={{
-                    lineHeight: 1,
-                    fontFamily: "var(--serif)",
-                    fontSize: 11.5,
-                    color: c.otherMonth ? "transparent" : "rgba(24,21,14,0.42)",
-                  }}
-                >
-                  {c.otherMonth ? "·" : lunarDay ?? "·"}
-                </span>
-                {!c.otherMonth && c.score != null ? (
-                  <span
-                    style={{
-                      width: 5,
-                      height: 5,
-                      flexShrink: 0,
-                      borderRadius: "50%",
-                      background: scoreDotColor(c.score),
-                    }}
-                  />
-                ) : null}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+                />
+              ) : null}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -207,12 +197,8 @@ export function CLichMonthGrid({
 export function CLichMonthScoreLegend() {
   return (
     <div
+      className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-x-[14px]"
       style={{
-        marginTop: 16,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 14,
         fontFamily: "var(--serif)",
         fontSize: 11.5,
         color: CT.muted,

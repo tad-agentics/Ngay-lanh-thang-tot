@@ -9,8 +9,8 @@ import {
 import type { Profile } from "~/lib/profile-context";
 import {
   baziReadingCacheRevision,
-  persistBaziPaywallTeaserSession,
-  readBaziPaywallTeaserSession,
+  persistBaziPaywallTeaserCache,
+  readBaziPaywallTeaserCache,
 } from "~/lib/bazi-reading-session";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -279,7 +279,7 @@ export async function loadBaziPaywallBundleCached(
   profile: Profile,
 ): Promise<BaziPaywallBundle> {
   const revision = baziReadingCacheRevision(profile);
-  const cached = readBaziPaywallTeaserSession(profile.id, revision);
+  const cached = readBaziPaywallTeaserCache(profile.id, revision);
   if (cached) {
     return {
       laSoDisplay: cached.laSoDisplay,
@@ -296,7 +296,7 @@ export async function loadBaziPaywallBundleCached(
     try {
       const bundle = await loadBaziPaywallBundle(profile);
       if (bundle.menhOverview) {
-        persistBaziPaywallTeaserSession(profile.id, revision, {
+        persistBaziPaywallTeaserCache(profile.id, revision, {
           menhOverview: bundle.menhOverview,
           laSoDisplay: bundle.laSoDisplay,
         });

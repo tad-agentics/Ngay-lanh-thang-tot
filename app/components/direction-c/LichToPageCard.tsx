@@ -42,8 +42,6 @@ export type LichToPageCardProps = {
   /** Inline NLTT luận — between verdict and Nên/Tránh/Giờ (`c-screens-a` order). */
   reasoning?: ReactNode;
   rows: LichRow[];
-  /** Bottom strip inside card (e.g. save-day CTA). */
-  footer?: ReactNode;
   onVerdictClick?: () => void;
 };
 
@@ -58,7 +56,6 @@ export function LichToPageCard({
   score,
   reasoning,
   rows,
-  footer,
   onVerdictClick,
 }: LichToPageCardProps) {
   const inlineReasoning = reasoning;
@@ -261,17 +258,6 @@ export function LichToPageCard({
           </div>
         ))}
       </div>
-
-      {footer ? (
-        <div
-          style={{
-            padding: "8px 18px 12px",
-            borderTop: `1px solid ${CT.hairline}`,
-          }}
-        >
-          {footer}
-        </div>
-      ) : null}
     </div>
   );
 }

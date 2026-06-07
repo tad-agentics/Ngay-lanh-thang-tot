@@ -7,6 +7,7 @@ import { fetchBaziReadingDelivery } from "~/lib/bazi-reading-delivery";
 import {
   baziReadingCacheRevision,
   currentYearVn,
+  readBaziPaywallTeaserCache,
 } from "~/lib/bazi-reading-session";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { canUseBaziReading } from "~/lib/entitlements";
@@ -17,7 +18,6 @@ import {
 import type { Profile } from "~/lib/profile-context";
 
 const PREWARM_STORAGE_PREFIX = "bazi-prewarm:";
-const PAYWALL_TEASER_PREWARM_PREFIX = "bazi-paywall-prewarm:";
 
 /** Dedupe trong phiên trang, kể cả khi localStorage bị chặn (private mode). */
 const paywallTeaserPrewarmInflight = new Set<string>();
@@ -117,19 +117,10 @@ export function scheduleBaziReadingPrewarm(
   });
 }
 
-function todayIsoVn(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
 /**
- * Làm ấm teaser Bát Tự (§01) cho **non-buyer** — tối đa một lần/ngày mỗi hồ sơ.
- * Sinh nền `la-so-chi-tiet` preview để `reading_cache` (server, 7d) + session
- * cache đã sẵn khi user mở paywall `/toi/luan-bat-tu`. Buyer dùng full prewarm.
+ * Làm ấm teaser Bát Tự (§01) cho **non-buyer** — chạy nền sau khi có profile.
+ * Sinh `la-so-chi-tiet` preview → `reading_cache` (server) + session/local cache
+ * sẵn trước khi user mở `/toi`. Buyer dùng full prewarm.
  */
 export function scheduleBaziPaywallTeaserPrewarm(profile: Profile): void {
   if (isBaziReadingScreenLoadActive()) return;
@@ -137,16 +128,10 @@ export function scheduleBaziPaywallTeaserPrewarm(profile: Profile): void {
   if (!profileToBatTuPersonQuery(profile).birth_date) return;
 
   const revision = baziReadingCacheRevision(profile);
+  if (readBaziPaywallTeaserCache(profile.id, revision)?.menhOverview) return;
+
   const inflightKey = `${profile.id}:${revision}`;
   if (paywallTeaserPrewarmInflight.has(inflightKey)) return;
-
-  const dayKey = `${PAYWALL_TEASER_PREWARM_PREFIX}${inflightKey}:${todayIsoVn()}`;
-  try {
-    if (localStorage.getItem(dayKey)) return;
-    localStorage.setItem(dayKey, "1");
-  } catch {
-    /* private mode — bỏ qua guard ngày; in-flight set + server cache vẫn dedupe */
-  }
 
   paywallTeaserPrewarmInflight.add(inflightKey);
   void loadBaziPaywallBundleCached(profile)

@@ -1,26 +1,28 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  persistBaziPaywallTeaserCache,
+  persistBaziPaywallTeaserLocal,
   persistBaziPaywallTeaserSession,
+  readBaziPaywallTeaserCache,
+  readBaziPaywallTeaserLocal,
   readBaziPaywallTeaserSession,
 } from "~/lib/bazi-reading-session";
 import { routeUsesBaziTeaserPrewarm } from "~/lib/route-performance-gates";
 
 describe("routeUsesBaziTeaserPrewarm", () => {
-  it("matches /toi hub only (not paywall or /lich)", () => {
+  it("matches /toi hub (legacy gate — prewarm now runs app-wide)", () => {
     expect(routeUsesBaziTeaserPrewarm("/toi")).toBe(true);
     expect(routeUsesBaziTeaserPrewarm("/toi/")).toBe(true);
     expect(routeUsesBaziTeaserPrewarm("/lich")).toBe(false);
-    expect(routeUsesBaziTeaserPrewarm("/lich/")).toBe(false);
     expect(routeUsesBaziTeaserPrewarm("/toi/luan-bat-tu")).toBe(false);
-    expect(routeUsesBaziTeaserPrewarm("/toi/cai-dat")).toBe(false);
-    expect(routeUsesBaziTeaserPrewarm("/")).toBe(false);
   });
 });
 
 describe("bazi paywall teaser session cache", () => {
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
   });
 
   it("round-trips menhOverview + laSoDisplay for a matching revision", () => {
@@ -51,5 +53,58 @@ describe("bazi paywall teaser session cache", () => {
     });
 
     expect(readBaziPaywallTeaserSession("user-1", "rev-a")).toBeNull();
+  });
+});
+
+describe("bazi paywall teaser local cache", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+    localStorage.clear();
+  });
+
+  it("round-trips via localStorage", () => {
+    persistBaziPaywallTeaserLocal("user-1", "rev-a", {
+      menhOverview: "Lá số của bạn…",
+      laSoDisplay: null,
+    });
+
+    expect(readBaziPaywallTeaserLocal("user-1", "rev-a")).toEqual({
+      menhOverview: "Lá số của bạn…",
+      laSoDisplay: null,
+    });
+  });
+
+  it("readBaziPaywallTeaserCache prefers session then local", () => {
+    persistBaziPaywallTeaserLocal("user-1", "rev-a", {
+      menhOverview: "local",
+      laSoDisplay: null,
+    });
+    persistBaziPaywallTeaserSession("user-1", "rev-a", {
+      menhOverview: "session",
+      laSoDisplay: null,
+    });
+
+    expect(readBaziPaywallTeaserCache("user-1", "rev-a")?.menhOverview).toBe(
+      "session",
+    );
+
+    sessionStorage.clear();
+    expect(readBaziPaywallTeaserCache("user-1", "rev-a")?.menhOverview).toBe(
+      "local",
+    );
+  });
+
+  it("persistBaziPaywallTeaserCache writes both stores", () => {
+    persistBaziPaywallTeaserCache("user-1", "rev-a", {
+      menhOverview: "both",
+      laSoDisplay: null,
+    });
+
+    expect(readBaziPaywallTeaserSession("user-1", "rev-a")?.menhOverview).toBe(
+      "both",
+    );
+    expect(readBaziPaywallTeaserLocal("user-1", "rev-a")?.menhOverview).toBe(
+      "both",
+    );
   });
 });

@@ -4,7 +4,7 @@ import type { LaSoJson } from "~/lib/api-types";
 import { loadBaziPaywallBundleCached } from "~/lib/bazi-reading-load";
 import {
   baziReadingCacheRevision,
-  readBaziPaywallTeaserSession,
+  readBaziPaywallTeaserCache,
 } from "~/lib/bazi-reading-session";
 import type { Profile } from "~/lib/profile-context";
 
@@ -31,7 +31,7 @@ function readInitialTeaserState(profile: Profile | null): TeaserState {
 
   const laSo = (profile.la_so as LaSoJson | null) ?? null;
   const revision = baziReadingCacheRevision(profile);
-  const cached = readBaziPaywallTeaserSession(profile.id, revision);
+  const cached = readBaziPaywallTeaserCache(profile.id, revision);
   if (cached) {
     return {
       menhProse: cached.menhOverview,
