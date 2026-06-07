@@ -57,13 +57,16 @@ export async function redisSetNxEx(
   ttlSec: number,
 ): Promise<boolean> {
   if (!redisRestConfigured()) return true;
-  const res = await fetch(
-    `${restBase()}/set/${encodeURIComponent(key)}/${encodeURIComponent(value)}?EX=${ttlSec}&NX=true`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${bearer()}` },
+  // Send the whole command as a JSON array — unambiguous flag handling for `NX`
+  // (query-string `NX=true` makes Upstash emit an extra `true` arg → ERR syntax error).
+  const res = await fetch(restBase(), {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${bearer()}`,
+      "Content-Type": "application/json",
     },
-  );
+    body: JSON.stringify(["SET", key, value, "EX", ttlSec, "NX"]),
+  });
   if (!res.ok) {
     console.error("redisSetNxEx", res.status, await res.text());
     return false;

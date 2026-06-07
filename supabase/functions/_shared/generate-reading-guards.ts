@@ -89,7 +89,9 @@ export function generateReadingRateLimitScope(
  * Fixed window: at most one generate-reading LLM path per user per window.
  * Follow-ups use a separate key so the initial day luận does not block chat 10s.
  * @returns true when the caller may proceed (slot acquired).
- * Fail-closed when Redis is configured but unavailable; fail-open only when Redis unset (local dev).
+ * Blocks only when the slot is confirmed held. If the SET fails for any other
+ * reason (Redis error/outage) and the key is not actually present, fail open —
+ * a transient Redis fault must never hard-block every paid reading.
  */
 export async function acquireGenerateReadingRateLimit(
   userId: string,
@@ -108,5 +110,5 @@ export async function acquireGenerateReadingRateLimit(
   const acquired = await redisSetNxEx(key, "1", windowSec);
   if (acquired) return true;
   const held = await redisGetString(key);
-  return false;
+  return held == null;
 }
