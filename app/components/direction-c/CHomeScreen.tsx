@@ -5,6 +5,7 @@ import { Mono } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichDayMonthDivider } from "~/components/direction-c/CLichDayMonthDivider";
 import { CLichMonthCalendarSection } from "~/components/direction-c/CLichMonthCalendarSection";
+import { CLichDayCardSkeleton } from "~/components/direction-c/CLichDayCardSkeleton";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { LichSelectedDayCard } from "~/components/direction-c/LichSelectedDayCard";
@@ -157,6 +158,10 @@ export function CHomeScreen() {
     () => dayReady || dayLoading,
     [dayReady, dayLoading],
   );
+  const showDayCardSkeleton = Boolean(
+    dayLoading && !dayReady && !showRecomputeSkeleton && canBatTu,
+  );
+  const showDayCard = Boolean(dayReady && !showRecomputeSkeleton);
 
   return (
     <main
@@ -180,20 +185,14 @@ export function CHomeScreen() {
           </p>
         ) : null}
 
-        {dayLoading && !showRecomputeSkeleton ? (
-          <p
-            className="py-12 text-center font-serif text-sm"
-            style={{ color: CT.muted }}
-          >
-            Đang tải ngày…
-          </p>
-        ) : null}
-
         {showRecomputeSkeleton ? <CLichRecomputeSkeleton variant="page" /> : null}
 
-        {showDayBlock && !showRecomputeSkeleton ? (
+        {showDayCardSkeleton || showDayCard ? (
           <div ref={dayCardRef}>
-            <LichSelectedDayCard iso={selectedIso} dayData={dayData} />
+            {showDayCardSkeleton ? <CLichDayCardSkeleton /> : null}
+            {showDayCard ? (
+              <LichSelectedDayCard iso={selectedIso} dayData={dayData} />
+            ) : null}
           </div>
         ) : null}
 
