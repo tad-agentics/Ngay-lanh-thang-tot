@@ -182,7 +182,7 @@ export function CTodayReasoning({
                 style={{
                   fontFamily: "var(--display-2)",
                   fontWeight: 700,
-                  fontSize: 13.5,
+                  fontSize: 14.5,
                   color: CT.red,
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
