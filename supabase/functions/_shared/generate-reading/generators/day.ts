@@ -130,7 +130,8 @@ export async function generateDayReading(
         payload,
         READING_MAX_TOKENS_DAY_DETAIL,
         DAY_DETAIL_REQUEST_TIMEOUT_MS,
-        { profile: "flash" },
+        // Anchor luận dài — tắt thinking để `content` không bị reasoning ăn hết max_tokens.
+        { profile: "flash", disableThinking: true },
       );
     }
   } else {
