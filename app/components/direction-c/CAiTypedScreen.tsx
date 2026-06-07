@@ -9,7 +9,13 @@ import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { DAY_LUAN_MAX_FOLLOW_UPS } from "~/lib/day-luan-chat";
-import { canPeekTodayLuanReading } from "~/lib/entitlements";
+import {
+  canPeekTodayLuanReading,
+  DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
+  isOnboardingTrialExhausted,
+  onboardingTrialQuestionsRemaining,
+} from "~/lib/entitlements";
+import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
 import { buildCalendarLockedDayTeaser } from "~/lib/home-bat-tu";
 import { lichDayPath } from "~/lib/lich-day-url";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
@@ -262,6 +268,7 @@ function canPopSpaHistory(): boolean {
 export function CAiTypedScreen({ iso }: { iso: string }) {
   const navigate = useNavigate();
   const turnEndRef = useRef<HTMLDivElement>(null);
+  const { showOnboardingTrialExhaustedModal } = useOnboardingTrialExhaustedModal();
 
   const openPurchase = useCallback(() => {
     navigate("/dat-lich");
@@ -294,6 +301,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     followUpRemaining,
     serverThreadMessages,
     followUpChatEnabled,
+    trialAccess,
   } = useDayLuanReading(iso);
 
   const dayShort = formatDayIsoShort(iso);
@@ -320,8 +328,25 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const [submitBusy, setSubmitBusy] = useState(false);
   const threadHydratedIsoRef = useRef<string | null>(null);
 
-  const quotaRemaining = followUpRemaining;
+  const trialChatRemaining = profile
+    ? onboardingTrialQuestionsRemaining(profile)
+    : 0;
+  const quotaRemaining = trialAccess
+    ? Math.min(followUpRemaining, trialChatRemaining)
+    : followUpRemaining;
   const quotaExhausted = quotaRemaining <= 0;
+  const quotaCap = trialAccess
+    ? DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX
+    : DAY_LUAN_MAX_FOLLOW_UPS;
+  const trialExhausted = isOnboardingTrialExhausted(profile);
+
+  const handlePurchaseOrTrialModal = useCallback(() => {
+    if (trialExhausted) {
+      showOnboardingTrialExhaustedModal();
+      return;
+    }
+    openPurchase();
+  }, [trialExhausted, showOnboardingTrialExhaustedModal, openPurchase]);
 
   const engineTeaserFallback = useMemo(() => {
     if (!todayFreePeek || !detail) return null;
@@ -394,7 +419,12 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const submitFollowUp = useCallback(
     async (rawQuestion: string) => {
       if (purchaseGated) {
-        openPurchase();
+        handlePurchaseOrTrialModal();
+        return;
+      }
+
+      if (quotaExhausted && trialExhausted) {
+        showOnboardingTrialExhaustedModal();
         return;
       }
 
@@ -453,9 +483,11 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       askFollowUp,
       compareWithTomorrow,
       followUpChatEnabled,
-      openPurchase,
+      handlePurchaseOrTrialModal,
       purchaseGated,
       quotaExhausted,
+      trialExhausted,
+      showOnboardingTrialExhaustedModal,
       scrollToLatest,
       submitBusy,
       unlocked,
@@ -465,7 +497,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const retryFollowUp = useCallback(
     async (turnId: string, question: string) => {
       if (purchaseGated) {
-        openPurchase();
+        handlePurchaseOrTrialModal();
         return;
       }
       setFollowUps((prev) =>
@@ -498,7 +530,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
     },
-    [askFollowUp, openPurchase, purchaseGated],
+    [askFollowUp, handlePurchaseOrTrialModal, purchaseGated],
   );
 
   const askedQuestions = [
@@ -515,7 +547,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const purchaseGatedChips =
     purchaseGated &&
     anchorDone &&
-    followUpChatEnabled &&
+    (todayFreePeek || Boolean(reading)) &&
     remainingChips.length > 0;
 
   return (
@@ -549,7 +581,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 </p>
                 <button
                   type="button"
-                  onClick={openPurchase}
+                  onClick={handlePurchaseOrTrialModal}
                   className="w-full max-w-xs py-3 text-xs font-extrabold uppercase tracking-wider"
                   style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
                 >
@@ -705,7 +737,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                     <button
                       key={chip}
                       type="button"
-                      onClick={openPurchase}
+                      onClick={handlePurchaseOrTrialModal}
                       className="text-left py-2.5 px-3.5 font-serif text-[13.5px] leading-snug"
                       style={chipButtonStyle}
                     >
@@ -775,14 +807,14 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ) : null}
       </div>
 
-      {purchaseGated && followUpChatEnabled && anchorDone && !detailLoading && !detailError ? (
+      {purchaseGated && anchorDone && !detailLoading && !detailError ? (
         <div
           className="px-5 pt-2 pb-[18px]"
           style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}
         >
           <button
             type="button"
-            onClick={openPurchase}
+            onClick={handlePurchaseOrTrialModal}
             className="flex w-full items-center gap-2.5 py-2.5 px-3.5 text-left"
             style={{
               background: "#fff",
@@ -809,7 +841,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
             className="mt-[7px] px-1 text-center font-serif text-[11px] italic"
             style={{ color: CT.muted }}
           >
-            Đặt lịch cát tường để hỏi tiếp và chat với NLTT
+            Đặt lịch cát tường để chat với NLTT
           </p>
         </div>
       ) : null}
@@ -825,11 +857,30 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         >
           <div
             className="flex items-center gap-2.5 py-2.5 px-3.5"
+            role={quotaExhausted && trialExhausted ? "button" : undefined}
+            tabIndex={quotaExhausted && trialExhausted ? 0 : undefined}
+            onClick={
+              quotaExhausted && trialExhausted
+                ? showOnboardingTrialExhaustedModal
+                : undefined
+            }
+            onKeyDown={
+              quotaExhausted && trialExhausted
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      showOnboardingTrialExhaustedModal();
+                    }
+                  }
+                : undefined
+            }
             style={{
               background: quotaExhausted ? "rgba(0,0,0,0.02)" : "#fff",
               border: `1px solid ${CT.hairline}`,
               borderRadius: 999,
-              pointerEvents: quotaExhausted ? "none" : "auto",
+              pointerEvents:
+                quotaExhausted && !trialExhausted ? "none" : "auto",
+              cursor: quotaExhausted && trialExhausted ? "pointer" : undefined,
             }}
           >
             <input
@@ -868,7 +919,9 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 className="w-full text-center font-serif italic text-[11px]"
                 style={{ color: CT.muted }}
               >
-                Hết câu hôm nay · quay lại sáng mai
+                {trialAccess || trialExhausted
+                  ? "Hết lượt chat miễn phí · chạm để mở gói lịch"
+                  : "Hết câu hôm nay · quay lại sáng mai"}
               </span>
             ) : (
               <>
@@ -889,9 +942,9 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 >
                   còn{" "}
                   <span style={{ color: CT.goldDeep, fontWeight: 700 }}>
-                    {quotaRemaining}/{DAY_LUAN_MAX_FOLLOW_UPS}
+                    {quotaRemaining}/{quotaCap}
                   </span>{" "}
-                  câu hỏi AI
+                  {trialAccess ? "lượt chat" : "câu hỏi AI"}
                 </Mono>
               </>
             )}

@@ -7,6 +7,11 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { CTraCuuAskBar } from "~/components/direction-c/tra-cuu/CTraCuuAskBar";
 import { NSealSmall, NSealTiny } from "~/components/direction-c/tra-cuu/NSeal";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
+import {
+  effectiveChatQuotaRemaining,
+  isOnboardingTrialExhausted,
+} from "~/lib/entitlements";
+import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import type { TuTruIntent } from "~/lib/api-types";
 import { CT } from "~/lib/c-tokens";
@@ -64,10 +69,15 @@ export function CTraCuuDayScreen({
     serverThreadMessages,
     followUpChatEnabled,
     subActive,
+    profile,
     calendarTeaserUser,
+    trialAccess,
     payload,
     luanContext,
   } = useDayLuanReading(iso);
+  const { showOnboardingTrialExhaustedModal } = useOnboardingTrialExhaustedModal();
+  const trialExhausted = isOnboardingTrialExhausted(profile);
+  const displayQuota = effectiveChatQuotaRemaining(profile, followUpRemaining);
 
   const { savePick, deletePick, picks } = useSavedPicks();
   const savedPick = findSavedPickForDay(picks, iso);
@@ -143,8 +153,12 @@ export function CTraCuuDayScreen({
 
   const handleAsk = useCallback(
     async (question: string) => {
-      if (calendarTeaserUser || !subActive) {
-        toast.error("Cần mở luận giải trước.");
+      if (calendarTeaserUser) {
+        if (trialExhausted) {
+          showOnboardingTrialExhaustedModal();
+        } else {
+          toast.error("Cần gói lịch hoặc lượt thử để hỏi tiếp.");
+        }
         return;
       }
       if (!unlocked) {
@@ -194,8 +208,9 @@ export function CTraCuuDayScreen({
     [
       askFollowUp,
       calendarTeaserUser,
+      trialExhausted,
+      showOnboardingTrialExhaustedModal,
       iso,
-      subActive,
       unlockAndLoad,
       unlocked,
     ],
@@ -480,11 +495,20 @@ export function CTraCuuDayScreen({
 
       <CTraCuuAskBar
         mode="day"
-        placeholder={`Hỏi tiếp về ngày ${dayShort}…`}
-        quotaRemaining={followUpRemaining}
+        placeholder={
+          calendarTeaserUser
+            ? "Đặt lịch để hỏi tiếp…"
+            : `Hỏi tiếp về ngày ${dayShort}…`
+        }
+        quotaRemaining={displayQuota}
         quotaLoaded={quotaLoaded}
+        trialChatMode={trialAccess}
+        paywallLocked={calendarTeaserUser && trialExhausted}
+        onTrialExhaustedTap={
+          trialExhausted ? showOnboardingTrialExhaustedModal : undefined
+        }
         submitBusy={submitBusy}
-        disabled={calendarTeaserUser || !subActive}
+        disabled={calendarTeaserUser}
         onSubmit={(q) => void handleAsk(q)}
       />
 

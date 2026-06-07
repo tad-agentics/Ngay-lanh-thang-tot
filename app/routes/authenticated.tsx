@@ -29,6 +29,7 @@ import {
   profileHasBirthChartInput,
   stashPendingReturnTo,
 } from "~/lib/pending-return-to";
+import { OnboardingTrialExhaustedProvider } from "~/lib/onboarding-trial-exhausted-context";
 import { ProfileProvider } from "~/lib/profile-context";
 import {
   isSubExpiredBlocked,
@@ -191,13 +192,13 @@ function AuthenticatedShellWithProfile({
   }
 
   return (
-    <>
+    <OnboardingTrialExhaustedProvider>
       <ReadingPrewarmGate />
       <SavedPicksRouteGate>
         <AuthenticatedMobileShell>
           <Outlet />
         </AuthenticatedMobileShell>
       </SavedPicksRouteGate>
-    </>
+    </OnboardingTrialExhaustedProvider>
   );
 }

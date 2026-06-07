@@ -4,7 +4,10 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-import { isCalendarTeaserEligible } from "./entitlements.ts";
+import {
+  hasOnboardingTrialAccess,
+  isCalendarTeaserEligible,
+} from "./entitlements.ts";
 import { todayIsoVietnam } from "./generate-reading/core/dates.ts";
 import { redisGetString, redisRestConfigured, redisSetNxEx } from "./redis-cache.ts";
 
@@ -33,7 +36,7 @@ export async function preflightAiReadingAccess(
 ): Promise<GenerateReadingPreflight> {
   const { data: profile, error: pErr } = await admin
     .from("profiles")
-    .select("subscription_expires_at")
+    .select("subscription_expires_at, onboarding_trial_questions_used")
     .eq("id", userId)
     .maybeSingle();
 
@@ -46,6 +49,11 @@ export async function preflightAiReadingAccess(
       profile.subscription_expires_at as string | null,
     )
   ) {
+    return { allowed: true };
+  }
+
+  // Onboarding trial: never-sub full day luận on any day while quota remains.
+  if (scope === "day_detail" && hasOnboardingTrialAccess(profile)) {
     return { allowed: true };
   }
 

@@ -11,6 +11,14 @@ import { BackBar, Mono } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { NSealTiny } from "~/components/direction-c/tra-cuu/NSeal";
 import { useTraCuuResultsChat } from "~/hooks/useTraCuuResultsChat";
+import { useProfile } from "~/hooks/useProfile";
+import {
+  canAccessPaidCalendar,
+  effectiveChatQuotaRemaining,
+  isOnboardingTrialChatMode,
+  isOnboardingTrialExhausted,
+} from "~/lib/entitlements";
+import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
 import type { ResultDay, ResultGrade, TuTruIntent } from "~/lib/api-types";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import type { TraCuuResultsClientAction } from "~/lib/tra-cuu-results-chat";
@@ -141,6 +149,12 @@ export function CTraCuuResultsScreen({
   const sessionKey = `${state.intent}:${state.rangeStart}:${state.rangeEnd}`;
   const [introTypingDone, setIntroTypingDone] = useState(false);
   const turnEndRef = useRef<HTMLDivElement>(null);
+  const { profile } = useProfile();
+  const { showOnboardingTrialExhaustedModal } = useOnboardingTrialExhaustedModal();
+  const trialChatMode = isOnboardingTrialChatMode(profile);
+  const trialExhausted = isOnboardingTrialExhausted(profile);
+  const displayQuota = effectiveChatQuotaRemaining(profile, quotaRemaining);
+  const chatPaywalled = Boolean(profile && !canAccessPaidCalendar(profile));
 
   const { turns, submitBusy, ask, markTurnTypingDone } = useTraCuuResultsChat({
     state,
@@ -378,10 +392,19 @@ export function CTraCuuResultsScreen({
 
       <CTraCuuAskBar
         mode="results"
-        placeholder="Hỏi tiếp hoặc đổi việc…"
-        quotaRemaining={quotaRemaining}
+        placeholder={
+          chatPaywalled
+            ? "Đặt lịch để hỏi tiếp…"
+            : "Hỏi tiếp hoặc đổi việc…"
+        }
+        quotaRemaining={displayQuota}
         quotaLoaded={quotaLoaded}
-        disabled={interactionLocked}
+        trialChatMode={trialChatMode}
+        paywallLocked={chatPaywalled && trialExhausted}
+        onTrialExhaustedTap={
+          trialExhausted ? showOnboardingTrialExhaustedModal : undefined
+        }
+        disabled={interactionLocked || chatPaywalled}
         submitBusy={submitBusy || interactionLocked}
         onSubmit={(q) => {
           if (!q.trim()) {

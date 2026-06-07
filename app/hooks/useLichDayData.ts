@@ -6,7 +6,7 @@ import { useOfflineCalendar } from "~/hooks/useOfflineCalendar";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { profileCanUseBatTu, profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
-import { canUseCalendar } from "~/lib/entitlements";
+import { canAccessPaidCalendar, canUseCalendar } from "~/lib/entitlements";
 import {
   buildCalendarLockedDayTeaser,
   mergeDayDetailScoreIntoHome,
@@ -44,7 +44,9 @@ export function useLichDayData(iso: string) {
   const canBatTu = profileCanUseBatTu(profile);
   const recomputePending = profile?.la_so_recompute_status === "pending";
   const subActive = Boolean(profile && canUseCalendar(profile));
-  const calendarLocked = Boolean(user && profile && !subActive);
+  const calendarLocked = Boolean(
+    user && profile && !canAccessPaidCalendar(profile),
+  );
   const personalized = Boolean(
     profile && profileToBatTuPersonQuery(profile).birth_date,
   );

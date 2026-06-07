@@ -6,7 +6,7 @@ import {
   bodyHasBirthDate,
   CALENDAR_GATE_OPS,
   isPersonalizedCalendarBody,
-} from "../../../shared/bat-tu-cache-policy.ts";
+} from "../../../../shared/bat-tu-cache-policy.ts";
 import {
   redisDelKey,
   redisGetString,

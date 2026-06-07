@@ -1,23 +1,75 @@
 import type { Profile } from "~/lib/profile-context";
 import {
   type ProfileEntitlements,
+  type ProfileTrialEntitlements,
+  DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
+  canAccessPaidCalendar as coreCanAccessPaidCalendar,
   canUseBaziReading as coreCanUseBaziReading,
   canUseCalendar as coreCanUseCalendar,
   canUseTieuVanReading as coreCanUseTieuVanReading,
+  hasOnboardingTrialAccess as coreHasOnboardingTrialAccess,
   isCalendarTeaserEligible as coreIsCalendarTeaserEligible,
   isNeverSubscribedUser as coreIsNeverSubscribedUser,
   isSubscriptionLapsed as coreIsSubscriptionLapsed,
+  onboardingTrialQuestionsRemaining as coreOnboardingTrialQuestionsRemaining,
   subscriptionActive,
 } from "../../shared/entitlements-core.ts";
 
-export { subscriptionActive };
-export type { ProfileEntitlements };
+export { subscriptionActive, DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX };
+export type { ProfileEntitlements, ProfileTrialEntitlements };
 export type EntitlementProfile = ProfileEntitlements;
 
 export function canUseCalendar(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
   return coreCanUseCalendar(profile);
+}
+
+export function hasOnboardingTrialAccess(
+  profile: ProfileTrialEntitlements | null | undefined,
+): boolean {
+  return coreHasOnboardingTrialAccess(profile);
+}
+
+/** Never-sub đã dùng hết pool 5 lượt chat onboarding. */
+export function isOnboardingTrialExhausted(
+  profile: ProfileTrialEntitlements | null | undefined,
+): boolean {
+  if (!profile || !coreIsNeverSubscribedUser(profile)) return false;
+  return !coreHasOnboardingTrialAccess(profile);
+}
+
+export function onboardingTrialQuestionsRemaining(
+  profile: ProfileTrialEntitlements | null | undefined,
+): number {
+  return coreOnboardingTrialQuestionsRemaining(profile);
+}
+
+/** Subscription or never-sub onboarding trial — unlocks tra cứu + full lịch browse. */
+export function canAccessPaidCalendar(
+  profile: ProfileTrialEntitlements | null | undefined,
+): boolean {
+  return coreCanAccessPaidCalendar(profile);
+}
+
+/** Shared chat UI: cap daily pool by lifetime trial turns for never-sub users. */
+export function effectiveChatQuotaRemaining(
+  profile: ProfileTrialEntitlements | null | undefined,
+  dailyRemaining: number,
+): number {
+  if (!profile) return dailyRemaining;
+  if (coreIsNeverSubscribedUser(profile)) {
+    const trialRem = coreOnboardingTrialQuestionsRemaining(profile);
+    if (trialRem > 0) return Math.min(dailyRemaining, trialRem);
+    return 0;
+  }
+  return dailyRemaining;
+}
+
+export function isOnboardingTrialChatMode(
+  profile: ProfileTrialEntitlements | null | undefined,
+): boolean {
+  return coreHasOnboardingTrialAccess(profile);
 }
 
 export function isNeverSubscribedUser(

@@ -15,7 +15,7 @@ import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
-import { canUseCalendar } from "~/lib/entitlements";
+import { canAccessPaidCalendar, canUseCalendar } from "~/lib/entitlements";
 import {
   buildCalendarLockedDayTeaser,
   pickDayDetailInlineLuanFallback,
@@ -65,7 +65,9 @@ export function CDayDetailScreen() {
   );
   const personalized = Boolean(birthQuery?.birth_date);
   const subActive = profile ? canUseCalendar(profile) : false;
-  const calendarLocked = Boolean(user && profile && !subActive);
+  const calendarLocked = Boolean(
+    user && profile && !canAccessPaidCalendar(profile),
+  );
   const todayIso = todayIsoInVn();
 
   const dayDetailBody = useMemo(() => {

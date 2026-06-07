@@ -6,7 +6,14 @@ import { useAuth } from "~/lib/auth";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { baziReadingBirthRevision } from "~/lib/bazi-reading-session";
-import { canUseCalendar, canPeekTodayLuanReading } from "~/lib/entitlements";
+import {
+  canAccessPaidCalendar,
+  canUseCalendar,
+  canPeekTodayLuanReading,
+  hasOnboardingTrialAccess,
+  isOnboardingTrialExhausted,
+} from "~/lib/entitlements";
+import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
 import {
   clearInlineReadingFailCooldown,
   isInlineReadingFailCooldown,
@@ -46,7 +53,8 @@ type ThreadOpenSnapshot = {
 export function useDayLuanReading(iso: string) {
   const { user } = useAuth();
   const userId = user?.id;
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, refresh: refreshProfile } = useProfile();
+  const { showOnboardingTrialExhaustedModal } = useOnboardingTrialExhaustedModal();
   const [reading, setReading] = useState<string | null>(null);
   const [readingLoading, setReadingLoading] = useState(false);
   const [readingFailed, setReadingFailed] = useState(false);
@@ -64,11 +72,15 @@ export function useDayLuanReading(iso: string) {
   const loadGenRef = useRef(0);
 
   const subActive = canUseCalendar(profile);
-  /** Chưa có gói lịch (never-sub + lapsed) — cùng gate mua gói trên `/luan-ai`. */
-  const calendarTeaserUser = Boolean(profile && !subActive);
+  const trialAccess = hasOnboardingTrialAccess(profile);
+  const paidCalendarAccess = canAccessPaidCalendar(profile);
+  /** Chưa có gói lịch và hết lượt thử — paywall `/luan-ai`. */
+  const calendarTeaserUser = Boolean(profile && !paidCalendarAccess);
   const todayIso = todayIsoInVn();
-  /** Never-sub / lapsed: luận full hôm nay (wow moment) — ngày khác paywall. */
+  /** Never-sub / lapsed: luận full hôm nay (wow moment) — ngày khác cần gói hoặc lượt thử. */
   const todayFreePeek = canPeekTodayLuanReading(profile, iso, todayIso);
+  /** Có thể tải luận anchor: hôm nay (teaser) hoặc bất kỳ ngày nào (lượt thử). */
+  const dayLuanPeek = todayFreePeek || trialAccess;
 
   const batTuQuery = profile ? profileToBatTuPersonQuery(profile) : null;
   const batTuBody =
@@ -168,7 +180,7 @@ export function useDayLuanReading(iso: string) {
     ) {
       return;
     }
-    if (calendarTeaserUser && !todayFreePeek) {
+    if (calendarTeaserUser && !dayLuanPeek) {
       setReading(null);
       setReadingLoading(false);
       setReadingFailed(false);
@@ -178,7 +190,7 @@ export function useDayLuanReading(iso: string) {
     const gen = ++loadGenRef.current;
     setReading(null);
     setReadingFailed(false);
-    if (subActive) {
+    if (subActive || trialAccess) {
       setUnlocked(true);
     } else {
       setUnlocked(false);
@@ -215,16 +227,22 @@ export function useDayLuanReading(iso: string) {
     luanContext,
     subActive,
     calendarTeaserUser,
-    todayFreePeek,
+    dayLuanPeek,
+    trialAccess,
     loadReading,
     iso,
     userId,
     luanContextHash,
   ]);
 
+  const canUseDayLuanChat =
+    !calendarTeaserUser && (trialAccess || (subActive && unlocked));
+
   const ensureDayLuanThread = useCallback(
     async (anchorReading?: string): Promise<string | null> => {
-      if (!profile || !luanContext || !unlocked || calendarTeaserUser) return null;
+      if (!profile || !luanContext || calendarTeaserUser) return null;
+      if (subActive && !unlocked) return null;
+      if (!subActive && !trialAccess) return null;
 
       const birthRevision = baziReadingBirthRevision(profile);
       const anchorLen = anchorReading?.trim().length ?? 0;
@@ -255,13 +273,13 @@ export function useDayLuanReading(iso: string) {
       setServerThreadMessages(open.messages);
       return open.thread_id;
     },
-    [profile, luanContext, unlocked, calendarTeaserUser, iso],
+    [profile, luanContext, unlocked, calendarTeaserUser, trialAccess, subActive, iso],
   );
 
   useEffect(() => {
-    if (!reading || !unlocked || calendarTeaserUser || !luanContext || !profile) {
-      return;
-    }
+    if (!reading || calendarTeaserUser || !luanContext || !profile) return;
+    if (subActive && !unlocked) return;
+    if (!subActive && !trialAccess) return;
     const anchorLen = reading.trim().length;
     const snap = threadOpenRef.current;
     if (
@@ -273,7 +291,17 @@ export function useDayLuanReading(iso: string) {
       return;
     }
     void ensureDayLuanThread(reading);
-  }, [reading, unlocked, calendarTeaserUser, luanContext, profile, iso, ensureDayLuanThread]);
+  }, [
+    reading,
+    unlocked,
+    calendarTeaserUser,
+    trialAccess,
+    subActive,
+    luanContext,
+    profile,
+    iso,
+    ensureDayLuanThread,
+  ]);
 
   const unlockAndLoad = useCallback(async () => {
     if (!luanContext || unlockBusy || calendarTeaserUser) return;
@@ -297,11 +325,31 @@ export function useDayLuanReading(iso: string) {
 
   const askFollowUp = useCallback(
     async (question: string, idempotencyKey: string) => {
-      if (!luanContext || !unlocked || calendarTeaserUser) {
+      if (!luanContext || calendarTeaserUser) {
+        if (isOnboardingTrialExhausted(profile)) {
+          showOnboardingTrialExhaustedModal();
+        }
+        return {
+          ok: false as const,
+          reading: null as string | null,
+          message: "Cần gói lịch hoặc lượt chat miễn phí.",
+        };
+      }
+      if (subActive && !unlocked) {
         return {
           ok: false as const,
           reading: null as string | null,
           message: "Cần mở luận giải trước.",
+        };
+      }
+      if (!subActive && !trialAccess) {
+        if (isOnboardingTrialExhausted(profile)) {
+          showOnboardingTrialExhaustedModal();
+        }
+        return {
+          ok: false as const,
+          reading: null as string | null,
+          message: "Bạn đã dùng hết 5 lượt chat miễn phí.",
         };
       }
       const q = question.trim();
@@ -331,6 +379,9 @@ export function useDayLuanReading(iso: string) {
         idempotency_key: idempotencyKey,
       });
       if (!res.ok) {
+        if (res.code === "TRIAL_EXHAUSTED") {
+          showOnboardingTrialExhaustedModal();
+        }
         const message =
           res.code === "IN_PROGRESS"
             ? "Đang xử lý câu hỏi. Đợi vài giây rồi thử lại."
@@ -352,6 +403,9 @@ export function useDayLuanReading(iso: string) {
         { role: "user", content: q },
         { role: "assistant", content: res.answer },
       ]);
+      if (trialAccess) {
+        void refreshProfile();
+      }
 
       return {
         ok: true as const,
@@ -359,7 +413,18 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [luanContext, unlocked, calendarTeaserUser, ensureDayLuanThread, reading, iso],
+    [
+      luanContext,
+      unlocked,
+      calendarTeaserUser,
+      trialAccess,
+      subActive,
+      profile,
+      ensureDayLuanThread,
+      reading,
+      refreshProfile,
+      showOnboardingTrialExhaustedModal,
+    ],
   );
 
   const compareWithIso = useCallback(
@@ -420,7 +485,7 @@ export function useDayLuanReading(iso: string) {
 
   const retryReading = useCallback(async () => {
     if (!luanContext) return;
-    if (calendarTeaserUser && !todayFreePeek) return;
+    if (calendarTeaserUser && !dayLuanPeek) return;
     if (userId) clearInlineReadingFailCooldown(userId, iso);
     const gen = ++loadGenRef.current;
     setReading(null);
@@ -443,7 +508,7 @@ export function useDayLuanReading(iso: string) {
     }
     setUnlocked(true);
     await loadReading(luanContext, gen, iso);
-  }, [luanContext, subActive, calendarTeaserUser, todayFreePeek, iso, loadReading]);
+  }, [luanContext, subActive, calendarTeaserUser, dayLuanPeek, iso, loadReading]);
 
   return {
     profile,
@@ -461,6 +526,7 @@ export function useDayLuanReading(iso: string) {
     subActive,
     calendarTeaserUser,
     todayFreePeek,
+    trialAccess,
     unlockAndLoad,
     retryReading,
     askFollowUp,
@@ -469,6 +535,7 @@ export function useDayLuanReading(iso: string) {
     threadId,
     followUpRemaining,
     serverThreadMessages,
-    followUpChatEnabled: Boolean(unlocked && !calendarTeaserUser && luanContext),
+    followUpChatEnabled: Boolean(luanContext && canUseDayLuanChat),
+    canUseDayLuanChat,
   };
 }

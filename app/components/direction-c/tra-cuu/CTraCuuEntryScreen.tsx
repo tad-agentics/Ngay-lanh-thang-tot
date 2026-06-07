@@ -7,6 +7,11 @@ import { CT } from "~/lib/c-tokens";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { resolveTraCuuIntentFromText } from "~/lib/tra-cuu-intent-resolve";
 import { TRA_CUU_TASK_CHIPS } from "~/lib/tra-cuu-task-chips";
+import {
+  DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
+  hasOnboardingTrialAccess,
+  onboardingTrialQuestionsRemaining,
+} from "~/lib/entitlements";
 import type { Profile } from "~/lib/profile-context";
 
 type CTraCuuEntryScreenProps = {
@@ -67,6 +72,11 @@ export function CTraCuuEntryScreen({
   }
 
   const formDisabled = disabled || profileLoading || !profile;
+  const trialRemaining = profile
+    ? onboardingTrialQuestionsRemaining(profile)
+    : 0;
+  const showTrialHint =
+    Boolean(profile) && hasOnboardingTrialAccess(profile) && trialRemaining > 0;
 
   return (
     <div
@@ -150,6 +160,17 @@ export function CTraCuuEntryScreen({
           ↑
         </button>
       </div>
+
+      {showTrialHint ? (
+        <p
+          className="mt-3 font-serif text-[12.5px] leading-snug"
+          style={{ color: CT.muted }}
+        >
+          Bạn còn{" "}
+          <span style={{ color: CT.goldDeep }}>{trialRemaining}</span>/
+          {DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX} lượt chat miễn phí.
+        </p>
+      ) : null}
 
       <div className="mt-4">
         <Mono style={{ color: CT.muted, fontSize: 9 }}>Việc thường gặp</Mono>

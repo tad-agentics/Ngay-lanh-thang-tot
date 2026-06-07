@@ -4,7 +4,12 @@ import { toast } from "sonner";
 import { useProfile } from "~/hooks/useProfile";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import { baziReadingBirthRevision } from "~/lib/bazi-reading-session";
-import { canUseCalendar } from "~/lib/entitlements";
+import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
+import {
+  canAccessPaidCalendar,
+  hasOnboardingTrialAccess,
+  isOnboardingTrialExhausted,
+} from "~/lib/entitlements";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
 import {
   invokeTraCuuResultsChatAsk,
@@ -76,7 +81,11 @@ async function openThreadWithRetry(
     if (res.ok) return res;
   }
 
-  toast.error(last.ok ? "Không mở được hội thoại." : last.message);
+  if (!last.ok && last.code === "SUB_EXPIRED") {
+    toast.error(last.message);
+  } else {
+    toast.error(last.ok ? "Không mở được hội thoại." : last.message);
+  }
   return last;
 }
 
@@ -87,8 +96,11 @@ export function useTraCuuResultsChat({
   onQuotaChange,
   onClientAction,
 }: UseTraCuuResultsChatOptions) {
-  const { profile } = useProfile();
-  const subActive = canUseCalendar(profile);
+  const { profile, refresh: refreshProfile } = useProfile();
+  const { showOnboardingTrialExhaustedModal } = useOnboardingTrialExhaustedModal();
+  const canChat = canAccessPaidCalendar(profile);
+  const trialAccess = hasOnboardingTrialAccess(profile);
+  const trialExhausted = isOnboardingTrialExhausted(profile);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [turns, setTurns] = useState<TraCuuResultsChatTurn[]>([]);
   const [submitBusy, setSubmitBusy] = useState(false);
@@ -111,7 +123,7 @@ export function useTraCuuResultsChat({
   }, [sessionKey]);
 
   useEffect(() => {
-    if (!enabled || !profile || !subActive) return;
+    if (!enabled || !profile || !canChat) return;
 
     let cancelled = false;
     const isCancelled = () => cancelled;
@@ -138,11 +150,11 @@ export function useTraCuuResultsChat({
     return () => {
       cancelled = true;
     };
-  }, [enabled, profile, subActive, sessionKey]);
+  }, [enabled, profile, canChat, sessionKey]);
 
   useEffect(() => {
     const introText = intro?.trim();
-    if (!enabled || !profile || !subActive || !threadId || !introText) return;
+    if (!enabled || !profile || !canChat || !threadId || !introText) return;
     if (introSyncedRef.current === sessionKey) return;
 
     let cancelled = false;
@@ -161,14 +173,18 @@ export function useTraCuuResultsChat({
     return () => {
       cancelled = true;
     };
-  }, [enabled, profile, subActive, sessionKey, threadId, intro]);
+  }, [enabled, profile, canChat, sessionKey, threadId, intro]);
 
   const ask = useCallback(
     async (question: string) => {
       const q = question.trim();
       if (!q || submitBusy) return;
-      if (!subActive) {
-        toast.error("Cần gói lịch đang hoạt động.");
+      if (!canChat) {
+        if (trialExhausted) {
+          showOnboardingTrialExhaustedModal();
+        } else {
+          toast.error("Bạn đã dùng hết lượt chat miễn phí. Đặt lịch để tiếp tục.");
+        }
         return;
       }
       const askSession = sessionKeyRef.current;
@@ -213,11 +229,18 @@ export function useTraCuuResultsChat({
           };
           return next;
         });
-        if (res.message) toast.error(res.message);
+        if (res.code === "TRIAL_EXHAUSTED") {
+          showOnboardingTrialExhaustedModal();
+        } else if (res.message) {
+          toast.error(res.message);
+        }
         return;
       }
 
       onQuotaChangeRef.current?.(res.follow_up_remaining);
+      if (trialAccess && res.type === "answer") {
+        void refreshProfile();
+      }
 
       if (res.type === "change_task" || res.type === "open_day") {
         setTurns((prev) => prev.filter((t) => !(t.question === q && t.loading)));
@@ -239,7 +262,16 @@ export function useTraCuuResultsChat({
         return next;
       });
     },
-    [submitBusy, subActive, threadId, onClientAction],
+    [
+      submitBusy,
+      canChat,
+      trialAccess,
+      trialExhausted,
+      threadId,
+      onClientAction,
+      refreshProfile,
+      showOnboardingTrialExhaustedModal,
+    ],
   );
 
   const markTurnTypingDone = useCallback((index: number) => {
@@ -253,7 +285,10 @@ export function useTraCuuResultsChat({
   return {
     turns,
     submitBusy,
-    chatEnabled: Boolean(subActive && threadId),
+    canChat,
+    trialAccess,
+    trialExhausted,
+    chatEnabled: Boolean(canChat && threadId),
     ask,
     markTurnTypingDone,
   };

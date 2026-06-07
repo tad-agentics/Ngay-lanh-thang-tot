@@ -34,6 +34,7 @@ export interface Database {
           timezone: string;
           birth_data_locked_at: string | null;
           onboarding_completed_at: string | null;
+          onboarding_trial_questions_used: number;
           created_at: string;
           updated_at: string;
         };
@@ -60,6 +61,7 @@ export interface Database {
           timezone?: string;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
+          onboarding_trial_questions_used?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -86,6 +88,7 @@ export interface Database {
           timezone?: string;
           birth_data_locked_at?: string | null;
           onboarding_completed_at?: string | null;
+          onboarding_trial_questions_used?: number;
           created_at?: string;
           updated_at?: string;
         };

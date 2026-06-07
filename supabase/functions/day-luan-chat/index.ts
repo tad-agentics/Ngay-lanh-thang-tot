@@ -24,6 +24,12 @@ import {
   acquireGenerateReadingRateLimit,
   preflightAiReadingAccess,
 } from "../_shared/generate-reading-guards.ts";
+import { hasOnboardingTrialAccess } from "../_shared/entitlements.ts";
+import {
+  finalizeOnboardingTrialConsume,
+  readOnboardingTrialQuestionsMax,
+  shouldConsumeTrialQuestion,
+} from "../_shared/onboarding-trial.ts";
 import { trackProfileEngagement } from "../_shared/user-engagement.ts";
 import { stableStringify } from "../_shared/generate-reading/core/cache.ts";
 import {
@@ -514,6 +520,25 @@ Deno.serve(async (req) => {
         .eq("id", idem.id);
     }
 
+    const { data: trialProfile } = await admin
+      .from("profiles")
+      .select("subscription_expires_at, onboarding_trial_questions_used")
+      .eq("id", user.id)
+      .maybeSingle();
+    const trialMax = await readOnboardingTrialQuestionsMax(admin);
+    const consumeTrial = shouldConsumeTrialQuestion(trialProfile);
+    if (consumeTrial && !hasOnboardingTrialAccess(trialProfile, trialMax)) {
+      return json(
+        {
+          ok: false,
+          error_code: "TRIAL_EXHAUSTED",
+          message: "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục.",
+        },
+        402,
+        req,
+      );
+    }
+
     const inc = await tryIncrementDaily(admin, user.id, vnToday);
     if (inc.limited) {
       return json(
@@ -607,6 +632,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!updErr && updated) {
+      await finalizeOnboardingTrialConsume(
+        admin,
+        user.id,
+        consumeTrial,
+        "day-luan-chat:ask",
+      );
       return json(askSuccessPayload(inc.count, trimmed), 200, req);
     }
 
@@ -621,6 +652,12 @@ Deno.serve(async (req) => {
     const reloadedMessages = parseStoredMessages(reloaded?.messages);
     const recovered = findCachedAnswerInMessages(reloadedMessages, question);
     if (recovered) {
+      await finalizeOnboardingTrialConsume(
+        admin,
+        user.id,
+        consumeTrial,
+        "day-luan-chat:ask-recovered",
+      );
       const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(askSuccessPayload(globalCount, recovered), 200, req);
     }
@@ -633,6 +670,12 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (idemAfter?.status === "done" && typeof idemAfter.answer === "string") {
+      await finalizeOnboardingTrialConsume(
+        admin,
+        user.id,
+        consumeTrial,
+        "day-luan-chat:ask-idempotent",
+      );
       const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(
         askSuccessPayload(globalCount, idemAfter.answer.trim()),

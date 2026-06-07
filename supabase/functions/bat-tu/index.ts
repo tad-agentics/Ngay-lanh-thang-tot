@@ -30,6 +30,27 @@ import {
   isNeverSubscribedUser,
   isTraCuuPickChonNgay,
 } from "../_shared/entitlements.ts";
+import { todayIsoVietnam } from "../_shared/generate-reading/core/dates.ts";
+import {
+  profileAllowsTraCuuOrPaidCalendar,
+  profilePassesCalendarGate,
+  readOnboardingTrialQuestionsMax,
+} from "../_shared/onboarding-trial.ts";
+
+const GATE_PROFILE_SELECT =
+  "subscription_expires_at, onboarding_trial_questions_used";
+
+function parseCalendarGateDayIso(
+  op: string,
+  body: Record<string, unknown>,
+): string | null {
+  if (op === "ngay-hom-nay") return todayIsoVietnam();
+  const raw = body.date;
+  if (typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw.trim())) {
+    return raw.trim().slice(0, 10);
+  }
+  return null;
+}
 
 /**
  * GET /v1/phong-thuy + `detail=teaser`: bỏ các key paywall khỏi JSON trả client
@@ -1144,9 +1165,10 @@ Deno.serve(async (req) => {
     const calendarUserId =
       userId ?? (await resolveUserIdFromRequest(req, supabaseUrl, anonKey));
     if (calendarUserId && bodyHasBirthDate(body)) {
+      const trialMax = await readOnboardingTrialQuestionsMax(admin);
       const { data: subProfile, error: subErr } = await admin
         .from("profiles")
-        .select("subscription_expires_at")
+        .select(GATE_PROFILE_SELECT)
         .eq("id", calendarUserId)
         .maybeSingle();
       if (subErr || !subProfile) {
@@ -1158,9 +1180,14 @@ Deno.serve(async (req) => {
             },
           }, 400, req);
       }
+      const gateDayIso = parseCalendarGateDayIso(op, body);
       if (
-        !canUseCalendar(subProfile) &&
-        !isCalendarTeaserEligible(subProfile)
+        !profilePassesCalendarGate(
+          subProfile,
+          gateDayIso,
+          todayIsoVietnam(),
+          trialMax,
+        )
       ) {
         return json(
           {
@@ -1188,9 +1215,10 @@ Deno.serve(async (req) => {
 
   const traCuuPick = isTraCuuPickChonNgay(op, body);
   if (traCuuPick && userId) {
+    const trialMax = await readOnboardingTrialQuestionsMax(admin);
     const { data: subProfile, error: subErr } = await admin
       .from("profiles")
-      .select("subscription_expires_at")
+      .select(GATE_PROFILE_SELECT)
       .eq("id", userId)
       .maybeSingle();
     if (subErr || !subProfile) {
@@ -1202,16 +1230,13 @@ Deno.serve(async (req) => {
           },
         }, 400, req);
     }
-    if (
-      !canUseCalendar(subProfile) &&
-      !isCalendarTeaserEligible(subProfile)
-    ) {
+    if (!profileAllowsTraCuuOrPaidCalendar(subProfile, trialMax)) {
       return json(
         {
           error: {
             code: "SUB_EXPIRED",
             message:
-              "Lịch của bạn đã hết hạn. Gia hạn để tiếp tục tra cứu ngày tốt.",
+              "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục tra cứu ngày tốt.",
           },
         }, 402, req);
     }

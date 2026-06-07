@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canAccessPaidCalendar,
   canPeekTodayLuanReading,
+  effectiveChatQuotaRemaining,
+  hasOnboardingTrialAccess,
+  isOnboardingTrialExhausted,
   isCalendarTeaserEligible,
   isNeverSubscribedUser,
   isNewUserDayLuanTeaser,
+  isOnboardingTrialChatMode,
   isSubscriptionLapsed,
   neverSubFreeDayReading,
+  onboardingTrialQuestionsRemaining,
   subscriptionActive,
 } from "./entitlements";
 
@@ -161,6 +167,84 @@ describe("neverSubFreeDayReading", () => {
     expect(neverSubFreeDayReading(neverSub, "2026-06-02", "2026-06-01")).toBe(
       false,
     );
+  });
+});
+
+describe("onboarding trial questions", () => {
+  const neverSub = {
+    subscription_expires_at: null,
+    bazi_reading_unlocked_at: null,
+    tieu_van_reading_expires_at: null,
+    onboarding_trial_questions_used: 0,
+  };
+
+  it("grants 5 remaining for new never-sub users", () => {
+    expect(onboardingTrialQuestionsRemaining(neverSub)).toBe(5);
+    expect(hasOnboardingTrialAccess(neverSub)).toBe(true);
+    expect(canAccessPaidCalendar(neverSub)).toBe(true);
+  });
+
+  it("blocks when trial quota is exhausted", () => {
+    const exhausted = { ...neverSub, onboarding_trial_questions_used: 5 };
+    expect(onboardingTrialQuestionsRemaining(exhausted)).toBe(0);
+    expect(hasOnboardingTrialAccess(exhausted)).toBe(false);
+    expect(canAccessPaidCalendar(exhausted)).toBe(false);
+    expect(isOnboardingTrialExhausted(exhausted)).toBe(true);
+    expect(isOnboardingTrialExhausted(neverSub)).toBe(false);
+  });
+
+  it("does not grant trial to lapsed subscribers", () => {
+    const lapsed = {
+      subscription_expires_at: "2020-01-01T00:00:00Z",
+      bazi_reading_unlocked_at: null,
+      tieu_van_reading_expires_at: null,
+      onboarding_trial_questions_used: 0,
+    };
+    expect(hasOnboardingTrialAccess(lapsed)).toBe(false);
+    expect(canAccessPaidCalendar(lapsed)).toBe(false);
+  });
+});
+
+describe("effectiveChatQuotaRemaining", () => {
+  const neverSub = {
+    subscription_expires_at: null,
+    bazi_reading_unlocked_at: null,
+    tieu_van_reading_expires_at: null,
+    onboarding_trial_questions_used: 2,
+  };
+
+  it("caps daily pool by trial remaining for never-sub", () => {
+    expect(effectiveChatQuotaRemaining(neverSub, 10)).toBe(3);
+    expect(isOnboardingTrialChatMode(neverSub)).toBe(true);
+  });
+
+  it("returns 0 for never-sub with exhausted trial", () => {
+    expect(
+      effectiveChatQuotaRemaining(
+        {
+          subscription_expires_at: null,
+          bazi_reading_unlocked_at: null,
+          tieu_van_reading_expires_at: null,
+          onboarding_trial_questions_used: 5,
+        },
+        10,
+      ),
+    ).toBe(0);
+  });
+
+  it("returns daily pool for subscribers", () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    expect(
+      effectiveChatQuotaRemaining(
+        {
+          subscription_expires_at: future,
+          bazi_reading_unlocked_at: null,
+          tieu_van_reading_expires_at: null,
+          onboarding_trial_questions_used: 0,
+        },
+        7,
+      ),
+    ).toBe(7);
   });
 });
 

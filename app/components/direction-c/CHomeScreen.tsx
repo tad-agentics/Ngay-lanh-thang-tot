@@ -19,6 +19,7 @@ import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import {
+  canAccessPaidCalendar,
   canUseCalendar,
   canUseTieuVanReading,
   hasYearlySubscription,
@@ -148,7 +149,9 @@ export function CHomeScreen() {
   const tieuVanUnlocked = canUseTieuVanReading(profile);
   const yearlySub = hasYearlySubscription(profile);
   const tieuVanYear = currentYearVn();
-  const calendarLockedView = Boolean(user && profile && !canUseCalendar(profile));
+  const calendarLockedView = Boolean(
+    user && profile && !canAccessPaidCalendar(profile),
+  );
 
   const showDayBlock = useMemo(
     () => dayReady || dayLoading,

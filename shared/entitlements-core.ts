@@ -8,6 +8,13 @@ export type ProfileEntitlements = {
   tieu_van_reading_expires_at: string | null;
 };
 
+export type ProfileTrialEntitlements = ProfileEntitlements & {
+  onboarding_trial_questions_used?: number | null;
+};
+
+/** Default when `app_config.onboarding_trial_questions_max` is unset. */
+export const DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX = 5;
+
 export function subscriptionActive(
   expires: string | null | undefined,
 ): boolean {
@@ -44,6 +51,41 @@ export function isCalendarTeaserEligible(
 ): boolean {
   if (!profile) return false;
   return isNeverSubscribedUser(profile) || isSubscriptionLapsed(profile);
+}
+
+export function onboardingTrialQuestionsUsed(
+  profile: ProfileTrialEntitlements | null | undefined,
+): number {
+  const raw = profile?.onboarding_trial_questions_used ?? 0;
+  return typeof raw === "number" && Number.isFinite(raw) && raw > 0
+    ? Math.floor(raw)
+    : 0;
+}
+
+export function onboardingTrialQuestionsRemaining(
+  profile: ProfileTrialEntitlements | null | undefined,
+  max = DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
+): number {
+  if (!profile || !isNeverSubscribedUser(profile)) return 0;
+  const cap = max > 0 ? max : DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX;
+  return Math.max(0, cap - onboardingTrialQuestionsUsed(profile));
+}
+
+/** Never-sub with free chat turns left — unlocks chat + tra cứu until exhausted. */
+export function hasOnboardingTrialAccess(
+  profile: ProfileTrialEntitlements | null | undefined,
+  max = DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
+): boolean {
+  return onboardingTrialQuestionsRemaining(profile, max) > 0;
+}
+
+/** Active subscription or onboarding trial (never-sub only). */
+export function canAccessPaidCalendar(
+  profile: ProfileTrialEntitlements | null | undefined,
+  max = DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
+): boolean {
+  if (!profile) return false;
+  return canUseCalendar(profile) || hasOnboardingTrialAccess(profile, max);
 }
 
 function hasYearlySub(profile: ProfileEntitlements): boolean {

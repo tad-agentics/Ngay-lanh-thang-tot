@@ -17,6 +17,12 @@ import {
   acquireGenerateReadingRateLimit,
   subscriptionActiveForReading,
 } from "../_shared/generate-reading-guards.ts";
+import { hasOnboardingTrialAccess } from "../_shared/entitlements.ts";
+import {
+  finalizeOnboardingTrialConsume,
+  readOnboardingTrialQuestionsMax,
+  shouldConsumeTrialQuestion,
+} from "../_shared/onboarding-trial.ts";
 import { todayIsoVietnam } from "../_shared/generate-reading/core/dates.ts";
 import { stableStringify } from "../_shared/generate-reading/core/cache.ts";
 import { llmChat } from "../_shared/generate-reading/core/llm.ts";
@@ -94,7 +100,7 @@ async function preflightTraCuuChat(
 ): Promise<{ allowed: true } | { allowed: false; message: string }> {
   const { data: profile, error } = await admin
     .from("profiles")
-    .select("subscription_expires_at")
+    .select("subscription_expires_at, onboarding_trial_questions_used")
     .eq("id", userId)
     .maybeSingle();
   if (error || !profile) {
@@ -107,7 +113,14 @@ async function preflightTraCuuChat(
   ) {
     return { allowed: true };
   }
-  return { allowed: false, message: "Cần gói lịch đang hoạt động." };
+  const trialMax = await readOnboardingTrialQuestionsMax(admin);
+  if (hasOnboardingTrialAccess(profile, trialMax)) {
+    return { allowed: true };
+  }
+  return {
+    allowed: false,
+    message: "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục.",
+  };
 }
 
 function parsePickMeta(body: Record<string, unknown>): TraCuuResultsPickMeta | null {
@@ -523,6 +536,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    const { data: trialProfile } = await admin
+      .from("profiles")
+      .select("subscription_expires_at, onboarding_trial_questions_used")
+      .eq("id", user.id)
+      .maybeSingle();
+    const trialMax = await readOnboardingTrialQuestionsMax(admin);
+    const consumeTrial = shouldConsumeTrialQuestion(trialProfile);
+    if (consumeTrial && !hasOnboardingTrialAccess(trialProfile, trialMax)) {
+      return json(
+        {
+          ok: false,
+          error_code: "TRIAL_EXHAUSTED",
+          message: "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục.",
+        },
+        402,
+        req,
+      );
+    }
+
     const inc = await tryIncrementDaily(admin, user.id, vnToday);
     if (inc.limited) {
       return json(
@@ -612,6 +644,13 @@ Deno.serve(async (req) => {
         updated_at: now,
       })
       .eq("id", threadId);
+
+    await finalizeOnboardingTrialConsume(
+      admin,
+      user.id,
+      consumeTrial,
+      "tra-cuu-results-chat:answer",
+    );
 
     return json(
       {

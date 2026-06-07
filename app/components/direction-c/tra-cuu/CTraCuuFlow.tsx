@@ -11,7 +11,8 @@ import { useTraCuuFlowPick } from "~/hooks/useTraCuuFlowPick";
 import { useProfile } from "~/hooks/useProfile";
 import type { TuTruIntent } from "~/lib/api-types";
 import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
-import { canUseCalendar } from "~/lib/entitlements";
+import { canAccessPaidCalendar, isOnboardingTrialExhausted } from "~/lib/entitlements";
+import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
 import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { CT } from "~/lib/c-tokens";
 import { loadTraCuuIntroReading } from "~/lib/tra-cuu-readings-load";
@@ -46,7 +47,8 @@ export function CTraCuuFlow({
   const resultsScrollRef = useRef<HTMLDivElement>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
   const { profile, loading: profileLoading } = useProfile();
-  const calendarLocked = profile ? !canUseCalendar(profile) : false;
+  const { showOnboardingTrialExhaustedModal } = useOnboardingTrialExhaustedModal();
+  const calendarLocked = profile ? !canAccessPaidCalendar(profile) : false;
   const { busy, slow, runPick, cancel } = useTraCuuFlowPick();
   const { followUpRemaining, quotaLoaded, refreshQuota, setFollowUpRemaining } =
     useDayLuanDailyQuota(true);
@@ -301,7 +303,13 @@ export function CTraCuuFlow({
             initialIntent={initialIntent}
             initialPillText={entryPillText}
             scrollRef={entryScrollRef}
-            onNeedSubscription={() => void navigate("/dat-lich")}
+            onNeedSubscription={() => {
+              if (profile && isOnboardingTrialExhausted(profile)) {
+                showOnboardingTrialExhaustedModal();
+                return;
+              }
+              void navigate("/dat-lich");
+            }}
             onSubmit={(intent, intentLabel) => void startSearch(intent, intentLabel)}
           />
         ) : null}

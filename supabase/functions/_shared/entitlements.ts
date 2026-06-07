@@ -2,14 +2,20 @@
 
 export {
   type ProfileEntitlements,
+  type ProfileTrialEntitlements,
+  DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX,
   applyYearlyBundleLuận,
+  canAccessPaidCalendar,
   canUseBaziReading,
   canUseCalendar,
   canUseTieuVanReading,
   extendSubscriptionMonths,
+  hasOnboardingTrialAccess,
   isCalendarTeaserEligible,
   isNeverSubscribedUser,
   isSubscriptionLapsed,
+  onboardingTrialQuestionsRemaining,
+  onboardingTrialQuestionsUsed,
   subscriptionActive,
 } from "../../../shared/entitlements-core.ts";
 
