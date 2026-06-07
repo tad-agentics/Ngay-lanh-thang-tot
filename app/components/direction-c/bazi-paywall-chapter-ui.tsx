@@ -5,12 +5,12 @@ import { CBaziPhongThuySection } from "~/components/direction-c/CBaziPhongThuySe
 import { CBaziQuyNhanSection } from "~/components/direction-c/CBaziQuyNhanSection";
 import { CBaziTinhCachSection } from "~/components/direction-c/CBaziTinhCachSection";
 import { CBaziVanNamSection } from "~/components/direction-c/CBaziVanNamSection";
-import {
-  baziPaywallLockedChapters,
-  type BaziPaywallLockedChapter,
-} from "~/lib/bazi-paywall-mock";
+import type { BaziPaywallLockedChapter } from "~/lib/bazi-paywall-mock";
 import { CT } from "~/lib/c-tokens";
-import { LUAN_LA_SO_BAT_TU_TAGLINE } from "~/lib/luan-la-so-bat-tu-labels";
+import {
+  homeBaziPaywallBlurHook,
+  LUAN_LA_SO_BAT_TU_TAGLINE,
+} from "~/lib/luan-la-so-bat-tu-labels";
 
 export function BaziPaywallLockedChapterBody({
   chapter,
@@ -92,7 +92,7 @@ export function BaziPaywallLockedSectionBody({
   );
 }
 
-/** Home `/lich` — mock chapter blur + CTA nổi trên overlay. */
+/** Home `/lich` — blur gợi mở + CTA giữa khối, viền vàng như nút. */
 export function CBaziLockedChaptersHomeTeaser({
   yearCanChi,
   priceLabel,
@@ -100,57 +100,69 @@ export function CBaziLockedChaptersHomeTeaser({
   yearCanChi: string;
   priceLabel: string;
 }) {
-  const chapters = baziPaywallLockedChapters(yearCanChi);
-
   return (
-    <div className="relative mt-3 max-h-[148px] min-h-[108px] overflow-hidden">
+    <div className="relative mt-3 min-h-[116px] overflow-hidden">
       <div
-        className="select-none space-y-4"
+        className="select-none px-0.5 py-2"
         style={{ filter: "blur(4px)", WebkitFilter: "blur(4px)" }}
         aria-hidden
       >
-        {chapters.slice(0, 2).map((chapter) => (
-          <div key={chapter.key}>
-            <BaziPaywallLockedChapterBody chapter={chapter} />
-          </div>
-        ))}
+        <p
+          className="font-serif text-[13px] leading-[1.65]"
+          style={{ color: CT.ink2 }}
+        >
+          {homeBaziPaywallBlurHook(yearCanChi)}
+        </p>
       </div>
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.72) 38%, rgba(255,255,255,0.94) 72%, rgba(255,255,255,0.98) 100%)`,
+          background: `linear-gradient(180deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.78) 42%, rgba(255,255,255,0.88) 100%)`,
         }}
         aria-hidden
       />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center px-2 pb-2.5 pt-10">
-        <p
-          className="mb-2 text-center font-serif text-[11px] leading-snug"
-          style={{ color: CT.muted }}
+      <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-1 py-3">
+        <div
+          className="w-full border px-3.5 py-2.5 text-center"
+          style={{
+            borderColor: CT.goldDeep,
+            background: "rgba(255,255,255,0.94)",
+          }}
         >
-          {LUAN_LA_SO_BAT_TU_TAGLINE}
-        </p>
-        <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-sm" style={{ color: CT.muted }}>
-              ○
+          <p
+            className="mb-1.5 font-serif text-[10.5px] leading-snug"
+            style={{ color: CT.muted }}
+          >
+            {LUAN_LA_SO_BAT_TU_TAGLINE}
+          </p>
+          <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-sm" style={{ color: CT.muted }}>
+                ○
+              </span>
+              <Mono
+                className="font-bold uppercase tracking-[0.06em]"
+                style={{ color: CT.ink, fontSize: 10 }}
+              >
+                Chưa mở khoá
+              </Mono>
+            </div>
+            <span
+              className="font-[family-name:var(--display-2)] text-[13.5px] font-bold tabular-nums"
+              style={{ color: CT.goldDeep }}
+            >
+              {priceLabel}
             </span>
-            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
+            <span
+              className="font-[family-name:var(--display-2)] text-[13px] font-bold uppercase tracking-[0.08em]"
+              style={{ color: CT.goldDeep }}
+            >
+              →
+            </span>
           </div>
-          <span
-            className="font-[family-name:var(--display-2)] text-[13.5px] font-bold tabular-nums"
-            style={{ color: CT.goldDeep }}
-          >
-            {priceLabel}
-          </span>
-          <span className="font-serif text-[11px]" style={{ color: CT.muted }}>
-            · hoặc miễn phí với Lịch năm
-          </span>
-          <span
-            className="font-[family-name:var(--display-2)] text-[13px] font-bold uppercase tracking-[0.08em]"
-            style={{ color: CT.goldDeep }}
-          >
-            →
-          </span>
+          <p className="mt-1 font-serif text-[10.5px]" style={{ color: CT.muted }}>
+            hoặc miễn phí với Lịch năm
+          </p>
         </div>
       </div>
     </div>
