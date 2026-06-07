@@ -1,5 +1,6 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
 
+import type { BatTuOperation } from "~/lib/api-types";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { queryKeys } from "~/lib/query-keys";
 import { APP_QUERY_STALE_TIME_MS } from "~/lib/query-client";
@@ -15,7 +16,7 @@ type BatTuQueryOptions<T> = Omit<
 
 export function useBatTuQuery<T>(
   userId: string | undefined,
-  op: string,
+  op: BatTuOperation,
   body: Record<string, unknown>,
   options?: BatTuQueryOptions<T>,
 ) {

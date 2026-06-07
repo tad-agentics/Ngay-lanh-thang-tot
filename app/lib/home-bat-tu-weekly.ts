@@ -152,7 +152,7 @@ export function parseWeeklySummaryForScreen(raw: unknown): WeeklySummaryScreen |
     for (const row of topRaw) {
       const o = U.asRecord(row);
       if (!o) continue;
-      const iso = U.pickIsoFromDayRow(o) ?? pickIsoFromUnknown(o);
+      const iso = U.pickIsoFromDayRow(o);
       if (!iso) continue;
       const g = U.pickStr(o, ["grade", "rank", "hang"]).toUpperCase() || "—";
       const sVal = o.score;

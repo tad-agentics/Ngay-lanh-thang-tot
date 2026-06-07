@@ -98,11 +98,13 @@ describe("acquireGenerateReadingRateLimit", () => {
     );
   });
 
-  it("fails closed when NX misses and GET finds no key (Redis outage)", async () => {
+  it("fails open when NX misses and GET finds no key (Redis outage)", async () => {
     redisSetNxEx.mockResolvedValue(false);
     redisGetString.mockResolvedValue(null);
 
-    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(false);
+    // A transient Redis fault must never hard-block every paid reading:
+    // block only when the slot is confirmed held.
+    await expect(acquireGenerateReadingRateLimit("user-1")).resolves.toBe(true);
   });
 });
 
