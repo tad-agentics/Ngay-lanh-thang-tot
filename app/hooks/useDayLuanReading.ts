@@ -428,6 +428,7 @@ export function useDayLuanReading(iso: string) {
   const retryReading = useCallback(async () => {
     if (!luanContext) return;
     if (calendarTeaserUser && !todayFreePeek) return;
+    if (userId) clearInlineReadingFailCooldown(userId, iso);
     const gen = ++loadGenRef.current;
     setReading(null);
     setReadingFailed(false);

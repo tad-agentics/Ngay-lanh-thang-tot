@@ -13,6 +13,7 @@ import {
   ttlForEndpoint,
 } from "../core/config.ts";
 import { persistReadingCache } from "../core/cache-persist.ts";
+import { stableStringify } from "../core/cache.ts";
 import { llmChat, llmCompletion, llmLegacyProse } from "../core/llm.ts";
 import { buildDayDetailFollowUpMessages } from "../core/thread-history.ts";
 import type { GenerateContext, GenerateResult } from "../core/types.ts";
@@ -118,13 +119,27 @@ export async function generateDayReading(
         { profile: "flash", disableThinking: true },
       );
     } else if (variant === "inline" || variant === "teaser") {
+      const luanContext = ctx.promptBody.luan_context ?? ctx.data;
+      const inlinePayload =
+        endpoint === "day-detail"
+          ? stableStringify({ endpoint: "day-detail", data: luanContext })
+          : payload;
       reading = await llmCompletion(
         INLINE_LICH_TO_SYSTEM,
-        payload,
+        inlinePayload,
         READING_MAX_TOKENS_INLINE_LICH_TO,
         DAY_DETAIL_REQUEST_TIMEOUT_MS,
         { profile: "flash", disableThinking: true },
       );
+      if (!reading && endpoint === "day-detail") {
+        reading = await llmCompletion(
+          INLINE_LICH_TO_SYSTEM,
+          inlinePayload,
+          READING_MAX_TOKENS_INLINE_LICH_TO,
+          DAY_DETAIL_REQUEST_TIMEOUT_MS,
+          { profile: "flash", disableThinking: true },
+        );
+      }
     } else {
       const anchorOpts = { profile: "flash" as const, disableThinking: true };
       reading = await llmCompletion(

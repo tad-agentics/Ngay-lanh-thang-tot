@@ -10,6 +10,7 @@ import type { LuanThreadTurn } from "~/lib/generate-reading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { DAY_LUAN_MAX_FOLLOW_UPS } from "~/lib/day-luan-chat";
 import { canPeekTodayLuanReading } from "~/lib/entitlements";
+import { buildCalendarLockedDayTeaser } from "~/lib/home-bat-tu";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import {
   anchorQuestionForScore,
@@ -308,8 +309,23 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const quotaRemaining = followUpRemaining;
   const quotaExhausted = quotaRemaining <= 0;
 
+  const engineTeaserFallback = useMemo(() => {
+    if (!todayFreePeek || !detail) return null;
+    return buildCalendarLockedDayTeaser(detail);
+  }, [todayFreePeek, detail]);
+
+  const aiReadingSettled =
+    !readingLoading && !detailLoading && !profileLoading;
+  const showEngineTeaserFallback =
+    todayFreePeek &&
+    aiReadingSettled &&
+    !reading &&
+    Boolean(engineTeaserFallback);
+  const displayReading =
+    reading ?? (showEngineTeaserFallback ? engineTeaserFallback : null);
+
   const showAnchorHead = Boolean(
-    reading && !readingLoading && (unlocked || todayFreePeek),
+    displayReading && !readingLoading && (unlocked || todayFreePeek),
   );
   const anchorDone = showAnchorHead && anchorTypingDone;
   const locked =
@@ -319,7 +335,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     !detailLoading &&
     !profileLoading;
   const readingMissing =
-    !reading &&
+    !displayReading &&
     !readingLoading &&
     !detailLoading &&
     !profileLoading &&
@@ -333,6 +349,12 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     setAnchorTypingDone(false);
     setFollowUps([]);
   }, [iso]);
+
+  useEffect(() => {
+    if (showEngineTeaserFallback) {
+      setAnchorTypingDone(true);
+    }
+  }, [showEngineTeaserFallback, iso]);
 
   useEffect(() => {
     if (serverThreadMessages.length === 0) return;
@@ -579,17 +601,17 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
             {(readingLoading || showAnchorHead) && (
               <AiAnswerRow
                 kicker={
-                  readingLoading && !reading
+                  readingLoading && !displayReading
                     ? "NLTT đang luận…"
                     : anchorKicker
                 }
               >
-                {readingLoading && !reading ? (
+                {readingLoading && !displayReading ? (
                   <NlttInkLoadingBody />
                 ) : (
                   <TypedBody
-                    text={reading ?? ""}
-                    active={showAnchorHead && !anchorTypingDone}
+                    text={displayReading ?? ""}
+                    active={showAnchorHead && !anchorTypingDone && Boolean(reading)}
                     onComplete={handleAnchorTypingComplete}
                   />
                 )}

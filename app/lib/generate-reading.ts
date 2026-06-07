@@ -3,6 +3,7 @@ import { FunctionsHttpError } from "@supabase/supabase-js";
 import { generateReadingFunctionName } from "~/lib/generate-reading-functions";
 import { sanitizeNlttLuanProse } from "~/lib/nltt-luan-prose";
 import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
+import { getAccessTokenForEdgeInvoke } from "~/lib/supabase-edge-auth";
 import { supabase } from "~/lib/supabase";
 
 export type LaSoChiTietSection = {
@@ -452,16 +453,14 @@ export async function invokeGenerateReading(
 ): Promise<GenerateReadingResponse> {
   const functionName = generateReadingFunctionName(input.endpoint);
   try {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+    const accessToken = await getAccessTokenForEdgeInvoke();
     const { data, error } =
       await supabase.functions.invoke<unknown>(functionName, {
         body: input,
-        ...(session?.access_token
+        ...(accessToken
           ? {
               headers: {
-                Authorization: `Bearer ${session.access_token}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             }
           : {}),
