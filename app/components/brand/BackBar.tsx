@@ -39,6 +39,7 @@ export function BackBar({
   const fg = dark ? "var(--cream, #ede7d3)" : "var(--ink, #18150e)";
   const muteFg = dark ? "rgba(200,188,152,0.6)" : "var(--muted-warm, #7a7050)";
   const ac = accent ?? (dark ? "var(--gold, #c5a55a)" : "var(--gold-deep, #9a7c22)");
+  const barBg = dark ? "var(--forest-deep, #0e1c14)" : "var(--paper, #f1ece1)";
 
   return (
     <div
@@ -47,8 +48,10 @@ export function BackBar({
         alignItems: "center",
         gap: 12,
         padding: "8px 22px 12px",
-        position: "relative",
-        zIndex: 5,
+        position: "sticky",
+        top: 0,
+        zIndex: 30,
+        background: barBg,
       }}
     >
       {showBack ? (
@@ -68,6 +71,9 @@ export function BackBar({
             justifyContent: "center",
             color: ac,
             cursor: "pointer",
+            touchAction: "manipulation",
+            position: "relative",
+            zIndex: 1,
             flexShrink: 0,
             fontFamily: "var(--serif)",
             fontSize: 20.5,

@@ -252,14 +252,27 @@ const chipButtonStyle = {
   cursor: "pointer",
 } as const;
 
+function canPopSpaHistory(): boolean {
+  if (typeof window === "undefined") return false;
+  const idx = (window.history.state as { idx?: number } | null)?.idx;
+  return typeof idx === "number" && idx > 0;
+}
+
 export function CAiTypedScreen({ iso }: { iso: string }) {
   const navigate = useNavigate();
-  const scrollRef = useRef<HTMLDivElement>(null);
   const turnEndRef = useRef<HTMLDivElement>(null);
 
   const openPurchase = useCallback(() => {
     navigate("/dat-lich");
   }, [navigate]);
+
+  const handleBack = useCallback(() => {
+    if (canPopSpaHistory()) {
+      navigate(-1);
+      return;
+    }
+    navigate(`/ngay/${iso}`);
+  }, [navigate, iso]);
 
   const {
     profile,
@@ -506,12 +519,12 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   return (
     <main
-      className="min-h-[100svh] flex flex-col"
+      className="flex min-h-full flex-col"
       style={{ background: CT.paper, color: CT.ink }}
     >
-      <BackBar title={`Luận giải · ngày ${dayShort}`} />
+      <BackBar title={`Luận giải · ngày ${dayShort}`} onBack={handleBack} />
 
-      <div ref={scrollRef} className="flex-1 overflow-auto px-6 pt-2 pb-6">
+      <div className="flex-1 px-6 pt-2 pb-6">
         {detailError ? <ErrorBanner message={detailError} /> : null}
 
         {!detailError ? (
