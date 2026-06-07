@@ -8,6 +8,7 @@ import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { DAY_LUAN_MAX_FOLLOW_UPS } from "~/lib/day-luan-chat";
+import { canPeekTodayLuanReading } from "~/lib/entitlements";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import {
   anchorQuestionForScore,
@@ -279,6 +280,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const dayShort = formatDayIsoShort(iso);
   const todayIso = todayIsoInVn();
   const todayShort = formatDayIsoShort(todayIso);
+  const todayFreePeek = canPeekTodayLuanReading(profile, iso, todayIso);
+  const purchaseGated = paywallTeaser || todayFreePeek;
   const score = detail?.score ?? null;
   const anchorQuestion = anchorQuestionForScore(score, iso);
   const sectionBundle = buildDayLuanSectionBundle(detail);
@@ -296,11 +299,11 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const quotaExhausted = quotaRemaining <= 0;
 
   const showAnchorHead = Boolean(
-    reading && !readingLoading && (unlocked || paywallTeaser),
+    reading && !readingLoading && (unlocked || paywallTeaser || todayFreePeek),
   );
   const anchorDone = showAnchorHead && anchorTypingDone;
   const locked =
-    !paywallTeaser &&
+    !purchaseGated &&
     !unlocked &&
     !readingLoading &&
     !detailLoading &&
@@ -341,7 +344,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   const submitFollowUp = useCallback(
     async (rawQuestion: string) => {
-      if (paywallTeaser) {
+      if (purchaseGated) {
         openPurchase();
         return;
       }
@@ -402,7 +405,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       compareWithTomorrow,
       followUpChatEnabled,
       openPurchase,
-      paywallTeaser,
+      purchaseGated,
       quotaExhausted,
       scrollToLatest,
       submitBusy,
@@ -412,7 +415,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
 
   const retryFollowUp = useCallback(
     async (turnId: string, question: string) => {
-      if (paywallTeaser) {
+      if (purchaseGated) {
         openPurchase();
         return;
       }
@@ -446,7 +449,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ),
       );
     },
-    [askFollowUp, openPurchase, paywallTeaser],
+    [askFollowUp, openPurchase, purchaseGated],
   );
 
   const askedQuestions = [
@@ -461,7 +464,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     anchorDone || !showAnchorHead ? "NLTT luận" : "NLTT đang luận…";
 
   const purchaseGatedChips =
-    paywallTeaser &&
+    purchaseGated &&
     anchorDone &&
     followUpChatEnabled &&
     remainingChips.length > 0;
@@ -705,7 +708,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         ) : null}
       </div>
 
-      {paywallTeaser && followUpChatEnabled && anchorDone && !detailLoading && !detailError ? (
+      {purchaseGated && followUpChatEnabled && anchorDone && !detailLoading && !detailError ? (
         <div
           className="px-5 pt-2 pb-[18px]"
           style={{ background: CT.paper, borderTop: `1px solid ${CT.hairline}` }}

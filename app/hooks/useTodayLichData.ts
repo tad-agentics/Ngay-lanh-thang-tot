@@ -1,10 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { hashBatTuBody, useBatTuQuery } from "~/hooks/useBatTuQuery";
+import { useBatTuQuery } from "~/hooks/useBatTuQuery";
 import { useOfflineCalendar } from "~/hooks/useOfflineCalendar";
 import { useProfile } from "~/hooks/useProfile";
-import { canUseCalendar, isNeverSubscribedUser } from "~/lib/entitlements";
 import { useAuth } from "~/lib/auth";
 import { profileCanUseBatTu, profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
@@ -34,17 +33,11 @@ export function useTodayLichData() {
   const canBatTu = profileCanUseBatTu(profile);
   const recomputePending = profile?.la_so_recompute_status === "pending";
 
-  const lapsedNoCalendar =
-    Boolean(profile) &&
-    !canUseCalendar(profile!) &&
-    !isNeverSubscribedUser(profile!);
-
   const batTuBody = useMemo(() => {
     if (!profile || !canBatTu) return null;
     return { ...profileToBatTuPersonQuery(profile), date: todayIso };
   }, [profile, canBatTu, todayIso]);
 
-  const bodyHash = batTuBody ? hashBatTuBody(batTuBody) : "";
   const userId = user?.id;
 
   const bootstrapToday = useMemo((): NgayHomNayHome | null => {
@@ -59,7 +52,7 @@ export function useTodayLichData() {
   }, [userId, todayIso, queryClient]);
 
   const fetchEnabled =
-    Boolean(userId && batTuBody && online && !recomputePending && !lapsedNoCalendar);
+    Boolean(userId && batTuBody && online && !recomputePending);
 
   const homNayQuery = useBatTuQuery<unknown>(userId, "ngay-hom-nay", batTuBody ?? {}, {
     enabled: fetchEnabled,
@@ -108,6 +101,8 @@ export function useTodayLichData() {
     error = "Không có dữ liệu ngoại tuyến cho hôm nay.";
   } else if (homNayQuery.isError) {
     error = homNayQuery.error?.message ?? "Không tải được lịch hôm nay.";
+  } else if (detailQuery.isError) {
+    error = detailQuery.error?.message ?? "Không tải được chi tiết ngày hôm nay.";
   }
 
   const loading =
@@ -120,6 +115,9 @@ export function useTodayLichData() {
 
   const today = !online ? offlineToday : mergedToday;
 
+  const detailLoading =
+    fetchEnabled && detailQuery.isPending && detailData == null;
+
   return {
     profile,
     profileLoading,
@@ -127,6 +125,8 @@ export function useTodayLichData() {
     error,
     today,
     rawPayload: homNayData ?? null,
+    detailPayload: detailData ?? null,
+    detailLoading,
     readingPayload,
     menh,
     scoreMethodology: today?.scoreMethodology ?? null,

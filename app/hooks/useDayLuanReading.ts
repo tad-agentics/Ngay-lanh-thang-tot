@@ -334,13 +334,13 @@ export function useDayLuanReading(iso: string) {
 
   const retryReading = useCallback(async () => {
     if (!luanContext) return;
-    if (paywallTeaser) {
+    if (!subActive) {
       await loadReading(luanContext, "teaser");
       return;
     }
     if (!unlocked) return;
     await loadReading(luanContext, "full");
-  }, [luanContext, unlocked, paywallTeaser, loadReading]);
+  }, [luanContext, unlocked, subActive, loadReading]);
 
   return {
     profile,

@@ -3,7 +3,7 @@ import { isLuanContextPayload } from "~/lib/luan-context";
 
 /**
  * Prefer `day-luan-context` on `day-detail` (same engine path as `/luan-ai/day-*`).
- * Never-sub must use `teaser` (production gate); subscribers use `inline` for shorter copy.
+ * Calendar-teaser users (never-sub / lapsed) use `teaser` on today; subscribers use `inline`.
  */
 export function buildInlineDayReadingInvoke(
   endpoint: "ngay-hom-nay" | "day-detail",

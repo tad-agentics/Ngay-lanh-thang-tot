@@ -54,6 +54,16 @@ export function neverSubFreeDayReading(
   return isNewUserDayLuanTeaser(profile) && dayIso === todayIso;
 }
 
+/** Hôm nay: user chưa có gói lịch vẫn xem được luận teaser trên `/luan-ai/day-*`. */
+export function canPeekTodayLuanReading(
+  profile: EntitlementProfile | null | undefined,
+  dayIso: string,
+  todayIso: string,
+): boolean {
+  if (!profile || !dayIso || !todayIso || dayIso !== todayIso) return false;
+  return !canUseCalendar(profile);
+}
+
 export function canUseBaziReading(
   profile: EntitlementProfile | null | undefined,
 ): boolean {

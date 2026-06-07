@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { Mono } from "~/components/brand";
@@ -6,7 +7,6 @@ import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeS
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
 import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
-import { CHomeTodayLuanPaywall } from "~/components/direction-c/CHomeTodayLuanPaywall";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
@@ -22,10 +22,13 @@ import {
   canUseTieuVanReading,
   hasYearlySubscription,
   isNewUserDayLuanTeaser,
+  neverSubFreeDayReading,
   subscriptionActive,
 } from "~/lib/entitlements";
 import { CT } from "~/lib/c-tokens";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
+import { buildCalendarLockedDayTeaser } from "~/lib/home-bat-tu";
+import { parseDayDetailForView } from "~/lib/day-detail-view";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
 import {
   LUAN_LA_SO_BAT_TU_TAGLINE,
@@ -52,12 +55,22 @@ export function CHomeScreen() {
     online,
     todayIso,
     recomputePending: recomputePendingFromData,
+    detailPayload,
+    detailLoading,
   } = useTodayLichData();
 
   const showRecomputeSkeleton = recomputePending || recomputePendingFromData;
   const subActive = subscriptionActive(profile?.subscription_expires_at ?? null);
   const calendarLocked = Boolean(user && profile && !canUseCalendar(profile));
   const newUserTeaser = isNewUserDayLuanTeaser(profile);
+  const neverSubTodayFree = neverSubFreeDayReading(profile, todayIso, todayIso);
+  const expectNlttLuan = subActive || neverSubTodayFree;
+
+  const dayEngineFallback = useMemo(() => {
+    if (!calendarLocked || expectNlttLuan || !detailPayload) return null;
+    const detail = parseDayDetailForView(detailPayload);
+    return detail ? buildCalendarLockedDayTeaser(detail) : null;
+  }, [calendarLocked, expectNlttLuan, detailPayload]);
 
   const {
     text: readingText,
@@ -75,18 +88,19 @@ export function CHomeScreen() {
     newUserTeaser,
   });
 
-  const showHomeLuanPaywall =
-    !subActive &&
-    Boolean(user && today) &&
-    !readingLoading &&
-    !readingText?.trim();
   const showNlttLuanFailed =
-    subActive &&
+    expectNlttLuan &&
     Boolean(user && today) &&
     !readingLoading &&
     !readingText?.trim();
-  const showTodayReasoning =
-    Boolean(readingLoading || readingText?.trim());
+  const lapsedReasoningPending =
+    calendarLocked && !expectNlttLuan && detailLoading && !dayEngineFallback;
+  const showTodayReasoning = Boolean(
+    readingLoading ||
+      readingText?.trim() ||
+      dayEngineFallback ||
+      lapsedReasoningPending,
+  );
 
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
@@ -145,10 +159,6 @@ export function CHomeScreen() {
                 >
                   Luận giải đầy đủ cần kết nối lại.
                 </p>
-              ) : showHomeLuanPaywall ? (
-                <CHomeTodayLuanPaywall
-                  onDatLich={() => void navigate("/dat-lich")}
-                />
               ) : showNlttLuanFailed ? (
                 <p
                   className="px-[18px] pb-3.5 font-serif text-sm italic leading-snug"
@@ -168,13 +178,14 @@ export function CHomeScreen() {
               ) : showTodayReasoning ? (
                 <CTodayReasoning
                   text={readingText}
-                  loading={readingLoading}
+                  fallbackText={dayEngineFallback}
+                  loading={
+                    (readingLoading && expectNlttLuan) || lapsedReasoningPending
+                  }
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
-                  onCtaClick={() =>
-                    void navigate(calendarLocked ? "/dat-lich" : `/luan-ai/day-${todayIso}`)
-                  }
-                  showCta={Boolean(user)}
+                  onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
+                  showCta={Boolean(user) && (expectNlttLuan || calendarLocked)}
                   showCtaWithEngineFallback={calendarLocked}
                 />
               ) : null

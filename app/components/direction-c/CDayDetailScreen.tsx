@@ -245,7 +245,11 @@ export function CDayDetailScreen() {
                     instant={instantTyping}
                     onTypingComplete={markTypingSeen}
                     onCtaClick={() =>
-                      void navigate(calendarLocked ? "/dat-lich" : `/luan-ai/day-${iso}`)
+                      void navigate(
+                        calendarLocked && iso !== todayIso
+                          ? "/dat-lich"
+                          : `/luan-ai/day-${iso}`,
+                      )
                     }
                     showCta={Boolean(user) && (expectNlttLuan || calendarLocked)}
                     showCtaWithEngineFallback={calendarLocked}

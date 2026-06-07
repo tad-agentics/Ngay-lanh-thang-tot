@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canPeekTodayLuanReading,
   isCalendarTeaserEligible,
   isNeverSubscribedUser,
   isNewUserDayLuanTeaser,
@@ -93,6 +94,52 @@ describe("isCalendarTeaserEligible", () => {
         bazi_reading_unlocked_at: null,
         tieu_van_reading_expires_at: null,
       }),
+    ).toBe(false);
+  });
+});
+
+describe("canPeekTodayLuanReading", () => {
+  const neverSub = {
+    subscription_expires_at: null,
+    bazi_reading_unlocked_at: null,
+    tieu_van_reading_expires_at: null,
+  };
+  const lapsed = {
+    subscription_expires_at: "2020-01-01T00:00:00Z",
+    bazi_reading_unlocked_at: null,
+    tieu_van_reading_expires_at: null,
+  };
+
+  it("true for never-sub on today", () => {
+    expect(canPeekTodayLuanReading(neverSub, "2026-06-01", "2026-06-01")).toBe(
+      true,
+    );
+  });
+
+  it("true for lapsed subscriber on today", () => {
+    expect(canPeekTodayLuanReading(lapsed, "2026-06-01", "2026-06-01")).toBe(
+      true,
+    );
+  });
+
+  it("false for lapsed on other days", () => {
+    expect(canPeekTodayLuanReading(lapsed, "2026-06-02", "2026-06-01")).toBe(
+      false,
+    );
+  });
+
+  it("false while subscription is active", () => {
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    expect(
+      canPeekTodayLuanReading(
+        {
+          subscription_expires_at: future,
+          bazi_reading_unlocked_at: null,
+          tieu_van_reading_expires_at: null,
+        },
+        "2026-06-01",
+        "2026-06-01",
+      ),
     ).toBe(false);
   });
 });

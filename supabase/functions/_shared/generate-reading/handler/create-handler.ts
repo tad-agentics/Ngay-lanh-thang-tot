@@ -8,6 +8,7 @@ import {
   preflightAiReadingAccess,
 } from "../../generate-reading-guards.ts";
 import { isLuanContextPayload } from "../../luan-context.ts";
+import { isCalendarTeaserEligible } from "../../entitlements.ts";
 import { corsHeadersForRequest } from "../../cors.ts";
 import { trackProfileEngagement } from "../../user-engagement.ts";
 import {
@@ -186,20 +187,16 @@ export function createGenerateReadingHandler(
           .select("subscription_expires_at")
           .eq("id", uid)
           .maybeSingle();
-        if (
-          teaserProfErr ||
-          !teaserProfile ||
-          teaserProfile.subscription_expires_at != null
-        ) {
+        if (teaserProfErr || !teaserProfile || !isCalendarTeaserEligible(teaserProfile)) {
           console.warn(
             "generate-reading teaser denied",
             endpoint,
             uid,
-            teaserProfErr?.message ?? "not_never_subscribed",
+            teaserProfErr?.message ?? "not_calendar_teaser_eligible",
           );
           return ok(null, null, req);
         }
-        if (endpoint === "day-detail") {
+        if (endpoint === "day-detail" || endpoint === "ngay-hom-nay") {
           if (!dayIso || dayIso !== todayIsoVietnam()) {
             return ok(null, null, req);
           }
