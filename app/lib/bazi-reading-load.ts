@@ -271,9 +271,9 @@ const paywallBundleInflight = new Map<string, Promise<BaziPaywallBundle>>();
 
 /**
  * Paywall teaser với session cache — non-buyer mở `/toi/luan-bat-tu` nhiều lần
- * (hoặc sau prewarm trên `/lich` / `/toi`) không gọi lại Edge. Server
- * `reading_cache` (7d) lo phần cross-session; sessionStorage lo re-mount trong phiên.
- * In-flight dedupe tránh prewarm + home card gọi song song.
+ * (hoặc sau prewarm trên `/toi`) không gọi lại Edge. Server `reading_cache` (7d)
+ * lo phần cross-session; sessionStorage lo re-mount trong phiên.
+ * In-flight dedupe tránh prewarm + preview card gọi song song.
  */
 export async function loadBaziPaywallBundleCached(
   profile: Profile,

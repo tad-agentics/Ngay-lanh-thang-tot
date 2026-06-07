@@ -43,7 +43,7 @@ type CHomeBaziPreviewCardProps = {
   profile: Profile;
 };
 
-/** /lich — lá số thật + menh teaser + blur chương; không cần bấm để thấy Nhật chủ/Mệnh. */
+/** /toi — lá số thật + menh teaser + blur chương; không cần bấm để thấy Nhật chủ/Mệnh. */
 export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
   const pkg = UI_PACKAGES.find((p) => p.sku === "luan_bat_tu");
   const yearCanChi = fallbackFlowYearCanChiLabel(currentYearVn()) ?? "";

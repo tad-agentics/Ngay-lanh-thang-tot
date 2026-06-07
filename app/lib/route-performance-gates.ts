@@ -17,10 +17,10 @@ export function routeUsesBaziPrewarm(pathname: string): boolean {
   return false;
 }
 
-/** Non-buyer teaser prewarm — hub `/toi` và `/lich` (preview card trên Hôm nay). */
+/** Non-buyer teaser prewarm — hub `/toi` (Bát Tự preview card). */
 export function routeUsesBaziTeaserPrewarm(pathname: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";
-  return p === "/toi" || p === "/lich";
+  return p === "/toi";
 }
 
 export function routeUsesVanTrinhNamPrewarm(pathname: string): boolean {

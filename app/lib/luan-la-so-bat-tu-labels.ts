@@ -10,7 +10,7 @@ export const LUAN_LA_SO_BAT_TU_TAGLINE =
 
 export const LUAN_LA_SO_BAT_TU_FREE_WITH_YEARLY = "hoặc miễn phí với Lịch năm";
 
-/** Một câu blur trên card `/lich` — gợi ấn vào đọc chi tiết paywall. */
+/** Một câu blur trên card preview `/toi` — gợi ấn vào đọc chi tiết paywall. */
 export function homeBaziPaywallBlurHook(yearCanChi: string): string {
   const year = yearCanChi.trim();
   if (year) {

@@ -91,7 +91,7 @@ export function BaziPaywallLockedSectionBody({
   );
 }
 
-/** Home `/lich` — blur gợi mở + CTA giữa khối, viền vàng như nút. */
+/** Tôi tab Bát Tự preview — blur gợi mở + CTA giữa khối, viền vàng như nút. */
 export function CBaziLockedChaptersHomeTeaser({
   yearCanChi,
 }: {

@@ -14,7 +14,7 @@ import { Mono } from "~/components/brand";
 import { CConfirmDialog } from "~/components/direction-c/CConfirmDialog";
 import { DirectionCScreenBoundary } from "~/components/direction-c/DirectionCScreenBoundary";
 import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
-import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
+import { CHomeBaziPreviewCard } from "~/components/direction-c/CHomeBaziPreviewCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import {
@@ -317,9 +317,9 @@ export default function ToiRoute() {
               Đọc ngay →
             </div>
           </Link>
-        ) : (
-          <CMeLockedBaziCard />
-        )}
+        ) : profile ? (
+          <CHomeBaziPreviewCard profile={profile} />
+        ) : null}
 
         {TIEU_VAN_LUAN_ENABLED ? (
           tieuVanUnlocked ? (

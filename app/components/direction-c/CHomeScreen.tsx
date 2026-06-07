@@ -5,7 +5,6 @@ import { Mono } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
-import { CHomeBaziPreviewCard } from "~/components/direction-c/CHomeBaziPreviewCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
@@ -17,7 +16,6 @@ import { useTodayLichData } from "~/hooks/useTodayLichData";
 import { useAuth } from "~/lib/auth";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import {
-  canUseBaziReading,
   canUseCalendar,
   canUseTieuVanReading,
   hasYearlySubscription,
@@ -27,10 +25,6 @@ import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { buildCalendarLockedDayTeaser } from "~/lib/home-bat-tu";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
-import {
-  LUAN_LA_SO_BAT_TU_TAGLINE,
-  LUAN_LA_SO_BAT_TU_TITLE,
-} from "~/lib/luan-la-so-bat-tu-labels";
 import {
   LUAN_LUU_NIEN_NGUYET_TAGLINE,
   LUAN_LUU_NIEN_NGUYET_TITLE,
@@ -113,7 +107,6 @@ export function CHomeScreen() {
   const prevIso = addDaysToIso(todayIso, -1);
   const nextIso = addDaysToIso(todayIso, 1);
   const offlineMode = !online;
-  const baziUnlocked = canUseBaziReading(profile);
   const tieuVanUnlocked = canUseTieuVanReading(profile);
   const yearlySub = hasYearlySubscription(profile);
   const tieuVanYear = currentYearVn();
@@ -206,42 +199,6 @@ export function CHomeScreen() {
               ) : null
             }
           />
-        ) : null}
-
-        {today && !showRecomputeSkeleton && (subActive || calendarLocked) ? (
-          baziUnlocked ? (
-            <Link
-              to="/toi/luan-bat-tu"
-              className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
-              style={{ background: "#fff", borderColor: CT.goldDeep, color: CT.ink }}
-            >
-              <div className="flex items-baseline gap-2">
-                <span style={{ color: CT.goldDeep, fontSize: 14.5 }}>★</span>
-                <Mono style={{ color: CT.goldDeep, fontSize: 9.5 }}>
-                  {yearlySub ? "Đã mở · gói năm" : "Đã mở"}
-                </Mono>
-              </div>
-              <div
-                className="mt-1.5 font-[family-name:var(--display)] text-[19.5px] font-extrabold uppercase tracking-[-0.01em]"
-                style={{ color: CT.ink }}
-              >
-                {LUAN_LA_SO_BAT_TU_TITLE}
-              </div>
-              <div className="mt-1 font-serif text-xs" style={{ color: CT.muted }}>
-                {LUAN_LA_SO_BAT_TU_TAGLINE}
-              </div>
-              <div
-                className="mt-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"
-                style={{ color: CT.goldDeep }}
-              >
-                Đọc ngay →
-              </div>
-            </Link>
-          ) : (
-            profile ? (
-              <CHomeBaziPreviewCard profile={profile} />
-            ) : null
-          )
         ) : null}
 
         {TIEU_VAN_LUAN_ENABLED && today && !showRecomputeSkeleton && (subActive || calendarLocked) ? (
