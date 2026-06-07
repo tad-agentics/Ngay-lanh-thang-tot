@@ -16,6 +16,15 @@ import {
 } from "~/lib/lich-thang-cache";
 import type { Profile } from "~/lib/profile-context";
 
+export type LichThangData = {
+  days: CalendarDay[];
+  lunarMonthLabel: string | null;
+  loading: boolean;
+  refreshing: boolean;
+  error: string | null;
+  recomputePending: boolean;
+};
+
 async function fetchLichThangMonth(
   body: ReturnType<typeof profileToBatTuPersonQuery>,
   year: number,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -25,8 +25,6 @@ import {
   resolveSavedPickSource,
 } from "~/lib/saved-pick-mark";
 import type { TuTruIntent } from "~/lib/api-types";
-import { addDaysToIso } from "~/lib/tu-tru-dates";
-
 type NgayNavState = {
   markLabel?: string;
   intentLabel?: string;
@@ -35,13 +33,13 @@ type NgayNavState = {
 type LichSelectedDayCardProps = {
   iso: string;
   dayData: LichDayData;
-  onSelectIso: (iso: string) => void;
+  mastheadSubline?: ReactNode;
 };
 
 export function LichSelectedDayCard({
   iso,
   dayData,
-  onSelectIso,
+  mastheadSubline,
 }: LichSelectedDayCardProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -208,19 +206,40 @@ export function LichSelectedDayCard({
     }
   }
 
-  const prevIso = addDaysToIso(iso, -1);
-  const nextIso = addDaysToIso(iso, 1);
-
   if (!cardProps) return null;
+
+  const saveDayFooter =
+    user && personalized && (detail || cardFromToday) ? (
+      <button
+        type="button"
+        disabled={saving}
+        onClick={() => setMarkSheetOpen(true)}
+        className="flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
+        style={{
+          padding: 12,
+          background: savedPick ? "transparent" : CT.forest,
+          color: savedPick ? CT.goldDeep : CT.cream,
+          fontFamily: "var(--display-2)",
+          fontWeight: 800,
+          fontSize: 12.5,
+          letterSpacing: "0.08em",
+          border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
+        }}
+      >
+        {savedPick
+          ? "Sửa đánh dấu"
+          : saving
+            ? "Đang lưu…"
+            : "Lưu ngày lành · nhắc trước 1 ngày"}
+      </button>
+    ) : undefined;
 
   return (
     <>
       <LichToPageCard
         {...cardProps}
-        prevLabel={`${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm trước`}
-        nextLabel={`${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)} hôm sau`}
-        onPrev={() => onSelectIso(prevIso)}
-        onNext={() => onSelectIso(nextIso)}
+        mastheadSubline={mastheadSubline}
+        footer={saveDayFooter}
         reasoning={
           !online ? (
             <p
@@ -294,31 +313,6 @@ export function LichSelectedDayCard({
             </div>
           ) : null}
         </div>
-      ) : null}
-
-      {user && personalized && (detail || cardFromToday) ? (
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() => setMarkSheetOpen(true)}
-          className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
-          style={{
-            padding: 12,
-            background: savedPick ? "transparent" : CT.forest,
-            color: savedPick ? CT.goldDeep : CT.cream,
-            fontFamily: "var(--display-2)",
-            fontWeight: 800,
-            fontSize: 12.5,
-            letterSpacing: "0.08em",
-            border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
-          }}
-        >
-          {savedPick
-            ? "Sửa đánh dấu"
-            : saving
-              ? "Đang lưu…"
-              : "Lưu ngày lành · nhắc trước 1 ngày"}
-        </button>
       ) : null}
 
       <CSavedPickMarkSheet

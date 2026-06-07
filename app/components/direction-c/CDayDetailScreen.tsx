@@ -39,7 +39,6 @@ import {
 import type { TuTruIntent } from "~/lib/api-types";
 import { offerGoogleCalendarAfterSave } from "~/lib/saved-pick-calendar";
 import { findSavedPickForDay } from "~/lib/saved-picks-upcoming";
-import { addDaysToIso } from "~/lib/tu-tru-dates";
 import { resolveInlineReadingPayload } from "~/lib/today-inline-reading-payload";
 
 type NgayNavState = {
@@ -164,8 +163,6 @@ export function CDayDetailScreen() {
       followUpPrompt,
   );
 
-  const prevIso = iso ? addDaysToIso(iso, -1) : "";
-  const nextIso = iso ? addDaysToIso(iso, 1) : "";
   const monthNum = iso ? Number(iso.slice(5, 7)) : 0;
 
   const score = detail?.score ?? null;
@@ -343,18 +340,32 @@ export function CDayDetailScreen() {
                     : detail.hungSatLabels,
                 gioTot: detail.gioTot || "—",
               })}
-              prevLabel={
-                prevIso
-                  ? `${prevIso.slice(8, 10)}.${prevIso.slice(5, 7)} hôm trước`
-                  : undefined
+              footer={
+                user && personalized ? (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => setMarkSheetOpen(true)}
+                    className="flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
+                    style={{
+                      padding: 12,
+                      background: savedPick ? "transparent" : CT.forest,
+                      color: savedPick ? CT.goldDeep : CT.cream,
+                      fontFamily: "var(--display-2)",
+                      fontWeight: 800,
+                      fontSize: 12.5,
+                      letterSpacing: "0.08em",
+                      border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
+                    }}
+                  >
+                    {savedPick
+                      ? "Sửa đánh dấu"
+                      : saving
+                        ? "Đang lưu…"
+                        : "Lưu ngày lành · nhắc trước 1 ngày"}
+                  </button>
+                ) : undefined
               }
-              nextLabel={
-                nextIso
-                  ? `${nextIso.slice(8, 10)}.${nextIso.slice(5, 7)} hôm sau`
-                  : undefined
-              }
-              onPrev={() => void navigate(`/ngay/${prevIso}`)}
-              onNext={() => void navigate(`/ngay/${nextIso}`)}
             />
 
             {savedPick ? (
@@ -378,30 +389,6 @@ export function CDayDetailScreen() {
               </div>
             ) : null}
 
-            {user && personalized ? (
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => setMarkSheetOpen(true)}
-                className="mt-4 flex min-h-[44px] w-full cursor-pointer items-center justify-center border-none uppercase tracking-widest disabled:cursor-default disabled:opacity-60"
-                style={{
-                  padding: 12,
-                  background: savedPick ? "transparent" : CT.forest,
-                  color: savedPick ? CT.goldDeep : CT.cream,
-                  fontFamily: "var(--display-2)",
-                  fontWeight: 800,
-                  fontSize: 12.5,
-                  letterSpacing: "0.08em",
-                  border: savedPick ? `1px solid ${CT.goldDeep}` : "none",
-                }}
-              >
-                {savedPick
-                  ? "Sửa đánh dấu"
-                  : saving
-                    ? "Đang lưu…"
-                    : "Lưu ngày lành · nhắc trước 1 ngày"}
-              </button>
-            ) : null}
           </>
         ) : null}
       </div>

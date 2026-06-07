@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import {
@@ -7,55 +5,36 @@ import {
   CLichMonthScoreLegend,
 } from "~/components/direction-c/CLichMonthGrid";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
-import { useLichThangData } from "~/hooks/useLichThangData";
-import { useOnlineStatus } from "~/hooks/useOnlineStatus";
-import type { Profile } from "~/lib/profile-context";
+import type { LichThangData } from "~/hooks/useLichThangData";
 import { CT } from "~/lib/c-tokens";
-import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 
 export type CLichMonthCalendarSectionProps = {
-  profile: Profile | null;
-  profileLoading: boolean;
   year: number;
   month: number;
   todayIso: string;
   selectedIso: string;
+  monthThang: LichThangData;
   onShiftMonth: (delta: number) => void;
   onSelectDay: (iso: string) => void;
 };
 
 export function CLichMonthCalendarSection({
-  profile,
-  profileLoading,
   year,
   month,
   todayIso,
   selectedIso,
+  monthThang,
   onShiftMonth,
   onSelectDay,
 }: CLichMonthCalendarSectionProps) {
   const { pending: recomputePending } = useLaSoRecomputeGate();
-  const online = useOnlineStatus();
 
   const {
     days,
-    lunarMonthLabel,
     loading,
-    refreshing,
     error,
     recomputePending: hookRecomputePending,
-  } = useLichThangData({
-    profile,
-    profileLoading,
-    year,
-    month,
-    online,
-  });
-
-  const menh = useMemo(() => {
-    const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
-    return laso?.menh ?? "bạn";
-  }, [profile]);
+  } = monthThang;
 
   const showRecomputeSkeleton = recomputePending || hookRecomputePending;
   const showInitialLoading = loading && days.length === 0 && !showRecomputeSkeleton;
@@ -63,13 +42,28 @@ export function CLichMonthCalendarSection({
   return (
     <section className="mt-6">
       <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-        }}
+        className="grid grid-cols-3 items-end"
+        style={{ columnGap: 14 }}
       >
+        <button
+          type="button"
+          aria-label="Tháng trước"
+          onClick={() => onShiftMonth(-1)}
+          className="justify-self-start"
+          style={{
+            color: CT.goldDeep,
+            fontFamily: "var(--serif)",
+            fontSize: 20.5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          ‹
+        </button>
         <div
+          className="text-center"
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
@@ -82,67 +76,23 @@ export function CLichMonthCalendarSection({
         >
           Tháng {month} · {year}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <button
-            type="button"
-            aria-label="Tháng trước"
-            onClick={() => onShiftMonth(-1)}
-            style={{
-              color: CT.goldDeep,
-              fontFamily: "var(--serif)",
-              fontSize: 20.5,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            aria-label="Tháng sau"
-            onClick={() => onShiftMonth(1)}
-            style={{
-              color: CT.goldDeep,
-              fontFamily: "var(--serif)",
-              fontSize: 20.5,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-            }}
-          >
-            ›
-          </button>
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: 6,
-          fontFamily: "var(--serif)",
-          fontSize: 13,
-          color: "var(--muted)",
-          lineHeight: 1.5,
-        }}
-      >
-        {lunarMonthLabel ? (
-          <>
-            {lunarMonthLabel}
-            {" · "}
-          </>
-        ) : null}
-        chấm theo bản mệnh{" "}
-        <strong style={{ color: CT.ink, fontWeight: 600 }}>{menh}</strong>
-        {refreshing ? (
-          <>
-            {" · "}
-            <span style={{ color: CT.goldDeep, fontStyle: "italic" }}>
-              Đang cập nhật…
-            </span>
-          </>
-        ) : null}
+        <button
+          type="button"
+          aria-label="Tháng sau"
+          onClick={() => onShiftMonth(1)}
+          className="justify-self-end"
+          style={{
+            color: CT.goldDeep,
+            fontFamily: "var(--serif)",
+            fontSize: 20.5,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          ›
+        </button>
       </div>
 
       {error ? <ErrorBanner message={error} /> : null}

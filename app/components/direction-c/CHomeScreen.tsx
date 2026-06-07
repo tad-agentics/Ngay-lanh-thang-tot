@@ -6,6 +6,7 @@ import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichMonthCalendarSection } from "~/components/direction-c/CLichMonthCalendarSection";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
+import { LichMonthMenhSubline } from "~/components/direction-c/LichMonthMenhSubline";
 import { LichSelectedDayCard } from "~/components/direction-c/LichSelectedDayCard";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { useLaSoRecomputeGate } from "~/hooks/useLaSoRecomputeGate";
@@ -13,6 +14,7 @@ import {
   normalizeLichDayIso,
   useLichDayData,
 } from "~/hooks/useLichDayData";
+import { useLichThangData } from "~/hooks/useLichThangData";
 import { useProfile } from "~/hooks/useProfile";
 import { useAuth } from "~/lib/auth";
 import { currentYearVn } from "~/lib/bazi-reading-session";
@@ -33,6 +35,7 @@ import {
   LUAN_LUU_NIEN_NGUYET_TAGLINE,
   LUAN_LUU_NIEN_NGUYET_TITLE,
 } from "~/lib/luan-luu-nien-nguyet-labels";
+import { laSoJsonToRevealProps } from "~/lib/la-so-ui";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 
 export function CHomeScreen() {
@@ -134,6 +137,27 @@ export function CHomeScreen() {
     subActive,
   } = dayData;
 
+  const monthThang = useLichThangData({
+    profile,
+    profileLoading,
+    year: viewYm.year,
+    month: viewYm.month,
+    online,
+  });
+
+  const menh = useMemo(() => {
+    const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
+    return laso?.menh ?? "bạn";
+  }, [profile]);
+
+  const mastheadSubline = canBatTu ? (
+    <LichMonthMenhSubline
+      lunarMonthLabel={monthThang.lunarMonthLabel}
+      menh={menh}
+      refreshing={monthThang.refreshing}
+    />
+  ) : undefined;
+
   const showRecomputeSkeleton = recomputePending || dayRecomputePending;
   const tieuVanUnlocked = canUseTieuVanReading(profile);
   const yearlySub = hasYearlySubscription(profile);
@@ -183,19 +207,18 @@ export function CHomeScreen() {
             <LichSelectedDayCard
               iso={selectedIso}
               dayData={dayData}
-              onSelectIso={setSelectedIso}
+              mastheadSubline={mastheadSubline}
             />
           </div>
         ) : null}
 
         {canBatTu && !showRecomputeSkeleton ? (
           <CLichMonthCalendarSection
-            profile={profile}
-            profileLoading={profileLoading}
             year={viewYm.year}
             month={viewYm.month}
             todayIso={todayIso}
             selectedIso={selectedIso}
+            monthThang={monthThang}
             onShiftMonth={shiftMonth}
             onSelectDay={setSelectedIso}
           />
