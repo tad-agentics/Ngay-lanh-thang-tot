@@ -53,9 +53,10 @@ function thinkingEnabled(
 ): boolean {
   if (options.disableThinking) return false;
   if (profile === "pro") return true;
+  // Flash default off — faster, avoids reasoning eating max_tokens → empty content.
   const v = Deno.env.get("DEEPSEEK_THINKING")?.trim().toLowerCase();
-  if (v === "disabled" || v === "0" || v === "false") return false;
-  return true;
+  if (v === "enabled" || v === "1" || v === "true") return true;
+  return false;
 }
 
 export async function llmChat(
@@ -194,6 +195,7 @@ export async function llmLegacyProse(
 ): Promise<string | null> {
   return await llmCompletion(systemPrompt, userJson, maxTokens, timeoutMs, {
     profile,
+    ...(profile === "flash" ? { disableThinking: true } : {}),
   });
 }
 

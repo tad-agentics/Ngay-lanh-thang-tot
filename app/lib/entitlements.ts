@@ -56,7 +56,7 @@ export function neverSubFreeDayReading(
   return isNewUserDayLuanTeaser(profile) && dayIso === todayIso;
 }
 
-/** Hôm nay: user chưa có gói lịch (never-sub + lapsed) xem luận teaser trên `/luan-ai/day-*`. */
+/** Hôm nay: user chưa có gói lịch (never-sub + lapsed) xem luận full trên `/luan-ai/day-*`. */
 export function canPeekTodayLuanReading(
   profile: EntitlementProfile | null | undefined,
   dayIso: string,

@@ -4,6 +4,8 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+import { isCalendarTeaserEligible } from "./entitlements.ts";
+import { todayIsoVietnam } from "./generate-reading/core/dates.ts";
 import { redisGetString, redisRestConfigured, redisSetNxEx } from "./redis-cache.ts";
 
 const AI_READING_UNLOCK_FEATURE_KEY = "ai_reading_unlock";
@@ -43,6 +45,15 @@ export async function preflightAiReadingAccess(
     subscriptionActiveForReading(
       profile.subscription_expires_at as string | null,
     )
+  ) {
+    return { allowed: true };
+  }
+
+  // Wow-moment: never-sub / lapsed get full day-detail anchor on today only (`/luan-ai`).
+  if (
+    scope === "day_detail" &&
+    dayIso === todayIsoVietnam() &&
+    isCalendarTeaserEligible(profile)
   ) {
     return { allowed: true };
   }

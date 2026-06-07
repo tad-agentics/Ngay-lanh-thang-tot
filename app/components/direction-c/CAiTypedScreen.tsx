@@ -531,7 +531,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               <div className="mt-6 text-center">
                 <p className="font-serif text-sm mb-4" style={{ color: CT.ink2 }}>
                   Luận giải cho ngày {dayShort} cần gói lịch cá nhân. Bạn vẫn có
-                  thể xem teaser miễn phí cho hôm nay.
+                  thể xem luận đầy đủ miễn phí cho hôm nay.
                 </p>
                 <button
                   type="button"

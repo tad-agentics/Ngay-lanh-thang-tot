@@ -67,7 +67,7 @@ export function useDayLuanReading(iso: string) {
   /** Chưa có gói lịch (never-sub + lapsed) — cùng gate mua gói trên `/luan-ai`. */
   const calendarTeaserUser = Boolean(profile && !subActive);
   const todayIso = todayIsoInVn();
-  /** Never-sub / lapsed: chỉ sinh luận teaser khi xem đúng ngày hôm nay (VN). */
+  /** Never-sub / lapsed: luận full hôm nay (wow moment) — ngày khác paywall. */
   const todayFreePeek = canPeekTodayLuanReading(profile, iso, todayIso);
 
   const batTuQuery = profile ? profileToBatTuPersonQuery(profile) : null;
@@ -110,7 +110,6 @@ export function useDayLuanReading(iso: string) {
   const loadReading = useCallback(
     async (
       contextPayload: unknown,
-      mode: "full" | "teaser",
       gen: number,
       dayIso: string,
     ): Promise<void> => {
@@ -126,13 +125,12 @@ export function useDayLuanReading(iso: string) {
       }
       setReadingLoading(true);
       setReadingFailed(false);
-      const runKey = `${userId}:day-luan:${dayIso}:${mode}:${stableStringify(contextPayload)}`;
+      const runKey = `${userId}:day-luan:${dayIso}:full:${stableStringify(contextPayload)}`;
       const result = await runInlineReadingDeduped(runKey, async () => {
         const r = await invokeGenerateReadingWithRetry({
           endpoint: "day-detail",
           data: contextPayload,
           day_iso: dayIso,
-          ...(mode === "teaser" ? { variant: "teaser" } : {}),
         });
         if (r.reading) {
           clearInlineReadingFailCooldown(userId, dayIso);
@@ -200,9 +198,9 @@ export function useDayLuanReading(iso: string) {
             setReadingFailed(true);
             return;
           }
-          await loadReading(luanContext, "full", gen, iso);
+          await loadReading(luanContext, gen, iso);
         } else {
-          await loadReading(luanContext, "teaser", gen, iso);
+          await loadReading(luanContext, gen, iso);
         }
       } catch {
         if (gen !== loadGenRef.current) return;
@@ -292,7 +290,7 @@ export function useDayLuanReading(iso: string) {
     }
     setUnlocked(true);
     const gen = ++loadGenRef.current;
-    await loadReading(luanContext, "full", gen, iso);
+    await loadReading(luanContext, gen, iso);
     setUnlockBusy(false);
     return { ok: true as const };
   }, [luanContext, unlockBusy, calendarTeaserUser, iso, loadReading]);
@@ -433,7 +431,7 @@ export function useDayLuanReading(iso: string) {
     setReading(null);
     setReadingFailed(false);
     if (!subActive) {
-      await loadReading(luanContext, "teaser", gen, iso);
+      await loadReading(luanContext, gen, iso);
       return;
     }
     setReadingLoading(true);
@@ -449,7 +447,7 @@ export function useDayLuanReading(iso: string) {
       return;
     }
     setUnlocked(true);
-    await loadReading(luanContext, "full", gen, iso);
+    await loadReading(luanContext, gen, iso);
   }, [luanContext, subActive, calendarTeaserUser, todayFreePeek, iso, loadReading]);
 
   return {

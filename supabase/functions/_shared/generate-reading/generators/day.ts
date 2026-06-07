@@ -39,7 +39,7 @@ export async function generateDayReading(
       payload,
       READING_MAX_TOKENS_CHON_NGAY,
       CHON_NGAY_REQUEST_TIMEOUT_MS,
-      { profile: "flash" },
+      { profile: "flash", disableThinking: true },
     );
     if (!reading) return { reading: null };
     if (admin) {
@@ -55,7 +55,7 @@ export async function generateDayReading(
       payload,
       READING_MAX_TOKENS_CHON_NGAY_CARDS,
       CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS,
-      { jsonMode: true, profile: "flash" },
+      { jsonMode: true, profile: "flash", disableThinking: true },
     );
     let map = raw ? parseChonNgayDayReadingsJson(raw) : null;
     if (!map || Object.keys(map).length === 0) {
@@ -64,7 +64,7 @@ export async function generateDayReading(
         payload,
         READING_MAX_TOKENS_CHON_NGAY_CARDS,
         CHON_NGAY_CARDS_REQUEST_TIMEOUT_MS,
-        { jsonMode: true, profile: "flash" },
+        { jsonMode: true, profile: "flash", disableThinking: true },
       );
       map = retry ? parseChonNgayDayReadingsJson(retry) : null;
     }
@@ -100,7 +100,7 @@ export async function generateDayReading(
       payload,
       READING_MAX_TOKENS_INLINE_LICH_TO,
       REQUEST_TIMEOUT_MS,
-      { profile: "flash" },
+      { profile: "flash", disableThinking: true },
     );
   } else if (endpoint === "day-detail") {
     if (question) {
