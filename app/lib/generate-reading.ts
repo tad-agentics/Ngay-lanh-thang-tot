@@ -47,6 +47,8 @@ export type GenerateReadingInput = {
   month_num?: number;
   /** Năm dương — cache key. */
   flow_year?: number;
+  /** ISO ngày — preflight fallback khi `data` không có date ở top-level. */
+  day_iso?: string;
 };
 
 /** Invoke failed before a valid 200 body (504 gateway, network, other HTTP). */

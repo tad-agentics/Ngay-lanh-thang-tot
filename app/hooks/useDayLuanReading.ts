@@ -1,11 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useBatTuQuery } from "~/hooks/useBatTuQuery";
 import { useProfile } from "~/hooks/useProfile";
+import { useAuth } from "~/lib/auth";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { baziReadingBirthRevision } from "~/lib/bazi-reading-session";
 import { canUseCalendar } from "~/lib/entitlements";
+import {
+  clearInlineReadingFailCooldown,
+  isInlineReadingFailCooldown,
+  markInlineReadingFailCooldown,
+  runInlineReadingDeduped,
+} from "~/lib/inline-day-reading-coord";
+import { stableStringify } from "~/lib/stable-stringify";
 import {
   DAY_LUAN_MAX_FOLLOW_UPS,
   invokeDayLuanChatAsk,
@@ -36,6 +44,8 @@ type ThreadOpenSnapshot = {
 };
 
 export function useDayLuanReading(iso: string) {
+  const { user } = useAuth();
+  const userId = user?.id;
   const { profile, loading: profileLoading } = useProfile();
   const [reading, setReading] = useState<string | null>(null);
   const [readingLoading, setReadingLoading] = useState(false);
@@ -89,26 +99,53 @@ export function useDayLuanReading(iso: string) {
   const detail = payload != null ? parseDayDetailForView(payload) : null;
   const luanContext =
     luanQuery.data ?? detailQuery.data ?? null;
+  const luanContextHash = useMemo(
+    () => (luanContext != null ? stableStringify(luanContext) : ""),
+    [luanContext],
+  );
 
   const loadReading = useCallback(
     async (
       contextPayload: unknown,
       mode: "full" | "teaser",
       gen: number,
+      dayIso: string,
     ): Promise<void> => {
+      if (!userId) {
+        setReadingLoading(false);
+        setReadingFailed(true);
+        return;
+      }
+      if (isInlineReadingFailCooldown(userId, dayIso)) {
+        setReadingLoading(false);
+        setReadingFailed(true);
+        return;
+      }
       setReadingLoading(true);
       setReadingFailed(false);
-      const r = await invokeGenerateReadingWithRetry({
-        endpoint: "day-detail",
-        data: contextPayload,
-        ...(mode === "teaser" ? { variant: "teaser" } : {}),
+      const runKey = `${userId}:day-luan:${dayIso}:${mode}:${stableStringify(contextPayload)}`;
+      const result = await runInlineReadingDeduped(runKey, async () => {
+        const r = await invokeGenerateReadingWithRetry({
+          endpoint: "day-detail",
+          data: contextPayload,
+          day_iso: dayIso,
+          ...(mode === "teaser" ? { variant: "teaser" } : {}),
+        });
+        if (r.reading) {
+          clearInlineReadingFailCooldown(userId, dayIso);
+          return { text: r.reading, failed: false };
+        }
+        if (r.transportError) {
+          markInlineReadingFailCooldown(userId, dayIso);
+        }
+        return { text: null, failed: true };
       });
       if (gen !== loadGenRef.current) return;
-      setReading(r.reading);
+      setReading(result.text);
       setReadingLoading(false);
-      setReadingFailed(!r.reading);
+      setReadingFailed(result.failed);
     },
-    [],
+    [userId],
   );
 
   useEffect(() => {
@@ -120,7 +157,14 @@ export function useDayLuanReading(iso: string) {
   }, [iso]);
 
   useEffect(() => {
-    if (!fetchEnabled || detailLoading || detailError || luanContext == null) {
+    if (
+      !fetchEnabled ||
+      !userId ||
+      !luanContextHash ||
+      detailLoading ||
+      detailError ||
+      luanContext == null
+    ) {
       return;
     }
     const gen = ++loadGenRef.current;
@@ -146,9 +190,9 @@ export function useDayLuanReading(iso: string) {
             setReadingFailed(true);
             return;
           }
-          await loadReading(luanContext, "full", gen);
+          await loadReading(luanContext, "full", gen, iso);
         } else {
-          await loadReading(luanContext, "teaser", gen);
+          await loadReading(luanContext, "teaser", gen, iso);
         }
       } catch {
         if (gen !== loadGenRef.current) return;
@@ -164,6 +208,8 @@ export function useDayLuanReading(iso: string) {
     subActive,
     loadReading,
     iso,
+    userId,
+    luanContextHash,
   ]);
 
   const ensureDayLuanThread = useCallback(
@@ -234,7 +280,7 @@ export function useDayLuanReading(iso: string) {
     }
     setUnlocked(true);
     const gen = ++loadGenRef.current;
-    await loadReading(luanContext, "full", gen);
+    await loadReading(luanContext, "full", gen, iso);
     setUnlockBusy(false);
     return { ok: true as const };
   }, [luanContext, unlockBusy, calendarTeaserUser, iso, loadReading]);
@@ -373,7 +419,7 @@ export function useDayLuanReading(iso: string) {
     setReading(null);
     setReadingFailed(false);
     if (!subActive) {
-      await loadReading(luanContext, "teaser", gen);
+      await loadReading(luanContext, "teaser", gen, iso);
       return;
     }
     setReadingLoading(true);
@@ -389,7 +435,7 @@ export function useDayLuanReading(iso: string) {
       return;
     }
     setUnlocked(true);
-    await loadReading(luanContext, "full", gen);
+    await loadReading(luanContext, "full", gen, iso);
   }, [luanContext, subActive, iso, loadReading]);
 
   return {

@@ -125,14 +125,23 @@ export async function generateDayReading(
         { profile: "flash" },
       );
     } else {
+      const anchorOpts = { profile: "flash" as const, disableThinking: true };
       reading = await llmCompletion(
         DAY_DETAIL_SYSTEM,
         payload,
         READING_MAX_TOKENS_DAY_DETAIL,
         DAY_DETAIL_REQUEST_TIMEOUT_MS,
-        // Anchor luận dài — tắt thinking để `content` không bị reasoning ăn hết max_tokens.
-        { profile: "flash", disableThinking: true },
+        anchorOpts,
       );
+      if (!reading) {
+        reading = await llmCompletion(
+          DAY_DETAIL_SYSTEM,
+          payload,
+          READING_MAX_TOKENS_DAY_DETAIL,
+          DAY_DETAIL_REQUEST_TIMEOUT_MS,
+          anchorOpts,
+        );
+      }
     }
   } else {
     reading = null;

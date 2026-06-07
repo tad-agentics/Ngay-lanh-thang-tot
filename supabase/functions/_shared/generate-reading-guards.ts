@@ -67,12 +67,21 @@ export function generateReadingRateLimitScope(
     onlyTinhCach?: boolean;
     onlyLuuNienLife?: boolean;
     onlyLuuNienCore?: boolean;
+    /** `inline` | `teaser` | `full` — tránh inline lịch tờ chặn anchor `/luan-ai`. */
+    variant?: string;
+    followUp?: boolean;
   },
 ): string {
   if (opts?.preview) return `${endpoint}:preview`;
   if (opts?.onlyTinhCach) return `${endpoint}:only-tinh-cach`;
   if (opts?.onlyLuuNienLife) return `${endpoint}:only-luu-life`;
   if (opts?.onlyLuuNienCore) return `${endpoint}:only-luu-core`;
+  if (endpoint === "day-detail" || endpoint === "ngay-hom-nay") {
+    const v = opts?.followUp
+      ? "follow-up"
+      : (opts?.variant?.trim() || "full");
+    return `${endpoint}:${v}`;
+  }
   return endpoint;
 }
 

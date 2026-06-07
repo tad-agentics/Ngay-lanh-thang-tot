@@ -17,7 +17,7 @@ export const HOP_TUOI_PROMPT_VER = "2026-05-10-v1";
 export const CHON_NGAY_PROMPT_VER = "2026-05-10-v1";
 export const CHON_NGAY_CARDS_PROMPT_VER = "2026-05-10-v1";
 export const DAY_DETAIL_MULTITURN_VER = "2026-05-29-multiturn-v1";
-export const DAY_DETAIL_PROMPT_VER = "2026-05-28-luan-context-v1";
+export const DAY_DETAIL_PROMPT_VER = "2026-06-07-anchor-no-thinking-v1";
 export const INLINE_LICH_TO_PROMPT_VER = "2026-05-28-v1";
 /** Bump when switching provider/model — invalidates reading_cache. */
 export const GLOBAL_LLM_VER = "2026-05-29-deepseek-pro-day-multiturn";

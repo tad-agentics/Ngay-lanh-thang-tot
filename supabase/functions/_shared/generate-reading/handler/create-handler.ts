@@ -176,10 +176,15 @@ export function createGenerateReadingHandler(
         return ok(null, null, req);
       }
       const adminGate = createClient(gateUrl, gateService);
+      const bodyDayIso =
+        typeof body.day_iso === "string" &&
+          /^\d{4}-\d{2}-\d{2}$/.test(body.day_iso.trim())
+          ? body.day_iso.trim()
+          : null;
       const dayIso =
         endpoint === "ngay-hom-nay"
           ? todayIsoVietnam()
-          : dayIsoFromDayDetailData(data);
+          : dayIsoFromDayDetailData(data) ?? bodyDayIso;
 
       if (variant === "teaser") {
         const { data: teaserProfile, error: teaserProfErr } = await adminGate
@@ -442,6 +447,8 @@ export function createGenerateReadingHandler(
         onlyTinhCach,
         onlyLuuNienLife,
         onlyLuuNienCore,
+        variant: variant || undefined,
+        followUp: question.length > 0,
       });
       const slot = await acquireGenerateReadingRateLimit(rateLimitUserId, {
         followUp: question.length > 0,

@@ -26,6 +26,16 @@ describe("generateReadingRateLimitScope", () => {
       "la-so-chi-tiet",
     );
   });
+
+  it("isolates day-detail inline from anchor full", () => {
+    expect(
+      generateReadingRateLimitScope("day-detail", { variant: "inline" }),
+    ).toBe("day-detail:inline");
+    expect(generateReadingRateLimitScope("day-detail")).toBe("day-detail:full");
+    expect(
+      generateReadingRateLimitScope("day-detail", { followUp: true }),
+    ).toBe("day-detail:follow-up");
+  });
 });
 
 describe("acquireGenerateReadingRateLimit", () => {
