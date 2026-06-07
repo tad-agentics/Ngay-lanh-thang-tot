@@ -41,7 +41,8 @@ export function baziReadingCacheRevision(
       }).format(new Date()),
       10,
     );
-  return [String(y), "w13", baziReadingBirthRevision(p)].join("\x1e");
+  // w14 — invalidate paywall menh teaser session after mirror-opening prompt + flash LLM
+  return [String(y), "w14", baziReadingBirthRevision(p)].join("\x1e");
 }
 
 function sessionKey(profileId: string): string {
