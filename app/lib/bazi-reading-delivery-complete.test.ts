@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { baziReadingDeliveryIsComplete } from "./bazi-reading-load";
-import { MIN_MENH_TONG_QUAN_LUAN_CHARS } from "./bazi-reading-outline";
-import { LUU_NIEN_LIFE_AREA_PREFIX } from "./luu-nien-life-ui";
-import { MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS } from "./luu-nien-ui";
 import {
+  baziReadingDeliveryIsComplete,
+  MIN_MENH_TONG_QUAN_LUAN_CHARS,
   PHONG_THUY_HUONG_SECTION_ID,
   PHONG_THUY_MAU_SECTION_ID,
   PHONG_THUY_PHI_TINH_SECTION_ID,
-} from "./phong-thuy-ui";
-
+} from "../../shared/bazi-reading-delivery-complete.ts";
+import { LUU_NIEN_LIFE_AREA_PREFIX } from "./luu-nien-life-ui";
+import { MIN_LUU_NIEN_QUY_NHAN_LUAN_CHARS } from "./luu-nien-ui";
 const menhText = "m".repeat(MIN_MENH_TONG_QUAN_LUAN_CHARS);
 const traitText = `a\n\nb\n\n${"x".repeat(420)}`;
 const lifeText = `a\n\nb\n\n${"y".repeat(420)}`;

@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "jsdom",
-    include: ["app/**/*.test.ts", "app/**/*.test.tsx"],
+    include: ["app/**/*.test.ts", "app/**/*.test.tsx", "shared/**/*.test.ts"],
     env: {
       VITE_SUPABASE_URL: "http://localhost:54321",
       VITE_SUPABASE_PUBLISHABLE_KEY: "test-publishable-key",

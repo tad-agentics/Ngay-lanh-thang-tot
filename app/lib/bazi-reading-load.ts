@@ -59,6 +59,9 @@ import {
   missingTinhCachTraitIds,
 } from "~/lib/personality-traits-ui";
 import { isBaziReadingScreenLoadActive } from "~/lib/bazi-reading-load-coord";
+import { baziReadingDeliveryIsComplete } from "../../shared/bazi-reading-delivery-complete.ts";
+
+export { baziReadingDeliveryIsComplete };
 
 const BAZI_INVOKE_STAGGER_MS = 1_500;
 /** Khớp `RATE_LIMIT_RETRY_MS` trong `generate-reading.ts`. */
@@ -194,34 +197,6 @@ export function menhOverviewFromLaSoSections(
 
 function deliveryHasMenhProse(sections: LaSoChiTietSection[]): boolean {
   return hasMenhTongQuanLuanFromSections(sections);
-}
-
-/** Đủ 5 § màn 18 để persist DB / fast-path cache (không regenerate thiếu §04–§05). */
-export function baziReadingDeliveryIsComplete(
-  sections: LaSoChiTietSection[],
-  opts?: {
-    luuNienFactsRaw?: unknown | null;
-    phongThuyFactsRaw?: unknown | null;
-  },
-): boolean {
-  const luuFacts = opts?.luuNienFactsRaw
-    ? parseLuuNienFactsView(opts.luuNienFactsRaw)
-    : null;
-  const expectedLife = Math.max(1, luuFacts?.lifeAreas.length ?? 4);
-
-  if (!deliveryHasMenhProse(sections)) return false;
-  if (!hasTinhCachLuanFromSections(sections)) return false;
-  if (!hasLuuNienLifeLuanFromSections(sections, expectedLife)) return false;
-
-  const needsQuy = Boolean(luuFacts?.quyNhan || luuFacts?.daiVanNext);
-  if (needsQuy && !hasLuuNienQuyNhanLuanFromSections(sections)) return false;
-
-  if (opts?.phongThuyFactsRaw != null) {
-    const ptFacts = parsePhongThuyFactsView(opts.phongThuyFactsRaw);
-    if (!hasPhongThuyLuanFromSections(sections, ptFacts)) return false;
-  }
-
-  return true;
 }
 
 function deliveryHasFullLuanSections(

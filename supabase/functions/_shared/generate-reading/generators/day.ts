@@ -12,6 +12,7 @@ import {
   REQUEST_TIMEOUT_MS,
   ttlForEndpoint,
 } from "../core/config.ts";
+import { persistReadingCache } from "../core/cache-persist.ts";
 import { llmChat, llmCompletion, llmLegacyProse } from "../core/llm.ts";
 import { buildDayDetailFollowUpMessages } from "../core/thread-history.ts";
 import type { GenerateContext, GenerateResult } from "../core/types.ts";
@@ -42,10 +43,7 @@ export async function generateDayReading(
     if (!reading) return { reading: null };
     if (admin) {
       const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-      await admin.from("reading_cache").upsert(
-        { cache_key: cacheKey, reading, expires_at: expiresAt },
-        { onConflict: "cache_key" },
-      );
+      await persistReadingCache(admin, cacheKey, reading, expiresAt);
     }
     return { reading };
   }
@@ -73,10 +71,7 @@ export async function generateDayReading(
     const toStore = JSON.stringify({ day_readings: map });
     if (admin) {
       const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-      await admin.from("reading_cache").upsert(
-        { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-        { onConflict: "cache_key" },
-      );
+      await persistReadingCache(admin, cacheKey, toStore, expiresAt);
     }
     return { reading: null, dayReadings: map };
   }
@@ -145,10 +140,7 @@ export async function generateDayReading(
   if (!reading) return { reading: null };
   if (admin) {
     const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-    await admin.from("reading_cache").upsert(
-      { cache_key: cacheKey, reading, expires_at: expiresAt },
-      { onConflict: "cache_key" },
-    );
+    await persistReadingCache(admin, cacheKey, reading, expiresAt);
   }
   return { reading };
 }

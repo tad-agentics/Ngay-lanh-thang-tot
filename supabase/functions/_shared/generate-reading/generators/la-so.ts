@@ -3,6 +3,7 @@ import {
   REQUEST_TIMEOUT_MS,
   ttlForEndpoint,
 } from "../core/config.ts";
+import { persistReadingCache } from "../core/cache-persist.ts";
 import { llmLegacyProse } from "../core/llm.ts";
 import type { GenerateContext, GenerateResult } from "../core/types.ts";
 import { SYSTEM_PROMPT } from "../prompts/legacy-prose.ts";
@@ -38,10 +39,7 @@ export async function generateLaSoReading(
       const toStore = JSON.stringify({ sections });
       if (admin) {
         const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-        await admin.from("reading_cache").upsert(
-          { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-          { onConflict: "cache_key" },
-        );
+        await persistReadingCache(admin, cacheKey, toStore, expiresAt);
       }
       return { reading: null, sections };
     }
@@ -54,10 +52,7 @@ export async function generateLaSoReading(
       const toStore = JSON.stringify({ sections: sectionsOut });
       if (admin) {
         const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-        await admin.from("reading_cache").upsert(
-          { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-          { onConflict: "cache_key" },
-        );
+        await persistReadingCache(admin, cacheKey, toStore, expiresAt);
       }
       return { reading: null, sections: sectionsOut };
     }
@@ -67,10 +62,7 @@ export async function generateLaSoReading(
     const toStore = JSON.stringify({ sections });
     if (admin) {
       const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-      await admin.from("reading_cache").upsert(
-        { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-        { onConflict: "cache_key" },
-      );
+      await persistReadingCache(admin, cacheKey, toStore, expiresAt);
     }
     return { reading: null, sections };
   }
@@ -85,10 +77,7 @@ export async function generateLaSoReading(
   if (!reading) return { reading: null };
   if (admin) {
     const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-    await admin.from("reading_cache").upsert(
-      { cache_key: cacheKey, reading, expires_at: expiresAt },
-      { onConflict: "cache_key" },
-    );
+    await persistReadingCache(admin, cacheKey, reading, expiresAt);
   }
   return { reading };
 }

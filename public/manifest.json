@@ -53,7 +53,7 @@
     {
       "name": "Tra cứu",
       "short_name": "Tra cứu",
-      "description": "Hợp tuổi, phong thủy và công cụ tra cứu",
+      "description": "Tra cứu ngày lành và công cụ liên quan",
       "url": "/tra-cuu",
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },

@@ -36,6 +36,9 @@ export function invalidateLaSoRecomputeCaches(
     void queryClient.invalidateQueries({
       queryKey: queryKeys.lichThangRoot(userId),
     });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.batTuRoot(userId),
+    });
   }
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event(LA_SO_RECOMPUTED_EVENT));

@@ -25,6 +25,7 @@ import {
   subscriptionActive,
 } from "~/lib/entitlements";
 import { CT } from "~/lib/c-tokens";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { ngayHomNayToLichCard } from "~/lib/lich-format";
 import {
   LUAN_LA_SO_BAT_TU_TAGLINE,
@@ -215,7 +216,7 @@ export function CHomeScreen() {
           )
         ) : null}
 
-        {today && !showRecomputeSkeleton && (subActive || newUserTeaser) ? (
+        {TIEU_VAN_LUAN_ENABLED && today && !showRecomputeSkeleton && (subActive || newUserTeaser) ? (
           tieuVanUnlocked && subActive ? (
             <Link
               to={`/toi/luan-tieu-van?year=${tieuVanYear}`}
@@ -254,7 +255,7 @@ export function CHomeScreen() {
             className="mt-4 text-center font-serif text-xs italic leading-snug"
             style={{ color: CT.muted }}
           >
-            Tra cứu, hợp tuổi, luận giải AI cần online — sẽ trở lại khi có mạng.
+            Tra cứu và luận giải AI cần online — sẽ trở lại khi có mạng.
           </p>
         ) : null}
       </div>

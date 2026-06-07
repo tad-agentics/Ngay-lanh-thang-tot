@@ -3,11 +3,14 @@ import { Link } from "react-router";
 import { Mono } from "~/components/brand";
 import { currentYearVn } from "~/lib/bazi-reading-session";
 import { CT } from "~/lib/c-tokens";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { LUAN_LUU_NIEN_NGUYET_TAGLINE, LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 import { catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — Tôi / Lịch: lưu niên & lưu nguyệt locked card when addon not unlocked. */
 export function CMeLockedTieuVanCard() {
+  if (!TIEU_VAN_LUAN_ENABLED) return null;
+
   const pkg = UI_PACKAGES.find((p) => p.sku === "luan_tieu_van");
   const tieuVanYear = currentYearVn();
 

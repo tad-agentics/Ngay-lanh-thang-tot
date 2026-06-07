@@ -4,6 +4,7 @@
  */
 
 import { LandingDirectionC } from "~/components/landing/LandingDirectionC";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 
 import type { Route } from "./+types/landing";
@@ -21,7 +22,9 @@ const FAQS = [
   ],
   [
     "Mua gói nào hợp lý nhất?",
-    `Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Tiết kiệm hơn mua riêng từng phần.`,
+    TIEU_VAN_LUAN_ENABLED
+      ? `Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Tiết kiệm hơn mua riêng từng phần.`
+      : "Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự. Tiết kiệm hơn mua riêng từng phần.",
   ],
 ] as const;
 

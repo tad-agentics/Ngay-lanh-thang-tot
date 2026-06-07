@@ -8,6 +8,7 @@ import {
   checkoutResponseFromOrder,
   flowForPackageSku,
   isPaymentFlowExemptPath,
+  isPaymentRecoveryPackageSku,
   isRecoverablePendingOrder,
   isTerminalPaymentStatus,
   recoveryConfirmTarget,
@@ -44,7 +45,7 @@ async function fetchPendingOrderForUser(
       .eq("id", preferredOrderId)
       .eq("user_id", userId)
       .maybeSingle();
-    if (data && isRecoverablePendingOrder(data)) {
+    if (data && isRecoverablePendingOrder(data) && isPaymentRecoveryPackageSku(data.package_sku)) {
       return data as PaymentOrderRecoveryRow;
     }
   }
@@ -61,7 +62,10 @@ async function fetchPendingOrderForUser(
 
   if (!rows?.length) return null;
   for (const row of rows) {
-    if (isRecoverablePendingOrder(row)) {
+    if (
+      isRecoverablePendingOrder(row) &&
+      isPaymentRecoveryPackageSku(row.package_sku)
+    ) {
       return row as PaymentOrderRecoveryRow;
     }
   }

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 import { AuthenticatedMobileShell } from "~/components/AuthenticatedMobileShell";
+import { ReadingPrewarmGate } from "~/components/ReadingPrewarmGate";
+import { SavedPicksRouteGate } from "~/components/SavedPicksRouteGate";
 import { AppShellViewport } from "~/components/AppShellViewport";
 import { CSubExpired } from "~/components/CSubExpired";
 import { ErrorBanner } from "~/components/ErrorBanner";
@@ -189,8 +191,13 @@ function AuthenticatedShellWithProfile({
   }
 
   return (
-    <AuthenticatedMobileShell>
-      <Outlet />
-    </AuthenticatedMobileShell>
+    <>
+      <ReadingPrewarmGate />
+      <SavedPicksRouteGate>
+        <AuthenticatedMobileShell>
+          <Outlet />
+        </AuthenticatedMobileShell>
+      </SavedPicksRouteGate>
+    </>
   );
 }

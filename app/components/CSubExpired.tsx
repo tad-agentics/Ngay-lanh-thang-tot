@@ -5,6 +5,7 @@ import { useAuth } from "~/lib/auth";
 import { useLastPaidSubscriptionSku } from "~/hooks/useLastPaidSubscriptionSku";
 import { useSubscription } from "~/hooks/useSubscription";
 import { CT } from "~/lib/c-tokens";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { UI_PACKAGES } from "~/lib/packages";
 
 /** Direction C — subscription expired full-screen blocker (artboard 38). */
@@ -88,7 +89,9 @@ export function CSubExpired() {
         >
           Gia hạn để tiếp tục xem trang ngày cát lành, tra cứu vạn sự và khai mở{" "}
           <strong className="font-semibold" style={{ color: CT.ink }}>
-            luận giải Bát Tự + lưu niên & lưu nguyệt
+            {TIEU_VAN_LUAN_ENABLED
+              ? "luận giải Bát Tự + lưu niên & lưu nguyệt"
+              : "luận giải Bát Tự"}
           </strong>
           . Thông tin lá số Tứ Trụ của bản chủ vẫn được lưu trữ an toàn, không cần lập lại sau khi gia hạn.
         </p>

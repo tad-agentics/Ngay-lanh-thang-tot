@@ -1,4 +1,5 @@
 import type { PackageSku } from "~/lib/api-types";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import {
   LUAN_LA_SO_BAT_TU_TITLE_SHORT,
 } from "~/lib/luan-la-so-bat-tu-labels";
@@ -20,7 +21,13 @@ export const SUBSCRIPTION_SKUS: PackageSku[] = [
   "goi_12thang",
 ];
 
-export const ADDON_SKUS: PackageSku[] = ["luan_bat_tu", "luan_tieu_van"];
+/** All addon SKUs (including temporarily hidden) — payment flow + order lookup. */
+export const ALL_ADDON_SKUS: PackageSku[] = ["luan_bat_tu", "luan_tieu_van"];
+
+/** Addons shown in catalog / new checkout. */
+export const ADDON_SKUS: PackageSku[] = TIEU_VAN_LUAN_ENABLED
+  ? ALL_ADDON_SKUS
+  : ["luan_bat_tu"];
 
 export const UI_PACKAGES: {
   sku: PackageSku;
@@ -42,7 +49,9 @@ export const UI_PACKAGES: {
   {
     sku: "goi_6thang",
     title: "6 tháng",
-    subtitle: `Lịch cá nhân + ${LUAN_LUU_NIEN_NGUYET_TITLE} trong gói.`,
+    subtitle: TIEU_VAN_LUAN_ENABLED
+      ? `Lịch cá nhân + ${LUAN_LUU_NIEN_NGUYET_TITLE} trong gói.`
+      : "Lịch cá nhân 6 tháng.",
     priceLabel: catalogPriceLabel("goi_6thang"),
     featured: false,
     kind: "subscription",
@@ -50,7 +59,9 @@ export const UI_PACKAGES: {
   {
     sku: "goi_12thang",
     title: "1 năm",
-    subtitle: `Toàn bộ tính năng — lịch + luận Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}.`,
+    subtitle: TIEU_VAN_LUAN_ENABLED
+      ? `Toàn bộ tính năng — lịch + luận Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}.`
+      : "Toàn bộ tính năng — lịch + luận Bát tự.",
     priceLabel: catalogPriceLabel("goi_12thang"),
     badge: "Đề xuất",
     featured: true,
@@ -64,12 +75,16 @@ export const UI_PACKAGES: {
     featured: false,
     kind: "addon",
   },
-  {
-    sku: "luan_tieu_van",
-    title: LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
-    subtitle: `${LUAN_LUU_NIEN_NGUYET_TITLE} — 12 tháng tới.`,
-    priceLabel: catalogPriceLabel("luan_tieu_van"),
-    featured: false,
-    kind: "addon",
-  },
+  ...(TIEU_VAN_LUAN_ENABLED
+    ? [
+        {
+          sku: "luan_tieu_van" as const,
+          title: LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
+          subtitle: `${LUAN_LUU_NIEN_NGUYET_TITLE} — 12 tháng tới.`,
+          priceLabel: catalogPriceLabel("luan_tieu_van"),
+          featured: false,
+          kind: "addon" as const,
+        },
+      ]
+    : []),
 ];

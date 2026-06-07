@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useBatTuQuery } from "~/hooks/useBatTuQuery";
 import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
@@ -14,7 +15,7 @@ import {
   invokeGenerateReading,
   type LuanThreadTurn,
 } from "~/lib/generate-reading";
-import { parseDayDetailForView, type DayDetailViewModel } from "~/lib/day-detail-view";
+import { parseDayDetailForView } from "~/lib/day-detail-view";
 import { parseDayCompareResponse } from "~/lib/luan-context";
 import { invokeReadingUnlock } from "~/lib/reading-unlock";
 import {
@@ -32,12 +33,6 @@ type ThreadOpenSnapshot = {
 
 export function useDayLuanReading(iso: string) {
   const { profile, loading: profileLoading } = useProfile();
-  const [detailLoading, setDetailLoading] = useState(true);
-  const [detailError, setDetailError] = useState<string | null>(null);
-  const [detail, setDetail] = useState<DayDetailViewModel | null>(null);
-  const [payload, setPayload] = useState<unknown>(null);
-  const [luanContext, setLuanContext] = useState<unknown>(null);
-
   const [reading, setReading] = useState<string | null>(null);
   const [readingLoading, setReadingLoading] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
@@ -51,9 +46,43 @@ export function useDayLuanReading(iso: string) {
 
   const threadIdRef = useRef<string | null>(null);
   const threadOpenRef = useRef<ThreadOpenSnapshot | null>(null);
+  const loadGenRef = useRef(0);
 
   const subActive = canUseCalendar(profile);
   const paywallTeaser = isNewUserDayLuanTeaser(profile);
+
+  const batTuQuery = profile ? profileToBatTuPersonQuery(profile) : null;
+  const batTuBody =
+    batTuQuery?.birth_date && iso
+      ? { ...batTuQuery, date: iso }
+      : { date: iso, tz: "Asia/Ho_Chi_Minh" };
+  const fetchEnabled =
+    !profileLoading && Boolean(profile?.id && batTuQuery?.birth_date && iso);
+
+  const detailQuery = useBatTuQuery<unknown>(
+    profile?.id,
+    "day-detail",
+    batTuBody,
+    { enabled: fetchEnabled },
+  );
+  const luanQuery = useBatTuQuery<unknown>(
+    profile?.id,
+    "day-luan-context",
+    batTuBody,
+    { enabled: fetchEnabled },
+  );
+
+  const detailLoading =
+    fetchEnabled && (detailQuery.isPending || luanQuery.isPending);
+  const detailError = detailQuery.isError
+    ? (detailQuery.error?.message ?? "Không tải chi tiết ngày.")
+    : !profileLoading && profile && !batTuQuery?.birth_date
+      ? "Cần lá số trên hồ sơ."
+      : null;
+  const payload = detailQuery.data ?? null;
+  const detail = payload != null ? parseDayDetailForView(payload) : null;
+  const luanContext =
+    luanQuery.data ?? detailQuery.data ?? null;
 
   const loadReading = useCallback(
     async (contextPayload: unknown, mode: "full" | "teaser") => {
@@ -78,51 +107,30 @@ export function useDayLuanReading(iso: string) {
   }, [iso]);
 
   useEffect(() => {
-    if (profileLoading || !profile || !iso) return;
-    const body = profileToBatTuPersonQuery(profile);
-    if (!body.birth_date) {
-      setDetailLoading(false);
-      setDetailError("Cần lá số trên hồ sơ.");
+    if (!fetchEnabled || detailLoading || detailError || luanContext == null) {
       return;
     }
-    let cancelled = false;
-    setDetailLoading(true);
-    setDetailError(null);
+    const gen = ++loadGenRef.current;
     setReading(null);
-    setLuanContext(null);
     void (async () => {
-      const query = { ...body, date: iso };
-      const [detailRes, luanRes] = await Promise.all([
-        invokeBatTu<unknown>({ op: "day-detail", body: query }),
-        invokeBatTu<unknown>({ op: "day-luan-context", body: query }),
-      ]);
-      if (cancelled) return;
-      if (!detailRes.ok) {
-        setDetailLoading(false);
-        setDetailError(detailRes.message ?? "Không tải chi tiết ngày.");
-        setDetail(null);
-        setPayload(null);
-        return;
-      }
-      setPayload(detailRes.data);
-      setDetail(parseDayDetailForView(detailRes.data));
-      const contextPayload = luanRes.ok ? luanRes.data : detailRes.data;
-      setLuanContext(contextPayload);
-      setDetailLoading(false);
-
       if (subActive) {
         setUnlocked(true);
-        await loadReading(contextPayload, "full");
-        return;
+        await loadReading(luanContext, "full");
+      } else {
+        setUnlocked(false);
+        await loadReading(luanContext, "teaser");
       }
-
-      setUnlocked(false);
-      await loadReading(contextPayload, "teaser");
+      if (gen !== loadGenRef.current) return;
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [iso, profile, profileLoading, subActive, loadReading]);
+  }, [
+    fetchEnabled,
+    detailLoading,
+    detailError,
+    luanContext,
+    subActive,
+    loadReading,
+    iso,
+  ]);
 
   const ensureDayLuanThread = useCallback(
     async (anchorReading?: string): Promise<string | null> => {

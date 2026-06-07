@@ -1,11 +1,13 @@
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { baziReadingDeliveryIsComplete } from "../../../../shared/bazi-reading-delivery-complete.ts";
 import {
   BAZI_READING_DELIVERY_CONTENT_VERSION,
   loadBaziReadingDeliveryRow,
   upsertBaziReadingDelivery,
-  type BaziDeliverySection,
 } from "../bazi-reading-delivery.ts";
+import { runBaziGenerateBundle, type GenerateInvokeResult } from "../bazi-reading-generate-bundle.ts";
 import { userHasBaziReadingAccess } from "../bazi-reading-gate.ts";
+import { redisDelKey, redisSetNxEx } from "../redis-cache.ts";
 import {
   baziReadingBirthRevision,
   currentYearVn,
@@ -13,19 +15,17 @@ import {
   type PrewarmProfileRow,
 } from "./profile-bat-tu.ts";
 
-const STAGGER_MS = 1_500;
-
-type GenSection = BaziDeliverySection;
+const PREWARM_LOCK_TTL_SEC = 600;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function parseSections(json: Record<string, unknown> | null): GenSection[] {
+function parseSections(json: Record<string, unknown> | null) {
   if (!json) return [];
   const raw = json.sections;
   if (!Array.isArray(raw)) return [];
-  const out: GenSection[] = [];
+  const out: { id: string; title: string; text: string }[] = [];
   for (const row of raw) {
     if (!row || typeof row !== "object" || Array.isArray(row)) continue;
     const r = row as Record<string, unknown>;
@@ -38,22 +38,13 @@ function parseSections(json: Record<string, unknown> | null): GenSection[] {
   return out;
 }
 
-function mergeSections(
-  base: GenSection[],
-  incoming: GenSection[],
-): GenSection[] {
-  const byId = new Map(base.map((s) => [s.id, s]));
-  for (const s of incoming) byId.set(s.id, s);
-  return [...byId.values()];
-}
-
 async function invokeEdge(
   supabaseUrl: string,
   serviceKey: string,
   functionName: string,
   body: Record<string, unknown>,
   userId: string,
-): Promise<Record<string, unknown> | null> {
+): Promise<{ json: Record<string, unknown> | null; status: number }> {
   const res = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
     method: "POST",
     headers: {
@@ -64,13 +55,38 @@ async function invokeEdge(
   });
   if (!res.ok) {
     console.warn("[bazi-prewarm]", functionName, res.status);
-    return null;
+    return { json: null, status: res.status };
   }
   try {
-    return (await res.json()) as Record<string, unknown>;
+    return { json: (await res.json()) as Record<string, unknown>, status: res.status };
   } catch {
-    return null;
+    return { json: null, status: res.status };
   }
+}
+
+const GENERATE_RETRY_MS = 11_000;
+const GENERATE_RETRY_STATUSES = new Set([502, 503, 504]);
+
+async function invokeGenerateWithRetry(
+  supabaseUrl: string,
+  serviceKey: string,
+  functionName: string,
+  body: Record<string, unknown>,
+  userId: string,
+): Promise<GenerateInvokeResult | null> {
+  let result = await invokeEdge(supabaseUrl, serviceKey, functionName, body, userId);
+  if (
+    !result.json &&
+    GENERATE_RETRY_STATUSES.has(result.status)
+  ) {
+    await sleep(GENERATE_RETRY_MS);
+    result = await invokeEdge(supabaseUrl, serviceKey, functionName, body, userId);
+  }
+  if (!result.json) return null;
+  return {
+    sections: parseSections(result.json),
+    reading: typeof result.json.reading === "string" ? result.json.reading : null,
+  };
 }
 
 async function invokeBatTu(
@@ -102,18 +118,6 @@ async function invokeBatTu(
   } catch {
     return null;
   }
-}
-
-function deliveryLooksComplete(
-  sections: GenSection[],
-): boolean {
-  const menh = sections.find((s) => s.id === "menh_tong_quan")?.text ?? "";
-  if (menh.length < 600) return false;
-  const traits = sections.filter((s) => s.id.startsWith("tinh_cach_trait_"));
-  if (traits.length < 2) return false;
-  const life = sections.filter((s) => s.id.startsWith("luu_nien_life_"));
-  if (life.length < 2) return false;
-  return sections.length >= 6;
 }
 
 export async function runBaziReadingPrewarm(
@@ -149,7 +153,10 @@ export async function runBaziReadingPrewarm(
     existing &&
     existing.birth_revision === birthRevision &&
     existing.content_version === BAZI_READING_DELIVERY_CONTENT_VERSION &&
-    deliveryLooksComplete(existing.sections)
+    baziReadingDeliveryIsComplete(existing.sections, {
+      luuNienFactsRaw: existing.luu_nien_facts,
+      phongThuyFactsRaw: existing.phong_thuy_facts,
+    })
   ) {
     return { ok: true, skipped: true, reason: "complete" };
   }
@@ -159,130 +166,83 @@ export async function runBaziReadingPrewarm(
     return { ok: false, reason: "birth" };
   }
 
+  const lockKey = `prewarm:lock:v1:${userId}:${year}`;
+  const lockAcquired = await redisSetNxEx(lockKey, "1", PREWARM_LOCK_TTL_SEC);
+  if (!lockAcquired) {
+    return { ok: true, skipped: true, reason: "locked" };
+  }
+
   console.info("[bazi-prewarm] start", userId, year);
 
-  const lasoData = await invokeBatTu(supabaseUrl, serviceKey, "la-so", person, userId);
-  if (!lasoData) {
-    return { ok: false, reason: "la-so" };
-  }
-
-  const luuNienFacts = await invokeBatTu(
-    supabaseUrl,
-    serviceKey,
-    "la-so-luu-nien",
-    { ...person, year },
-    userId,
-  );
-    const phongThuyFacts = await invokeBatTu(
-      supabaseUrl,
-      serviceKey,
-      "phong-thuy",
-      { ...person, year, purpose: "NHA_O", detail: "full" },
-      userId,
-    );
-
-  let sections: GenSection[] = [];
-
-  const menhGen = await invokeEdge(
-    supabaseUrl,
-    serviceKey,
-    "generate-reading-la-so",
-    { endpoint: "la-so-chi-tiet", data: lasoData, preview: true },
-    userId,
-  );
-  sections = mergeSections(sections, parseSections(menhGen));
-
-  await sleep(STAGGER_MS);
-
-  const tinhGen = await invokeEdge(
-    supabaseUrl,
-    serviceKey,
-    "generate-reading-la-so",
-    {
-      endpoint: "la-so-chi-tiet",
-      data: lasoData,
-      only_tinh_cach: true,
-    },
-    userId,
-  );
-  sections = mergeSections(sections, parseSections(tinhGen));
-
-  if (luuNienFacts) {
-    const lifeGen = await invokeEdge(
-      supabaseUrl,
-      serviceKey,
-      "generate-reading-luu-nien",
-      {
-        endpoint: "luu-nien",
-        data: luuNienFacts,
-        only_luu_nien_life: true,
+  try {
+    const bundle = await runBaziGenerateBundle({
+      person,
+      year,
+      ports: {
+        invokeBatTu: (op, query) =>
+          invokeBatTu(supabaseUrl, serviceKey, op, query, userId),
+        invokeGenerate: async (functionName, body) => {
+          const out = await invokeGenerateWithRetry(
+            supabaseUrl,
+            serviceKey,
+            functionName,
+            body,
+            userId,
+          );
+          return out;
+        },
+        invokeGenerateWithRetry: async (functionName, body) =>
+          invokeGenerateWithRetry(
+            supabaseUrl,
+            serviceKey,
+            functionName,
+            body,
+            userId,
+          ),
+        sleep,
       },
+    });
+
+    if (!bundle || bundle.sections.length === 0) {
+      return { ok: false, reason: "empty" };
+    }
+
+    if (!bundle.complete) {
+      console.warn(
+        "[bazi-prewarm] partial",
+        userId,
+        bundle.sections.map((s) => s.id).join(","),
+      );
+      return { ok: false, reason: "partial" };
+    }
+
+    const yearCanChi =
+      typeof (bundle.luuNienFacts as Record<string, unknown> | null)
+          ?.year_can_chi === "string"
+        ? String((bundle.luuNienFacts as Record<string, unknown>).year_can_chi)
+        : "";
+
+    const saved = await upsertBaziReadingDelivery(admin, {
       userId,
-    );
-    sections = mergeSections(sections, parseSections(lifeGen));
+      flowYear: year,
+      birthRevision,
+      contentVersion: BAZI_READING_DELIVERY_CONTENT_VERSION,
+      sections: bundle.sections,
+      laSoDisplay: p.la_so ?? null,
+      luuNienFacts: bundle.luuNienFacts,
+      phongThuyFacts: bundle.phongThuyFacts,
+      yearCanChi,
+    });
 
-    await sleep(STAGGER_MS);
+    if (!saved.ok) {
+      return { ok: false, reason: "persist" };
+    }
 
-    const coreGen = await invokeEdge(
-      supabaseUrl,
-      serviceKey,
-      "generate-reading-luu-nien",
-      {
-        endpoint: "luu-nien",
-        data: luuNienFacts,
-        only_luu_nien_core: true,
-      },
-      userId,
-    );
-    sections = mergeSections(sections, parseSections(coreGen));
+    console.info("[bazi-prewarm] done", userId, bundle.sections.length);
+    return { ok: true };
+  } finally {
+    if (lockAcquired) {
+      await redisDelKey(lockKey);
+    }
   }
-
-  if (phongThuyFacts) {
-    await sleep(STAGGER_MS);
-    const ptGen = await invokeEdge(
-      supabaseUrl,
-      serviceKey,
-      "generate-reading-la-so",
-      { endpoint: "phong-thuy", data: phongThuyFacts },
-      userId,
-    );
-    sections = mergeSections(sections, parseSections(ptGen));
-  }
-
-  if (!deliveryLooksComplete(sections)) {
-    console.warn(
-      "[bazi-prewarm] partial",
-      userId,
-      sections.map((s) => s.id).join(","),
-    );
-  }
-
-  if (sections.length === 0) {
-    return { ok: false, reason: "empty" };
-  }
-
-  const yearCanChi =
-    typeof (luuNienFacts as Record<string, unknown> | null)?.year_can_chi ===
-        "string"
-      ? String((luuNienFacts as Record<string, unknown>).year_can_chi)
-      : "";
-
-  const saved = await upsertBaziReadingDelivery(admin, {
-    userId,
-    flowYear: year,
-    birthRevision,
-    contentVersion: BAZI_READING_DELIVERY_CONTENT_VERSION,
-    sections,
-    laSoDisplay: p.la_so ?? null,
-    luuNienFacts: luuNienFacts ?? null,
-    phongThuyFacts: phongThuyFacts ?? null,
-    yearCanChi,
-  });
-
-  if (!saved.ok) {
-    return { ok: false, reason: "persist" };
-  }
-
-  console.info("[bazi-prewarm] done", userId, sections.length);
-  return { ok: true };
 }

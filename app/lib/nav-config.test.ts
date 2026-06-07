@@ -4,6 +4,7 @@ import {
   getActiveTab,
   isCalendarBrowsePath,
   isSubscriptionExemptPath,
+  legacyAppRedirect,
   sanitizeReturnTo,
   shouldShowNav,
 } from "~/lib/nav-config";
@@ -61,5 +62,9 @@ describe("nav-config (Direction C)", () => {
     expect(isSubscriptionExemptPath("/toi/gioi-thieu")).toBe(true);
     expect(isSubscriptionExemptPath("/lich")).toBe(false);
     expect(isSubscriptionExemptPath("/tra-cuu")).toBe(false);
+  });
+
+  it("redirects legacy /app/tieu-van to /toi while feature hidden", () => {
+    expect(legacyAppRedirect("/app/tieu-van")).toBe("/toi");
   });
 });

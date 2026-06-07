@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -7,12 +7,12 @@ import { BackBar } from "~/components/brand";
 import { COfflineBanner } from "~/components/direction-c/COfflineBanner";
 import { CSavedPickMarkSheet } from "~/components/direction-c/CSavedPickMarkSheet";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
+import { useBatTuQuery } from "~/hooks/useBatTuQuery";
 import { useInlineDayReading } from "~/hooks/useInlineDayReading";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { useOptionalProfile } from "~/hooks/useOptionalProfile";
 import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
-import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
 import {
@@ -56,14 +56,8 @@ export function CDayDetailScreen() {
   const online = useOnlineStatus();
   const { user, profile, loading: profileLoading } = useOptionalProfile();
   const { savePick, updatePick, picks } = useSavedPicks();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [markSheetOpen, setMarkSheetOpen] = useState(false);
-  const [rawPayload, setRawPayload] = useState<unknown | null>(null);
-  const [detail, setDetail] = useState<ReturnType<typeof parseDayDetailForView> | null>(
-    null,
-  );
 
   const iso = ngay ?? "";
   const navState = location.state as NgayNavState | null;
@@ -81,6 +75,29 @@ export function CDayDetailScreen() {
     ? neverSubFreeDayReading(profile, iso, todayIso)
     : false;
   const expectNlttLuan = subActive || neverSubTodayFree;
+
+  const dayDetailBody = useMemo(() => {
+    if (!iso) return { date: "", tz: "Asia/Ho_Chi_Minh" };
+    return personalized && birthQuery
+      ? { ...birthQuery, date: iso }
+      : { date: iso, mode: "generic", tz: "Asia/Ho_Chi_Minh" };
+  }, [iso, personalized, birthQuery]);
+
+  const {
+    data: rawPayload,
+    isPending: loading,
+    error: queryError,
+  } = useBatTuQuery<unknown>(user?.id, "day-detail", dayDetailBody, {
+    enabled: !profileLoading && Boolean(iso) && online,
+  });
+
+  const detail = useMemo(
+    () => (rawPayload != null ? parseDayDetailForView(rawPayload) : null),
+    [rawPayload],
+  );
+
+  const error = queryError?.message ?? null;
+
   const dayEngineFallback =
     detail && !expectNlttLuan
       ? calendarLocked
@@ -88,7 +105,6 @@ export function CDayDetailScreen() {
         : pickDayDetailInlineLuanFallback(detail) || null
       : null;
   const menh = profile ? laSoJsonToRevealProps(profile.la_so)?.menh ?? null : null;
-  const birthDate = birthQuery?.birth_date ?? null;
 
   const {
     text: readingText,
@@ -103,40 +119,6 @@ export function CDayDetailScreen() {
     subActive,
     newUserTeaser,
   });
-
-  useEffect(() => {
-    if (profileLoading || !iso) return;
-
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-      void (async () => {
-      const body =
-        personalized && birthQuery
-          ? { ...birthQuery, date: iso }
-          : { date: iso, mode: "generic", tz: "Asia/Ho_Chi_Minh" };
-
-      const res = await invokeBatTu<unknown>({
-        op: "day-detail",
-        body,
-      });
-      if (cancelled) return;
-      if (!res.ok) {
-        setError(res.message ?? "Không tải chi tiết ngày.");
-        setDetail(null);
-        setRawPayload(null);
-      } else {
-        setRawPayload(res.data);
-        setDetail(parseDayDetailForView(res.data));
-      }
-      setLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [profileLoading, iso, personalized, birthDate, birthQuery]);
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
   const nextIso = iso ? addDaysToIso(iso, 1) : "";

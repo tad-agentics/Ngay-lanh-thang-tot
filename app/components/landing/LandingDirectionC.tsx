@@ -17,6 +17,7 @@ import {
 import { LandingPrimaryCtaLink } from "~/components/landing/LandingPrimaryCtaLink";
 import { useLandingPrimaryCta } from "~/hooks/useLandingPrimaryCta";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
 import { supabase } from "~/lib/supabase";
 import {
@@ -62,7 +63,9 @@ const FAQS = [
   ],
   [
     "Nên chọn gói dịch vụ nào phù hợp nhất?",
-    `Gói năm ${formatVndPriceDisplay(PACKAGE_AMOUNT_VND.goi_12thang)} là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
+    TIEU_VAN_LUAN_ENABLED
+      ? `Gói năm ${formatVndPriceDisplay(PACKAGE_AMOUNT_VND.goi_12thang)} là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`
+      : `Gói năm ${formatVndPriceDisplay(PACKAGE_AMOUNT_VND.goi_12thang)} là lựa chọn tối ưu và trọn vẹn nhất — mở khóa toàn bộ tính năng bao gồm: Lịch bản mệnh trọn năm + Luận giải lá số Bát Tự chi tiết. Gói này giúp bạn tiết kiệm đáng kể so với việc đăng ký lẻ từng tính năng.`,
   ],
   [
     "Tôi không am hiểu về tử vi, phong thủy có dùng được không?",
@@ -671,10 +674,12 @@ export function LandingDirectionC() {
                     <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
                     <span><strong>Bản Luận giải Bát tự chuyên sâu (Xem trọn đời):</strong> Giải mã chi tiết ngũ hành bản mệnh, hỷ dụng thần, và chỉ dẫn phương án bổ khuyết cải vận toàn diện.</span>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
-                    <span><strong>{LUAN_LUU_NIEN_NGUYET_TITLE}:</strong> Lưu niên năm và lưu nguyệt tháng — tỏ tường vận hạn cát hung để chủ động đón lành tránh dữ.</span>
-                  </div>
+                  {TIEU_VAN_LUAN_ENABLED ? (
+                    <div className="flex items-start gap-3">
+                      <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
+                      <span><strong>{LUAN_LUU_NIEN_NGUYET_TITLE}:</strong> Lưu niên năm và lưu nguyệt tháng — tỏ tường vận hạn cát hung để chủ động đón lành tránh dữ.</span>
+                    </div>
+                  ) : null}
                   <div className="flex items-start gap-3">
                     <span style={{ color: T.gold, lineHeight: 1, fontSize: "16px" }}>✦</span>
                     <span><strong>Hỏi đáp AI Không giới hạn (Đặc quyền hôm nay):</strong> Độc quyền gửi tới 10 câu hỏi đáp chuyên sâu trực tiếp mỗi ngày về lá số bản mệnh hằng ngày của bản thân.</span>
@@ -711,7 +716,9 @@ export function LandingDirectionC() {
 
                 <div className="mt-8 p-4 font-serif text-[13px] leading-relaxed rounded-[3px]" style={{ background: "rgba(255,255,255,0.03)", border: "1px dashed rgba(197,165,90,0.25)" }}>
                   <p className="m-0" style={{ color: "rgba(237,231,211,0.7)" }}>
-                    {`Gói dịch vụ được nhiều quý anh chị trên 30 tuổi tin dùng nhất. Đã bao gồm trọn gói Luận giải Bát tự và ${LUAN_LUU_NIEN_NGUYET_TITLE} (tiết kiệm hơn 40% so với mua lẻ từng bản luận giải).`}
+                    {TIEU_VAN_LUAN_ENABLED
+                      ? `Gói dịch vụ được nhiều quý anh chị trên 30 tuổi tin dùng nhất. Đã bao gồm trọn gói Luận giải Bát tự và ${LUAN_LUU_NIEN_NGUYET_TITLE} (tiết kiệm hơn 40% so với mua lẻ từng bản luận giải).`
+                      : "Gói dịch vụ được nhiều quý anh chị trên 30 tuổi tin dùng nhất. Đã bao gồm trọn gói Luận giải Bát tự (tiết kiệm hơn 40% so với mua lẻ)."}
                   </p>
                 </div>
               </div>
@@ -731,7 +738,9 @@ export function LandingDirectionC() {
                   { text: "90 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
                   { text: "Điểm số cát hung & Luận giải chi tiết", ok: true },
                   { text: "Hỏi đáp AI chi tiết về ngày hôm nay", ok: true },
-                  { text: `${LUAN_LUU_NIEN_NGUYET_TITLE} (12 tháng)`, ok: false },
+                  ...(TIEU_VAN_LUAN_ENABLED
+                    ? [{ text: `${LUAN_LUU_NIEN_NGUYET_TITLE} (12 tháng)`, ok: false }]
+                    : []),
                   { text: "Bản Luận giải Bát tự chuyên sâu trọn đời", ok: false },
                 ]
               },
@@ -742,12 +751,16 @@ export function LandingDirectionC() {
                 priceVnd: PACKAGE_AMOUNT_VND.goi_6thang,
                 per: "6 tháng",
                 save: `Tiết kiệm ${formatVndPriceDisplay(100_000)}`,
-                desc: "Đầy đủ lịch bản mệnh nửa năm, kết hợp luận giải vận hạn chi tiết để chủ động mưu sự đại sự hanh thông.",
+                desc: TIEU_VAN_LUAN_ENABLED
+                  ? "Đầy đủ lịch bản mệnh nửa năm, kết hợp luận giải vận hạn chi tiết để chủ động mưu sự đại sự hanh thông."
+                  : "Đầy đủ lịch bản mệnh nửa năm để chủ động mưu sự đại sự hanh thông.",
                 features: [
                   { text: "180 ngày Lịch bản mệnh Tứ Trụ hằng ngày", ok: true },
                   { text: "Điểm số cát hung & Luận giải chi tiết", ok: true },
                   { text: "Hỏi đáp AI chi tiết về ngày hôm nay", ok: true },
-                  { text: LUAN_LUU_NIEN_NGUYET_TITLE, ok: true },
+                  ...(TIEU_VAN_LUAN_ENABLED
+                    ? [{ text: LUAN_LUU_NIEN_NGUYET_TITLE, ok: true }]
+                    : []),
                   { text: "Bản Luận giải Bát tự chuyên sâu trọn đời", ok: false },
                 ]
               },

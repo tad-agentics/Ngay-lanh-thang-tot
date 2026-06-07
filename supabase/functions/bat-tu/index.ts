@@ -6,11 +6,22 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import {
-  redisGetString,
-  redisRestConfigured,
-  redisSetExString,
-} from "./redis-cache.ts";
+  ANONYMOUS_OPS,
+  authCacheWriteEnabled,
+  bodyHasBirthDate,
+  CALENDAR_GATE_OPS,
+  invalidateBatTuCacheForBody,
+  isPersonalizedCalendarBody,
+  isUpstreamCacheable,
+  readBatTuCachePayload,
+  writeBatTuCachePayload,
+} from "../_shared/bat-tu/cache.ts";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
+import {
+  currentYearVn,
+  profileToBatTuPersonQuery,
+  type PrewarmProfileRow,
+} from "../_shared/bazi-reading-prewarm/profile-bat-tu.ts";
 import {
   canUseBaziReading,
   canUseCalendar,
@@ -149,29 +160,6 @@ function tieVanYearMonth(body: Record<string, unknown>): string | null {
   const s = String(body.month).trim();
   if (!/^\d{4}-\d{2}$/.test(s)) return null;
   return s;
-}
-
-/** Ops callable without Supabase session (caller may still send birth_* in `body`). */
-const ANONYMOUS_OPS = new Set([
-  "ngay-hom-nay",
-  "weekly-summary",
-  "convert-date",
-  "lich-thang",
-  "day-detail",
-]);
-
-/** Personalized calendar ops — gate when JWT + birth_date present. */
-const CALENDAR_GATE_OPS = new Set([
-  "ngay-hom-nay",
-  "lich-thang",
-  "day-detail",
-  "day-luan-context",
-  "day-compare",
-]);
-
-function bodyHasBirthDate(body: Record<string, unknown>): boolean {
-  const v = body.birth_date;
-  return v != null && String(v).trim() !== "";
 }
 
 async function resolveUserIdFromRequest(
@@ -1011,67 +999,21 @@ async function persistRecomputeLaSo(
   return null;
 }
 
-/** TTL tối đa 60 phút; BAT_TU_CACHE_TTL_SEC (giây), clamp 1…3600, mặc định 3600. */
-function cacheTtlSec(): number {
-  const raw = Deno.env.get("BAT_TU_CACHE_TTL_SEC");
-  const n = raw != null && raw !== "" ? Number.parseInt(raw, 10) : 3600;
-  if (!Number.isFinite(n) || n <= 0) return 3600;
-  return Math.min(3600, Math.max(1, n));
-}
-
-async function sha256Hex(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(text),
-  );
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-/**
- * Không cache: ghi hồ sơ upstream (POST profile), hoặc tu-tru (mỗi user cần persist lá số).
- */
-function isUpstreamCacheable(op: string, init: RequestInit): boolean {
-  const m = (init.method ?? "GET").toUpperCase();
-  if (op === "profile" && m === "POST") return false;
-  if (op === "tu-tru" || op === "tu-tru-preview" || op === "recompute-la-so") {
-    return false;
-  }
-  return true;
-}
-
-async function batTuCacheKey(
+async function tryReturnBatTuCache(
   op: string,
   upstreamUrl: string,
   upstreamInit: RequestInit,
-): Promise<string> {
-  const method = upstreamInit.method ?? "GET";
-  const body =
-    typeof upstreamInit.body === "string" ? upstreamInit.body : "";
-  const raw = `${op}\n${method}\n${upstreamUrl}\n${body}`;
-  const hash = await sha256Hex(raw);
-  return `bat-tu:v1:${hash}`;
-}
-
-async function readBatTuCache(
-  op: string,
-  upstreamUrl: string,
-  upstreamInit: RequestInit,
+  body: Record<string, unknown>,
+  calendarGatePassed: boolean,
   req: Request,
 ): Promise<Response | null> {
   if (!isUpstreamCacheable(op, upstreamInit)) return null;
-  if (!redisRestConfigured()) return null;
-  try {
-    const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
-    const raw = await redisGetString(ck);
-    if (raw == null) return null;
-    const parsed = JSON.parse(raw) as { data?: unknown };
-    if (!("data" in parsed)) return null;
-    return json(parsed, 200, req);
-  } catch {
+  if (isPersonalizedCalendarBody(op, body) && !calendarGatePassed) {
     return null;
   }
+  const cached = await readBatTuCachePayload(op, upstreamUrl, upstreamInit);
+  if (cached == null) return null;
+  return json({ data: cached }, 200, req);
 }
 
 Deno.serve(async (req) => {
@@ -1143,14 +1085,21 @@ Deno.serve(async (req) => {
   const { url: upstreamUrl, init: upstreamInit } = upstream;
   (upstreamInit.headers as Record<string, string>)["X-API-Key"] = batKey;
 
-  const cacheTtl = cacheTtlSec();
-
   const admin = createClient(supabaseUrl, serviceKey);
   let userId: string | null = null;
+  let calendarGatePassed = false;
+  const personalizedCalendar = isPersonalizedCalendarBody(op, body);
 
-  if (ANONYMOUS_OPS.has(op)) {
-    const cached = await readBatTuCache(op, upstreamUrl, upstreamInit, req);
-    if (cached) return cached;
+  if (ANONYMOUS_OPS.has(op) && !personalizedCalendar) {
+    const early = await tryReturnBatTuCache(
+      op,
+      upstreamUrl,
+      upstreamInit,
+      body,
+      true,
+      req,
+    );
+    if (early) return early;
   }
 
   if (!ANONYMOUS_OPS.has(op)) {
@@ -1222,8 +1171,20 @@ Deno.serve(async (req) => {
             },
           }, 402, req);
       }
+      calendarGatePassed = true;
+      if (!userId) userId = calendarUserId;
     }
   }
+
+  const cachedAfterGate = await tryReturnBatTuCache(
+    op,
+    upstreamUrl,
+    upstreamInit,
+    body,
+    calendarGatePassed,
+    req,
+  );
+  if (cachedAfterGate) return cachedAfterGate;
 
   const traCuuPick = isTraCuuPickChonNgay(op, body);
   if (traCuuPick && userId) {
@@ -1530,19 +1491,24 @@ Deno.serve(async (req) => {
       return json(
         { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
     }
-  }
-
-  if (
-    ANONYMOUS_OPS.has(op) &&
-    isUpstreamCacheable(op, upstreamInit) &&
-    redisRestConfigured()
-  ) {
-    try {
-      const ck = await batTuCacheKey(op, upstreamUrl, upstreamInit);
-      await redisSetExString(ck, JSON.stringify({ data }), cacheTtl);
-    } catch (e) {
-      console.error("bat-tu cache set", e);
-    }
+    const { data: profAfter } = await admin
+      .from("profiles")
+      .select("ngay_sinh, gio_sinh, gioi_tinh")
+      .eq("id", userId)
+      .maybeSingle();
+    const personQuery = profAfter
+      ? profileToBatTuPersonQuery(profAfter as PrewarmProfileRow)
+      : profileToBatTuPersonQuery(body as PrewarmProfileRow);
+    await invalidateBatTuCacheForBody(
+      {
+        ...personQuery,
+        year: currentYearVn(),
+        purpose: "NHA_O",
+        detail: "full",
+      },
+      buildUpstream,
+      batUrl,
+    );
   }
 
   const outData =
@@ -1553,6 +1519,14 @@ Deno.serve(async (req) => {
     !Array.isArray(data)
       ? stripPhongThuyTeaserPayload(data)
       : data;
+
+  const canWriteCache =
+    isUpstreamCacheable(op, upstreamInit) &&
+    (!personalizedCalendar || calendarGatePassed) &&
+    (ANONYMOUS_OPS.has(op) || authCacheWriteEnabled());
+  if (canWriteCache) {
+    await writeBatTuCachePayload(op, upstreamUrl, upstreamInit, outData);
+  }
 
   if (op === "tieu-van" && userId && outData != null) {
     const ymStore = tieVanYearMonth(body);

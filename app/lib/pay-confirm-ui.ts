@@ -5,6 +5,7 @@ import {
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
 } from "~/lib/luan-luu-nien-nguyet-labels";
 import { formatVndPriceDisplay } from "~/lib/vnd-format";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { UI_PACKAGES } from "~/lib/packages";
 
 export const PAY_CONFIRM_TIER_META: Partial<
@@ -23,7 +24,9 @@ export const PAY_CONFIRM_TIER_META: Partial<
     baseline: "797.000",
     per: "6 tháng",
     save: "tiết kiệm 298.000 ₫",
-    sub: `Lịch + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`,
+    sub: TIEU_VAN_LUAN_ENABLED
+      ? `Lịch + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`
+      : "Lịch cá nhân 6 tháng",
   },
   goi_12thang: {
     baseline: "1.097.000",
@@ -124,7 +127,7 @@ export function addonSubscriptionUpsell(addonSku: PackageSku): {
   const sixMonth = UI_PACKAGES.find((p) => p.sku === "goi_6thang");
   const yearly = UI_PACKAGES.find((p) => p.sku === "goi_12thang");
 
-  if (addonSku === "luan_tieu_van" && sixMonth) {
+  if (addonSku === "luan_tieu_van" && TIEU_VAN_LUAN_ENABLED && sixMonth) {
     return {
       planSku: "goi_6thang",
       planLabel: "Lịch 6 tháng",
@@ -137,7 +140,9 @@ export function addonSubscriptionUpsell(addonSku: PackageSku): {
       planSku: "goi_12thang",
       planLabel: "Lịch năm",
       priceLabel: yearly.priceLabel,
-      benefit: `mở toàn bộ tính năng — lịch + luận Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`,
+      benefit: TIEU_VAN_LUAN_ENABLED
+        ? `mở toàn bộ tính năng — lịch + luận Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`
+        : "mở toàn bộ tính năng — lịch + luận Bát tự",
     };
   }
   return null;

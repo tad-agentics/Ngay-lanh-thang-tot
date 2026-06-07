@@ -6,7 +6,8 @@ import {
 } from "~/lib/pay-checkout-timeout";
 import type { PendingPaymentFlow } from "~/lib/pending-payment-session";
 import { paymentFlowForSku } from "~/lib/pending-payment-session";
-import { ADDON_SKUS } from "~/lib/packages";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
+import { ALL_ADDON_SKUS, SUBSCRIPTION_SKUS } from "~/lib/packages";
 
 export type PaymentOrderRecoveryRow = {
   id: string;
@@ -33,6 +34,9 @@ export function isPaymentFlowExemptPath(pathname: string): boolean {
     return true;
   }
   if (p.startsWith("/luan/mua/that-bai")) return true;
+  if (p === "/lich" || p.startsWith("/lich/")) return true;
+  if (p === "/tra-cuu" || p.startsWith("/tra-cuu/")) return true;
+  if (p.startsWith("/ngay/")) return true;
   return false;
 }
 
@@ -154,7 +158,16 @@ export function recoveryConfirmTarget(
 }
 
 export function isAddonPackageSku(sku: string): sku is PackageSku {
-  return ADDON_SKUS.includes(sku as PackageSku);
+  return ALL_ADDON_SKUS.includes(sku as PackageSku);
+}
+
+/** Pending orders for temporarily hidden products should not surface recovery UI. */
+export function isPaymentRecoveryPackageSku(sku: string): boolean {
+  if (sku === "luan_tieu_van" && !TIEU_VAN_LUAN_ENABLED) return false;
+  return (
+    isAddonPackageSku(sku) ||
+    SUBSCRIPTION_SKUS.includes(sku as PackageSku)
+  );
 }
 
 export function flowForPackageSku(sku: PackageSku): PendingPaymentFlow {

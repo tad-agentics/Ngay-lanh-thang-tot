@@ -3,6 +3,7 @@ import {
   READING_MAX_TOKENS_PHONG_THUY_BLOCK,
   ttlForEndpoint,
 } from "../core/config.ts";
+import { persistReadingCache } from "../core/cache-persist.ts";
 import {
   createEdgeBudget,
   GENERATE_READING_EDGE_BUDGET_MS,
@@ -139,10 +140,7 @@ async function cachePhongThuySections(
   if (!admin || sections.length === 0) return;
   const toStore = JSON.stringify({ sections });
   const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-  await admin.from("reading_cache").upsert(
-    { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-    { onConflict: "cache_key" },
-  );
+  await persistReadingCache(admin, cacheKey, toStore, expiresAt);
 }
 
 /** §04 — 3 khối luận: hướng · màu · phi tinh. */

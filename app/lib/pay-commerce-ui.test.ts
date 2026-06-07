@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
+
 import {
   brandedSubscriptionPlanName,
   formatPaymentOrderRef,
@@ -49,7 +51,7 @@ describe("pay-commerce-ui", () => {
     expect(yearlyPlanUpsellDeltaVnd("luan_bat_tu")).toBe(500_000);
   });
 
-  it("computes 6-month upsell delta for Tiểu vận addon", () => {
+  it.skipIf(!TIEU_VAN_LUAN_ENABLED)("computes 6-month upsell delta for Tiểu vận addon", () => {
     expect(subscriptionUpsellDeltaVnd("luan_tieu_van", "goi_6thang")).toBe(300_000);
   });
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   checkoutResponseFromOrder,
   isPaymentFlowExemptPath,
+  isPaymentRecoveryPackageSku,
   isRecoverablePendingOrder,
   recoverySuccessPath,
 } from "./payment-order-recovery";
@@ -12,7 +13,9 @@ describe("payment-order-recovery", () => {
     expect(isPaymentFlowExemptPath("/dat-lich/xac-nhan")).toBe(true);
     expect(isPaymentFlowExemptPath("/thanh-cong")).toBe(true);
     expect(isPaymentFlowExemptPath("/luan/mua/xac-nhan")).toBe(true);
-    expect(isPaymentFlowExemptPath("/lich")).toBe(false);
+    expect(isPaymentFlowExemptPath("/lich")).toBe(true);
+    expect(isPaymentFlowExemptPath("/tra-cuu")).toBe(true);
+    expect(isPaymentFlowExemptPath("/toi")).toBe(false);
   });
 
   it("allows recovery only in pending age window", () => {
@@ -78,5 +81,11 @@ describe("payment-order-recovery", () => {
     expect(recoverySuccessPath("addon", "luan_bat_tu", "x")).toContain(
       "/luan/mua/thanh-cong",
     );
+  });
+
+  it("hides recovery for temporarily disabled tiểu vận addon", () => {
+    expect(isPaymentRecoveryPackageSku("luan_tieu_van")).toBe(false);
+    expect(isPaymentRecoveryPackageSku("luan_bat_tu")).toBe(true);
+    expect(isPaymentRecoveryPackageSku("goi_6thang")).toBe(true);
   });
 });

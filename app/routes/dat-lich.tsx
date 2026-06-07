@@ -18,6 +18,7 @@ import {
 } from "~/lib/packages";
 import { useProfile } from "~/hooks/useProfile";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 
 const SUBSCRIPTION_TIERS = UI_PACKAGES.filter((p) =>
   SUBSCRIPTION_SKUS.includes(p.sku),
@@ -211,11 +212,16 @@ export default function DatLichRoute() {
                       Gồm: Lịch cả năm + Luận giải Bát tự{" "}
                       <strong className="font-semibold" style={{ color: CT.cream }}>
                         299k
-                      </strong>{" "}
-                      + {LUAN_LUU_NIEN_NGUYET_TITLE}{" "}
-                      <strong className="font-semibold" style={{ color: CT.cream }}>
-                        199k
                       </strong>
+                      {TIEU_VAN_LUAN_ENABLED ? (
+                        <>
+                          {" "}
+                          + {LUAN_LUU_NIEN_NGUYET_TITLE}{" "}
+                          <strong className="font-semibold" style={{ color: CT.cream }}>
+                            199k
+                          </strong>
+                        </>
+                      ) : null}
                     </div>
                   </>
                 ) : meta?.save ? (
@@ -251,8 +257,13 @@ export default function DatLichRoute() {
           className="mt-[22px] font-serif text-xs leading-relaxed"
           style={{ color: CT.muted }}
         >
-          Gói 3 tháng: lịch cá nhân · tra cứu ngày tốt · hợp tuổi. Gói 6 tháng thêm
-          {LUAN_LUU_NIEN_NGUYET_TITLE}. Gói năm mở full luận Bát tự và toàn bộ tính năng.
+          Gói 3 tháng: lịch cá nhân · tra cứu ngày tốt.
+          {TIEU_VAN_LUAN_ENABLED ? (
+            <> Gói 6 tháng thêm {LUAN_LUU_NIEN_NGUYET_TITLE}.</>
+          ) : (
+            <> Gói 6 tháng: lịch cá nhân dài hạn.</>
+          )}{" "}
+          Gói năm mở full luận Bát tự và toàn bộ tính năng.
         </p>
 
         <div

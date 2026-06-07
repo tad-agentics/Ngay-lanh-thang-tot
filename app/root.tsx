@@ -10,22 +10,25 @@ import {
 import { MetaPixelHead } from "~/components/MetaPixelHead";
 import { MetaPixelRouteTracker } from "~/components/MetaPixelRouteTracker";
 import { QueryProvider } from "~/components/QueryProvider";
-import { SavedPicksGate } from "~/components/SavedPicksGate";
 import { SiteBanner } from "~/components/SiteBanner";
 import { Toaster } from "~/components/ui/sonner";
 import { AuthProvider } from "~/lib/auth";
-import { captureClientException, initSentry } from "~/lib/sentry";
 
 import type { Route } from "./+types/root";
 import "./app.css";
 
-initSentry();
+if (typeof window !== "undefined") {
+  const bootSentry = () => {
+    void import("~/lib/sentry").then((m) => m.initSentry());
+  };
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(bootSentry);
+  } else {
+    setTimeout(bootSentry, 1);
+  }
+}
 
 export const links: Route.LinksFunction = () => [
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap",
-  },
   { rel: "manifest", href: "/manifest.json" },
   {
     rel: "icon",
@@ -67,12 +70,10 @@ export default function App() {
   return (
     <QueryProvider>
       <AuthProvider>
-        <SavedPicksGate>
-          <MetaPixelRouteTracker />
-          <SiteBanner />
-          <Outlet />
-          <Toaster richColors position="top-center" />
-        </SavedPicksGate>
+        <MetaPixelRouteTracker />
+        <SiteBanner />
+        <Outlet />
+        <Toaster richColors position="top-center" />
       </AuthProvider>
     </QueryProvider>
   );
@@ -90,7 +91,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
         ? "Không tìm thấy trang bạn yêu cầu."
         : error.statusText || "Máy chủ trả về lỗi. Thử lại sau.";
   } else if (error && error instanceof Error) {
-    captureClientException(error, { tags: { boundary: "root" } });
+    void import("~/lib/sentry").then(({ captureClientException }) => {
+      captureClientException(error, { tags: { boundary: "root" } });
+    });
     if (import.meta.env.DEV) {
       details = error.message;
       stack = error.stack;

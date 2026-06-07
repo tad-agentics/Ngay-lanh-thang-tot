@@ -75,3 +75,14 @@ export async function redisSetNxEx(
   }
   return j.result === "OK";
 }
+
+export async function redisDelKey(key: string): Promise<void> {
+  if (!redisRestConfigured()) return;
+  const res = await fetch(`${restBase()}/del/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${bearer()}` },
+  });
+  if (!res.ok) {
+    console.error("redisDelKey", res.status, await res.text());
+  }
+}

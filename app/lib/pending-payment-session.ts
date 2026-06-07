@@ -1,5 +1,5 @@
 import type { PackageSku } from "~/lib/api-types";
-import { ADDON_SKUS } from "~/lib/packages";
+import { ALL_ADDON_SKUS } from "~/lib/packages";
 
 const STORAGE_KEY = "ngaytot:pending-payment:v1";
 const DISMISS_KEY = "ngaytot:pending-payment-dismiss:v1";
@@ -18,7 +18,7 @@ export type PendingPaymentSession = {
 };
 
 export function paymentFlowForSku(sku: PackageSku): PendingPaymentFlow {
-  return ADDON_SKUS.includes(sku) ? "addon" : "subscription";
+  return ALL_ADDON_SKUS.includes(sku) ? "addon" : "subscription";
 }
 
 export function stashPendingPayment(session: PendingPaymentSession): void {

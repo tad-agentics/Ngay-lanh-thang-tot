@@ -2,6 +2,8 @@
  * Direction C nav — 3-tab: Lịch · Tra cứu · Tôi
  */
 
+import { HOP_TUOI_ENABLED, TIEU_VAN_LUAN_ENABLED } from "./feature-flags";
+
 export type BottomNavTab = "lich" | "tra-cuu" | "toi";
 
 const NAV_PATHS = new Set([
@@ -96,7 +98,6 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/tra-cuu": "/tra-cuu",
   "/app/chon-ngay": "/tra-cuu",
   "/app/chon-ngay/ket-qua": "/tra-cuu/ket-qua",
-  "/app/hop-tuoi": "/tra-cuu/hop-tuoi",
   "/app/toi": "/toi",
   "/app/mua-luong": "/dat-lich",
   "/app/mua-luong/thanh-cong": "/thanh-cong",
@@ -107,7 +108,7 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/chuyen-lich": "/toi",
   "/app/la-so": "/toi/la-so",
   "/app/la-so/chi-tiet": "/toi/la-so",
-  "/app/tieu-van": "/toi/luan-tieu-van",
+  "/app/tieu-van": "/toi",
   "/app/phong-thuy": "/lich",
   "/tien-ich/phong-thuy": "/lich",
   "/tra-cuu/dang-tim": "/tra-cuu",
@@ -121,6 +122,12 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
 
 export function legacyAppRedirect(pathname: string): string | null {
   const p = normalizePath(pathname);
+  if (p === "/app/hop-tuoi") {
+    return HOP_TUOI_ENABLED ? "/tra-cuu/hop-tuoi" : "/tra-cuu";
+  }
+  if (p === "/app/tieu-van") {
+    return TIEU_VAN_LUAN_ENABLED ? "/toi/luan-tieu-van" : "/toi";
+  }
   if (LEGACY_APP_REDIRECTS[p]) return LEGACY_APP_REDIRECTS[p];
   if (p.startsWith("/app/ngay/")) {
     return p.replace("/app/ngay/", "/ngay/");

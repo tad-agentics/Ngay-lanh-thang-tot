@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { Navigate, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { CHopTuoiLoadingScreen } from "~/components/direction-c/CHopTuoiLoadingScreen";
@@ -26,6 +26,7 @@ import {
 } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
+import { HOP_TUOI_ENABLED } from "~/lib/feature-flags";
 import { hopTuoiPayloadToPanel } from "~/lib/hop-tuoi-result";
 import { persistHopTuoiKetQua } from "~/lib/hop-tuoi-session";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
@@ -81,6 +82,13 @@ function ageFromNgaySinh(ngaySinh: string | null): string | null {
 }
 
 export default function TraCuuHopTuoiRoute() {
+  if (!HOP_TUOI_ENABLED) {
+    return <Navigate to="/tra-cuu" replace />;
+  }
+  return <TraCuuHopTuoiScreen />;
+}
+
+function TraCuuHopTuoiScreen() {
   const navigate = useNavigate();
   const { profile, loading: profileLoading } = useProfile();
   const [form, setForm] = useState({

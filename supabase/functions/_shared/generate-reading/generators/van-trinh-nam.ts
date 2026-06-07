@@ -20,6 +20,7 @@ import {
   VAN_TRINH_NAM_JSON_SYSTEM,
 } from "../prompts/van-trinh-nam.ts";
 import { ttlForEndpoint } from "../core/config.ts";
+import { persistReadingCache } from "../core/cache-persist.ts";
 
 async function generateVanTrinhNamJsonSections(
   ctx: GenerateContext,
@@ -68,10 +69,7 @@ export async function generateVanTrinhNamReading(
     const toStore = JSON.stringify({ sections });
     if (admin) {
       const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-      await admin.from("reading_cache").upsert(
-        { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-        { onConflict: "cache_key" },
-      );
+      await persistReadingCache(admin, cacheKey, toStore, expiresAt);
     }
     return { reading: null, sections };
   }

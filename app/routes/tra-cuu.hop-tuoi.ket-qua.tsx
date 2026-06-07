@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
@@ -16,6 +16,7 @@ import {
   stashTraCuuIntentPreset,
 } from "~/lib/hop-tuoi-ui";
 import { CT, DISPLAY, DISPLAY2 } from "~/lib/c-tokens";
+import { HOP_TUOI_ENABLED } from "~/lib/feature-flags";
 
 function gradHeadline(label: string): string {
   return label.toUpperCase();
@@ -70,6 +71,13 @@ function HopTuoiSaveButton({
 }
 
 export default function TraCuuHopTuoiKetQuaRoute() {
+  if (!HOP_TUOI_ENABLED) {
+    return <Navigate to="/tra-cuu" replace />;
+  }
+  return <TraCuuHopTuoiKetQuaScreen />;
+}
+
+function TraCuuHopTuoiKetQuaScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const navState = location.state as HopTuoiKetQuaState | null;

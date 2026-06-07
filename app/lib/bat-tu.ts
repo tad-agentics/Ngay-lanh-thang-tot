@@ -4,6 +4,26 @@ import type { BatTuRequest } from "~/lib/api-types";
 import { isSubExpiredCode, notifySubExpired } from "~/lib/sub-expired";
 import { supabase } from "~/lib/supabase";
 
+const SESSION_DEDUPE_MS = 30_000;
+let sessionInflight: ReturnType<typeof supabase.auth.getSession> | null = null;
+let sessionInflightUntil = 0;
+
+/** Dedupe concurrent getSession bursts (e.g. 3 parallel bat-tu queries). */
+async function ensureSessionFresh(): Promise<void> {
+  const now = Date.now();
+  if (sessionInflight && now < sessionInflightUntil) {
+    await sessionInflight;
+    return;
+  }
+  sessionInflightUntil = now + SESSION_DEDUPE_MS;
+  sessionInflight = supabase.auth.getSession();
+  try {
+    await sessionInflight;
+  } finally {
+    // keep resolved promise until TTL expires
+  }
+}
+
 type EdgeErrorInner = {
   code?: string;
   message?: string;
@@ -23,6 +43,7 @@ export async function invokeBatTu<T = unknown>(
   | { ok: true; data: T }
   | { ok: false; code: string; message: string; reset_at?: number }
 > {
+  await ensureSessionFresh();
   const { data, error } = await supabase.functions.invoke<OkBody<T> | EdgeErrorBody>(
     "bat-tu",
     { body: req },

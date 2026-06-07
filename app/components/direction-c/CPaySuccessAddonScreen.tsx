@@ -28,7 +28,8 @@ import {
   PAY_CONFIRM_ADDON_META,
 } from "~/lib/pay-confirm-ui";
 import { LUAN_LA_SO_BAT_TU_TITLE } from "~/lib/luan-la-so-bat-tu-labels";
-import { ADDON_SKUS, catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
+import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
+import { ADDON_SKUS, ALL_ADDON_SKUS, catalogPriceLabel, UI_PACKAGES } from "~/lib/packages";
 
 const VALID_SKUS = new Set<PackageSku>(ADDON_SKUS);
 
@@ -46,7 +47,7 @@ export function CPaySuccessAddonScreen() {
   const { order, paid: paidFromOrder, trackingOrderId } = usePaymentSuccessOrder(
     orderIdFromUrl,
     user?.id,
-    { packageSkus: ADDON_SKUS },
+    { packageSkus: ALL_ADDON_SKUS },
   );
   const [paidOverride, setPaidOverride] = useState(false);
   const paid = paidFromOrder || paidOverride;
@@ -71,9 +72,15 @@ export function CPaySuccessAddonScreen() {
     : null;
 
   const ctaTo =
-    sku === "luan_tieu_van"
-      ? `/toi/luan-tieu-van?year=${currentYearVn()}`
-      : "/toi/luan-bat-tu";
+    sku === "luan_bat_tu"
+      ? "/toi/luan-bat-tu"
+      : TIEU_VAN_LUAN_ENABLED
+        ? `/toi/luan-tieu-van?year=${currentYearVn()}`
+        : "/toi";
+  const ctaLabel =
+    sku === "luan_tieu_van" && !TIEU_VAN_LUAN_ENABLED
+      ? "Về Tôi →"
+      : "Đọc luận giải ngay →";
   const headlineTitle = addonMeta?.title ?? pkg?.title ?? LUAN_LA_SO_BAT_TU_TITLE;
   const catalogPriceLabelText =
     pkg?.priceLabel ?? catalogPriceLabel(sku ?? "luan_bat_tu");
@@ -192,7 +199,7 @@ export function CPaySuccessAddonScreen() {
               Còn thiếu
             </Mono>
             <p className="mt-1 text-[13px] leading-snug" style={{ color: CT.ink2 }}>
-              {sku === "luan_tieu_van" ? (
+              {sku === "luan_tieu_van" && TIEU_VAN_LUAN_ENABLED ? (
                 <>
                   Bạn chưa có{" "}
                   <strong className="font-semibold" style={{ color: CT.ink }}>
@@ -226,7 +233,7 @@ export function CPaySuccessAddonScreen() {
           className="mt-[22px] block w-full max-w-[320px] py-3.5 text-center text-[13.5px] font-extrabold uppercase tracking-[0.08em] no-underline"
           style={{ ...PAY_DISPLAY2, background: CT.forest, color: CT.cream }}
         >
-          Đọc luận giải ngay →
+          {ctaLabel}
         </Link>
 
         <button

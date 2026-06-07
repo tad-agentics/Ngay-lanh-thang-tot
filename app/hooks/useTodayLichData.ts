@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
+import { hashBatTuBody, useBatTuQuery } from "~/hooks/useBatTuQuery";
 import { useOfflineCalendar } from "~/hooks/useOfflineCalendar";
 import { useProfile } from "~/hooks/useProfile";
 import { canUseCalendar, isNeverSubscribedUser } from "~/lib/entitlements";
 import { useAuth } from "~/lib/auth";
-import { invokeBatTu } from "~/lib/bat-tu";
 import { profileCanUseBatTu, profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
   mergeDayDetailScoreIntoHome,
@@ -12,133 +13,112 @@ import {
   type NgayHomNayHome,
 } from "~/lib/home-bat-tu";
 import { laSoJsonToRevealProps, profileHasLaso } from "~/lib/la-so-ui";
-import { todayIsoInVn } from "~/lib/today-reading-cache";
+import { queryKeys } from "~/lib/query-keys";
+import {
+  readTodayHomeSession,
+  todayIsoInVn,
+} from "~/lib/today-reading-cache";
 
 export function useTodayLichData() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { profile, loading: profileLoading } = useProfile();
   const todayIso = todayIsoInVn();
   const { online, readCached, writeCached } = useOfflineCalendar(
     user?.id,
     todayIso,
   );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [today, setToday] = useState<NgayHomNayHome | null>(null);
-  const [rawPayload, setRawPayload] = useState<unknown | null>(null);
-  /** Structured context for `generate-reading` (preferred over raw ngay-hom-nay). */
-  const [readingPayload, setReadingPayload] = useState<unknown | null>(null);
 
   const laso = profile ? laSoJsonToRevealProps(profile.la_so) : null;
   const menh = laso?.menh ?? null;
   const canBatTu = profileCanUseBatTu(profile);
+  const recomputePending = profile?.la_so_recompute_status === "pending";
+
+  const lapsedNoCalendar =
+    Boolean(profile) &&
+    !canUseCalendar(profile!) &&
+    !isNeverSubscribedUser(profile!);
+
+  const batTuBody = useMemo(() => {
+    if (!profile || !canBatTu) return null;
+    return { ...profileToBatTuPersonQuery(profile), date: todayIso };
+  }, [profile, canBatTu, todayIso]);
+
+  const bodyHash = batTuBody ? hashBatTuBody(batTuBody) : "";
+  const userId = user?.id;
+
+  const bootstrapToday = useMemo((): NgayHomNayHome | null => {
+    if (!userId) return null;
+    const fromSession = readTodayHomeSession(userId, todayIso);
+    if (fromSession) return fromSession;
+    return (
+      queryClient.getQueryData<NgayHomNayHome>(
+        queryKeys.todayLich(userId, todayIso),
+      ) ?? null
+    );
+  }, [userId, todayIso, queryClient]);
+
+  const fetchEnabled =
+    Boolean(userId && batTuBody && online && !recomputePending && !lapsedNoCalendar);
+
+  const homNayQuery = useBatTuQuery<unknown>(userId, "ngay-hom-nay", batTuBody ?? {}, {
+    enabled: fetchEnabled,
+  });
+  const detailQuery = useBatTuQuery<unknown>(userId, "day-detail", batTuBody ?? {}, {
+    enabled: fetchEnabled,
+  });
+  const luanQuery = useBatTuQuery<unknown>(
+    userId,
+    "day-luan-context",
+    batTuBody ?? {},
+    { enabled: fetchEnabled },
+  );
+
+  const homNayData = homNayQuery.data;
+  const detailData = detailQuery.data;
+  const luanData = luanQuery.data;
+
+  const mergedToday = useMemo((): NgayHomNayHome | null => {
+    if (homNayData == null) return bootstrapToday;
+    let parsed = parseNgayHomNayForHome(homNayData);
+    if (parsed && detailData != null) {
+      parsed = mergeDayDetailScoreIntoHome(parsed, detailData);
+    }
+    return parsed;
+  }, [homNayData, detailData, bootstrapToday]);
+
+  const readingPayload =
+    luanData ?? detailData ?? homNayData ?? null;
 
   useEffect(() => {
-    if (profileLoading) return;
-    if (
-      profile &&
-      !canUseCalendar(profile) &&
-      !isNeverSubscribedUser(profile)
-    ) {
-      setLoading(false);
-      setToday(null);
-      setRawPayload(null);
-      setReadingPayload(null);
-      setError(null);
-      return;
-    }
-    if (!profile || !canBatTu) {
-      setLoading(false);
-      setToday(null);
-      setRawPayload(null);
-      setReadingPayload(null);
-      setError(
-        profile && !canBatTu
-          ? "Hoàn tất lập lá số (ngày sinh và canh giờ) để mở lịch."
-          : null,
-      );
-      return;
-    }
+    if (!mergedToday || !userId) return;
+    writeCached(mergedToday);
+    queryClient.setQueryData(
+      queryKeys.todayLich(userId, todayIso),
+      mergedToday,
+    );
+  }, [mergedToday, userId, todayIso, writeCached, queryClient]);
 
-    if (profile.la_so_recompute_status === "pending") {
-      setLoading(true);
-      setToday(null);
-      setRawPayload(null);
-      setReadingPayload(null);
-      setError(null);
-      return;
-    }
+  const offlineToday = !online ? readCached() : null;
 
-    if (!online) {
-      const cached = readCached();
-      setToday(cached);
-      setRawPayload(null);
-      setReadingPayload(null);
-      setError(cached ? null : "Không có dữ liệu ngoại tuyến cho hôm nay.");
-      setLoading(false);
-      return;
-    }
+  let error: string | null = null;
+  if (profile && !canBatTu) {
+    error = "Hoàn tất lập lá số (ngày sinh và canh giờ) để mở lịch.";
+  } else if (!online && !offlineToday) {
+    error = "Không có dữ liệu ngoại tuyến cho hôm nay.";
+  } else if (homNayQuery.isError) {
+    error = homNayQuery.error?.message ?? "Không tải được lịch hôm nay.";
+  }
 
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
+  const loading =
+    profileLoading ||
+    recomputePending ||
+    (fetchEnabled &&
+      homNayQuery.isPending &&
+      !bootstrapToday &&
+      !offlineToday);
 
-    void (async () => {
-      const body = profileToBatTuPersonQuery(profile);
-      const query = { ...body, date: todayIso };
-      const [homNayRes, detailRes, luanRes] = await Promise.all([
-        invokeBatTu<unknown>({
-          op: "ngay-hom-nay",
-          body: query,
-        }),
-        invokeBatTu<unknown>({
-          op: "day-detail",
-          body: query,
-        }),
-        invokeBatTu<unknown>({
-          op: "day-luan-context",
-          body: query,
-        }),
-      ]);
-      if (cancelled) return;
-      if (!homNayRes.ok) {
-        setError(homNayRes.message ?? "Không tải được lịch hôm nay.");
-        setToday(null);
-        setRawPayload(null);
-        setReadingPayload(null);
-      } else {
-        let parsed = parseNgayHomNayForHome(homNayRes.data);
-        if (parsed && detailRes.ok) {
-          parsed = mergeDayDetailScoreIntoHome(parsed, detailRes.data);
-        }
-        setToday(parsed);
-        setRawPayload(homNayRes.data);
-        setReadingPayload(
-          luanRes.ok
-            ? luanRes.data
-            : detailRes.ok
-              ? detailRes.data
-              : homNayRes.data,
-        );
-        if (parsed) writeCached(parsed);
-      }
-      setLoading(false);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    profile,
-    profileLoading,
-    canBatTu,
-    online,
-    readCached,
-    writeCached,
-    todayIso,
-  ]);
-
-  const recomputePending = profile?.la_so_recompute_status === "pending";
+  const today = !online ? offlineToday : mergedToday;
 
   return {
     profile,
@@ -146,7 +126,7 @@ export function useTodayLichData() {
     loading,
     error,
     today,
-    rawPayload,
+    rawPayload: homNayData ?? null,
     readingPayload,
     menh,
     scoreMethodology: today?.scoreMethodology ?? null,

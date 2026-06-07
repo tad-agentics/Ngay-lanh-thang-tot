@@ -25,3 +25,13 @@ export function createAppQueryClient() {
     },
   });
 }
+
+let appQueryClient: QueryClient | null = null;
+
+/** Singleton — shared by QueryProvider and route clientLoaders. */
+export function getAppQueryClient(): QueryClient {
+  if (!appQueryClient) {
+    appQueryClient = createAppQueryClient();
+  }
+  return appQueryClient;
+}

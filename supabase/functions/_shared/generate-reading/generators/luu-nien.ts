@@ -5,6 +5,7 @@ import {
   READING_MAX_TOKENS_LUU_NIEN_JSON,
   ttlForEndpoint,
 } from "../core/config.ts";
+import { persistReadingCache } from "../core/cache-persist.ts";
 import {
   createEdgeBudget,
   GENERATE_READING_EDGE_BUDGET_MS,
@@ -116,10 +117,7 @@ async function cacheAndReturnSections(
   const toStore = JSON.stringify({ sections });
   if (admin) {
     const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-    await admin.from("reading_cache").upsert(
-      { cache_key: cacheKey, reading: toStore, expires_at: expiresAt },
-      { onConflict: "cache_key" },
-    );
+    await persistReadingCache(admin, cacheKey, toStore, expiresAt);
   }
   return { reading: null, sections };
 }
@@ -172,10 +170,7 @@ export async function generateLuuNienReading(
   if (!reading) return { reading: null };
   if (admin) {
     const expiresAt = new Date(now + ttlForEndpoint(endpoint)).toISOString();
-    await admin.from("reading_cache").upsert(
-      { cache_key: cacheKey, reading, expires_at: expiresAt },
-      { onConflict: "cache_key" },
-    );
+    await persistReadingCache(admin, cacheKey, reading, expiresAt);
   }
   return { reading };
 }

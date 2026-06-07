@@ -18,7 +18,8 @@ import {
   parseAnchorReading,
   parseThreadHistory,
 } from "../core/thread-history.ts";
-import { readCachedBody, sha256Prefix16, stableStringify } from "../core/cache.ts";
+import { tryReadingCacheHit } from "../core/cache-persist.ts";
+import { sha256Prefix16, stableStringify } from "../core/cache.ts";
 import { MAX_BODY_CHARS } from "../core/config.ts";
 import { dayIsoFromDayDetailData, todayIsoVietnam } from "../core/dates.ts";
 import { ok, rateLimited } from "../core/response.ts";
@@ -385,6 +386,35 @@ export function createGenerateReadingHandler(
     let phongThuySeedSections: LaSoChiTietSection[] | undefined;
 
     if (admin) {
+      const { getReadingCacheL2, setReadingCacheL2, readingCacheL2TtlSec } =
+        await import("../../reading-cache-l2.ts");
+
+      const hitArgs = {
+        admin,
+        req,
+        endpoint,
+        cacheKey,
+        now,
+        preview,
+        onlyTinhCach,
+        onlyLuuNienLife,
+        onlyLuuNienCore,
+        options,
+      };
+
+      const l2Raw = await getReadingCacheL2(cacheKey);
+      if (l2Raw) {
+        const l2Hit = await tryReadingCacheHit({
+          ...hitArgs,
+          reading: l2Raw,
+          expiresAt: null,
+        });
+        if (l2Hit.kind === "response") return l2Hit.response;
+        if (l2Hit.kind === "phong-seed") {
+          phongThuySeedSections = l2Hit.sections;
+        }
+      }
+
       const { data: row, error: readErr } = await admin
         .from("reading_cache")
         .select("reading, expires_at")
@@ -392,109 +422,19 @@ export function createGenerateReadingHandler(
         .maybeSingle();
 
       if (!readErr && row && typeof row.reading === "string") {
-        const exp = row.expires_at as string;
-        if (new Date(exp).getTime() > now) {
-          const cached = readCachedBody(endpoint, row.reading);
-          if (endpoint === "la-so-chi-tiet") {
-            if (cached.sections != null && cached.sections.length > 0) {
-              if (onlyTinhCach) {
-                const tinhValid = options.tinhCachCachedSectionsValid;
-                if (tinhValid && !tinhValid(cached.sections)) {
-                  await admin.from("reading_cache").delete().eq(
-                    "cache_key",
-                    cacheKey,
-                  );
-                } else {
-                  const out = options.transformCachedLaSoSections
-                    ? options.transformCachedLaSoSections(
-                      cached.sections,
-                      preview,
-                    )
-                    : cached.sections;
-                  return ok(null, out, req);
-                }
-              } else {
-                const laSoValid = options.laSoChiTietCachedSectionsValid;
-                if (laSoValid && !laSoValid(cached.sections)) {
-                  await admin.from("reading_cache").delete().eq(
-                    "cache_key",
-                    cacheKey,
-                  );
-                } else {
-                  const out = options.transformCachedLaSoSections
-                    ? options.transformCachedLaSoSections(
-                      cached.sections,
-                      preview,
-                    )
-                    : cached.sections;
-                  return ok(null, out, req);
-                }
-              }
-            } else {
-              await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
-            }
-          } else if (
-            endpoint === "tieu-van" ||
-            endpoint === "luu-nien" ||
-            endpoint === "van-trinh-nam" ||
-            endpoint === "phong-thuy"
-          ) {
-            if (cached.sections != null && cached.sections.length > 0) {
-              if (endpoint === "phong-thuy") {
-                const allOk =
-                  options.phongThuyAllBlocksCachedValid?.(cached.sections) ??
-                  false;
-                const partialOk =
-                  options.phongThuyCachedSectionsValid?.(cached.sections) ??
-                  false;
-                if (allOk) {
-                  return ok(null, cached.sections, req);
-                }
-                if (partialOk) {
-                  phongThuySeedSections = cached.sections;
-                } else {
-                  await admin.from("reading_cache").delete().eq(
-                    "cache_key",
-                    cacheKey,
-                  );
-                }
-              } else {
-                let validate =
-                  options.cachedSectionsValid ??
-                  options.tieuVanCachedSectionsValid;
-                if (endpoint === "luu-nien" && onlyLuuNienLife) {
-                  validate =
-                    options.luuNienLifeCachedSectionsValid ?? validate;
-                } else if (endpoint === "luu-nien" && onlyLuuNienCore) {
-                  validate =
-                    options.luuNienCoreCachedSectionsValid ?? validate;
-                }
-                const valid = validate?.(cached.sections) ?? true;
-                if (valid) {
-                  return ok(null, cached.sections, req);
-                }
-                await admin.from("reading_cache").delete().eq(
-                  "cache_key",
-                  cacheKey,
-                );
-              }
-            }
-            const r = cached.reading?.trim() ?? "";
-            if (r.length > 0) return ok(r, null, req);
-            await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
-          } else if (endpoint === "chon-ngay-cards") {
-            if (
-              cached.dayReadings != null &&
-              Object.keys(cached.dayReadings).length > 0
-            ) {
-              return ok(null, null, req, cached.dayReadings);
-            }
-            await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
-          } else {
-            const r = cached.reading?.trim() ?? "";
-            if (r.length > 0) return ok(r, null, req);
-            await admin.from("reading_cache").delete().eq("cache_key", cacheKey);
-          }
+        void setReadingCacheL2(
+          cacheKey,
+          row.reading,
+          readingCacheL2TtlSec(row.expires_at as string),
+        );
+        const pgHit = await tryReadingCacheHit({
+          ...hitArgs,
+          reading: row.reading,
+          expiresAt: row.expires_at as string,
+        });
+        if (pgHit.kind === "response") return pgHit.response;
+        if (pgHit.kind === "phong-seed") {
+          phongThuySeedSections = pgHit.sections;
         }
       }
     }
