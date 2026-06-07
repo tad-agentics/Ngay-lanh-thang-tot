@@ -12,7 +12,7 @@ import {
   routeUsesVanTrinhNamPrewarm,
 } from "~/lib/route-performance-gates";
 
-/** Prewarm chỉ trên route cần luận — tránh noise trên `/lich`, `/tra-cuu`. */
+/** Prewarm luận/teaser chỉ trên route cần — tránh noise trên `/tra-cuu`, v.v. */
 export function ReadingPrewarmGate() {
   const { pathname } = useLocation();
   const { profile } = useProfile();

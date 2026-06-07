@@ -1,22 +1,18 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 import { BackBar, Mono } from "~/components/brand";
+import {
+  BaziPaywallLockedChapterBody,
+  BaziPaywallLockedSectionBody,
+} from "~/components/direction-c/bazi-paywall-chapter-ui";
 import { CBaziMenhTongQuanBlock } from "~/components/direction-c/CBaziMenhTongQuanBlock";
-import { CBaziPhongThuySection } from "~/components/direction-c/CBaziPhongThuySection";
-import { CBaziQuyNhanSection } from "~/components/direction-c/CBaziQuyNhanSection";
-import { CBaziTinhCachSection } from "~/components/direction-c/CBaziTinhCachSection";
-import { CBaziVanNamSection } from "~/components/direction-c/CBaziVanNamSection";
 import { CPayConfirmSheet } from "~/components/direction-c/CPayConfirmSheet";
 import { BaziSectionHeading } from "~/components/direction-c/BaziSectionHeading";
-import type { LaSoJson } from "~/lib/api-types";
+import { useBaziPaywallMenhTeaser } from "~/hooks/useBaziPaywallMenhTeaser";
 import type { CreatePayosCheckoutResponse } from "~/lib/api-types";
-import {
-  baziPaywallLockedChapters,
-  type BaziPaywallLockedChapter,
-} from "~/lib/bazi-paywall-mock";
-import { loadBaziPaywallBundleCached } from "~/lib/bazi-reading-load";
+import { baziPaywallLockedChapters } from "~/lib/bazi-paywall-mock";
 import {
   baziOutlineSections,
   fallbackFlowYearCanChiLabel,
@@ -31,87 +27,9 @@ import type { Profile } from "~/lib/profile-context";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
 import { UI_PACKAGES } from "~/lib/packages";
 
-function PaywallLockedChapterBody({ chapter }: { chapter: BaziPaywallLockedChapter }) {
-  switch (chapter.key) {
-    case "tinh_cach":
-      return (
-        <CBaziTinhCachSection
-          traits={chapter.traits}
-          introProse={chapter.introProse}
-          prose=""
-          emptyReason={null}
-        />
-      );
-    case "van_nam":
-      return (
-        <CBaziVanNamSection facts={chapter.facts} prose="" emptyReason={null} />
-      );
-    case "phong_thuy":
-      return (
-        <CBaziPhongThuySection
-          facts={chapter.facts}
-          huongLuan=""
-          mauLuan=""
-          phiTinhLuan=""
-          prose=""
-          emptyReason={null}
-        />
-      );
-    case "quy_nhan":
-      return (
-        <CBaziQuyNhanSection
-          quyNhan={chapter.quyNhan}
-          daiVanNext={chapter.daiVanNext}
-          prose=""
-          emptyReason={null}
-        />
-      );
-  }
-}
-
 /** Direction C Secondary — khớp Design System `.btn-secondary`. */
 const PAYWALL_SECONDARY_BTN_CLASS =
   "flex w-full cursor-pointer border bg-transparent px-3.5 py-2.5 font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]";
-
-function LockedSectionBody({
-  children,
-  onUnlock,
-}: {
-  children: ReactNode;
-  onUnlock: () => void;
-}) {
-  return (
-    <div className="relative mt-3 min-h-[120px]">
-      <div
-        className="select-none"
-        style={{
-          filter: "blur(5px)",
-          WebkitFilter: "blur(5px)",
-        }}
-        aria-hidden
-      >
-        {children}
-      </div>
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: `linear-gradient(180deg, rgba(240,236,226,0.2) 0%, rgba(240,236,226,0.78) 45%, rgba(240,236,226,0.92) 100%)`,
-        }}
-        aria-hidden
-      />
-      <div className="absolute inset-0 flex items-center justify-center px-1">
-        <button
-          type="button"
-          onClick={onUnlock}
-          className={`${PAYWALL_SECONDARY_BTN_CLASS} items-center justify-center`}
-          style={{ borderColor: CT.goldDeep, color: CT.ink }}
-        >
-          Mở khóa để đọc
-        </button>
-      </div>
-    </div>
-  );
-}
 
 type CBaziReadingPaywallViewProps = {
   profile: Profile;
@@ -125,17 +43,27 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
   const yearlyUpsell = addonSubscriptionUpsell("luan_bat_tu");
 
   const [yearCanChi, setYearCanChi] = useState(() => fallbackFlowYearCanChiLabel(year));
-  const [laSoDisplay, setLaSoDisplay] = useState<LaSoJson | null>(
-    () => (profile.la_so as LaSoJson) ?? null,
-  );
-  const [menhProse, setMenhProse] = useState<string | null>(null);
-  const [menhLoading, setMenhLoading] = useState(true);
-  const [menhGenFailed, setMenhGenFailed] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [checkoutPayload, setCheckoutPayload] =
     useState<CreatePayosCheckoutResponse | null>(null);
-  const genRef = useRef(0);
+
+  const {
+    menhProse,
+    menhLoading,
+    menhFailed: menhGenFailed,
+    laSoDisplay,
+    reload: loadMenhPreview,
+  } = useBaziPaywallMenhTeaser(profile, {
+    onGenFailed: () => {
+      toast.error("Chưa tạo được luận tổng quan. Thử tải lại sau vài giây.");
+    },
+  });
+
+  useEffect(() => {
+    const label = fallbackFlowYearCanChiLabel(year);
+    if (label) setYearCanChi(label);
+  }, [year]);
 
   const outline = baziOutlineSections(yearCanChi);
   const lockedChapters = baziPaywallLockedChapters(yearCanChi);
@@ -147,32 +75,6 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
     menhGenFailed && laSoDisplay
       ? "Chưa tải được luận tổng quan lá số. Bốn chương dưới đã sẵn sàng sau khi mở khóa."
       : null;
-
-  function loadMenhPreview() {
-    const gen = ++genRef.current;
-    setMenhLoading(true);
-    setMenhGenFailed(false);
-    void (async () => {
-      const paywall = await loadBaziPaywallBundleCached(profile);
-      if (gen !== genRef.current) return;
-      const label = fallbackFlowYearCanChiLabel(year);
-      if (label) setYearCanChi(label);
-      if (paywall.laSoDisplay) setLaSoDisplay(paywall.laSoDisplay);
-      setMenhProse(paywall.menhOverview || null);
-      setMenhGenFailed(paywall.menhGenFailed);
-      if (paywall.menhGenFailed) {
-        toast.error("Chưa tạo được luận tổng quan. Thử tải lại sau vài giây.");
-      }
-      setMenhLoading(false);
-    })();
-  }
-
-  useEffect(() => {
-    loadMenhPreview();
-    return () => {
-      genRef.current += 1;
-    };
-  }, [profile, year]);
 
   async function startAddonCheckout(codes: {
     couponCode?: string;
@@ -231,9 +133,9 @@ export function CBaziReadingPaywallView({ profile }: CBaziReadingPaywallViewProp
           {lockedChapters.map((sec) => (
             <section key={sec.key} className="mt-8">
               <BaziSectionHeading index={sec.index} title={sec.title} />
-              <LockedSectionBody onUnlock={openAddonPaySheet}>
-                <PaywallLockedChapterBody chapter={sec} />
-              </LockedSectionBody>
+              <BaziPaywallLockedSectionBody onUnlock={openAddonPaySheet}>
+                <BaziPaywallLockedChapterBody chapter={sec} />
+              </BaziPaywallLockedSectionBody>
             </section>
           ))}
         </div>

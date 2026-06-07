@@ -1,4 +1,5 @@
 import { Mono } from "~/components/brand";
+import { CBaziNguHanhBars } from "~/components/direction-c/CBaziNguHanhBars";
 import { CBaziNlttLuanProse } from "~/components/direction-c/CBaziNlttLuanRow";
 import { BaziChapterEmpty } from "~/components/direction-c/BaziSectionHeading";
 import type { LaSoJson } from "~/lib/api-types";
@@ -10,22 +11,6 @@ import {
   laSoJsonToRevealProps,
 } from "~/lib/la-so-ui";
 import type { Profile } from "~/lib/profile-context";
-
-const NGU_HANH_BAR: Record<string, string> = {
-  kim: "#c8c5a0",
-  moc: CT.greenMute,
-  thuy: CT.forest,
-  hoa: "#c5402a",
-  tho: CT.goldDeep,
-};
-
-const NGU_HANH_LABEL: Record<string, string> = {
-  kim: "Kim",
-  moc: "Mộc",
-  thuy: "Thủy",
-  hoa: "Hỏa",
-  tho: "Thổ",
-};
 
 type CBaziMenhTongQuanBlockProps = {
   profile: Profile;
@@ -57,13 +42,6 @@ export function CBaziMenhTongQuanBlock({
   const detail = laSoJsonToChiTiet(laSo);
   const pillars = laSo ? buildLaSoFullPillarRows(laSo, profile) : [];
   const tagline = laSo ? extractMenhTagline(laSo) : null;
-
-  const nguEntries = (["moc", "hoa", "tho", "kim", "thuy"] as const).map((k) => ({
-    key: k,
-    label: NGU_HANH_LABEL[k] ?? k,
-    v: Math.round(detail.nguHanh[k] ?? 0),
-    color: NGU_HANH_BAR[k] ?? CT.muted,
-  }));
 
   if (!reveal) {
     return emptyReason ? (
@@ -156,39 +134,7 @@ export function CBaziMenhTongQuanBlock({
         </div>
       ) : null}
 
-      {nguEntries.some((r) => r.v > 0) ? (
-        <div className="mt-4">
-          <Mono className="mb-2 text-[9.5px]" style={{ color: CT.muted }}>
-            Ngũ hành trong lá số
-          </Mono>
-          <div className="flex h-[56px] items-end gap-1.5">
-            {nguEntries.map((row) => (
-              <div
-                key={row.key}
-                className="flex h-full flex-1 flex-col items-center justify-end"
-              >
-                <div
-                  className="mb-0.5 font-mono text-[10px] font-semibold"
-                  style={{ color: CT.ink }}
-                >
-                  {row.v}%
-                </div>
-                <div
-                  style={{
-                    width: "70%",
-                    height: `${Math.max(8, row.v * 2)}%`,
-                    background: row.color,
-                    opacity: 0.85,
-                  }}
-                />
-                <Mono className="mt-1 text-[9px]" style={{ color: CT.ink2 }}>
-                  {row.label}
-                </Mono>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
+      <CBaziNguHanhBars nguHanh={detail.nguHanh} variant="full" />
 
       {(reveal.dungThan !== "—" || reveal.kyThan !== "—") && (
         <div className="mt-3.5 grid grid-cols-2 gap-2">

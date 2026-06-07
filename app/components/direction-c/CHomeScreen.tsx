@@ -5,7 +5,7 @@ import { Mono } from "~/components/brand";
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { CLichRecomputeSkeleton } from "~/components/direction-c/CLichRecomputeSkeleton";
 import { CLichSegmentedNav } from "~/components/direction-c/CLichSegmentedNav";
-import { CMeLockedBaziCard } from "~/components/direction-c/CMeLockedBaziCard";
+import { CHomeBaziPreviewCard } from "~/components/direction-c/CHomeBaziPreviewCard";
 import { CMeLockedTieuVanCard } from "~/components/direction-c/CMeLockedTieuVanCard";
 import { CTodayReasoning } from "~/components/direction-c/CTodayReasoning";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
@@ -209,7 +209,7 @@ export function CHomeScreen() {
         ) : null}
 
         {today && !showRecomputeSkeleton && (subActive || calendarLocked) ? (
-          baziUnlocked && subActive ? (
+          baziUnlocked ? (
             <Link
               to="/toi/luan-bat-tu"
               className="relative mt-[22px] block cursor-pointer border px-4 py-3.5 no-underline"
@@ -238,7 +238,9 @@ export function CHomeScreen() {
               </div>
             </Link>
           ) : (
-            <CMeLockedBaziCard />
+            profile ? (
+              <CHomeBaziPreviewCard profile={profile} />
+            ) : null
           )
         ) : null}
 

@@ -267,10 +267,13 @@ export async function loadBaziPaywallBundle(
   };
 }
 
+const paywallBundleInflight = new Map<string, Promise<BaziPaywallBundle>>();
+
 /**
  * Paywall teaser với session cache — non-buyer mở `/toi/luan-bat-tu` nhiều lần
- * (hoặc sau prewarm trên `/toi`) không gọi lại Edge. Server `reading_cache` (7d)
- * lo phần cross-session; sessionStorage lo phần re-mount trong phiên.
+ * (hoặc sau prewarm trên `/lich` / `/toi`) không gọi lại Edge. Server
+ * `reading_cache` (7d) lo phần cross-session; sessionStorage lo re-mount trong phiên.
+ * In-flight dedupe tránh prewarm + home card gọi song song.
  */
 export async function loadBaziPaywallBundleCached(
   profile: Profile,
@@ -285,14 +288,27 @@ export async function loadBaziPaywallBundleCached(
     };
   }
 
-  const bundle = await loadBaziPaywallBundle(profile);
-  if (bundle.menhOverview) {
-    persistBaziPaywallTeaserSession(profile.id, revision, {
-      menhOverview: bundle.menhOverview,
-      laSoDisplay: bundle.laSoDisplay,
-    });
-  }
-  return bundle;
+  const inflightKey = `${profile.id}:${revision}`;
+  const existing = paywallBundleInflight.get(inflightKey);
+  if (existing) return existing;
+
+  const work = (async (): Promise<BaziPaywallBundle> => {
+    try {
+      const bundle = await loadBaziPaywallBundle(profile);
+      if (bundle.menhOverview) {
+        persistBaziPaywallTeaserSession(profile.id, revision, {
+          menhOverview: bundle.menhOverview,
+          laSoDisplay: bundle.laSoDisplay,
+        });
+      }
+      return bundle;
+    } finally {
+      paywallBundleInflight.delete(inflightKey);
+    }
+  })();
+
+  paywallBundleInflight.set(inflightKey, work);
+  return work;
 }
 
 /** @deprecated Dùng `loadBaziPaywallBundle`. */

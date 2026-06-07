@@ -7,12 +7,13 @@ import {
 import { routeUsesBaziTeaserPrewarm } from "~/lib/route-performance-gates";
 
 describe("routeUsesBaziTeaserPrewarm", () => {
-  it("matches only the profile hub /toi (not the paywall screen itself)", () => {
+  it("matches /toi hub and /lich home (not the paywall screen itself)", () => {
     expect(routeUsesBaziTeaserPrewarm("/toi")).toBe(true);
     expect(routeUsesBaziTeaserPrewarm("/toi/")).toBe(true);
+    expect(routeUsesBaziTeaserPrewarm("/lich")).toBe(true);
+    expect(routeUsesBaziTeaserPrewarm("/lich/")).toBe(true);
     expect(routeUsesBaziTeaserPrewarm("/toi/luan-bat-tu")).toBe(false);
     expect(routeUsesBaziTeaserPrewarm("/toi/cai-dat")).toBe(false);
-    expect(routeUsesBaziTeaserPrewarm("/lich")).toBe(false);
     expect(routeUsesBaziTeaserPrewarm("/")).toBe(false);
   });
 });
