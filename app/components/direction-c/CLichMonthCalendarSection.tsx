@@ -42,7 +42,7 @@ export function CLichMonthCalendarSection({
   return (
     <section>
       <div
-        className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end"
+        className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center"
         style={{ columnGap: 10 }}
       >
         <button
@@ -80,7 +80,7 @@ export function CLichMonthCalendarSection({
           </span>
         </button>
         <div
-          className="px-1 text-center"
+          className="flex min-h-[44px] items-center justify-center px-1 text-center"
           style={{
             fontFamily: "var(--display)",
             fontWeight: 800,
