@@ -11,6 +11,7 @@ import { CT, DISPLAY2 } from "~/lib/c-tokens";
 import { DAY_LUAN_MAX_FOLLOW_UPS } from "~/lib/day-luan-chat";
 import { canPeekTodayLuanReading } from "~/lib/entitlements";
 import { buildCalendarLockedDayTeaser } from "~/lib/home-bat-tu";
+import { lichDayPath } from "~/lib/lich-day-url";
 import { todayIsoInVn } from "~/lib/today-reading-cache";
 import {
   anchorQuestionForScore,
@@ -271,7 +272,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       navigate(-1);
       return;
     }
-    navigate(`/ngay/${iso}`);
+    navigate(lichDayPath(iso));
   }, [navigate, iso]);
 
   const {

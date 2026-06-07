@@ -31,6 +31,7 @@ export function routeUsesVanTrinhNamPrewarm(pathname: string): boolean {
 
 export function routeUsesSavedPicks(pathname: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";
+  if (p === "/lich" || p.startsWith("/lich/")) return true;
   if (p === "/toi" || p.startsWith("/toi/")) return true;
   if (p.startsWith("/ngay/")) return true;
   if (p === "/tra-cuu/hop-tuoi/ket-qua") return true;

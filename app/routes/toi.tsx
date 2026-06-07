@@ -33,6 +33,7 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { useAuth } from "~/lib/auth";
 import { scoreDotColor } from "~/lib/c-score";
 import { CT } from "~/lib/c-tokens";
+import { lichDayPath } from "~/lib/lich-day-url";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import {
   hasYearlySubscription,
@@ -381,7 +382,7 @@ export default function ToiRoute() {
                 }}
               >
                 <Link
-                  to={`/ngay/${r.iso}`}
+                  to={lichDayPath(r.iso)}
                   state={{
                     markLabel: pickMarkLabelForNav(r),
                     intentLabel: pickMarkLabelForNav(r),

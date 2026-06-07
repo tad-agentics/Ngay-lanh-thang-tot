@@ -2,6 +2,7 @@ import { Link } from "react-router";
 
 import { Mono } from "~/components/brand";
 import { CT } from "~/lib/c-tokens";
+import { lichDayPath, lichMonthPath } from "~/lib/lich-day-url";
 import type { VanTrinhNamDayRow, VanTrinhNamMonthBlock } from "~/lib/van-trinh-nam-types";
 
 function DayRow({
@@ -15,7 +16,7 @@ function DayRow({
     tone === "good" ? CT.greenMute : CT.red;
   return (
     <Link
-      to={`/ngay/${row.date}`}
+      to={lichDayPath(row.date)}
       className="mt-2 block border-l-2 py-1 pl-2.5 no-underline"
       style={{ borderColor: border }}
     >
@@ -39,7 +40,7 @@ export function VanTrinhNamB3Calendar({
   const b3 = month.b3_luu_nhat_calendar;
   const [y, m] = month.target_month.split("-").map(Number);
   const lichThangTo =
-    y && m ? `/lich/thang?year=${y}&month=${m}` : `/lich/thang?year=${year}`;
+    y && m ? lichMonthPath(y, m) : lichMonthPath(year, month.month_num);
 
   return (
     <div className="mt-3 border-t pt-3" style={{ borderColor: CT.hairline2 }}>

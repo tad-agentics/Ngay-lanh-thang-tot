@@ -80,13 +80,44 @@ export function isSubscriptionExemptPath(pathname: string): boolean {
   return false;
 }
 
-const RETURN_TO_ALLOW = /^\/(lich|tra-cuu|ngay\/[\d-]+|dat-lich)(\/|$)/;
+const RETURN_TO_PATH =
+  /^\/(lich(\/thang)?|tra-cuu(\/[\w-]+)*|ngay\/\d{4}-\d{2}-\d{2}|dat-lich(\/[\w-]+)*)$/;
+
+function lichReturnToQueryOk(query: string): boolean {
+  if (!query) return true;
+  const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : query);
+  for (const key of params.keys()) {
+    if (key !== "ngay" && key !== "year" && key !== "month") return false;
+  }
+  const ngay = params.get("ngay");
+  if (ngay && !/^\d{4}-\d{2}-\d{2}$/.test(ngay)) return false;
+  const year = params.get("year");
+  if (year && !/^\d{4}$/.test(year)) return false;
+  const month = params.get("month");
+  if (month) {
+    const m = Number(month);
+    if (!Number.isInteger(m) || m < 1 || m > 12) return false;
+  }
+  return true;
+}
 
 export function sanitizeReturnTo(raw: string | null): string | null {
   if (!raw || raw.length > 200) return null;
   if (!raw.startsWith("/") || raw.startsWith("//")) return null;
-  if (!RETURN_TO_ALLOW.test(raw)) return null;
-  return raw;
+
+  const noHash = raw.split("#")[0]!;
+  const qIdx = noHash.indexOf("?");
+  const path = (qIdx >= 0 ? noHash.slice(0, qIdx) : noHash).replace(/\/+$/, "") || "/";
+  const query = qIdx >= 0 ? noHash.slice(qIdx) : "";
+
+  if (!RETURN_TO_PATH.test(path)) return null;
+  if (path === "/lich" || path === "/lich/thang") {
+    if (!lichReturnToQueryOk(query)) return null;
+  } else if (query) {
+    return null;
+  }
+
+  return noHash;
 }
 
 /** Legacy /app/* → Direction C paths (302 during transition). */
@@ -94,7 +125,7 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app": "/lich",
   "/app/hom-nay": "/lich",
   "/app/home": "/lich",
-  "/app/thang": "/lich/thang",
+  "/app/thang": "/lich",
   "/app/tra-cuu": "/tra-cuu",
   "/app/chon-ngay": "/tra-cuu",
   "/app/chon-ngay/ket-qua": "/tra-cuu/ket-qua",
@@ -116,8 +147,8 @@ export const LEGACY_APP_REDIRECTS: Record<string, string> = {
   "/app/chia-se": "/tra-cuu",
   "/app/nhip/lich-su": "/lich",
   "/app/nhip/cai-dat": "/toi/cai-dat",
-  "/app/van-thang": "/lich/thang",
-  "/app/lich-thang": "/lich/thang",
+  "/app/van-thang": "/lich",
+  "/app/lich-thang": "/lich",
 };
 
 export function legacyAppRedirect(pathname: string): string | null {

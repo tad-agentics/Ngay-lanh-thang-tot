@@ -35,7 +35,12 @@ describe("nav-config (Direction C)", () => {
 
   it("sanitizes return_to deep links", () => {
     expect(sanitizeReturnTo("/lich")).toBe("/lich");
+    expect(sanitizeReturnTo("/lich?ngay=2026-06-15")).toBe("/lich?ngay=2026-06-15");
+    expect(sanitizeReturnTo("/lich?year=2025&month=3")).toBe("/lich?year=2025&month=3");
+    expect(sanitizeReturnTo("/lich?year=2025&month=03")).toBe("/lich?year=2025&month=03");
+    expect(sanitizeReturnTo("/lich?ngay=evil")).toBeNull();
     expect(sanitizeReturnTo("/tra-cuu/ket-qua")).toBe("/tra-cuu/ket-qua");
+    expect(sanitizeReturnTo("/tra-cuu/ket-qua?foo=bar")).toBeNull();
     expect(sanitizeReturnTo("/ngay/2026-05-27")).toBe("/ngay/2026-05-27");
     expect(sanitizeReturnTo("//evil.com")).toBeNull();
     expect(sanitizeReturnTo("/toi")).toBeNull();
