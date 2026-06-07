@@ -108,7 +108,7 @@ export function CBaziLockedChaptersHomeTeaser({
           className="font-serif text-[13px] leading-[1.65]"
           style={{ color: CT.ink2 }}
         >
-          {homeBaziPaywallBlurHook(yearCanChi)}
+          {LUAN_LA_SO_BAT_TU_TAGLINE}
         </p>
       </div>
       <div
@@ -127,10 +127,10 @@ export function CBaziLockedChaptersHomeTeaser({
           }}
         >
           <p
-            className="mb-1 font-serif text-[10.5px] leading-snug"
-            style={{ color: CT.muted }}
+            className="mb-1.5 font-serif text-[12.5px] leading-[1.55]"
+            style={{ color: CT.ink2 }}
           >
-            {LUAN_LA_SO_BAT_TU_TAGLINE}
+            {homeBaziPaywallBlurHook(yearCanChi)}
           </p>
           <span
             className="font-[family-name:var(--display-2)] text-[13px] font-bold uppercase tracking-[0.1em]"
