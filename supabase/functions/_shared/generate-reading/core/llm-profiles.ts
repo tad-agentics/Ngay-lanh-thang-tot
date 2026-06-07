@@ -1,16 +1,11 @@
 import type { LlmProfile } from "./llm.ts";
 
 /**
- * `deepseek-v4-pro` + thinking: `la-so-chi-tiet`, tiểu vận tháng (`tieu-van`), lưu niên (`luu-nien`).
- * Mọi endpoint khác (ngày, chọn ngày, hợp tuổi, phong-thuy, la-so, dai-van, …) → `deepseek-v4-flash`.
+ * Mọi endpoint luận giải dùng `deepseek-v4-flash`, không thinking (tốc độ + tránh reasoning ăn max_tokens).
+ * Giữ set để bump endpoint cụ thể lên pro sau này nếu cần.
  */
-export const DEEPSEEK_PRO_ENDPOINTS = new Set([
-  "la-so-chi-tiet",
-  "tieu-van",
-  "luu-nien",
-  "van-trinh-nam",
-]);
+export const DEEPSEEK_PRO_ENDPOINTS = new Set<string>();
 
-export function llmProfileForEndpoint(endpoint: string): LlmProfile {
-  return DEEPSEEK_PRO_ENDPOINTS.has(endpoint) ? "pro" : "flash";
+export function llmProfileForEndpoint(_endpoint: string): LlmProfile {
+  return DEEPSEEK_PRO_ENDPOINTS.has(_endpoint) ? "pro" : "flash";
 }

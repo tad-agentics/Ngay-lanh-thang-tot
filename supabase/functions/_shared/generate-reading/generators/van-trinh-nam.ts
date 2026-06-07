@@ -37,7 +37,7 @@ async function generateVanTrinhNamJsonSections(
     ctx.payload,
     READING_MAX_TOKENS_TIEU_VAN_JSON,
     jsonTimeout(),
-    { profile, jsonMode: true },
+    { profile, jsonMode: true, disableThinking: true },
   );
   let sections = rawJson ? parseVanTrinhNamSections(rawJson) : null;
 
@@ -50,7 +50,7 @@ async function generateVanTrinhNamJsonSections(
       ctx.payload,
       READING_MAX_TOKENS_TIEU_VAN_JSON,
       jsonTimeout(),
-      { profile, jsonMode: true },
+      { profile, jsonMode: true, disableThinking: true },
     );
     const parsed = retry ? parseVanTrinhNamSections(retry) : null;
     if (parsed?.length) sections = parsed;

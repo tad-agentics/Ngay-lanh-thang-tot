@@ -51,7 +51,8 @@ export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
   const laSo = laSoDisplay ?? ((profile.la_so as LaSoJson | null) ?? null);
   const reveal = laSo ? laSoJsonToRevealProps(laSo) : null;
   const tagline = laSo ? extractMenhTagline(laSo) : null;
-  const prosePreview = menhProse ? truncateMenhProsePreview(menhProse) : null;
+  const priceLabel = pkg?.priceLabel ?? catalogPriceLabel("luan_bat_tu");
+  const prosePreview = menhProse ? truncateMenhProsePreview(menhProse, 3) : null;
   const proseFallback = !prosePreview && !menhLoading ? tagline : null;
 
   if (!profileHasLaso(profile.la_so) || !reveal) {
@@ -114,54 +115,34 @@ export function CHomeBaziPreviewCard({ profile }: CHomeBaziPreviewCardProps) {
             style={{ background: "rgba(154,124,34,0.12)" }}
           />
           <div
-            className="h-3 w-[82%] rounded-sm"
+            className="h-3 w-[92%] rounded-sm"
+            style={{ background: "rgba(154,124,34,0.10)" }}
+          />
+          <div
+            className="h-3 w-[78%] rounded-sm"
             style={{ background: "rgba(154,124,34,0.08)" }}
           />
         </div>
       ) : prosePreview ? (
         <p
-          className="mt-3 font-serif text-[13px] italic leading-relaxed"
+          className="mt-3 font-serif text-[13px] italic leading-[1.65]"
           style={{ color: CT.ink2 }}
         >
           &ldquo;{prosePreview}&rdquo;
         </p>
       ) : proseFallback ? (
         <p
-          className="mt-3 font-serif text-[13px] italic leading-relaxed"
+          className="mt-3 font-serif text-[13px] italic leading-[1.65]"
           style={{ color: CT.ink2 }}
         >
           {proseFallback}
         </p>
       ) : null}
 
-      <CBaziLockedChaptersHomeTeaser yearCanChi={yearCanChi} />
-
-      <div
-        className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t pt-3"
-        style={{ borderColor: CT.hairline2 }}
-      >
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm" style={{ color: CT.muted }}>
-            ○
-          </span>
-          <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
-        </div>
-        <span
-          className="font-[family-name:var(--display-2)] text-sm font-bold tabular-nums"
-          style={{ color: CT.goldDeep }}
-        >
-          {pkg?.priceLabel ?? catalogPriceLabel("luan_bat_tu")}
-        </span>
-        <span className="font-serif text-[11.5px]" style={{ color: CT.muted }}>
-          · hoặc miễn phí với Lịch năm
-        </span>
-        <span
-          className="ml-auto font-[family-name:var(--display-2)] text-xs font-bold uppercase tracking-[0.06em]"
-          style={{ color: CT.goldDeep }}
-        >
-          →
-        </span>
-      </div>
+      <CBaziLockedChaptersHomeTeaser
+        yearCanChi={yearCanChi}
+        priceLabel={priceLabel}
+      />
     </Link>
   );
 }

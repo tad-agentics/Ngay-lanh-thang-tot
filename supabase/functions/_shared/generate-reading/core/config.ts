@@ -2,7 +2,7 @@ export const MAX_BODY_CHARS = 180_000;
 
 /** Hôm nay, ngày khác, chọn ngày, hợp tuổi, phong-thuy, la-so, dai-van, … */
 export const DEFAULT_LLM_MODEL = "deepseek-v4-flash";
-/** Chỉ `la-so-chi-tiet` (Bát Tự năm) + `tieu-van` / `luu-nien`. */
+/** Dự phòng nếu bật lại pro cho endpoint cụ thể — hiện không dùng. */
 export const DEFAULT_LLM_MODEL_PRO = "deepseek-v4-pro";
 export const DEEPSEEK_API_BASE = "https://api.deepseek.com";
 
@@ -43,7 +43,7 @@ export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN = READING_MAX_TOKENS_TIEU_VAN;
 /** @deprecated Use READING_MAX_TOKENS_TIEU_VAN_JSON or READING_MAX_TOKENS_LUU_NIEN_JSON */
 export const READING_MAX_TOKENS_TIEU_VAN_LUU_NIEN_JSON =
   READING_MAX_TOKENS_TIEU_VAN_JSON;
-/** Paywall preview `menh_tong_quan` — pro model; cần đủ token cho JSON (không bị thinking ăn hết). */
+/** Paywall preview `menh_tong_quan` — flash, không thinking; đủ token cho JSON. */
 export const READING_MAX_TOKENS_LA_SO_PREVIEW = 4_096;
 /** §02 personality_readings — 4 mục × ~500–600 từ. */
 export const READING_MAX_TOKENS_TINH_CACH_TRAITS = 12_288;

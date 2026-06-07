@@ -7,7 +7,7 @@ export const GENERATE_READING_DAY_ENDPOINTS = new Set([
   "hop-tuoi",
 ]);
 
-/** Edge `generate-reading-la-so` — only `la-so-chi-tiet` uses v4-pro; rest flash. */
+/** Edge `generate-reading-la-so` — tất cả endpoint dùng v4-flash (không thinking). */
 export const GENERATE_READING_LA_SO_ENDPOINTS = new Set([
   "la-so-chi-tiet",
   "phong-thuy",

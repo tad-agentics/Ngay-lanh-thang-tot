@@ -6,7 +6,8 @@ export const LUU_NIEN_ONLY_LIFE_CACHE_VER = "2026-05-31-luu-life-scoped-v4";
 export const LUU_NIEN_ONLY_CORE_CACHE_VER = "2026-05-31-luu-quy-800c-v1";
 export const LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER =
   "2026-05-31-tinh-cach-scoped-v3";
-export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER = "2026-05-31-preview-menh-1000";
+export const LA_SO_CHI_TIET_PREVIEW_PROMPT_VER =
+  "2026-06-07-preview-mirror-open-v1";
 export const TIEU_VAN_PROMPT_VER = "2026-05-31-tieu-van-split-v1";
 export const LUU_NIEN_PROMPT_VER = "2026-05-31-menh-tinh-luu-500w";
 export const PHONG_THUY_SECTIONS_CACHE_VER = "2026-05-31-phong-3blocks-v1";
@@ -20,7 +21,7 @@ export const DAY_DETAIL_MULTITURN_VER = "2026-05-29-multiturn-v1";
 export const DAY_DETAIL_PROMPT_VER = "2026-06-07-anchor-no-thinking-v1";
 export const INLINE_LICH_TO_PROMPT_VER = "2026-05-28-v1";
 /** Bump when switching provider/model — invalidates reading_cache. */
-export const GLOBAL_LLM_VER = "2026-05-29-deepseek-pro-day-multiturn";
+export const GLOBAL_LLM_VER = "2026-06-07-all-flash-no-thinking-v1";
 
 export function endpointCacheVersion(
   endpoint: string,

@@ -252,7 +252,7 @@ async function generateLaSoChiTietCombinedFallback(
       payload,
       READING_MAX_TOKENS_LA_SO_PREVIEW,
       laSoCallTimeout(budget),
-      { profile: LA_SO_CHI_TIET_PROFILE },
+      { profile: LA_SO_CHI_TIET_PROFILE, disableThinking: true },
     );
     const t = plain?.trim() ?? "";
     if (!t) return null;

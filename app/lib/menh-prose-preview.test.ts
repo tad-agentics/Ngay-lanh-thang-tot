@@ -7,11 +7,11 @@ describe("truncateMenhProsePreview", () => {
     expect(truncateMenhProsePreview("Một câu duy nhất.")).toBe("Một câu duy nhất.");
   });
 
-  it("truncates after two sentences", () => {
+  it("truncates after three sentences by default", () => {
     const prose =
-      "Câu một về mệnh. Câu hai về vận. Câu ba không hiện trên home.";
+      "Câu một về mệnh. Câu hai về vận. Câu ba về nhịp. Câu bốn không hiện trên home.";
     expect(truncateMenhProsePreview(prose)).toBe(
-      "Câu một về mệnh. Câu hai về vận.…",
+      "Câu một về mệnh. Câu hai về vận. Câu ba về nhịp.…",
     );
   });
 });

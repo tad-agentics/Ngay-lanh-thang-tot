@@ -91,12 +91,18 @@ export function BaziPaywallLockedSectionBody({
   );
 }
 
-/** Home `/lich` — mock chapter blur (cùng nguồn paywall), tagline hiện rõ. */
-export function CBaziLockedChaptersHomeTeaser({ yearCanChi }: { yearCanChi: string }) {
+/** Home `/lich` — mock chapter blur + CTA nổi trên overlay. */
+export function CBaziLockedChaptersHomeTeaser({
+  yearCanChi,
+  priceLabel,
+}: {
+  yearCanChi: string;
+  priceLabel: string;
+}) {
   const chapters = baziPaywallLockedChapters(yearCanChi);
 
   return (
-    <div className="relative mt-3 max-h-[128px] min-h-[72px] overflow-hidden">
+    <div className="relative mt-3 max-h-[148px] min-h-[108px] overflow-hidden">
       <div
         className="select-none space-y-4"
         style={{ filter: "blur(4px)", WebkitFilter: "blur(4px)" }}
@@ -111,16 +117,41 @@ export function CBaziLockedChaptersHomeTeaser({ yearCanChi }: { yearCanChi: stri
       <div
         className="pointer-events-none absolute inset-0"
         style={{
-          background: `linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.82) 52%, rgba(255,255,255,0.97) 100%)`,
+          background: `linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.72) 38%, rgba(255,255,255,0.94) 72%, rgba(255,255,255,0.98) 100%)`,
         }}
         aria-hidden
       />
-      <p
-        className="relative pt-10 text-center font-serif text-[11.5px]"
-        style={{ color: CT.muted }}
-      >
-        {LUAN_LA_SO_BAT_TU_TAGLINE}
-      </p>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center px-2 pb-2.5 pt-10">
+        <p
+          className="mb-2 text-center font-serif text-[11px] leading-snug"
+          style={{ color: CT.muted }}
+        >
+          {LUAN_LA_SO_BAT_TU_TAGLINE}
+        </p>
+        <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-0.5">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm" style={{ color: CT.muted }}>
+              ○
+            </span>
+            <Mono style={{ color: CT.muted, fontSize: 9.5 }}>Chưa mở khoá</Mono>
+          </div>
+          <span
+            className="font-[family-name:var(--display-2)] text-[13.5px] font-bold tabular-nums"
+            style={{ color: CT.goldDeep }}
+          >
+            {priceLabel}
+          </span>
+          <span className="font-serif text-[11px]" style={{ color: CT.muted }}>
+            · hoặc miễn phí với Lịch năm
+          </span>
+          <span
+            className="font-[family-name:var(--display-2)] text-[13px] font-bold uppercase tracking-[0.08em]"
+            style={{ color: CT.goldDeep }}
+          >
+            →
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

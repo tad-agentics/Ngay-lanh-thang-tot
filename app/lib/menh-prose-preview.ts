@@ -1,5 +1,5 @@
-/** First 1–2 sentences of menh_tong_quan for home/paywall teasers. */
-export function truncateMenhProsePreview(prose: string, maxSentences = 2): string {
+/** First 2–3 sentences of menh_tong_quan for home/paywall teasers. */
+export function truncateMenhProsePreview(prose: string, maxSentences = 3): string {
   const trimmed = prose.trim();
   if (!trimmed) return "";
 

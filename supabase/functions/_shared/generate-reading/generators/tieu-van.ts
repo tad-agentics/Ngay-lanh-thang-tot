@@ -39,7 +39,11 @@ async function generateTieuVanJsonSections(
 ): Promise<LaSoChiTietSection[] | null> {
   const { payload, data } = ctx;
   const profile = llmProfileForEndpoint("tieu-van");
-  const llmOpts = { profile, jsonMode: true as const };
+  const llmOpts = {
+    profile,
+    jsonMode: true as const,
+    disableThinking: true,
+  };
 
   const jsonTimeout = () =>
     budget.callTimeout(

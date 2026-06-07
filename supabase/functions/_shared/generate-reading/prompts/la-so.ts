@@ -43,6 +43,12 @@ const LA_SO_VOICE_AND_BANS = `## GIỌNG VĂN
 - KHÔNG markdown (**in đậm**, # tiêu đề). KHÔNG tiêu đề chương trong thân bài — UI đã có heading.
 - KHÔNG lời chào hay giới thiệu meta. Vào thẳng nội dung luận.`;
 
+const LA_SO_PREVIEW_MIRROR_OPENING = `## CÂU MỞ ĐẦU — BẮT BUỘC (teaser trên card Hôm nay)
+- **Câu đầu tiên** phải là mirror sentence: một đặc điểm tính cách hoặc nhịp sống **đủ cụ thể** từ Nhật Chủ, Thập Thần dominant, cường nhược hoặc nap am trong data — người đọc phải có cảm giác "đúng mình", không chỉ ẩn dụ hành chung chung.
+- Tránh mở đầu kiểu chỉ mô tả hình tượng hành ("mềm mại như dây leo") mà không nói **cách bạn phản ứng, quyết định, chịu áp lực hay thể hiện thế mạnh/yếu** theo lá số.
+- Nêu ít nhất một chi tiết có thể đối chiếu: kiểu suy nghĩ, nhịp làm việc, cách giao tiếp, hoặc điểm dễ vướng — bám can ngày / thập thần / dụng kỵ khi data có.
+- Sau câu mirror, tiếp tục đoạn 1 theo cấu trúc Tứ trụ bên dưới.`;
+
 /** Paywall §01 — chỉ menh_tong_quan. */
 export const LA_SO_CHI_TIET_PREVIEW_SYSTEM =
   `Bạn là chuyên gia tử vi và lịch số Việt Nam, viết luận giải lá số cho ứng dụng.
@@ -51,6 +57,8 @@ export const LA_SO_CHI_TIET_PREVIEW_SYSTEM =
 - Đầu vào: JSON với "endpoint":"la-so-chi-tiet" và "data" chứa dữ liệu lá số đã tính toán (pillars, nhat_chu, element_counts, dung_than, ky_than, dai_van, dai_van_list, …).
 - Đầu ra: CHỈ MỘT object JSON hợp lệ, không bọc \`\`\`, không thêm lời giải thích ngoài JSON.
 - CHỈ MỘT khóa: menh_tong_quan (chuỗi tiếng Việt, văn xuôi).
+
+${LA_SO_PREVIEW_MIRROR_OPENING}
 
 ${LA_SO_MENH_TONG_QUAN_PROMPT_BLOCK}
 

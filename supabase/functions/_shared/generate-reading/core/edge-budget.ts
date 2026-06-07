@@ -1,4 +1,4 @@
-/** Wall-clock budget for pro-model luận — stay under Supabase Edge ~60s limit. */
+/** Wall-clock budget luận giải — stay under Supabase Edge ~60s limit. */
 export const GENERATE_READING_EDGE_BUDGET_MS = 52_000;
 
 /** @deprecated Use `GENERATE_READING_EDGE_BUDGET_MS`. */

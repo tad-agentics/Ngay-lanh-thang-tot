@@ -30,7 +30,7 @@ type ChatCompletionResponse = {
   error?: { message?: string; type?: string; code?: string };
 };
 
-/** `flash` = ngày / chọn ngày; `pro` = lá số chi tiết + tiểu vận (thinking always on). */
+/** Mọi endpoint luận giải dùng `flash`; `pro` chỉ khi endpoint nằm trong `DEEPSEEK_PRO_ENDPOINTS`. */
 export type LlmProfile = "flash" | "pro";
 
 export type LlmCompletionOptions = {
@@ -216,6 +216,7 @@ export async function llmLaSoChiTietJson(
     {
       jsonMode: true,
       profile: llmProfileForEndpoint("la-so-chi-tiet"),
+      disableThinking: true,
       ...llmOpts,
     },
   );
