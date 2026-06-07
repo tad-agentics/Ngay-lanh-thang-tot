@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router";
 
 import { ErrorBanner } from "~/components/ErrorBanner";
 import { BackBar, LogoMark, Mono } from "~/components/brand";
+import { CBaziNlttLuanInkCursor } from "~/components/direction-c/CBaziNlttLuanRow";
 import { DayLuanSectionedPanel } from "~/components/direction-c/DayLuanSectionedPanel";
 import { useDayLuanReading } from "~/hooks/useDayLuanReading";
 import type { LuanThreadTurn } from "~/lib/generate-reading";
@@ -180,20 +181,23 @@ function QuestionBlock({
   );
 }
 
-function AnchorLoadingSkeleton() {
+/** Design system §13B — ink cursor while bat-tu / LLM chưa trả prose. */
+function NlttInkLoadingBody({
+  message = "Đang luận giải",
+  compact,
+}: {
+  message?: string;
+  compact?: boolean;
+}) {
   return (
-    <div className="mt-2 flex flex-col gap-2">
-      {[0.9, 0.75, 0.6].map((w) => (
-        <div
-          key={w}
-          style={{
-            height: 10,
-            width: `${w * 100}%`,
-            background: "rgba(154,124,34,0.06)",
-          }}
-        />
-      ))}
-    </div>
+    <p
+      className={`font-serif mt-1 italic leading-[1.6] ${compact ? "text-sm" : "text-[14px]"}`}
+      style={{ color: compact ? CT.muted : CT.ink2, minHeight: 20 }}
+      aria-live="polite"
+    >
+      {message}
+      <CBaziNlttLuanInkCursor />
+    </p>
   );
 }
 
@@ -321,6 +325,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     !profileLoading &&
     !detailError &&
     !offTodayPurchaseGate;
+  const showEarlyLoading =
+    (detailLoading || profileLoading) && !detailError;
 
   useEffect(() => {
     threadHydratedIsoRef.current = null;
@@ -484,16 +490,20 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
       <BackBar title={`Luận giải · ngày ${dayShort}`} />
 
       <div ref={scrollRef} className="flex-1 overflow-auto px-6 pt-2 pb-6">
-        {(detailLoading || profileLoading) && (
-          <p className="font-serif text-sm" style={{ color: CT.muted }}>
-            Đang tải…
-          </p>
-        )}
         {detailError ? <ErrorBanner message={detailError} /> : null}
 
-        {!detailLoading && !detailError ? (
+        {!detailError ? (
           <>
             <QuestionBlock question={anchorQuestion} />
+
+            {showEarlyLoading ? (
+              <AiAnswerRow kicker="Đang tải…">
+                <NlttInkLoadingBody message="" />
+              </AiAnswerRow>
+            ) : null}
+
+        {!detailLoading && !profileLoading ? (
+          <>
 
             {offTodayPurchaseGate ? (
               <div className="mt-6 text-center">
@@ -575,7 +585,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                 }
               >
                 {readingLoading && !reading ? (
-                  <AnchorLoadingSkeleton />
+                  <NlttInkLoadingBody />
                 ) : (
                   <TypedBody
                     text={reading ?? ""}
@@ -616,21 +626,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                     <QuestionBlock question={turn.question} compact />
                     {turn.loading ? (
                       <AiAnswerRow kicker="NLTT đang luận…" compact>
-                        <p
-                          className="font-serif text-sm mt-1"
-                          style={{ color: CT.muted, minHeight: 20 }}
-                        >
-                          <span
-                            aria-hidden
-                            style={{
-                              display: "inline-block",
-                              width: 7,
-                              height: 14,
-                              background: CT.ink,
-                              animation: "b-cursor-blink 1s steps(2) infinite",
-                            }}
-                          />
-                        </p>
+                        <NlttInkLoadingBody message="" compact />
                       </AiAnswerRow>
                     ) : turn.error ? (
                       <button
@@ -737,6 +733,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
             ) : null}
 
             <div ref={turnEndRef} aria-hidden className="h-1" />
+          </>
+        ) : null}
           </>
         ) : null}
       </div>
