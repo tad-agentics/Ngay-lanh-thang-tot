@@ -12,12 +12,16 @@ import {
   invokeDayLuanChatOpen,
 } from "~/lib/day-luan-chat";
 import {
-  invokeGenerateReading,
+  invokeGenerateReadingWithRetry,
   type LuanThreadTurn,
 } from "~/lib/generate-reading";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
 import { parseDayCompareResponse } from "~/lib/luan-context";
-import { invokeReadingUnlock } from "~/lib/reading-unlock";
+import {
+  ensureReadingUnlocked,
+  invokeReadingUnlock,
+  isReadingUnlockGranted,
+} from "~/lib/reading-unlock";
 import {
   DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
   dayLuanFollowUpAllowed,
@@ -35,6 +39,7 @@ export function useDayLuanReading(iso: string) {
   const { profile, loading: profileLoading } = useProfile();
   const [reading, setReading] = useState<string | null>(null);
   const [readingLoading, setReadingLoading] = useState(false);
+  const [readingFailed, setReadingFailed] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [unlockBusy, setUnlockBusy] = useState(false);
 
@@ -86,15 +91,22 @@ export function useDayLuanReading(iso: string) {
     luanQuery.data ?? detailQuery.data ?? null;
 
   const loadReading = useCallback(
-    async (contextPayload: unknown, mode: "full" | "teaser") => {
+    async (
+      contextPayload: unknown,
+      mode: "full" | "teaser",
+      gen: number,
+    ): Promise<void> => {
       setReadingLoading(true);
-      const r = await invokeGenerateReading({
+      setReadingFailed(false);
+      const r = await invokeGenerateReadingWithRetry({
         endpoint: "day-detail",
         data: contextPayload,
         ...(mode === "teaser" ? { variant: "teaser" } : {}),
       });
+      if (gen !== loadGenRef.current) return;
       setReading(r.reading);
       setReadingLoading(false);
+      setReadingFailed(!r.reading);
     },
     [],
   );
@@ -113,15 +125,36 @@ export function useDayLuanReading(iso: string) {
     }
     const gen = ++loadGenRef.current;
     setReading(null);
+    setReadingFailed(false);
+    if (subActive) {
+      setUnlocked(true);
+    } else {
+      setUnlocked(false);
+    }
+    setReadingLoading(true);
     void (async () => {
-      if (subActive) {
-        setUnlocked(true);
-        await loadReading(luanContext, "full");
-      } else {
-        setUnlocked(false);
-        await loadReading(luanContext, "teaser");
+      try {
+        if (subActive) {
+          const unlock = await ensureReadingUnlocked({
+            scope: "day_detail",
+            day_iso: iso,
+          });
+          if (gen !== loadGenRef.current) return;
+          if (!unlock.ok || !isReadingUnlockGranted(unlock)) {
+            setUnlocked(false);
+            setReadingLoading(false);
+            setReadingFailed(true);
+            return;
+          }
+          await loadReading(luanContext, "full", gen);
+        } else {
+          await loadReading(luanContext, "teaser", gen);
+        }
+      } catch {
+        if (gen !== loadGenRef.current) return;
+        setReadingLoading(false);
+        setReadingFailed(true);
       }
-      if (gen !== loadGenRef.current) return;
     })();
   }, [
     fetchEnabled,
@@ -200,7 +233,8 @@ export function useDayLuanReading(iso: string) {
       return { ok: false as const, message: unlock.message };
     }
     setUnlocked(true);
-    await loadReading(luanContext, "full");
+    const gen = ++loadGenRef.current;
+    await loadReading(luanContext, "full", gen);
     setUnlockBusy(false);
     return { ok: true as const };
   }, [luanContext, unlockBusy, calendarTeaserUser, iso, loadReading]);
@@ -335,13 +369,28 @@ export function useDayLuanReading(iso: string) {
 
   const retryReading = useCallback(async () => {
     if (!luanContext) return;
+    const gen = ++loadGenRef.current;
+    setReading(null);
+    setReadingFailed(false);
     if (!subActive) {
-      await loadReading(luanContext, "teaser");
+      await loadReading(luanContext, "teaser", gen);
       return;
     }
-    if (!unlocked) return;
-    await loadReading(luanContext, "full");
-  }, [luanContext, unlocked, subActive, loadReading]);
+    setReadingLoading(true);
+    const unlock = await ensureReadingUnlocked({
+      scope: "day_detail",
+      day_iso: iso,
+    });
+    if (gen !== loadGenRef.current) return;
+    if (!unlock.ok || !isReadingUnlockGranted(unlock)) {
+      setUnlocked(false);
+      setReadingLoading(false);
+      setReadingFailed(true);
+      return;
+    }
+    setUnlocked(true);
+    await loadReading(luanContext, "full", gen);
+  }, [luanContext, subActive, iso, loadReading]);
 
   return {
     profile,
@@ -353,6 +402,7 @@ export function useDayLuanReading(iso: string) {
     luanContext,
     reading,
     readingLoading,
+    readingFailed,
     unlocked,
     unlockBusy,
     subActive,
