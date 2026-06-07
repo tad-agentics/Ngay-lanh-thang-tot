@@ -73,7 +73,7 @@ export function followUpRemaining(count: number): number {
   return Math.max(0, MAX_DAY_LUAN_FOLLOW_UPS - Math.max(0, count));
 }
 
-/** Follow-up chat only for calendar today (Asia/Ho_Chi_Minh); other days are anchor-only. */
+/** @deprecated Today-only gate removed — kept for compare-with-tomorrow UX on Lịch. */
 export function dayLuanFollowUpAllowed(dayIso: string): boolean {
   const d = parseDayIso(dayIso);
   if (!d) return false;

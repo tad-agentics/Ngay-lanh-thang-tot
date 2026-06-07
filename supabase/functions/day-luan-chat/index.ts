@@ -9,12 +9,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeadersForRequest } from "../_shared/cors.ts";
 import {
   appendThreadTurns,
-  DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
-  dayLuanFollowUpAllowed,
   findCachedAnswerInMessages,
   followUpRemaining,
   freezeLuanContext,
-  MAX_DAY_LUAN_FOLLOW_UPS,
   mergeAnchorReading,
   parseBirthRevision,
   parseDayIso,
@@ -22,6 +19,7 @@ import {
   parseStoredMessages,
   parseThreadUuid,
 } from "../_shared/day-luan-thread.ts";
+import { todayIsoVietnam } from "../_shared/generate-reading/core/dates.ts";
 import {
   acquireGenerateReadingRateLimit,
   preflightAiReadingAccess,
@@ -37,6 +35,44 @@ import { buildDayDetailFollowUpMessages } from "../_shared/generate-reading/core
 import { DAY_DETAIL_FOLLOW_UP_SYSTEM } from "../_shared/generate-reading/prompts/day.ts";
 
 const PENDING_STALE_MS = 120_000;
+
+type AdminClient = ReturnType<typeof createClient>;
+
+async function fetchDailyCount(
+  admin: AdminClient,
+  userId: string,
+  vnDate: string,
+): Promise<number> {
+  const { data, error } = await admin.rpc("get_day_luan_daily_count", {
+    p_user: userId,
+    p_vn_date: vnDate,
+  });
+  if (error) {
+    console.error("get_day_luan_daily_count", error.message);
+    return 0;
+  }
+  return typeof data === "number" && Number.isFinite(data) ? data : 0;
+}
+
+async function tryIncrementDaily(
+  admin: AdminClient,
+  userId: string,
+  vnDate: string,
+): Promise<{ count: number; limited: boolean }> {
+  const { data, error } = await admin.rpc("increment_day_luan_daily", {
+    p_user: userId,
+    p_vn_date: vnDate,
+  });
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
+    console.error("increment_day_luan_daily", error?.message);
+    const count = await fetchDailyCount(admin, userId, vnDate);
+    return { count, limited: true };
+  }
+  const rec = data as Record<string, unknown>;
+  const count =
+    typeof rec.count === "number" && Number.isFinite(rec.count) ? rec.count : 0;
+  return { count, limited: rec.limited === true };
+}
 
 function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
@@ -69,12 +105,12 @@ type IdempotencyRow = {
   created_at: string;
 };
 
-function askSuccessPayload(count: number, answer: string) {
+function askSuccessPayload(globalDailyCount: number, answer: string) {
   return {
     ok: true,
     answer,
-    follow_up_count: count,
-    follow_up_remaining: followUpRemaining(count),
+    follow_up_count: globalDailyCount,
+    follow_up_remaining: followUpRemaining(globalDailyCount),
   };
 }
 
@@ -142,6 +178,20 @@ Deno.serve(async (req) => {
   if (action === "cta_click") {
     trackProfileEngagement(admin, user.id, "day_luan_follow_up");
     return json({ ok: true }, 200, req);
+  }
+
+  if (action === "quota") {
+    const vnToday = todayIsoVietnam();
+    const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+    return json(
+      {
+        ok: true,
+        follow_up_count: globalCount,
+        follow_up_remaining: followUpRemaining(globalCount),
+      },
+      200,
+      req,
+    );
   }
 
   if (action === "open") {
@@ -279,13 +329,14 @@ Deno.serve(async (req) => {
     }
 
     const messages = parseStoredMessages(row.messages);
-    const count = row.follow_up_count ?? 0;
+    const vnToday = todayIsoVietnam();
+    const globalCount = await fetchDailyCount(admin, user.id, vnToday);
     return json(
       {
         ok: true,
         thread_id: row.id,
-        follow_up_count: count,
-        follow_up_remaining: followUpRemaining(count),
+        follow_up_count: globalCount,
+        follow_up_remaining: followUpRemaining(globalCount),
         messages,
       },
       200,
@@ -369,6 +420,7 @@ Deno.serve(async (req) => {
     }
 
     let count = (thread.follow_up_count as number) ?? 0;
+    const vnToday = todayIsoVietnam();
 
     const { data: existingIdem } = await admin
       .from("day_luan_ask_idempotency")
@@ -379,27 +431,15 @@ Deno.serve(async (req) => {
 
     const idem = existingIdem as IdempotencyRow | null;
     if (idem?.status === "done" && idem.answer?.trim()) {
-      return json(askSuccessPayload(count, idem.answer.trim()), 200, req);
+      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+      return json(askSuccessPayload(globalCount, idem.answer.trim()), 200, req);
     }
 
     const storedMessages = parseStoredMessages(thread.messages);
     const cachedInThread = findCachedAnswerInMessages(storedMessages, question);
     if (cachedInThread) {
-      return json(askSuccessPayload(count, cachedInThread), 200, req);
-    }
-
-    if (!dayLuanFollowUpAllowed(dayIso)) {
-      return json(
-        {
-          ok: false,
-          error_code: "FOLLOW_UP_TODAY_ONLY",
-          message: DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
-          follow_up_count: count,
-          follow_up_remaining: 0,
-        },
-        403,
-        req,
-      );
+      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+      return json(askSuccessPayload(globalCount, cachedInThread), 200, req);
     }
 
     const now = new Date().toISOString();
@@ -423,20 +463,6 @@ Deno.serve(async (req) => {
         .eq("id", idem.id);
     }
 
-    if (count >= MAX_DAY_LUAN_FOLLOW_UPS) {
-      return json(
-        {
-          ok: false,
-          error_code: "QUOTA_EXCEEDED",
-          message: "Đã hết lượt hỏi thêm trong ngày này.",
-          follow_up_count: count,
-          follow_up_remaining: 0,
-        },
-        429,
-        req,
-      );
-    }
-
     if (!idem) {
       const { error: insIdemErr } = await admin
         .from("day_luan_ask_idempotency")
@@ -458,7 +484,8 @@ Deno.serve(async (req) => {
 
         if (raced?.status === "done" && typeof raced.answer === "string" &&
           raced.answer.trim()) {
-          return json(askSuccessPayload(count, raced.answer.trim()), 200, req);
+          const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+          return json(askSuccessPayload(globalCount, raced.answer.trim()), 200, req);
         }
         if (raced?.status === "pending") {
           const age = Date.now() - new Date(raced.created_at as string).getTime();
@@ -485,6 +512,21 @@ Deno.serve(async (req) => {
           updated_at: now,
         })
         .eq("id", idem.id);
+    }
+
+    const inc = await tryIncrementDaily(admin, user.id, vnToday);
+    if (inc.limited) {
+      return json(
+        {
+          ok: false,
+          error_code: "DAILY_LIMIT",
+          message: "Hết lượt hỏi hôm nay.",
+          follow_up_count: inc.count,
+          follow_up_remaining: 0,
+        },
+        429,
+        req,
+      );
     }
 
     const slot = await acquireGenerateReadingRateLimit(user.id, {
@@ -565,7 +607,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!updErr && updated) {
-      return json(askSuccessPayload(nextCount, trimmed), 200, req);
+      return json(askSuccessPayload(inc.count, trimmed), 200, req);
     }
 
     console.warn("day-luan-chat ask thread update race", updErr?.message);
@@ -579,8 +621,8 @@ Deno.serve(async (req) => {
     const reloadedMessages = parseStoredMessages(reloaded?.messages);
     const recovered = findCachedAnswerInMessages(reloadedMessages, question);
     if (recovered) {
-      const reloadedCount = (reloaded?.follow_up_count as number) ?? nextCount;
-      return json(askSuccessPayload(reloadedCount, recovered), 200, req);
+      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+      return json(askSuccessPayload(globalCount, recovered), 200, req);
     }
 
     const { data: idemAfter } = await admin
@@ -591,11 +633,9 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (idemAfter?.status === "done" && typeof idemAfter.answer === "string") {
+      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(
-        askSuccessPayload(
-          (reloaded?.follow_up_count as number) ?? count,
-          idemAfter.answer.trim(),
-        ),
+        askSuccessPayload(globalCount, idemAfter.answer.trim()),
         200,
         req,
       );

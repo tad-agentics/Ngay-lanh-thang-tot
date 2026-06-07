@@ -442,6 +442,9 @@ verify_jwt = false
 [functions.day-luan-chat]
 verify_jwt = false
 
+[functions.tra-cuu-results-chat]
+verify_jwt = false
+
 [functions.generate-reading-la-so]
 verify_jwt = false
 

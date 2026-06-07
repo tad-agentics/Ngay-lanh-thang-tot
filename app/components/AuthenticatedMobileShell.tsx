@@ -8,6 +8,7 @@ import { CPaymentRecoveryBanner } from "~/components/direction-c/CPaymentRecover
 import { CSubscriptionExpiryBanner } from "~/components/direction-c/CSubscriptionExpiryBanner";
 import { useOnlineStatus } from "~/hooks/useOnlineStatus";
 import { usePaymentRecovery } from "~/hooks/usePaymentRecovery";
+import { useTraCuuThinkingOverlay } from "~/hooks/useTraCuuThinkingOverlay";
 import { getActiveTab, shouldShowNav } from "~/lib/nav-config";
 
 type AuthenticatedMobileShellProps = {
@@ -19,7 +20,10 @@ export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellP
   const mainScrollRef = useRef<HTMLDivElement>(null);
   const online = useOnlineStatus();
   const { offer, checking, dismiss, checkPaymentStatus } = usePaymentRecovery();
-  const showNav = shouldShowNav(location.pathname);
+  const traCuuThinking = useTraCuuThinkingOverlay();
+  const showNav =
+    shouldShowNav(location.pathname) &&
+    !(traCuuThinking && location.pathname.startsWith("/tra-cuu"));
   const activeTab = getActiveTab(location.pathname);
   const lichTab =
     location.pathname === "/lich" || location.pathname.startsWith("/lich/");

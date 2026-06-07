@@ -304,13 +304,6 @@ export function useDayLuanReading(iso: string) {
           message: "Cần mở luận giải trước.",
         };
       }
-      if (!dayLuanFollowUpAllowed(iso)) {
-        return {
-          ok: false as const,
-          reading: null as string | null,
-          message: DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE,
-        };
-      }
       const q = question.trim();
       if (!q) {
         return {
@@ -341,9 +334,11 @@ export function useDayLuanReading(iso: string) {
         const message =
           res.code === "IN_PROGRESS"
             ? "Đang xử lý câu hỏi. Đợi vài giây rồi thử lại."
-            : res.code === "FOLLOW_UP_TODAY_ONLY"
-              ? DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE
-              : res.message;
+            : res.code === "DAILY_LIMIT"
+              ? "Hết lượt hỏi hôm nay."
+              : res.code === "FOLLOW_UP_TODAY_ONLY"
+                ? DAY_LUAN_FOLLOW_UP_TODAY_ONLY_MESSAGE
+                : res.message;
         return {
           ok: false as const,
           reading: null,
@@ -474,6 +469,6 @@ export function useDayLuanReading(iso: string) {
     threadId,
     followUpRemaining,
     serverThreadMessages,
-    followUpChatEnabled: dayLuanFollowUpAllowed(iso),
+    followUpChatEnabled: Boolean(unlocked && !calendarTeaserUser && luanContext),
   };
 }

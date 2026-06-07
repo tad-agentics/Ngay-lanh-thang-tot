@@ -13,6 +13,11 @@ export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
 export const TRA_CUU_PICK_MIN_OVERLAY_MS = 800;
 export const TRA_CUU_PICK_SLOW_MS = 8000;
 
+/** Upstream fetch — extra headroom for weekend client filter. */
+export const TRA_CUU_CHON_NGAY_TOP_N = 15;
+/** Max rows shown in results list. */
+export const TRA_CUU_DISPLAY_MAX_DAYS = 5;
+
 export type TraCuuPickPending = {
   intent: TuTruIntent;
   intentLabel: string;
@@ -56,7 +61,7 @@ export async function runTraCuuChonNgay(
       intent: pending.intent,
       range_start: rs,
       range_end: re,
-      top_n: 5,
+      top_n: TRA_CUU_CHON_NGAY_TOP_N,
       source: BAT_TU_SOURCE_TRA_CUU,
     },
   });
@@ -81,7 +86,7 @@ export async function runTraCuuChonNgay(
     daysInclusive: pending.daysInclusive,
   };
 
-  const days = mapChonNgayPayloadToResultDays(res.data, 5);
+  const days = mapChonNgayPayloadToResultDays(res.data, TRA_CUU_CHON_NGAY_TOP_N);
   if (days.length === 0) {
     return { ok: false, code: "NO_DAYS", ketQua: meta };
   }

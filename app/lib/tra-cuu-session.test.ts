@@ -4,8 +4,10 @@ import type { ChonNgayKetQuaState } from "~/lib/chon-ngay-flow";
 import {
   consumeTraCuuFormPreset,
   loadTraCuuEmpty,
+  loadTraCuuFlow,
   loadTraCuuKetQua,
   persistTraCuuEmpty,
+  persistTraCuuFlow,
   persistTraCuuKetQua,
 } from "~/lib/tra-cuu-session";
 
@@ -47,5 +49,21 @@ describe("tra-cuu-session", () => {
     persistTraCuuKetQua(sampleKetQua);
     expect(consumeTraCuuFormPreset()?.daysInclusive).toBe(30);
     expect(consumeTraCuuFormPreset()).toBeNull();
+  });
+
+  it("persists flow state with intro and screen", () => {
+    persistTraCuuFlow({
+      ...sampleKetQua,
+      intro: "Intro NLTT",
+      filter: "weekend",
+      screen: "results",
+      selectedDayIso: "2026-06-06",
+    });
+    const loaded = loadTraCuuFlow();
+    expect(loaded?.intro).toBe("Intro NLTT");
+    expect(loaded?.filter).toBe("weekend");
+    expect(loaded?.screen).toBe("results");
+    expect(loaded?.selectedDayIso).toBe("2026-06-06");
+    expect(loadTraCuuKetQua()?.payload).toEqual(sampleKetQua.payload);
   });
 });

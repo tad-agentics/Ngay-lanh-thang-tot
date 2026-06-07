@@ -102,3 +102,16 @@ export function parseDayCompareResponse(raw: unknown): DayCompareFacts | null {
   }
   return { comparisonVi, deltaScore, scoreA, scoreB, betterFor };
 }
+
+/** Chip gợi ý từ `day-luan-context` API (`suggested_followups[]`). */
+export function parseSuggestedFollowups(raw: unknown): string[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  const d = raw as Record<string, unknown>;
+  const arr = d.suggested_followups ?? d.suggestedFollowups;
+  if (!Array.isArray(arr)) return [];
+  const out: string[] = [];
+  for (const x of arr) {
+    if (typeof x === "string" && x.trim()) out.push(x.trim());
+  }
+  return out.slice(0, 5);
+}

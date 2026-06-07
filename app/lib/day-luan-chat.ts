@@ -83,6 +83,39 @@ export function trackDayLuanFollowUpCtaClick(): void {
   void invokeDayLuanChat({ action: "cta_click" });
 }
 
+export type DayLuanDailyQuotaResult =
+  | { ok: true; follow_up_count: number; follow_up_remaining: number }
+  | { ok: false; code: string; message: string };
+
+/** Shared pool 10/user/VN-day — no thread open required. */
+export async function invokeDayLuanDailyQuota(): Promise<DayLuanDailyQuotaResult> {
+  const { data } = await invokeDayLuanChat({ action: "quota" });
+
+  const err = parseError(data);
+  if (err) return { ok: false, code: err.code, message: err.message };
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return { ok: false, code: "NETWORK", message: "Không kết nối được." };
+  }
+
+  const d = data as Record<string, unknown>;
+  if (d.ok !== true) {
+    return { ok: false, code: "BAD_RESPONSE", message: "Không đọc được quota." };
+  }
+
+  const count =
+    typeof d.follow_up_count === "number" && Number.isFinite(d.follow_up_count)
+      ? d.follow_up_count
+      : 0;
+  const remaining =
+    typeof d.follow_up_remaining === "number" &&
+    Number.isFinite(d.follow_up_remaining)
+      ? d.follow_up_remaining
+      : Math.max(0, DAY_LUAN_MAX_FOLLOW_UPS - count);
+
+  return { ok: true, follow_up_count: count, follow_up_remaining: remaining };
+}
+
 export async function invokeDayLuanChatOpen(
   input: DayLuanChatOpenInput,
 ): Promise<DayLuanChatOpenResult> {
