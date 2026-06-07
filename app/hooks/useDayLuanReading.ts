@@ -5,7 +5,7 @@ import { useProfile } from "~/hooks/useProfile";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { baziReadingBirthRevision } from "~/lib/bazi-reading-session";
-import { canUseCalendar, isNewUserDayLuanTeaser } from "~/lib/entitlements";
+import { canUseCalendar } from "~/lib/entitlements";
 import {
   DAY_LUAN_MAX_FOLLOW_UPS,
   invokeDayLuanChatAsk,
@@ -49,7 +49,8 @@ export function useDayLuanReading(iso: string) {
   const loadGenRef = useRef(0);
 
   const subActive = canUseCalendar(profile);
-  const paywallTeaser = isNewUserDayLuanTeaser(profile);
+  /** Chưa có gói lịch (never-sub + lapsed) — cùng gate mua gói trên `/luan-ai`. */
+  const calendarTeaserUser = Boolean(profile && !subActive);
 
   const batTuQuery = profile ? profileToBatTuPersonQuery(profile) : null;
   const batTuBody =
@@ -134,7 +135,7 @@ export function useDayLuanReading(iso: string) {
 
   const ensureDayLuanThread = useCallback(
     async (anchorReading?: string): Promise<string | null> => {
-      if (!profile || !luanContext || !unlocked || paywallTeaser) return null;
+      if (!profile || !luanContext || !unlocked || calendarTeaserUser) return null;
 
       const birthRevision = baziReadingBirthRevision(profile);
       const anchorLen = anchorReading?.trim().length ?? 0;
@@ -165,11 +166,11 @@ export function useDayLuanReading(iso: string) {
       setServerThreadMessages(open.messages);
       return open.thread_id;
     },
-    [profile, luanContext, unlocked, paywallTeaser, iso],
+    [profile, luanContext, unlocked, calendarTeaserUser, iso],
   );
 
   useEffect(() => {
-    if (!reading || !unlocked || paywallTeaser || !luanContext || !profile) {
+    if (!reading || !unlocked || calendarTeaserUser || !luanContext || !profile) {
       return;
     }
     const anchorLen = reading.trim().length;
@@ -183,10 +184,10 @@ export function useDayLuanReading(iso: string) {
       return;
     }
     void ensureDayLuanThread(reading);
-  }, [reading, unlocked, paywallTeaser, luanContext, profile, iso, ensureDayLuanThread]);
+  }, [reading, unlocked, calendarTeaserUser, luanContext, profile, iso, ensureDayLuanThread]);
 
   const unlockAndLoad = useCallback(async () => {
-    if (!luanContext || unlockBusy || paywallTeaser) return;
+    if (!luanContext || unlockBusy || calendarTeaserUser) return;
     setUnlockBusy(true);
     setReadingLoading(true);
     const unlock = await invokeReadingUnlock({
@@ -202,11 +203,11 @@ export function useDayLuanReading(iso: string) {
     await loadReading(luanContext, "full");
     setUnlockBusy(false);
     return { ok: true as const };
-  }, [luanContext, unlockBusy, paywallTeaser, iso, loadReading]);
+  }, [luanContext, unlockBusy, calendarTeaserUser, iso, loadReading]);
 
   const askFollowUp = useCallback(
     async (question: string, idempotencyKey: string) => {
-      if (!luanContext || !unlocked || paywallTeaser) {
+      if (!luanContext || !unlocked || calendarTeaserUser) {
         return {
           ok: false as const,
           reading: null as string | null,
@@ -273,12 +274,12 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [luanContext, unlocked, paywallTeaser, ensureDayLuanThread, reading, iso],
+    [luanContext, unlocked, calendarTeaserUser, ensureDayLuanThread, reading, iso],
   );
 
   const compareWithIso = useCallback(
     async (otherIso: string) => {
-      if (!profile || !unlocked || paywallTeaser) {
+      if (!profile || !unlocked || calendarTeaserUser) {
         return {
           ok: false as const,
           reading: null as string | null,
@@ -316,7 +317,7 @@ export function useDayLuanReading(iso: string) {
         message: undefined as string | undefined,
       };
     },
-    [profile, unlocked, paywallTeaser, iso],
+    [profile, unlocked, calendarTeaserUser, iso],
   );
 
   const compareWithTomorrow = useCallback(async () => {
@@ -355,7 +356,7 @@ export function useDayLuanReading(iso: string) {
     unlocked,
     unlockBusy,
     subActive,
-    paywallTeaser,
+    calendarTeaserUser,
     unlockAndLoad,
     retryReading,
     askFollowUp,

@@ -15,11 +15,7 @@ import { useSavedPicks } from "~/hooks/useSavedPicks";
 import { LichToPageCard } from "~/components/direction-c/LichToPageCard";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { parseDayDetailForView } from "~/lib/day-detail-view";
-import {
-  canUseCalendar,
-  isNewUserDayLuanTeaser,
-} from "~/lib/entitlements";
-import { neverSubFreeDayReading } from "~/lib/entitlements";
+import { canUseCalendar } from "~/lib/entitlements";
 import {
   buildCalendarLockedDayTeaser,
   pickDayDetailInlineLuanFallback,
@@ -43,6 +39,7 @@ import type { TuTruIntent } from "~/lib/api-types";
 import { offerGoogleCalendarAfterSave } from "~/lib/saved-pick-calendar";
 import { findSavedPickForDay } from "~/lib/saved-picks-upcoming";
 import { addDaysToIso } from "~/lib/tu-tru-dates";
+import { resolveInlineReadingPayload } from "~/lib/today-inline-reading-payload";
 
 type NgayNavState = {
   markLabel?: string;
@@ -69,12 +66,7 @@ export function CDayDetailScreen() {
   const personalized = Boolean(birthQuery?.birth_date);
   const subActive = profile ? canUseCalendar(profile) : false;
   const calendarLocked = Boolean(user && profile && !subActive);
-  const newUserTeaser = profile ? isNewUserDayLuanTeaser(profile) : false;
   const todayIso = todayIsoInVn();
-  const neverSubTodayFree = profile
-    ? neverSubFreeDayReading(profile, iso, todayIso)
-    : false;
-  const expectNlttLuan = subActive || neverSubTodayFree;
 
   const dayDetailBody = useMemo(() => {
     if (!iso) return { date: "", tz: "Asia/Ho_Chi_Minh" };
@@ -83,23 +75,50 @@ export function CDayDetailScreen() {
       : { date: iso, mode: "generic", tz: "Asia/Ho_Chi_Minh" };
   }, [iso, personalized, birthQuery]);
 
-  const {
-    data: rawPayload,
-    isPending: loading,
-    error: queryError,
-  } = useBatTuQuery<unknown>(user?.id, "day-detail", dayDetailBody, {
-    enabled: !profileLoading && Boolean(iso) && online,
+  const dayDetailFetchEnabled =
+    !profileLoading &&
+    Boolean(iso) &&
+    online &&
+    (!personalized || Boolean(user?.id));
+  const luanFetchEnabled =
+    dayDetailFetchEnabled && personalized && Boolean(user?.id);
+
+  const detailQuery = useBatTuQuery<unknown>(user?.id, "day-detail", dayDetailBody, {
+    enabled: dayDetailFetchEnabled,
   });
+  const luanQuery = useBatTuQuery<unknown>(user?.id, "day-luan-context", dayDetailBody, {
+    enabled: luanFetchEnabled,
+  });
+
+  const rawPayload = detailQuery.data;
+  const loading = detailQuery.isPending;
+  const error = detailQuery.error?.message ?? null;
+
+  const { payload: inlineReadingPayload, pending: inlineReadingPending } = useMemo(
+    () =>
+      resolveInlineReadingPayload({
+        fetchEnabled: luanFetchEnabled && subActive,
+        luanPending: Boolean(luanFetchEnabled && luanQuery.isPending),
+        luanData: luanQuery.data,
+        detailData: rawPayload,
+        homNayData: null,
+      }),
+    [
+      luanFetchEnabled,
+      subActive,
+      luanQuery.isPending,
+      luanQuery.data,
+      rawPayload,
+    ],
+  );
 
   const detail = useMemo(
     () => (rawPayload != null ? parseDayDetailForView(rawPayload) : null),
     [rawPayload],
   );
 
-  const error = queryError?.message ?? null;
-
   const dayEngineFallback =
-    detail && !expectNlttLuan
+    detail && !subActive
       ? calendarLocked
         ? buildCalendarLockedDayTeaser(detail)
         : pickDayDetailInlineLuanFallback(detail) || null
@@ -114,10 +133,10 @@ export function CDayDetailScreen() {
   } = useInlineDayReading({
     iso,
     endpoint: "day-detail",
-    batTuPayload: rawPayload,
-    enabled: Boolean(detail && rawPayload && personalized && user),
+    batTuPayload: inlineReadingPayload,
+    payloadPending: inlineReadingPending,
+    enabled: Boolean(subActive && detail && personalized && user),
     subActive,
-    newUserTeaser,
   });
 
   const prevIso = iso ? addDaysToIso(iso, -1) : "";
@@ -241,7 +260,10 @@ export function CDayDetailScreen() {
                   <CTodayReasoning
                     text={readingText}
                     fallbackText={dayEngineFallback}
-                    loading={readingLoading && expectNlttLuan}
+                    loading={
+                      (readingLoading && subActive) ||
+                      (subActive && inlineReadingPending)
+                    }
                     instant={instantTyping}
                     onTypingComplete={markTypingSeen}
                     onCtaClick={() =>
@@ -251,7 +273,7 @@ export function CDayDetailScreen() {
                           : `/luan-ai/day-${iso}`,
                       )
                     }
-                    showCta={Boolean(user) && (expectNlttLuan || calendarLocked)}
+                    showCta={Boolean(user) && (subActive || calendarLocked)}
                     showCtaWithEngineFallback={calendarLocked}
                   />
                 ) : null

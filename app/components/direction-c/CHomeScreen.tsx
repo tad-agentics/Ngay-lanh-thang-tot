@@ -21,9 +21,6 @@ import {
   canUseCalendar,
   canUseTieuVanReading,
   hasYearlySubscription,
-  isNewUserDayLuanTeaser,
-  neverSubFreeDayReading,
-  subscriptionActive,
 } from "~/lib/entitlements";
 import { CT } from "~/lib/c-tokens";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
@@ -51,7 +48,8 @@ export function CHomeScreen() {
     today,
     menh,
     canBatTu,
-    readingPayload,
+    inlineReadingPayload,
+    inlineReadingPending,
     online,
     todayIso,
     recomputePending: recomputePendingFromData,
@@ -60,17 +58,14 @@ export function CHomeScreen() {
   } = useTodayLichData();
 
   const showRecomputeSkeleton = recomputePending || recomputePendingFromData;
-  const subActive = subscriptionActive(profile?.subscription_expires_at ?? null);
-  const calendarLocked = Boolean(user && profile && !canUseCalendar(profile));
-  const newUserTeaser = isNewUserDayLuanTeaser(profile);
-  const neverSubTodayFree = neverSubFreeDayReading(profile, todayIso, todayIso);
-  const expectNlttLuan = subActive || neverSubTodayFree;
+  const subActive = Boolean(profile && canUseCalendar(profile));
+  const calendarLocked = Boolean(user && profile && !subActive);
 
   const dayEngineFallback = useMemo(() => {
-    if (!calendarLocked || expectNlttLuan || !detailPayload) return null;
+    if (!calendarLocked || !detailPayload) return null;
     const detail = parseDayDetailForView(detailPayload);
     return detail ? buildCalendarLockedDayTeaser(detail) : null;
-  }, [calendarLocked, expectNlttLuan, detailPayload]);
+  }, [calendarLocked, detailPayload]);
 
   const {
     text: readingText,
@@ -80,26 +75,30 @@ export function CHomeScreen() {
   } = useInlineDayReading({
     iso: todayIso,
     endpoint: "ngay-hom-nay",
-    batTuPayload: readingPayload,
+    batTuPayload: inlineReadingPayload,
+    payloadPending: inlineReadingPending,
     enabled: Boolean(
-      user && today && readingPayload && online && !showRecomputeSkeleton,
+      subActive && user && today && online && !showRecomputeSkeleton,
     ),
     subActive,
-    newUserTeaser,
   });
 
+  const inlineLuanPending =
+    subActive && inlineReadingPending && !readingText?.trim();
   const showNlttLuanFailed =
-    expectNlttLuan &&
-    Boolean(user && today) &&
+    subActive &&
+    Boolean(user && today && inlineReadingPayload) &&
+    !inlineReadingPending &&
     !readingLoading &&
     !readingText?.trim();
-  const lapsedReasoningPending =
-    calendarLocked && !expectNlttLuan && detailLoading && !dayEngineFallback;
+  const calendarTeaserPending =
+    calendarLocked && detailLoading && !dayEngineFallback;
   const showTodayReasoning = Boolean(
     readingLoading ||
       readingText?.trim() ||
       dayEngineFallback ||
-      lapsedReasoningPending,
+      calendarTeaserPending ||
+      inlineLuanPending,
   );
 
   const prevIso = addDaysToIso(todayIso, -1);
@@ -180,12 +179,14 @@ export function CHomeScreen() {
                   text={readingText}
                   fallbackText={dayEngineFallback}
                   loading={
-                    (readingLoading && expectNlttLuan) || lapsedReasoningPending
+                    (readingLoading && subActive) ||
+                    calendarTeaserPending ||
+                    inlineLuanPending
                   }
                   instant={instantTyping}
                   onTypingComplete={markTypingSeen}
                   onCtaClick={() => void navigate(`/luan-ai/day-${todayIso}`)}
-                  showCta={Boolean(user) && (expectNlttLuan || calendarLocked)}
+                  showCta={Boolean(user) && (subActive || calendarLocked)}
                   showCtaWithEngineFallback={calendarLocked}
                 />
               ) : null
@@ -193,7 +194,7 @@ export function CHomeScreen() {
           />
         ) : null}
 
-        {today && !showRecomputeSkeleton && (subActive || newUserTeaser) ? (
+        {today && !showRecomputeSkeleton && (subActive || calendarLocked) ? (
           baziUnlocked && subActive ? (
             <Link
               to="/toi/luan-bat-tu"
@@ -227,7 +228,7 @@ export function CHomeScreen() {
           )
         ) : null}
 
-        {TIEU_VAN_LUAN_ENABLED && today && !showRecomputeSkeleton && (subActive || newUserTeaser) ? (
+        {TIEU_VAN_LUAN_ENABLED && today && !showRecomputeSkeleton && (subActive || calendarLocked) ? (
           tieuVanUnlocked && subActive ? (
             <Link
               to={`/toi/luan-tieu-van?year=${tieuVanYear}`}

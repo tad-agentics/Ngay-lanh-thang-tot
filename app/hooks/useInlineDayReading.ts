@@ -12,25 +12,25 @@ import {
   hasSeenInlineReading,
   markInlineReadingSeen,
   readTodayAiReadingCache,
-  todayIsoInVn,
   writeTodayAiReadingSession,
 } from "~/lib/today-reading-cache";
 
+/** Inline NLTT on lịch tờ — subscribers only; calendar-teaser users use engine copy on screen. */
 export function useInlineDayReading({
   iso,
   endpoint,
   batTuPayload,
   enabled,
+  payloadPending = false,
   subActive,
-  newUserTeaser,
 }: {
   iso: string;
   endpoint: "ngay-hom-nay" | "day-detail";
   batTuPayload: unknown | null;
   enabled: boolean;
+  /** Bat-tu payload still loading — keep prior text, show loading. */
+  payloadPending?: boolean;
   subActive: boolean;
-  /** User mới chưa từng đăng ký gói — teaser hôm nay; ngày khác dùng copy engine trên màn. */
-  newUserTeaser: boolean;
 }) {
   const { user } = useAuth();
   const payloadRef = useRef(batTuPayload);
@@ -42,7 +42,7 @@ export function useInlineDayReading({
   const [paywallBlurred, setPaywallBlurred] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !iso || !user) {
+    if (!enabled || !iso || !user || !subActive) {
       setText(null);
       setLoading(false);
       setInstantTyping(false);
@@ -51,31 +51,22 @@ export function useInlineDayReading({
     }
 
     const userId = user.id;
-    const todayIso = todayIsoInVn();
-    const freeNeverSubToday =
-      newUserTeaser &&
-      (endpoint === "ngay-hom-nay" || iso === todayIso);
 
-    if (newUserTeaser && !freeNeverSubToday) {
-      setText(null);
+    const cached = readTodayAiReadingCache(userId, iso);
+    if (cached) {
+      setText(shortenInlineReading(cached));
       setLoading(false);
-      setInstantTyping(false);
+      setInstantTyping(true);
       setPaywallBlurred(false);
       return;
     }
 
-    if (!newUserTeaser && subActive) {
-      const cached = readTodayAiReadingCache(userId, iso);
-      if (cached) {
-        setText(shortenInlineReading(cached));
-        setLoading(false);
-        setInstantTyping(true);
+    if (!batTuPayload) {
+      if (payloadPending) {
+        setLoading(true);
         setPaywallBlurred(false);
         return;
       }
-    }
-
-    if (!batTuPayload) {
       setText(null);
       setLoading(false);
       setInstantTyping(hasSeenInlineReading(userId, iso));
@@ -89,32 +80,6 @@ export function useInlineDayReading({
     setPaywallBlurred(false);
 
     void (async () => {
-      if (freeNeverSubToday) {
-        const genInput = buildInlineDayReadingInvoke(
-          endpoint,
-          payloadRef.current,
-          "teaser",
-        );
-        const r = await invokeGenerateReadingWithRetry(genInput);
-        if (cancelled) return;
-        if (r.reading) {
-          setText(shortenInlineReading(r.reading));
-          setInstantTyping(false);
-        } else {
-          setText(null);
-        }
-        setPaywallBlurred(false);
-        setLoading(false);
-        return;
-      }
-
-      if (!subActive) {
-        setText(null);
-        setLoading(false);
-        setPaywallBlurred(false);
-        return;
-      }
-
       const genInput = buildInlineDayReadingInvoke(
         endpoint,
         payloadRef.current,
@@ -151,7 +116,7 @@ export function useInlineDayReading({
         writeTodayAiReadingSession(userId, iso, teaser);
         setInstantTyping(false);
       } else {
-        setText(null);
+        setText((prev) => prev);
       }
       setPaywallBlurred(false);
       setLoading(false);
@@ -160,7 +125,7 @@ export function useInlineDayReading({
     return () => {
       cancelled = true;
     };
-  }, [enabled, batTuPayload, user, iso, endpoint, subActive, newUserTeaser]);
+  }, [enabled, batTuPayload, payloadPending, user, iso, endpoint, subActive]);
 
   const markTypingSeen = () => {
     if (!user?.id || !iso) return;

@@ -267,7 +267,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     unlocked,
     unlockBusy,
     subActive,
-    paywallTeaser,
+    calendarTeaserUser,
     unlockAndLoad,
     retryReading,
     askFollowUp,
@@ -281,7 +281,13 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const todayIso = todayIsoInVn();
   const todayShort = formatDayIsoShort(todayIso);
   const todayFreePeek = canPeekTodayLuanReading(profile, iso, todayIso);
-  const purchaseGated = paywallTeaser || todayFreePeek;
+  const purchaseGated = calendarTeaserUser;
+  const offTodayPurchaseGate =
+    purchaseGated &&
+    !todayFreePeek &&
+    !detailLoading &&
+    !profileLoading &&
+    !detailError;
   const score = detail?.score ?? null;
   const anchorQuestion = anchorQuestionForScore(score, iso);
   const sectionBundle = buildDayLuanSectionBundle(detail);
@@ -299,7 +305,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
   const quotaExhausted = quotaRemaining <= 0;
 
   const showAnchorHead = Boolean(
-    reading && !readingLoading && (unlocked || paywallTeaser || todayFreePeek),
+    reading && !readingLoading && (unlocked || todayFreePeek),
   );
   const anchorDone = showAnchorHead && anchorTypingDone;
   const locked =
@@ -313,7 +319,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     !readingLoading &&
     !detailLoading &&
     !profileLoading &&
-    !detailError;
+    !detailError &&
+    !offTodayPurchaseGate;
 
   useEffect(() => {
     threadHydratedIsoRef.current = null;
@@ -488,6 +495,32 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
           <>
             <QuestionBlock question={anchorQuestion} />
 
+            {offTodayPurchaseGate ? (
+              <div className="mt-6 text-center">
+                <p className="font-serif text-sm mb-4" style={{ color: CT.ink2 }}>
+                  Luận giải cho ngày {dayShort} cần gói lịch cá nhân. Bạn vẫn có
+                  thể xem teaser miễn phí cho hôm nay.
+                </p>
+                <button
+                  type="button"
+                  onClick={openPurchase}
+                  className="w-full max-w-xs py-3 text-xs font-extrabold uppercase tracking-wider"
+                  style={{ ...DISPLAY2, background: CT.forest, color: CT.cream, border: "none" }}
+                >
+                  Đặt lịch cát tường
+                </button>
+                {iso !== todayIso ? (
+                  <Link
+                    to={`/luan-ai/day-${todayIso}`}
+                    className="mt-3 inline-block font-serif text-sm"
+                    style={{ color: CT.goldDeep }}
+                  >
+                    Xem luận hôm nay →
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
+
             {readingMissing ? (
               <div className="mt-6 text-center">
                 <p className="font-serif text-sm mb-4" style={{ color: CT.ink2 }}>
@@ -564,7 +597,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               />
             ) : null}
 
-            {!paywallTeaser && !followUpChatEnabled && followUps.length > 0 ? (
+            {!purchaseGated && !followUpChatEnabled && followUps.length > 0 ? (
               <Mono
                 className="mt-[22px] block"
                 style={{ color: CT.muted, fontSize: 9.5, letterSpacing: "0.08em" }}
@@ -573,7 +606,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </Mono>
             ) : null}
 
-            {!paywallTeaser
+            {!purchaseGated
               ? followUps.map((turn) => (
                   <div
                     key={turn.id}
@@ -651,7 +684,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </div>
             ) : null}
 
-            {!paywallTeaser &&
+            {!purchaseGated &&
             followUpChatEnabled &&
             anchorDone &&
             remainingChips.length > 0 &&
@@ -678,7 +711,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
               </div>
             ) : null}
 
-            {!paywallTeaser && anchorDone && unlocked && !followUpChatEnabled ? (
+            {!purchaseGated && anchorDone && unlocked && !followUpChatEnabled ? (
               <div
                 className="mt-[22px] pt-4"
                 style={{ borderTop: `1px solid ${CT.hairline}` }}
@@ -747,7 +780,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
         </div>
       ) : null}
 
-      {!paywallTeaser &&
+      {!purchaseGated &&
       followUpChatEnabled &&
       unlocked &&
       !detailLoading &&

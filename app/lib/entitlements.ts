@@ -32,6 +32,7 @@ export function isSubscriptionLapsed(
   return coreIsSubscriptionLapsed(profile);
 }
 
+/** @deprecated Use `isCalendarTeaserEligible` — never-sub only; product treats lapsed the same. */
 export function isNewUserDayLuanTeaser(
   profile: EntitlementProfile | null | undefined,
 ): boolean {
@@ -45,6 +46,7 @@ export function isCalendarTeaserEligible(
   return coreIsCalendarTeaserEligible(profile);
 }
 
+/** @deprecated Use `canPeekTodayLuanReading` — never-sub on today only. */
 export function neverSubFreeDayReading(
   profile: EntitlementProfile | null | undefined,
   dayIso: string,
@@ -54,14 +56,14 @@ export function neverSubFreeDayReading(
   return isNewUserDayLuanTeaser(profile) && dayIso === todayIso;
 }
 
-/** Hôm nay: user chưa có gói lịch vẫn xem được luận teaser trên `/luan-ai/day-*`. */
+/** Hôm nay: user chưa có gói lịch (never-sub + lapsed) xem luận teaser trên `/luan-ai/day-*`. */
 export function canPeekTodayLuanReading(
   profile: EntitlementProfile | null | undefined,
   dayIso: string,
   todayIso: string,
 ): boolean {
   if (!profile || !dayIso || !todayIso || dayIso !== todayIso) return false;
-  return !canUseCalendar(profile);
+  return isCalendarTeaserEligible(profile);
 }
 
 export function canUseBaziReading(

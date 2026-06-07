@@ -17,6 +17,7 @@ import {
   readTodayHomeSession,
   todayIsoInVn,
 } from "~/lib/today-reading-cache";
+import { resolveInlineReadingPayload } from "~/lib/today-inline-reading-payload";
 
 export function useTodayLichData() {
   const { user } = useAuth();
@@ -80,8 +81,24 @@ export function useTodayLichData() {
     return parsed;
   }, [homNayData, detailData, bootstrapToday]);
 
-  const readingPayload =
-    luanData ?? detailData ?? homNayData ?? null;
+  const { payload: inlineReadingPayload, pending: inlineReadingPending } =
+    useMemo(
+      () =>
+        resolveInlineReadingPayload({
+          fetchEnabled,
+          luanPending: fetchEnabled && luanQuery.isPending,
+          luanData,
+          detailData,
+          homNayData,
+        }),
+      [
+        fetchEnabled,
+        luanQuery.isPending,
+        luanData,
+        detailData,
+        homNayData,
+      ],
+    );
 
   useEffect(() => {
     if (!mergedToday || !userId) return;
@@ -127,7 +144,8 @@ export function useTodayLichData() {
     rawPayload: homNayData ?? null,
     detailPayload: detailData ?? null,
     detailLoading,
-    readingPayload,
+    inlineReadingPayload,
+    inlineReadingPending,
     menh,
     scoreMethodology: today?.scoreMethodology ?? null,
     hasLaso: profile ? profileHasLaso(profile.la_so) : false,

@@ -47,7 +47,7 @@ export function pickDayDetailInlineLuanFallback(
   return pickInlineSummaryFromDayDetail(detail);
 }
 
-/** One-line upsell under lịch tờ when user chưa có gói — gợi bấm 「Hỏi tiếp」→ `/dat-lich`. */
+/** One-line upsell under lịch tờ when user chưa có gói lịch — gợi 「Hỏi tiếp」→ `/luan-ai` (hôm nay). */
 export function buildCalendarLockedDayTeaser(
   detail: NonNullable<ReturnType<typeof parseDayDetailForView>>,
 ): string {
