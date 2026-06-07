@@ -231,12 +231,28 @@ export async function loadBaziPaywallBundle(
   const laSoDisplay =
     mergeLaSoJsonForChiTietDisplay(cachedLaSo, enrichment) ?? cachedLaSo;
 
-  const gen = await invokeGenerateReading({
-    endpoint: "la-so-chi-tiet",
-    data: lasoRes.data,
-    preview: true,
-  });
-  const sections = laSoSectionsFromGenerateReading(gen.sections, gen.reading);
+  // Parity với Wave 1 của `loadBaziReadingFull`: teaser không có prewarm/cache,
+  // nên một lần gọi đơn (không retry) sẽ ra rỗng khi Edge trả 200 rỗng (rate
+  // limit) hoặc DeepSeek timeout lần đầu. Retry + vài lượt như luồng đã mua.
+  let sections: LaSoChiTietSection[] = [];
+  for (
+    let menhAttempt = 0;
+    menhAttempt < BAZI_MENH_PREVIEW_MAX_ATTEMPTS;
+    menhAttempt++
+  ) {
+    if (menhAttempt > 0) {
+      await new Promise((resolve) =>
+        setTimeout(resolve, BAZI_MENH_WAVE_RETRY_MS),
+      );
+    }
+    const gen = await invokeGenerateReadingWithRetry({
+      endpoint: "la-so-chi-tiet",
+      data: lasoRes.data,
+      preview: true,
+    });
+    sections = laSoSectionsFromGenerateReading(gen.sections, gen.reading);
+    if (deliveryHasMenhProse(sections)) break;
+  }
   const menhOverview = menhOverviewFromLaSoSections(sections);
 
   return {
