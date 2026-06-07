@@ -45,9 +45,9 @@ describe("pending-return-to", () => {
   });
 
   it("keeps pending return_to through first-run", () => {
-    stashPendingReturnTo("/lich/thang");
+    stashPendingReturnTo("/lich?year=2025&month=6");
     expect(destinationAfterAuth(false, true)).toBe("/dang-dung-lich");
-    expect(destinationAfterOnboarding()).toBe("/lich/thang");
+    expect(destinationAfterOnboarding()).toBe("/lich?year=2025&month=6");
   });
 
   it("routes to reveal when build animation already finished", () => {

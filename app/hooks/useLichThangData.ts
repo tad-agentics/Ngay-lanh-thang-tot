@@ -2,16 +2,13 @@ import { useEffect, useRef, useState } from "react";
 
 import type { CalendarDay } from "~/lib/api-types";
 import { invokeBatTu } from "~/lib/bat-tu";
-import {
-  profileToBatTuPersonQuery,
-} from "~/lib/bat-tu-birth";
+import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import {
   buildCalendarDaysForMonth,
   formatLichThangMonthKey,
   parseLichThangLunarMonthLabel,
   parseLichThangScoreMethodology,
 } from "~/lib/home-bat-tu";
-import type { ScoreMethodologyView } from "~/lib/score-methodology";
 import {
   lichThangBirthFingerprint,
   readLichThangCache,
@@ -23,24 +20,16 @@ async function fetchLichThangMonth(
   body: ReturnType<typeof profileToBatTuPersonQuery>,
   year: number,
   month: number,
-): Promise<
-  | {
-      ok: true;
-      days: CalendarDay[];
-      lunarMonthLabel: string | null;
-      scoreMethodology: ScoreMethodologyView | null;
-    }
-  | { ok: false; message: string }
-> {
+) {
   const res = await invokeBatTu<unknown>({
     op: "lich-thang",
     body: { ...body, month: formatLichThangMonthKey(year, month) },
   });
   if (!res.ok) {
-    return { ok: false, message: res.message ?? "Không tải lịch tháng." };
+    return { ok: false as const, message: res.message ?? "Không tải lịch tháng." };
   }
   return {
-    ok: true,
+    ok: true as const,
     days: buildCalendarDaysForMonth(month, year, res.data),
     lunarMonthLabel: parseLichThangLunarMonthLabel(res.data),
     scoreMethodology: parseLichThangScoreMethodology(res.data),
@@ -79,8 +68,6 @@ export function useLichThangData({
 }) {
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [lunarMonthLabel, setLunarMonthLabel] = useState<string | null>(null);
-  const [scoreMethodology, setScoreMethodology] =
-    useState<ScoreMethodologyView | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +81,6 @@ export function useLichThangData({
       setRefreshing(false);
       setDays([]);
       setLunarMonthLabel(null);
-      setScoreMethodology(null);
       setError(null);
       return;
     }
@@ -105,7 +91,6 @@ export function useLichThangData({
       setRefreshing(false);
       setDays([]);
       setLunarMonthLabel(null);
-      setScoreMethodology(null);
       setError("Cần ngày sinh trên hồ sơ.");
       return;
     }
@@ -118,7 +103,6 @@ export function useLichThangData({
     if (cached) {
       setDays(cached.days);
       setLunarMonthLabel(cached.lunarMonthLabel);
-      setScoreMethodology(cached.scoreMethodology ?? null);
       setLoading(false);
       setError(null);
     } else {
@@ -134,7 +118,6 @@ export function useLichThangData({
       setLoading(false);
       setDays([]);
       setLunarMonthLabel(null);
-      setScoreMethodology(null);
       setError("Không có lịch tháng ngoại tuyến — cần mạng để tải lần đầu.");
       return;
     }
@@ -151,7 +134,6 @@ export function useLichThangData({
           setError(result.message);
           setDays([]);
           setLunarMonthLabel(null);
-          setScoreMethodology(null);
         }
         setLoading(false);
         setRefreshing(false);
@@ -160,7 +142,6 @@ export function useLichThangData({
 
       setDays(result.days);
       setLunarMonthLabel(result.lunarMonthLabel);
-      setScoreMethodology(result.scoreMethodology);
       setError(null);
       setLoading(false);
       setRefreshing(false);
@@ -198,7 +179,6 @@ export function useLichThangData({
   return {
     days,
     lunarMonthLabel,
-    scoreMethodology,
     loading,
     refreshing,
     error,
