@@ -15,6 +15,10 @@ import {
   markSessionExpired,
   resetManualSignOutFlag,
 } from "~/lib/auth-session-redirect";
+import {
+  clearStaleAuthSession,
+  isStaleAuthSessionError,
+} from "~/lib/auth-stale-session";
 import { supabase } from "~/lib/supabase";
 
 export type AuthContextValue = {
@@ -35,8 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .getSession()
       .then(({ data, error }) => {
         if (error) {
-          if (/jwt|expired|invalid.*token/i.test(error.message)) {
-            markSessionExpired();
+          if (isStaleAuthSessionError(error.message)) {
+            void clearStaleAuthSession();
           }
           setSession(null);
         } else {
@@ -44,7 +48,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : String(err ?? "");
+        if (isStaleAuthSessionError(message)) {
+          void clearStaleAuthSession();
+        }
         setSession(null);
         setLoading(false);
       });
