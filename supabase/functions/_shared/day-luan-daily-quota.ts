@@ -5,6 +5,13 @@ import { finalizeOnboardingTrialConsume } from "./onboarding-trial.ts";
 
 export type AdminClient = ReturnType<typeof createClient>;
 
+export type DailyIncrementResult = {
+  count: number;
+  limited: boolean;
+  /** RPC/response fault — not the same as hitting the daily cap. */
+  rpcError?: boolean;
+};
+
 export type AskQuotaConsumeResult = {
   dailyCount: number;
   dailyLimited: boolean;
@@ -30,15 +37,20 @@ export async function tryIncrementDaily(
   admin: AdminClient,
   userId: string,
   vnDate: string,
-): Promise<{ count: number; limited: boolean }> {
+): Promise<DailyIncrementResult> {
   const { data, error } = await admin.rpc("increment_day_luan_daily", {
     p_user: userId,
     p_vn_date: vnDate,
   });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
-    console.error("increment_day_luan_daily", error?.message);
+  if (error) {
+    console.error("increment_day_luan_daily", error.message);
     const count = await fetchDailyCount(admin, userId, vnDate);
-    return { count, limited: true };
+    return { count, limited: true, rpcError: true };
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    console.error("increment_day_luan_daily", "invalid rpc response");
+    const count = await fetchDailyCount(admin, userId, vnDate);
+    return { count, limited: true, rpcError: true };
   }
   const rec = data as Record<string, unknown>;
   const count =
@@ -74,7 +86,7 @@ export async function finalizeAskQuotaConsume(
     consumeTrial,
     logContext,
   );
-  if (inc.limited) {
+  if (inc.limited && !inc.rpcError) {
     console.warn(`day_luan_daily_consume_limited:${logContext}`, {
       userId,
       count: inc.count,

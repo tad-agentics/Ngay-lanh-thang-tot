@@ -71,6 +71,9 @@ async function preflightTraCuuChat(
     .select("subscription_expires_at, onboarding_trial_questions_used")
     .eq("id", userId)
     .maybeSingle();
+  if (error) {
+    console.error("tra-cuu-results-chat preflight profile", error.message);
+  }
   if (error || !profile) {
     return { allowed: false, message: "Không tìm thấy hồ sơ." };
   }

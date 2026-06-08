@@ -18,6 +18,8 @@ export type ConsumeTrialResult = {
   used: number;
   remaining: number;
   limited: boolean;
+  /** RPC/response fault — not the same as exhausting trial quota. */
+  rpcError?: boolean;
 };
 
 let cachedTrialMax: number | null = null;
@@ -44,9 +46,13 @@ export async function consumeOnboardingTrialQuestion(
   const { data, error } = await admin.rpc("increment_onboarding_trial_question", {
     p_user: userId,
   });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
-    console.error("increment_onboarding_trial_question", error?.message);
-    return { used: 0, remaining: 0, limited: true };
+  if (error) {
+    console.error("increment_onboarding_trial_question", error.message);
+    return { used: 0, remaining: 0, limited: true, rpcError: true };
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    console.error("increment_onboarding_trial_question", "invalid rpc response");
+    return { used: 0, remaining: 0, limited: true, rpcError: true };
   }
   const rec = data as Record<string, unknown>;
   const used =
@@ -67,7 +73,7 @@ export async function finalizeOnboardingTrialConsume(
 ): Promise<ConsumeTrialResult | null> {
   if (!consumeTrial) return null;
   const result = await consumeOnboardingTrialQuestion(admin, userId);
-  if (result.limited) {
+  if (result.limited && !result.rpcError) {
     console.warn(`onboarding_trial_consume_limited:${logContext}`, {
       userId,
       used: result.used,
