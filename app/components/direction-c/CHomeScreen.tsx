@@ -73,7 +73,7 @@ export function CHomeScreen() {
         month: ym.month,
         todayIso,
       }),
-      { replace: true },
+      { replace: true, preventScrollReset: true },
     );
   }, [
     hasNgayParam,
@@ -96,7 +96,7 @@ export function CHomeScreen() {
           month: ym.month,
           todayIso,
         }),
-        { replace: true },
+        { replace: true, preventScrollReset: true },
       );
       window.requestAnimationFrame(() => {
         dayCardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -120,7 +120,7 @@ export function CHomeScreen() {
       setViewYm(ym);
       setSearchParams(
         applyLichCalendarParams(searchParams, { year: y, month: m }),
-        { replace: true },
+        { replace: true, preventScrollReset: true },
       );
     },
     [viewYm, searchParams, setSearchParams],

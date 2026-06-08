@@ -29,9 +29,10 @@ export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellP
     location.pathname === "/lich" || location.pathname.startsWith("/lich/");
   const darkNav = !online && lichTab;
 
+  // In-tab query updates (e.g. /lich month nav) must not jump to top.
   useLayoutEffect(() => {
     mainScrollRef.current?.scrollTo(0, 0);
-  }, [location.pathname, location.search]);
+  }, [location.pathname]);
 
   return (
     <AppShellViewport>
