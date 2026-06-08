@@ -395,7 +395,7 @@ export function CTraCuuResultsScreen({
         placeholder={
           chatPaywalled
             ? "Đặt lịch để hỏi tiếp…"
-            : "Hỏi tiếp hoặc đổi việc…"
+            : "Hỏi thêm để xem ngày khác…"
         }
         quotaRemaining={displayQuota}
         quotaLoaded={quotaLoaded}

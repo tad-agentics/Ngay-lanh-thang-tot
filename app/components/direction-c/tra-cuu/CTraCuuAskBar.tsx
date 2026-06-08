@@ -116,7 +116,7 @@ export function CTraCuuAskBar({
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSubmit();
           }}
-          className="min-w-0 flex-1 border-0 bg-transparent font-serif text-[13.5px] outline-none"
+          className="min-w-0 flex-1 border-0 bg-transparent font-serif text-base outline-none"
           style={{
             color: quotaExhausted || paywallLocked ? CT.muted : CT.ink,
             pointerEvents: paywallInteractive ? "none" : undefined,

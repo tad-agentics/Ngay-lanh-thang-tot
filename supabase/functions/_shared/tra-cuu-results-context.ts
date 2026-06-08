@@ -96,7 +96,7 @@ export function buildTraCuuResultsPickContext(
     },
     ranked_days: ranked,
     scope_hint_vi:
-      `Chỉ luận về các ngày trong danh sách gợi ý cho việc «${meta.intent_label}», theo lá số của người dùng. Không bịa ngày ngoài danh sách.`,
+      `Giao diện chỉ hiện 3 ngày đầu; còn lại trong ranked_days — khi người dùng hỏi thêm, gợi ý từ pool đó. Chỉ luận về các ngày trong danh sách gợi ý cho việc «${meta.intent_label}», theo lá số của người dùng. Không bịa ngày ngoài danh sách.`,
     anchor_question_hint_vi:
       "Giải thích ngày nào trong danh sách phù hợp và vì sao, hoặc trả lời câu hỏi cụ thể về một ngày đã gợi ý.",
   };

@@ -1,4 +1,4 @@
-/** Signals Tra cứu thinking overlay — hides bottom nav (plan G10). */
+/** Tra cứu full-bleed modes — hides floating bottom nav (thinking + chat screens). */
 
 let active = false;
 const listeners = new Set<() => void>();

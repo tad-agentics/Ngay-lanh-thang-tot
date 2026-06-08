@@ -141,7 +141,7 @@ export function CTraCuuEntryScreen({
           onKeyDown={(e) => {
             if (e.key === "Enter") trySubmit(pillText);
           }}
-          className="min-w-0 flex-1 border-0 bg-transparent font-serif text-sm outline-none"
+          className="min-w-0 flex-1 border-0 bg-transparent font-serif text-base outline-none"
           style={{ color: CT.ink }}
         />
         <button

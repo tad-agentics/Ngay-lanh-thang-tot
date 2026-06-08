@@ -263,11 +263,13 @@ export function CTraCuuFlow({
 
   const showThinking =
     screen === "thinking" || weekendFlash || (busy && screen !== "entry");
+  const chatScreen = screen === "results" || screen === "day";
+  const suppressBottomNav = showThinking || chatScreen;
 
   useEffect(() => {
-    setTraCuuThinkingOverlayActive(showThinking);
+    setTraCuuThinkingOverlayActive(suppressBottomNav);
     return () => setTraCuuThinkingOverlayActive(false);
-  }, [showThinking]);
+  }, [suppressBottomNav]);
 
   const goToEntry = useCallback(
     (prefillText?: string) => {

@@ -21,9 +21,9 @@ export function AuthenticatedMobileShell({ children }: AuthenticatedMobileShellP
   const online = useOnlineStatus();
   const { offer, checking, dismiss, checkPaymentStatus } = usePaymentRecovery();
   const traCuuThinking = useTraCuuThinkingOverlay();
-  const showNav =
-    shouldShowNav(location.pathname) &&
-    !(traCuuThinking && location.pathname.startsWith("/tra-cuu"));
+  const traCuuSuppressNav =
+    traCuuThinking && location.pathname.startsWith("/tra-cuu");
+  const showNav = shouldShowNav(location.pathname) && !traCuuSuppressNav;
   const activeTab = getActiveTab(location.pathname);
   const lichTab =
     location.pathname === "/lich" || location.pathname.startsWith("/lich/");

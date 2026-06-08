@@ -13,10 +13,10 @@ export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
 export const TRA_CUU_PICK_MIN_OVERLAY_MS = 800;
 export const TRA_CUU_PICK_SLOW_MS = 8000;
 
-/** Upstream `chon-ngay` — tu-tru-api max 10; extra headroom vs UI list (5). */
+/** Upstream `chon-ngay` — tu-tru-api max 10; pool for chat follow-ups beyond UI list. */
 export const TRA_CUU_CHON_NGAY_TOP_N = 10;
-/** Max rows shown in results list. */
-export const TRA_CUU_DISPLAY_MAX_DAYS = 5;
+/** Initial rows on results screen; more days via results chat. */
+export const TRA_CUU_DISPLAY_MAX_DAYS = 3;
 
 export type TraCuuPickPending = {
   intent: TuTruIntent;
