@@ -1,6 +1,6 @@
 /**
  * Tra cứu results-screen chat — multi-turn on chon-ngay pick list.
- * - open: freeze pick_context + intro anchor
+ * - open: freeze pick_context + intro anchor (first anchor consumes quota)
  * - ask: intent parse (JSON) → answer | change_task | open_day
  * Shares global day_luan_daily_usage quota with day-luan-chat.
  */
@@ -117,6 +117,71 @@ type ThreadRow = {
   follow_up_count: number;
 };
 
+/** After a delivered assistant turn (anchor intro or ask answer). */
+async function consumeTraCuuChatTurn(
+  admin: AdminClient,
+  userId: string,
+  req: Request,
+  vnToday: string,
+  logContext: string,
+): Promise<
+  | { ok: true; dailyCount: number }
+  | { ok: false; response: Response }
+> {
+  const { data: trialProfile } = await admin
+    .from("profiles")
+    .select("subscription_expires_at, onboarding_trial_questions_used")
+    .eq("id", userId)
+    .maybeSingle();
+  const trialMax = await readOnboardingTrialQuestionsMax(admin);
+  const consumeTrial = shouldConsumeTrialQuestion(trialProfile);
+  if (consumeTrial && !hasOnboardingTrialAccess(trialProfile, trialMax)) {
+    return {
+      ok: false,
+      response: json(
+        {
+          ok: false,
+          error_code: "TRIAL_EXHAUSTED",
+          message: "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục.",
+        },
+        402,
+        req,
+      ),
+    };
+  }
+
+  const dailyPreflight = await preflightDailyQuotaAvailable(
+    admin,
+    userId,
+    vnToday,
+  );
+  if (!dailyPreflight.allowed) {
+    return {
+      ok: false,
+      response: json(
+        {
+          ok: false,
+          error_code: "DAILY_LIMIT",
+          message: "Hết lượt hỏi hôm nay.",
+          follow_up_count: dailyPreflight.count,
+          follow_up_remaining: 0,
+        },
+        429,
+        req,
+      ),
+    };
+  }
+
+  const quota = await finalizeAskQuotaConsume(
+    admin,
+    userId,
+    vnToday,
+    consumeTrial,
+    logContext,
+  );
+  return { ok: true, dailyCount: quota.dailyCount };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeadersForRequest(req) });
@@ -215,27 +280,41 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const vnToday = todayIsoVietnam();
-    const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+    let dailyCount = await fetchDailyCount(admin, user.id, vnToday);
 
     if (existing) {
       const row = existing as ThreadRow;
       const messages = parseStoredTraCuuMessages(row.messages);
       if (anchorIntro && !row.anchor_intro?.trim()) {
-        await admin
+        const { data: patched } = await admin
           .from("tra_cuu_results_threads")
           .update({
             anchor_intro: anchorIntro,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", row.id);
+          .eq("id", row.id)
+          .or("anchor_intro.is.null,anchor_intro.eq.")
+          .select("id")
+          .maybeSingle();
+        if (patched?.id) {
+          const consumed = await consumeTraCuuChatTurn(
+            admin,
+            user.id,
+            req,
+            vnToday,
+            "tra-cuu-results-chat:anchor",
+          );
+          if (!consumed.ok) return consumed.response;
+          dailyCount = consumed.dailyCount;
+        }
       }
       return json(
         {
           ok: true,
           thread_id: row.id,
           messages,
-          follow_up_count: globalCount,
-          follow_up_remaining: followUpRemaining(globalCount),
+          follow_up_count: dailyCount,
+          follow_up_remaining: followUpRemaining(dailyCount),
         },
         200,
         req,
@@ -267,13 +346,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (anchorIntro) {
+      const consumed = await consumeTraCuuChatTurn(
+        admin,
+        user.id,
+        req,
+        vnToday,
+        "tra-cuu-results-chat:anchor",
+      );
+      if (!consumed.ok) return consumed.response;
+      dailyCount = consumed.dailyCount;
+    }
+
     return json(
       {
         ok: true,
         thread_id: inserted.id,
         messages: [],
-        follow_up_count: globalCount,
-        follow_up_remaining: followUpRemaining(globalCount),
+        follow_up_count: dailyCount,
+        follow_up_remaining: followUpRemaining(dailyCount),
       },
       200,
       req,

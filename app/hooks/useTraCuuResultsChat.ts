@@ -166,14 +166,31 @@ export function useTraCuuResultsChat({
       anchor_intro: introText,
     }).then((res) => {
       if (cancelled || sessionKeyRef.current !== patchSession) return;
-      if (!res.ok) return;
+      if (!res.ok) {
+        if (res.code === "TRIAL_EXHAUSTED") {
+          showOnboardingTrialExhaustedModal();
+        }
+        return;
+      }
       introSyncedRef.current = patchSession;
+      onQuotaChangeRef.current?.(res.follow_up_remaining);
+      if (trialAccess) void refreshProfile();
     });
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, profile, canChat, sessionKey, threadId, intro]);
+  }, [
+    enabled,
+    profile,
+    canChat,
+    sessionKey,
+    threadId,
+    intro,
+    trialAccess,
+    refreshProfile,
+    showOnboardingTrialExhaustedModal,
+  ]);
 
   const ask = useCallback(
     async (question: string) => {
