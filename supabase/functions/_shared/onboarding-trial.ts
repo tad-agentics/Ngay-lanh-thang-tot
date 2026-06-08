@@ -38,9 +38,13 @@ export async function readOnboardingTrialQuestionsMax(
 export async function consumeOnboardingTrialQuestion(
   admin: SupabaseClient,
   userId: string,
+  source?: string,
+  context?: Record<string, unknown>,
 ): Promise<ConsumeTrialResult> {
   const { data, error } = await admin.rpc("increment_onboarding_trial_question", {
     p_user: userId,
+    p_source: source?.trim() || null,
+    p_context: context ?? null,
   });
   if (error) {
     console.error("increment_onboarding_trial_question", error.message);
@@ -68,7 +72,11 @@ export async function finalizeOnboardingTrialConsume(
   logContext: string,
 ): Promise<ConsumeTrialResult | null> {
   if (!consumeTrial) return null;
-  const result = await consumeOnboardingTrialQuestion(admin, userId);
+  const result = await consumeOnboardingTrialQuestion(
+    admin,
+    userId,
+    logContext,
+  );
   if (result.limited && !result.rpcError) {
     console.warn(`onboarding_trial_consume_limited:${logContext}`, {
       userId,
