@@ -33,7 +33,7 @@ import { TRA_CUU_RESULTS_INTENT_PARSE_SYSTEM } from "../_shared/generate-reading
 import {
   buildTraCuuResultsPickContext,
   buildTraCuuSessionKey,
-  type TraCuuResultsPickMeta,
+  parseTraCuuResultsPickMeta,
 } from "../_shared/tra-cuu-results-context.ts";
 import {
   appendTraCuuThreadTurns,
@@ -91,23 +91,6 @@ async function preflightTraCuuChat(
   return {
     allowed: false,
     message: "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục.",
-  };
-}
-
-function parsePickMeta(body: Record<string, unknown>): TraCuuResultsPickMeta | null {
-  const intent = typeof body.intent === "string" ? body.intent.trim() : "";
-  const intentLabel =
-    typeof body.intent_label === "string" ? body.intent_label.trim() : "";
-  const rangeStart =
-    typeof body.range_start === "string" ? body.range_start.trim() : "";
-  const rangeEnd =
-    typeof body.range_end === "string" ? body.range_end.trim() : "";
-  if (!intent || !intentLabel || !rangeStart || !rangeEnd) return null;
-  return {
-    intent,
-    intent_label: intentLabel,
-    range_start: rangeStart,
-    range_end: rangeEnd,
   };
 }
 
@@ -203,7 +186,7 @@ Deno.serve(async (req) => {
   }
 
   if (action === "open") {
-    const meta = parsePickMeta(body);
+    const meta = parseTraCuuResultsPickMeta(body);
     const payload = body.chon_ngay_payload ?? body.payload;
     if (!meta || payload === undefined) {
       return json(

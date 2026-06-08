@@ -1,5 +1,9 @@
 /** Compact chon-ngay context for Tra cứu results chat. */
 
+/** Matches `tra_cuu_results_threads.session_key` CHECK constraint. */
+export const TRA_CUU_SESSION_KEY_MIN_LEN = 8;
+export const TRA_CUU_SESSION_KEY_MAX_LEN = 128;
+
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function asRecord(x: unknown): Record<string, unknown> | null {
@@ -41,8 +45,51 @@ export type TraCuuResultsPickMeta = {
   range_end: string;
 };
 
+export function isTraCuuIsoDay(raw: string): boolean {
+  return ISO_DAY.test(raw.trim().slice(0, 10));
+}
+
 export function buildTraCuuSessionKey(meta: TraCuuResultsPickMeta): string {
-  return `${meta.intent}:${meta.range_start}:${meta.range_end}`.slice(0, 128);
+  return `${meta.intent}:${meta.range_start}:${meta.range_end}`;
+}
+
+export function validateTraCuuSessionKey(key: string): boolean {
+  const len = key.length;
+  return len >= TRA_CUU_SESSION_KEY_MIN_LEN && len <= TRA_CUU_SESSION_KEY_MAX_LEN;
+}
+
+/** Returns a Vietnamese-safe reason when meta cannot produce a DB-valid session key. */
+export function validateTraCuuResultsPickMeta(
+  meta: TraCuuResultsPickMeta,
+): string | null {
+  if (!meta.intent.trim()) return "Thiếu intent.";
+  if (!meta.intent_label.trim()) return "Thiếu intent_label.";
+  if (!isTraCuuIsoDay(meta.range_start)) return "range_start không hợp lệ.";
+  if (!isTraCuuIsoDay(meta.range_end)) return "range_end không hợp lệ.";
+  const key = buildTraCuuSessionKey(meta);
+  if (!validateTraCuuSessionKey(key)) {
+    return "session_key không hợp lệ.";
+  }
+  return null;
+}
+
+export function parseTraCuuResultsPickMeta(
+  raw: Record<string, unknown>,
+): TraCuuResultsPickMeta | null {
+  const intent = typeof raw.intent === "string" ? raw.intent.trim() : "";
+  const intent_label =
+    typeof raw.intent_label === "string" ? raw.intent_label.trim() : "";
+  const range_start =
+    typeof raw.range_start === "string" ? raw.range_start.trim() : "";
+  const range_end =
+    typeof raw.range_end === "string" ? raw.range_end.trim() : "";
+  const meta: TraCuuResultsPickMeta = {
+    intent,
+    intent_label,
+    range_start,
+    range_end,
+  };
+  return validateTraCuuResultsPickMeta(meta) ? null : meta;
 }
 
 export function buildTraCuuResultsPickContext(

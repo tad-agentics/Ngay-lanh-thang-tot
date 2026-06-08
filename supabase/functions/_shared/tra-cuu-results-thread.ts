@@ -8,11 +8,17 @@ import type { ChatMessage } from "./generate-reading/core/thread-history.ts";
 import {
   TRA_CUU_RESULTS_FOLLOW_UP_SYSTEM,
 } from "./generate-reading/prompts/tra-cuu.ts";
+import {
+  TRA_CUU_SESSION_KEY_MAX_LEN,
+  TRA_CUU_SESSION_KEY_MIN_LEN,
+} from "./tra-cuu-results-context.ts";
 
 export function parseTraCuuSessionKey(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
   const t = raw.trim();
-  if (t.length < 8 || t.length > 128) return null;
+  if (t.length < TRA_CUU_SESSION_KEY_MIN_LEN || t.length > TRA_CUU_SESSION_KEY_MAX_LEN) {
+    return null;
+  }
   return t;
 }
 
