@@ -337,6 +337,7 @@ Deno.serve(async (req) => {
     }
 
     const vnToday = todayIsoVietnam();
+    const count = (thread.follow_up_count as number) ?? 0;
     const storedMessages = parseStoredTraCuuMessages(thread.messages);
 
     const { data: existingIdem } = await admin
@@ -648,33 +649,107 @@ Deno.serve(async (req) => {
       question,
       trimmed,
     );
-    const nextCount = (thread.follow_up_count ?? 0) + 1;
+    const nextCount = count + 1;
 
-    await admin
+    const { data: updated, error: updErr } = await admin
       .from("tra_cuu_results_threads")
       .update({
         messages: nextMessages,
         follow_up_count: nextCount,
         updated_at: now,
       })
-      .eq("id", threadId);
+      .eq("id", threadId)
+      .eq("follow_up_count", count)
+      .select("follow_up_count, messages")
+      .maybeSingle();
 
-    await finalizeOnboardingTrialConsume(
-      admin,
-      user.id,
-      consumeTrial,
-      "tra-cuu-results-chat:answer",
-    );
+    if (!updErr && updated) {
+      await finalizeOnboardingTrialConsume(
+        admin,
+        user.id,
+        consumeTrial,
+        "tra-cuu-results-chat:answer",
+      );
+      return json(
+        {
+          ok: true,
+          client_action: "answer",
+          answer: trimmed,
+          follow_up_count: inc.count,
+          follow_up_remaining: followUpRemaining(inc.count),
+        },
+        200,
+        req,
+      );
+    }
+
+    console.warn("tra-cuu-results-chat ask thread update race", updErr?.message);
+
+    const { data: reloaded } = await admin
+      .from("tra_cuu_results_threads")
+      .select("follow_up_count, messages")
+      .eq("id", threadId)
+      .maybeSingle();
+
+    const reloadedMessages = parseStoredTraCuuMessages(reloaded?.messages);
+    const recovered = findCachedAnswer(reloadedMessages, question);
+    if (recovered) {
+      await finalizeOnboardingTrialConsume(
+        admin,
+        user.id,
+        consumeTrial,
+        "tra-cuu-results-chat:answer-recovered",
+      );
+      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+      return json(
+        {
+          ok: true,
+          client_action: "answer",
+          answer: recovered,
+          follow_up_count: globalCount,
+          follow_up_remaining: followUpRemaining(globalCount),
+        },
+        200,
+        req,
+      );
+    }
+
+    const { data: idemAfter } = await admin
+      .from("tra_cuu_results_ask_idempotency")
+      .select("answer, status")
+      .eq("thread_id", threadId)
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (idemAfter?.status === "done" && typeof idemAfter.answer === "string" &&
+      idemAfter.answer.trim()) {
+      await finalizeOnboardingTrialConsume(
+        admin,
+        user.id,
+        consumeTrial,
+        "tra-cuu-results-chat:answer-idempotent",
+      );
+      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+      return json(
+        {
+          ok: true,
+          client_action: "answer",
+          answer: idemAfter.answer.trim(),
+          follow_up_count: globalCount,
+          follow_up_remaining: followUpRemaining(globalCount),
+        },
+        200,
+        req,
+      );
+    }
 
     return json(
       {
-        ok: true,
-        client_action: "answer",
-        answer: trimmed,
-        follow_up_count: inc.count,
-        follow_up_remaining: followUpRemaining(inc.count),
+        ok: false,
+        error_code: "CONFLICT",
+        message: "Thử gửi lại câu hỏi.",
       },
-      200,
+      409,
       req,
     );
   }
