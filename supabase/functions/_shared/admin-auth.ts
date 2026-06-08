@@ -3,11 +3,7 @@
  */
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeadersForRequest } from "./cors.ts";
-import {
-  redisGetString,
-  redisRestConfigured,
-  redisSetNxEx,
-} from "./redis-cache.ts";
+import { redisIncrWindow, redisRestConfigured } from "./redis-cache.ts";
 
 export type AdminAuthOk = {
   admin: SupabaseClient;
@@ -37,9 +33,9 @@ export function adminJson(
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
-/** Per-isolate soft limit — reduces scrape abuse from allowlisted admins. */
+/** Soft limit per admin email — shared across functions when Redis is configured. */
 const RATE_WINDOW_MS = 60_000;
-const RATE_MAX_REQUESTS = 60;
+const RATE_MAX_REQUESTS = 180;
 const rateBuckets = new Map<string, number[]>();
 
 export function isUuid(value: string): boolean {
@@ -62,13 +58,11 @@ async function allowAdminRate(email: string): Promise<boolean> {
     return allowAdminRateInMemory(normalized);
   }
   const windowSec = Math.ceil(RATE_WINDOW_MS / 1000);
-  for (let i = 0; i < RATE_MAX_REQUESTS; i++) {
-    const key = `admin_rl:v1:${normalized}:${i}`;
-    const acquired = await redisSetNxEx(key, "1", windowSec);
-    if (acquired) return true;
+  const count = await redisIncrWindow(`admin_rl:v2:${normalized}`, windowSec);
+  if (count == null) {
+    return allowAdminRateInMemory(normalized);
   }
-  await redisGetString(`admin_rl:v1:${normalized}:0`);
-  return false;
+  return count <= RATE_MAX_REQUESTS;
 }
 
 export async function requireAdmin(

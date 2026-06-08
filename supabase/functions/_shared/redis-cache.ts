@@ -79,6 +79,34 @@ export async function redisSetNxEx(
   return j.result === "OK";
 }
 
+/** INCR + EXPIRE on first hit — sliding window counter. */
+export async function redisIncrWindow(
+  key: string,
+  windowSec: number,
+): Promise<number | null> {
+  if (!redisRestConfigured()) return null;
+  const res = await fetch(`${restBase()}/incr/${encodeURIComponent(key)}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${bearer()}` },
+  });
+  if (!res.ok) {
+    console.error("redisIncrWindow incr", res.status, await res.text());
+    return null;
+  }
+  const j = (await res.json()) as { result?: number | null; error?: string };
+  if (j.error || typeof j.result !== "number") return null;
+  if (j.result === 1) {
+    const exp = await fetch(`${restBase()}/expire/${encodeURIComponent(key)}/${windowSec}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${bearer()}` },
+    });
+    if (!exp.ok) {
+      console.error("redisIncrWindow expire", exp.status, await exp.text());
+    }
+  }
+  return j.result;
+}
+
 export async function redisDelKey(key: string): Promise<void> {
   if (!redisRestConfigured()) return;
   const res = await fetch(`${restBase()}/del/${encodeURIComponent(key)}`, {
