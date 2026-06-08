@@ -13,8 +13,8 @@ export const BAT_TU_SOURCE_TRA_CUU = "tra_cuu";
 export const TRA_CUU_PICK_MIN_OVERLAY_MS = 800;
 export const TRA_CUU_PICK_SLOW_MS = 8000;
 
-/** Upstream fetch — extra headroom for weekend client filter. */
-export const TRA_CUU_CHON_NGAY_TOP_N = 15;
+/** Upstream `chon-ngay` — tu-tru-api max 10; extra headroom vs UI list (5). */
+export const TRA_CUU_CHON_NGAY_TOP_N = 10;
 /** Max rows shown in results list. */
 export const TRA_CUU_DISPLAY_MAX_DAYS = 5;
 
