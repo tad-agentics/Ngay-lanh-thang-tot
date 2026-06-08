@@ -398,13 +398,57 @@ Deno.serve(async (req) => {
     }
 
     if (!existingIdem) {
-      await admin.from("tra_cuu_results_ask_idempotency").insert({
-        thread_id: threadId,
-        idempotency_key: idempotencyKey,
-        question,
-        status: "pending",
-        updated_at: now,
-      });
+      const { error: insIdemErr } = await admin
+        .from("tra_cuu_results_ask_idempotency")
+        .insert({
+          thread_id: threadId,
+          idempotency_key: idempotencyKey,
+          question,
+          status: "pending",
+          updated_at: now,
+        });
+
+      if (insIdemErr) {
+        const { data: raced } = await admin
+          .from("tra_cuu_results_ask_idempotency")
+          .select("answer, status, created_at")
+          .eq("thread_id", threadId)
+          .eq("idempotency_key", idempotencyKey)
+          .maybeSingle();
+
+        if (
+          raced?.status === "done" &&
+          typeof raced.answer === "string" &&
+          raced.answer.trim()
+        ) {
+          const globalCount = await fetchDailyCount(admin, user.id, vnToday);
+          return json(
+            {
+              ok: true,
+              answer: raced.answer.trim(),
+              client_action: "answer",
+              follow_up_count: globalCount,
+              follow_up_remaining: followUpRemaining(globalCount),
+            },
+            200,
+            req,
+          );
+        }
+        if (raced?.status === "pending") {
+          const age = Date.now() - new Date(raced.created_at as string).getTime();
+          if (age < PENDING_STALE_MS) {
+            return json(
+              {
+                ok: false,
+                error_code: "IN_PROGRESS",
+                message: "Đang xử lý câu hỏi này. Đợi vài giây rồi thử lại.",
+              },
+              409,
+              req,
+            );
+          }
+        }
+      }
     } else if (existingIdem.status === "failed") {
       await admin
         .from("tra_cuu_results_ask_idempotency")
