@@ -105,6 +105,7 @@ export function useBaziPaywallMenhTeaser(
     return () => {
       genRef.current += 1;
     };
+    // profile omitted: revision embeds birth fields; genRef invalidates in-flight loads.
   }, [profile?.id, revision]);
 
   return {
