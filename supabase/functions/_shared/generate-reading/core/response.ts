@@ -18,6 +18,30 @@ export function rateLimited(req: Request): Response {
   );
 }
 
+export function dailyLimited(
+  req: Request,
+  followUpCount: number,
+): Response {
+  return new Response(
+    JSON.stringify({
+      reading: null,
+      error: {
+        code: "DAILY_LIMIT",
+        message: "Hết lượt hỏi hôm nay.",
+        follow_up_count: followUpCount,
+        follow_up_remaining: 0,
+      },
+    }),
+    {
+      status: 429,
+      headers: {
+        ...corsHeadersForRequest(req),
+        "Content-Type": "application/json",
+      },
+    },
+  );
+}
+
 export function ok(
   reading: string | null,
   sections: LaSoChiTietSection[] | null | undefined,

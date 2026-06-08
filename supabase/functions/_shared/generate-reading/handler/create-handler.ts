@@ -23,7 +23,11 @@ import { tryReadingCacheHit } from "../core/cache-persist.ts";
 import { sha256Prefix16, stableStringify } from "../core/cache.ts";
 import { MAX_BODY_CHARS } from "../core/config.ts";
 import { dayIsoFromDayDetailData, todayIsoVietnam } from "../core/dates.ts";
-import { ok } from "../core/response.ts";
+import {
+  refundDailyQuota,
+  tryIncrementDaily,
+} from "../../day-luan-daily-quota.ts";
+import { dailyLimited, ok } from "../core/response.ts";
 import type { GenerateReadingFn, LaSoChiTietSection } from "../core/types.ts";
 
 function parseStringIdArray(v: unknown): string[] {
@@ -471,6 +475,23 @@ export function createGenerateReadingHandler(
       }
     }
 
+    const fullDayDetailQuota =
+      endpoint === "day-detail" &&
+      !variant &&
+      !question &&
+      rateLimitUserId &&
+      admin;
+    let dayDetailQuotaReserved = false;
+    const vnToday = todayIsoVietnam();
+
+    if (fullDayDetailQuota) {
+      const inc = await tryIncrementDaily(admin, rateLimitUserId, vnToday);
+      if (inc.limited) {
+        return dailyLimited(req, inc.count);
+      }
+      dayDetailQuotaReserved = true;
+    }
+
     const result = await generate({
       req,
       endpoint,
@@ -490,6 +511,10 @@ export function createGenerateReadingHandler(
       threadHistory,
       phongThuySeedSections,
     });
+
+    if (dayDetailQuotaReserved && !result.reading?.trim()) {
+      await refundDailyQuota(admin!, rateLimitUserId!, vnToday);
+    }
 
     return ok(
       result.reading,

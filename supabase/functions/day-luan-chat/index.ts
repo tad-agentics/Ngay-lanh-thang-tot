@@ -39,46 +39,13 @@ import {
 import { llmChat } from "../_shared/generate-reading/core/llm.ts";
 import { buildDayDetailFollowUpMessages } from "../_shared/generate-reading/core/thread-history.ts";
 import { DAY_DETAIL_FOLLOW_UP_SYSTEM } from "../_shared/generate-reading/prompts/day.ts";
+import {
+  fetchDailyCount,
+  refundDailyQuota,
+  tryIncrementDaily,
+} from "../_shared/day-luan-daily-quota.ts";
 
 const PENDING_STALE_MS = 120_000;
-
-type AdminClient = ReturnType<typeof createClient>;
-
-async function fetchDailyCount(
-  admin: AdminClient,
-  userId: string,
-  vnDate: string,
-): Promise<number> {
-  const { data, error } = await admin.rpc("get_day_luan_daily_count", {
-    p_user: userId,
-    p_vn_date: vnDate,
-  });
-  if (error) {
-    console.error("get_day_luan_daily_count", error.message);
-    return 0;
-  }
-  return typeof data === "number" && Number.isFinite(data) ? data : 0;
-}
-
-async function tryIncrementDaily(
-  admin: AdminClient,
-  userId: string,
-  vnDate: string,
-): Promise<{ count: number; limited: boolean }> {
-  const { data, error } = await admin.rpc("increment_day_luan_daily", {
-    p_user: userId,
-    p_vn_date: vnDate,
-  });
-  if (error || !data || typeof data !== "object" || Array.isArray(data)) {
-    console.error("increment_day_luan_daily", error?.message);
-    const count = await fetchDailyCount(admin, userId, vnDate);
-    return { count, limited: true };
-  }
-  const rec = data as Record<string, unknown>;
-  const count =
-    typeof rec.count === "number" && Number.isFinite(rec.count) ? rec.count : 0;
-  return { count, limited: rec.limited === true };
-}
 
 function json(body: unknown, status: number, req: Request): Response {
   return new Response(JSON.stringify(body), {
@@ -539,21 +506,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const inc = await tryIncrementDaily(admin, user.id, vnToday);
-    if (inc.limited) {
-      return json(
-        {
-          ok: false,
-          error_code: "DAILY_LIMIT",
-          message: "Hết lượt hỏi hôm nay.",
-          follow_up_count: inc.count,
-          follow_up_remaining: 0,
-        },
-        429,
-        req,
-      );
-    }
-
     const slot = await acquireGenerateReadingRateLimit(user.id, {
       followUp: true,
     });
@@ -563,6 +515,21 @@ Deno.serve(async (req) => {
           ok: false,
           error_code: "RATE_LIMITED",
           message: "Đợi vài giây rồi thử lại.",
+        },
+        429,
+        req,
+      );
+    }
+
+    const inc = await tryIncrementDaily(admin, user.id, vnToday);
+    if (inc.limited) {
+      return json(
+        {
+          ok: false,
+          error_code: "DAILY_LIMIT",
+          message: "Hết lượt hỏi hôm nay.",
+          follow_up_count: inc.count,
+          follow_up_remaining: 0,
         },
         429,
         req,
@@ -589,6 +556,7 @@ Deno.serve(async (req) => {
     const trimmed = answer?.trim() ?? "";
 
     if (!trimmed) {
+      await refundDailyQuota(admin, user.id, vnToday);
       await admin
         .from("day_luan_ask_idempotency")
         .update({ status: "failed", updated_at: now })

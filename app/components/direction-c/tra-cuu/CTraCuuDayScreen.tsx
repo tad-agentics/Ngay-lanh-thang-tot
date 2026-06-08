@@ -62,6 +62,7 @@ export function CTraCuuDayScreen({
     reading,
     readingLoading,
     readingFailed,
+    dailyLimitReached,
     unlocked,
     unlockAndLoad,
     askFollowUp,
@@ -363,6 +364,10 @@ export function CTraCuuDayScreen({
                       style={{ color: CT.muted }}
                     >
                       NLTT đang luận chi tiết…
+                    </p>
+                  ) : dailyLimitReached ? (
+                    <p className="mt-2.5 font-serif text-[13px]" style={{ color: CT.ink2 }}>
+                      Hết lượt hỏi hôm nay. Quay lại sáng mai.
                     </p>
                   ) : readingFailed ? (
                     <p className="mt-2.5 font-serif text-[13px]" style={{ color: CT.red }}>

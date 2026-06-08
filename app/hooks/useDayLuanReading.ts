@@ -58,6 +58,7 @@ export function useDayLuanReading(iso: string) {
   const [reading, setReading] = useState<string | null>(null);
   const [readingLoading, setReadingLoading] = useState(false);
   const [readingFailed, setReadingFailed] = useState(false);
+  const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [unlocked, setUnlocked] = useState(false);
   const [unlockBusy, setUnlockBusy] = useState(false);
 
@@ -137,6 +138,7 @@ export function useDayLuanReading(iso: string) {
       }
       setReadingLoading(true);
       setReadingFailed(false);
+      setDailyLimitReached(false);
       const runKey = `${userId}:day-luan:${dayIso}:full:${stableStringify(contextPayload)}`;
       const result = await runInlineReadingDeduped(runKey, async () => {
         const r = await invokeGenerateReadingWithRetry({
@@ -146,17 +148,24 @@ export function useDayLuanReading(iso: string) {
         });
         if (r.reading) {
           clearInlineReadingFailCooldown(userId, dayIso);
-          return { text: r.reading, failed: false };
+          return { text: r.reading, failed: false, dailyLimit: false };
+        }
+        if (r.errorCode === "DAILY_LIMIT") {
+          return { text: null, failed: true, dailyLimit: true };
         }
         if (r.transportError) {
           markInlineReadingFailCooldown(userId, dayIso);
         }
-        return { text: null, failed: true };
+        return { text: null, failed: true, dailyLimit: false };
       });
       if (gen !== loadGenRef.current) return;
       setReading(result.text);
       setReadingLoading(false);
       setReadingFailed(result.failed);
+      if (result.dailyLimit) {
+        setDailyLimitReached(true);
+        setFollowUpRemaining(0);
+      }
     },
     [userId],
   );
@@ -190,6 +199,7 @@ export function useDayLuanReading(iso: string) {
     const gen = ++loadGenRef.current;
     setReading(null);
     setReadingFailed(false);
+    setDailyLimitReached(false);
     if (subActive || trialAccess) {
       setUnlocked(true);
     } else {
@@ -490,6 +500,7 @@ export function useDayLuanReading(iso: string) {
     const gen = ++loadGenRef.current;
     setReading(null);
     setReadingFailed(false);
+    setDailyLimitReached(false);
     if (!subActive) {
       await loadReading(luanContext, gen, iso);
       return;
@@ -521,6 +532,7 @@ export function useDayLuanReading(iso: string) {
     reading,
     readingLoading,
     readingFailed,
+    dailyLimitReached,
     unlocked,
     unlockBusy,
     subActive,

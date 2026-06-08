@@ -290,6 +290,7 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     detail,
     reading,
     readingLoading,
+    dailyLimitReached,
     unlocked,
     unlockBusy,
     subActive,
@@ -379,7 +380,8 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
     !detailLoading &&
     !profileLoading &&
     !detailError &&
-    !offTodayPurchaseGate;
+    !offTodayPurchaseGate &&
+    !dailyLimitReached;
   const showEarlyLoading =
     (detailLoading || profileLoading) && !detailError;
 
@@ -596,6 +598,14 @@ export function CAiTypedScreen({ iso }: { iso: string }) {
                     Xem luận hôm nay →
                   </Link>
                 ) : null}
+              </div>
+            ) : null}
+
+            {dailyLimitReached ? (
+              <div className="mt-6 text-center">
+                <p className="font-serif text-sm" style={{ color: CT.ink2 }}>
+                  Hết lượt hỏi hôm nay. Quay lại sáng mai để tiếp tục.
+                </p>
               </div>
             ) : null}
 

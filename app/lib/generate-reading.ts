@@ -59,12 +59,15 @@ export type GenerateReadingTransportError =
   /** Tab background / đổi mạng — Chrome ERR_NETWORK_* */
   | "network_interrupted";
 
+export type GenerateReadingErrorCode = "DAILY_LIMIT";
+
 export type GenerateReadingResponse = {
   reading: string | null;
   sections: LaSoChiTietSection[] | null;
   /** `chon-ngay-cards` — map ISO ngày → đoạn luận giải trên thẻ. */
   dayReadings: Record<string, string> | null;
   transportError?: GenerateReadingTransportError;
+  errorCode?: GenerateReadingErrorCode;
 };
 
 const EMPTY_GENERATE_READING: GenerateReadingResponse = {
@@ -396,7 +399,11 @@ const RATE_LIMIT_RETRY_MS = 11_000;
 const NETWORK_RETRY_DELAYS_MS = [2_000, 5_000] as const;
 
 function shouldRetryRateLimitEmpty(res: GenerateReadingResponse): boolean {
-  return generateReadingResponseEmpty(res) && !res.transportError;
+  return (
+    generateReadingResponseEmpty(res) &&
+    !res.transportError &&
+    !res.errorCode
+  );
 }
 
 function shouldRetryNetwork(res: GenerateReadingResponse): boolean {
@@ -475,6 +482,9 @@ export async function invokeGenerateReading(
           const parsed = parseGenerateReadingError(body);
           if (parsed) {
             handleGenerateReadingErrorCode(parsed.code);
+            if (parsed.code === "DAILY_LIMIT") {
+              return { ...EMPTY_GENERATE_READING, errorCode: "DAILY_LIMIT" };
+            }
           }
           if (import.meta.env.DEV) {
             console.warn("[luận-giải]", error.message, body);
@@ -499,6 +509,9 @@ export async function invokeGenerateReading(
       const parsedErr = parseGenerateReadingError(data);
       if (parsedErr) {
         handleGenerateReadingErrorCode(parsedErr.code);
+        if (parsedErr.code === "DAILY_LIMIT") {
+          return { ...EMPTY_GENERATE_READING, errorCode: "DAILY_LIMIT" };
+        }
         return { ...EMPTY_GENERATE_READING, transportError: "invoke_failed" };
       }
       const d = data as Record<string, unknown>;
