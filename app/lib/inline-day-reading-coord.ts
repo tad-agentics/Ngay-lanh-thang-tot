@@ -50,6 +50,8 @@ export function clearInlineReadingFailCooldown(
 export type InlineReadingRunResult = {
   text: string | null;
   failed: boolean;
+  /** Daily shared-quota cap reached — FE shows the limit state, no retry. */
+  dailyLimit?: boolean;
 };
 
 const inflight = new Map<string, Promise<InlineReadingRunResult>>();
