@@ -38,8 +38,3 @@ export function traCuuDayVerdictFromScore(score: number): TraCuuVerdictStyle {
     edge: CT.red,
   };
 }
-
-/** @deprecated Use traCuuDayVerdictFromScore */
-export function traCuuDayVerdictLabel(score: number): string {
-  return traCuuDayVerdictFromScore(score).label;
-}

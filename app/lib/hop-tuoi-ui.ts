@@ -1,8 +1,6 @@
 import type { TuTruIntent } from "~/lib/api-types";
 import { TU_TRU_INTENT_OPTIONS } from "~/lib/tu-tru-intents";
 
-const TRA_CUU_PRESET_KEY = "ngaytot.tra-cuu.preset.v1";
-
 export type TraCuuIntentPreset = {
   intent: TuTruIntent;
   intentLabel: string;
@@ -25,27 +23,6 @@ export function purposeLabelToTraCuuIntent(
   const intentLabel =
     TU_TRU_INTENT_OPTIONS.find((o) => o.value === intent)?.label ?? intent;
   return { intent, intentLabel };
-}
-
-export function stashTraCuuIntentPreset(preset: TraCuuIntentPreset): void {
-  try {
-    sessionStorage.setItem(TRA_CUU_PRESET_KEY, JSON.stringify(preset));
-  } catch {
-    // ignore
-  }
-}
-
-export function consumeTraCuuIntentPreset(): TraCuuIntentPreset | null {
-  try {
-    const raw = sessionStorage.getItem(TRA_CUU_PRESET_KEY);
-    if (!raw) return null;
-    sessionStorage.removeItem(TRA_CUU_PRESET_KEY);
-    const parsed = JSON.parse(raw) as TraCuuIntentPreset;
-    if (!parsed?.intent || !parsed.intentLabel) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
 }
 
 export type HopTuoiNextStepCopy = {
