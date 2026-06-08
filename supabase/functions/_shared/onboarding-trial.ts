@@ -22,21 +22,17 @@ export type ConsumeTrialResult = {
   rpcError?: boolean;
 };
 
-let cachedTrialMax: number | null = null;
-
+/** Preflight gate only — `increment_onboarding_trial_question` re-reads app_config per call. */
 export async function readOnboardingTrialQuestionsMax(
   admin: SupabaseClient,
 ): Promise<number> {
-  if (cachedTrialMax != null) return cachedTrialMax;
   const { data } = await admin
     .from("app_config")
     .select("value")
     .eq("config_key", "onboarding_trial_questions_max")
     .maybeSingle();
   const n = data?.value != null ? Number.parseInt(String(data.value), 10) : NaN;
-  cachedTrialMax =
-    Number.isFinite(n) && n > 0 ? n : DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX;
-  return cachedTrialMax;
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX;
 }
 
 export async function consumeOnboardingTrialQuestion(
