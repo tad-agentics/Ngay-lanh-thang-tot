@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 
+import { clearBaziPaywallTeaserLocalAll } from "~/lib/bazi-reading-session";
 import { clearPendingReferralCode } from "~/lib/pending-referral";
 import { setSubExpiredBlocked } from "~/lib/sub-expired";
 import {
@@ -61,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: subListener } = supabase.auth.onAuthStateChange(
       (event, next) => {
         if (event === "SIGNED_OUT" && !next) {
+          clearBaziPaywallTeaserLocalAll();
           markSessionExpired();
           resetManualSignOutFlag();
         }
@@ -74,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     markManualSignOut();
     clearPendingReferralCode();
+    clearBaziPaywallTeaserLocalAll();
     setSubExpiredBlocked(false);
     await supabase.auth.signOut();
     resetManualSignOutFlag();

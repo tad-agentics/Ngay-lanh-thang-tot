@@ -1,3 +1,4 @@
+import { clearBaziPaywallTeaserLocalAll } from "~/lib/bazi-reading-session";
 import { markSessionExpired } from "~/lib/auth-session-redirect";
 import { supabase } from "~/lib/supabase";
 
@@ -12,6 +13,7 @@ export function isStaleAuthSessionError(
 /** Drop broken local session without calling server revoke (refresh token already gone). */
 export async function clearStaleAuthSession(): Promise<void> {
   markSessionExpired();
+  clearBaziPaywallTeaserLocalAll();
   try {
     await supabase.auth.signOut({ scope: "local" });
   } catch {

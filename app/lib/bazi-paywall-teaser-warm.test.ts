@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import {
+  clearBaziPaywallTeaserLocalAll,
   persistBaziPaywallTeaserCache,
   persistBaziPaywallTeaserLocal,
   persistBaziPaywallTeaserSession,
@@ -92,6 +93,24 @@ describe("bazi paywall teaser local cache", () => {
     expect(readBaziPaywallTeaserCache("user-1", "rev-a")?.menhOverview).toBe(
       "local",
     );
+  });
+
+  it("clearBaziPaywallTeaserLocalAll removes all profile keys", () => {
+    persistBaziPaywallTeaserLocal("user-1", "rev-a", {
+      menhOverview: "a",
+      laSoDisplay: null,
+    });
+    persistBaziPaywallTeaserLocal("user-2", "rev-b", {
+      menhOverview: "b",
+      laSoDisplay: null,
+    });
+    localStorage.setItem("unrelated-key", "keep");
+
+    clearBaziPaywallTeaserLocalAll();
+
+    expect(readBaziPaywallTeaserLocal("user-1", "rev-a")).toBeNull();
+    expect(readBaziPaywallTeaserLocal("user-2", "rev-b")).toBeNull();
+    expect(localStorage.getItem("unrelated-key")).toBe("keep");
   });
 
   it("persistBaziPaywallTeaserCache writes both stores", () => {

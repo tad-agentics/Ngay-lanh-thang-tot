@@ -234,6 +234,20 @@ export function persistBaziPaywallTeaserLocal(
   }
 }
 
+/** Drop persisted paywall prose on sign-out (profile-keyed; not session-scoped). */
+export function clearBaziPaywallTeaserLocalAll(): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(BAZI_PAYWALL_TEASER_LOCAL)) keys.push(key);
+    }
+    for (const key of keys) localStorage.removeItem(key);
+  } catch {
+    /* private mode */
+  }
+}
+
 /** Session first, then localStorage — instant teaser on /toi without skeleton. */
 export function readBaziPaywallTeaserCache(
   profileId: string,
