@@ -26,7 +26,6 @@ import {
 } from "../_shared/generate-reading-guards.ts";
 import { hasOnboardingTrialAccess } from "../_shared/entitlements.ts";
 import {
-  finalizeOnboardingTrialConsume,
   readOnboardingTrialQuestionsMax,
   shouldConsumeTrialQuestion,
 } from "../_shared/onboarding-trial.ts";
@@ -41,8 +40,8 @@ import { buildDayDetailFollowUpMessages } from "../_shared/generate-reading/core
 import { DAY_DETAIL_FOLLOW_UP_SYSTEM } from "../_shared/generate-reading/prompts/day.ts";
 import {
   fetchDailyCount,
-  refundDailyQuota,
-  tryIncrementDaily,
+  finalizeAskQuotaConsume,
+  preflightDailyQuotaAvailable,
 } from "../_shared/day-luan-daily-quota.ts";
 
 const PENDING_STALE_MS = 120_000;
@@ -521,14 +520,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    const inc = await tryIncrementDaily(admin, user.id, vnToday);
-    if (inc.limited) {
+    const dailyPreflight = await preflightDailyQuotaAvailable(
+      admin,
+      user.id,
+      vnToday,
+    );
+    if (!dailyPreflight.allowed) {
       return json(
         {
           ok: false,
           error_code: "DAILY_LIMIT",
           message: "Hết lượt hỏi hôm nay.",
-          follow_up_count: inc.count,
+          follow_up_count: dailyPreflight.count,
           follow_up_remaining: 0,
         },
         429,
@@ -556,7 +559,6 @@ Deno.serve(async (req) => {
     const trimmed = answer?.trim() ?? "";
 
     if (!trimmed) {
-      await refundDailyQuota(admin, user.id, vnToday);
       await admin
         .from("day_luan_ask_idempotency")
         .update({ status: "failed", updated_at: now })
@@ -600,13 +602,14 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!updErr && updated) {
-      await finalizeOnboardingTrialConsume(
+      const quota = await finalizeAskQuotaConsume(
         admin,
         user.id,
+        vnToday,
         consumeTrial,
         "day-luan-chat:ask",
       );
-      return json(askSuccessPayload(inc.count, trimmed), 200, req);
+      return json(askSuccessPayload(quota.dailyCount, trimmed), 200, req);
     }
 
     console.warn("day-luan-chat ask thread update race", updErr?.message);
@@ -620,12 +623,6 @@ Deno.serve(async (req) => {
     const reloadedMessages = parseStoredMessages(reloaded?.messages);
     const recovered = findCachedAnswerInMessages(reloadedMessages, question);
     if (recovered) {
-      await finalizeOnboardingTrialConsume(
-        admin,
-        user.id,
-        consumeTrial,
-        "day-luan-chat:ask-recovered",
-      );
       const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(askSuccessPayload(globalCount, recovered), 200, req);
     }
@@ -638,15 +635,15 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (idemAfter?.status === "done" && typeof idemAfter.answer === "string") {
-      await finalizeOnboardingTrialConsume(
+      const quota = await finalizeAskQuotaConsume(
         admin,
         user.id,
+        vnToday,
         consumeTrial,
         "day-luan-chat:ask-idempotent",
       );
-      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(
-        askSuccessPayload(globalCount, idemAfter.answer.trim()),
+        askSuccessPayload(quota.dailyCount, idemAfter.answer.trim()),
         200,
         req,
       );

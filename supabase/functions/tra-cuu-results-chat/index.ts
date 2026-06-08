@@ -19,7 +19,6 @@ import {
 } from "../_shared/generate-reading-guards.ts";
 import { hasOnboardingTrialAccess } from "../_shared/entitlements.ts";
 import {
-  finalizeOnboardingTrialConsume,
   readOnboardingTrialQuestionsMax,
   shouldConsumeTrialQuestion,
 } from "../_shared/onboarding-trial.ts";
@@ -46,8 +45,8 @@ import { findCachedAnswerInMessages as findCachedAnswer } from "../_shared/day-l
 import {
   type AdminClient,
   fetchDailyCount,
-  refundDailyQuota,
-  tryIncrementDaily,
+  finalizeAskQuotaConsume,
+  preflightDailyQuotaAvailable,
 } from "../_shared/day-luan-daily-quota.ts";
 
 const PENDING_STALE_MS = 120_000;
@@ -585,14 +584,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    const inc = await tryIncrementDaily(admin, user.id, vnToday);
-    if (inc.limited) {
+    const dailyPreflight = await preflightDailyQuotaAvailable(
+      admin,
+      user.id,
+      vnToday,
+    );
+    if (!dailyPreflight.allowed) {
       return json(
         {
           ok: false,
           error_code: "DAILY_LIMIT",
           message: "Hết lượt hỏi hôm nay.",
-          follow_up_count: inc.count,
+          follow_up_count: dailyPreflight.count,
           follow_up_remaining: 0,
         },
         429,
@@ -617,7 +620,6 @@ Deno.serve(async (req) => {
 
     const trimmed = answer?.trim() ?? "";
     if (!trimmed) {
-      await refundDailyQuota(admin, user.id, vnToday);
       await admin
         .from("tra_cuu_results_ask_idempotency")
         .update({ status: "failed", updated_at: now })
@@ -664,9 +666,10 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!updErr && updated) {
-      await finalizeOnboardingTrialConsume(
+      const quota = await finalizeAskQuotaConsume(
         admin,
         user.id,
+        vnToday,
         consumeTrial,
         "tra-cuu-results-chat:answer",
       );
@@ -675,8 +678,8 @@ Deno.serve(async (req) => {
           ok: true,
           client_action: "answer",
           answer: trimmed,
-          follow_up_count: inc.count,
-          follow_up_remaining: followUpRemaining(inc.count),
+          follow_up_count: quota.dailyCount,
+          follow_up_remaining: followUpRemaining(quota.dailyCount),
         },
         200,
         req,
@@ -694,12 +697,6 @@ Deno.serve(async (req) => {
     const reloadedMessages = parseStoredTraCuuMessages(reloaded?.messages);
     const recovered = findCachedAnswer(reloadedMessages, question);
     if (recovered) {
-      await finalizeOnboardingTrialConsume(
-        admin,
-        user.id,
-        consumeTrial,
-        "tra-cuu-results-chat:answer-recovered",
-      );
       const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(
         {
@@ -723,20 +720,20 @@ Deno.serve(async (req) => {
 
     if (idemAfter?.status === "done" && typeof idemAfter.answer === "string" &&
       idemAfter.answer.trim()) {
-      await finalizeOnboardingTrialConsume(
+      const quota = await finalizeAskQuotaConsume(
         admin,
         user.id,
+        vnToday,
         consumeTrial,
         "tra-cuu-results-chat:answer-idempotent",
       );
-      const globalCount = await fetchDailyCount(admin, user.id, vnToday);
       return json(
         {
           ok: true,
           client_action: "answer",
           answer: idemAfter.answer.trim(),
-          follow_up_count: globalCount,
-          follow_up_remaining: followUpRemaining(globalCount),
+          follow_up_count: quota.dailyCount,
+          follow_up_remaining: followUpRemaining(quota.dailyCount),
         },
         200,
         req,
