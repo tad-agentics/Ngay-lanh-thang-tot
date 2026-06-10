@@ -10,7 +10,7 @@ describe("resolveOrderChargeAmounts", () => {
     const charge = resolveOrderChargeAmounts({
       packageSku: "goi_12thang",
       amountVnd: 7_990,
-      listAmountVnd: 799_000,
+      listAmountVnd: 549_000,
     });
     expect(charge?.finalVnd).toBe(7_990);
     expect(charge?.hasDiscount).toBe(true);
@@ -21,13 +21,13 @@ describe("resolveOrderChargeAmounts", () => {
       packageSku: "goi_1thang",
       amountVnd: null,
       discountBreakdown: {
-        list_amount_vnd: 299_000,
-        amount_vnd: 269_100,
-        coupon_discount_vnd: 29_900,
+        list_amount_vnd: 149_000,
+        amount_vnd: 134_100,
+        coupon_discount_vnd: 14_900,
       },
     });
-    expect(charge?.finalVnd).toBe(269_100);
-    expect(charge?.listVnd).toBe(299_000);
+    expect(charge?.finalVnd).toBe(134_100);
+    expect(charge?.listVnd).toBe(149_000);
   });
 
   it("uses pending session quote before catalog fallback", () => {
@@ -35,7 +35,7 @@ describe("resolveOrderChargeAmounts", () => {
       packageSku: "goi_12thang",
       amountVnd: null,
       pendingAmountVnd: 7_990,
-      pendingListAmountVnd: 799_000,
+      pendingListAmountVnd: 549_000,
     });
     expect(charge?.finalVnd).toBe(7_990);
     expect(charge?.hasDiscount).toBe(true);
@@ -53,7 +53,7 @@ describe("resolveOrderChargeAmounts", () => {
 describe("parseOrderDiscountBreakdown", () => {
   it("parses checkout JSON", () => {
     const b = parseOrderDiscountBreakdown({
-      list_amount_vnd: 799_000,
+      list_amount_vnd: 549_000,
       amount_vnd: 7_990,
     });
     expect(b?.amount_vnd).toBe(7_990);

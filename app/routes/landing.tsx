@@ -6,10 +6,14 @@
 import { LandingDirectionC } from "~/components/landing/LandingDirectionC";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
+import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
+import { formatVndDigits } from "~/lib/vnd-format";
 
 import type { Route } from "./+types/landing";
 
 const SITE_ORIGIN = "https://ngaylanhthangtot.vn";
+
+const YEARLY_PRICE_LABEL = `${formatVndDigits(PACKAGE_AMOUNT_VND.goi_12thang)} ₫`;
 
 const FAQS = [
   [
@@ -23,8 +27,8 @@ const FAQS = [
   [
     "Mua gói nào hợp lý nhất?",
     TIEU_VAN_LUAN_ENABLED
-      ? `Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Tiết kiệm hơn mua riêng từng phần.`
-      : "Gói năm 799k — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự. Tiết kiệm hơn mua riêng từng phần.",
+      ? `Gói năm ${YEARLY_PRICE_LABEL} — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự + ${LUAN_LUU_NIEN_NGUYET_TITLE}. Tiết kiệm hơn mua riêng từng phần.`
+      : `Gói năm ${YEARLY_PRICE_LABEL} — toàn bộ tính năng: Lịch cả năm + Luận giải Bát tự. Tiết kiệm hơn mua riêng từng phần.`,
   ],
 ] as const;
 
@@ -43,7 +47,7 @@ function landingJsonLd() {
         offers: {
           "@type": "Offer",
           name: "Lịch 1 năm",
-          price: "799000",
+          price: String(PACKAGE_AMOUNT_VND.goi_12thang),
           priceCurrency: "VND",
         },
       },

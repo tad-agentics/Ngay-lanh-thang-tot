@@ -7,6 +7,16 @@ import {
 import { formatVndPriceDisplay } from "~/lib/vnd-format";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { UI_PACKAGES } from "~/lib/packages";
+import {
+  formatTierBaselineDigits,
+  formatTierSaveLabel,
+  subscriptionSixMonthBaselineVnd,
+  subscriptionTierSavingsVnd,
+  subscriptionYearBaselineVnd,
+} from "~/lib/subscription-tier-pricing";
+
+const sixMonthSave = subscriptionTierSavingsVnd("goi_6thang");
+const yearSave = subscriptionTierSavingsVnd("goi_12thang");
 
 export const PAY_CONFIRM_TIER_META: Partial<
   Record<
@@ -21,17 +31,27 @@ export const PAY_CONFIRM_TIER_META: Partial<
     sub: "Chỉ lịch · dùng thử",
   },
   goi_6thang: {
-    baseline: "797.000",
+    baseline:
+      sixMonthSave != null && sixMonthSave > 0
+        ? formatTierBaselineDigits(subscriptionSixMonthBaselineVnd())
+        : null,
     per: "6 tháng",
-    save: "tiết kiệm 298.000 ₫",
+    save:
+      sixMonthSave != null && sixMonthSave > 0
+        ? formatTierSaveLabel(sixMonthSave)
+        : null,
     sub: TIEU_VAN_LUAN_ENABLED
       ? `Lịch + ${LUAN_LUU_NIEN_NGUYET_TITLE_SHORT}`
       : "Lịch cá nhân 6 tháng",
   },
   goi_12thang: {
-    baseline: "1.097.000",
+    baseline:
+      yearSave != null && yearSave > 0
+        ? formatTierBaselineDigits(subscriptionYearBaselineVnd())
+        : null,
     per: "cả năm",
-    save: "tiết kiệm 298.000 ₫",
+    save:
+      yearSave != null && yearSave > 0 ? formatTierSaveLabel(yearSave) : null,
     sub: "Toàn bộ tính năng",
   },
 };

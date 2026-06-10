@@ -48,7 +48,7 @@ describe("pay-commerce-ui", () => {
   });
 
   it("computes yearly upsell delta from addon price", () => {
-    expect(yearlyPlanUpsellDeltaVnd("luan_bat_tu")).toBe(500_000);
+    expect(yearlyPlanUpsellDeltaVnd("luan_bat_tu")).toBe(250_000);
   });
 
   it.skipIf(!TIEU_VAN_LUAN_ENABLED)("computes 6-month upsell delta for Tiểu vận addon", () => {

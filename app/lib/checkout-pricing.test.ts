@@ -18,7 +18,7 @@ describe("resolveCheckoutPricing", () => {
   it("applies coupon only when referral discount percent is zero", () => {
     const result = resolveCheckoutPricing({
       packageSku: "goi_1thang",
-      listAmountVnd: 299_000,
+      listAmountVnd: 149_000,
       couponCode: "SAVE10",
       referralCode: "FRIEND1",
       buyerUserId: "buyer",
@@ -30,16 +30,16 @@ describe("resolveCheckoutPricing", () => {
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.breakdown.coupon_discount_vnd).toBe(29_900);
+    expect(result.breakdown.coupon_discount_vnd).toBe(14_900);
     expect(result.breakdown.referral_discount_vnd).toBe(0);
-    expect(result.breakdown.amount_vnd).toBe(269_100);
+    expect(result.breakdown.amount_vnd).toBe(134_100);
     expect(result.breakdown.checkout_referral_code).toBe("FRIEND1");
   });
 
   it("rejects coupon already used by buyer", () => {
     const result = resolveCheckoutPricing({
       packageSku: "goi_1thang",
-      listAmountVnd: 299_000,
+      listAmountVnd: 149_000,
       couponCode: "SAVE10",
       referralCode: null,
       buyerUserId: "buyer",
@@ -59,7 +59,7 @@ describe("resolveCheckoutPricing", () => {
   it("rejects self referral", () => {
     const result = resolveCheckoutPricing({
       packageSku: "goi_1thang",
-      listAmountVnd: 299_000,
+      listAmountVnd: 149_000,
       couponCode: null,
       referralCode: "MYCODE",
       buyerUserId: "buyer",

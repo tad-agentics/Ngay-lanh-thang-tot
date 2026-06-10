@@ -19,6 +19,7 @@ import { useLandingPrimaryCta } from "~/hooks/useLandingPrimaryCta";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
 import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
+import { subscriptionTierSavingsVnd } from "~/lib/subscription-tier-pricing";
 import { supabase } from "~/lib/supabase";
 import {
   formatVndDigits,
@@ -80,6 +81,8 @@ const FAQS = [
     "Tuyệt đối không. Khi hết hạn, bạn sẽ chủ động quyết định việc tiếp tục đồng hành hay không. Chúng tôi không bao giờ tự động lưu hay trừ tiền trong thẻ của bạn. Ngoài ra, cam kết hoàn tiền 100% trong vòng 7 ngày nếu trải nghiệm không làm bạn hài lòng.",
   ],
 ] as const;
+
+const sixMonthSaveVnd = subscriptionTierSavingsVnd("goi_6thang");
 
 const landingGoogleBtnClass =
   "inline-flex items-center justify-center gap-2 border-0 cursor-pointer font-display font-bold uppercase no-underline";
@@ -750,7 +753,9 @@ export function LandingDirectionC() {
                 duration: "6 tháng",
                 priceVnd: PACKAGE_AMOUNT_VND.goi_6thang,
                 per: "6 tháng",
-                save: `Tiết kiệm ${formatVndPriceDisplay(100_000)}`,
+                save: sixMonthSaveVnd
+                  ? `Tiết kiệm ${formatVndPriceDisplay(sixMonthSaveVnd)}`
+                  : undefined,
                 desc: TIEU_VAN_LUAN_ENABLED
                   ? "Đầy đủ lịch bản mệnh nửa năm, kết hợp luận giải vận hạn chi tiết để chủ động mưu sự đại sự hanh thông."
                   : "Đầy đủ lịch bản mệnh nửa năm để chủ động mưu sự đại sự hanh thông.",

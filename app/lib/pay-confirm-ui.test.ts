@@ -3,10 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   formatLabelWithCurrency,
   payTrackablePriceAriaLabel,
+  PAY_CONFIRM_TIER_META,
   priceDisplay,
   priceVndFromLabel,
   resolveTrackableValueVnd,
 } from "~/lib/pay-confirm-ui";
+import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
+import { formatVndDigits } from "~/lib/vnd-format";
 
 function normVnd(s: string): string {
   return s.replace(/\u00a0/g, " ");
@@ -38,7 +41,7 @@ describe("resolveTrackableValueVnd", () => {
   it("falls back to catalog from label", () => {
     expect(resolveTrackableValueVnd(null, "499.000₫")).toBe(499_000);
     expect(resolveTrackableValueVnd(0, "499.000₫")).toBe(499_000);
-    expect(resolveTrackableValueVnd(undefined, "799.000₫")).toBe(799_000);
+    expect(resolveTrackableValueVnd(undefined, "549.000₫")).toBe(549_000);
   });
 });
 
@@ -50,12 +53,15 @@ describe("payTrackablePriceAriaLabel", () => {
   });
 
   it("includes baseline compare-at", () => {
+    const meta = PAY_CONFIRM_TIER_META.goi_6thang;
     const result = payTrackablePriceAriaLabel({
-      price: "499.000",
-      baseline: "797.000",
+      price: formatVndDigits(PACKAGE_AMOUNT_VND.goi_6thang),
+      baseline: meta?.baseline ?? null,
       per: "6 tháng",
     });
-    expect(normVnd(result)).toBe("Giá 499.000 ₫, giảm từ 797.000 ₫, 6 tháng");
+    expect(normVnd(result)).toBe(
+      `Giá ${formatVndDigits(PACKAGE_AMOUNT_VND.goi_6thang)} ₫, giảm từ ${meta?.baseline} ₫, 6 tháng`,
+    );
   });
 });
 

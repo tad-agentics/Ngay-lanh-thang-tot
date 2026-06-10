@@ -19,6 +19,13 @@ import {
 import { useProfile } from "~/hooks/useProfile";
 import { LUAN_LUU_NIEN_NGUYET_TITLE } from "~/lib/luan-luu-nien-nguyet-labels";
 import { TIEU_VAN_LUAN_ENABLED } from "~/lib/feature-flags";
+import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
+import {
+  addonReadingsBundleVnd,
+  subscriptionTierSavingsVnd,
+  subscriptionYearSavingsPercentLabel,
+} from "~/lib/subscription-tier-pricing";
+import { formatVndDigits } from "~/lib/vnd-format";
 
 const SUBSCRIPTION_TIERS = UI_PACKAGES.filter((p) =>
   SUBSCRIPTION_SKUS.includes(p.sku),
@@ -44,6 +51,8 @@ export default function DatLichRoute() {
   }, [planParam]);
 
   const statusLine = subscriptionStatusLine(profile);
+  const yearSaveVnd = subscriptionTierSavingsVnd("goi_12thang") ?? 0;
+  const yearSavePercent = subscriptionYearSavingsPercentLabel();
 
   useEffect(() => {
     pageScrollRef.current?.scrollTo(0, 0);
@@ -202,7 +211,7 @@ export default function DatLichRoute() {
                         className="text-[11.5px] font-bold"
                         style={{ ...DISPLAY2, color: CT.gold }}
                       >
-                        tiết kiệm 27,2%
+                        tiết kiệm {yearSavePercent}%
                       </span>
                     </div>
                     <div
@@ -337,7 +346,7 @@ export default function DatLichRoute() {
           >
             Mở lẻ cả hai bản luận giải ={" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.ink }}>
-              {withVndCurrency("498.000")}
+              {withVndCurrency(formatVndDigits(addonReadingsBundleVnd()))}
             </strong>{" "}
             — nhưng <strong className="font-semibold">không kèm Lịch cát tường</strong>.
           </div>
@@ -347,11 +356,11 @@ export default function DatLichRoute() {
           >
             Gói năm{" "}
             <strong className="font-bold" style={{ ...DISPLAY2, color: CT.goldDeep }}>
-              {withVndCurrency("799.000")}
+              {withVndCurrency(formatVndDigits(PACKAGE_AMOUNT_VND.goi_12thang))}
             </strong>{" "}
             đã tích hợp trọn vẹn cả hai bản luận + lịch cả năm — tiết kiệm ngay{" "}
             <strong className="font-semibold" style={{ color: CT.greenMute }}>
-              {withVndCurrency("298.000")}
+              {withVndCurrency(formatVndDigits(yearSaveVnd))}
             </strong>{" "}
             so với mua lẻ từng phần.
           </div>

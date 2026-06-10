@@ -41,7 +41,7 @@ export const PACKAGES: Record<PackageSku, PackageDef> = {
   },
   goi_1thang: {
     sku: "goi_1thang",
-    amountVnd: 299_000,
+    amountVnd: 149_000,
     creditsToAdd: null,
     subscriptionMonths: 3,
     baziUnlock: false,
@@ -50,7 +50,7 @@ export const PACKAGES: Record<PackageSku, PackageDef> = {
   },
   goi_6thang: {
     sku: "goi_6thang",
-    amountVnd: 499_000,
+    amountVnd: 249_000,
     creditsToAdd: null,
     subscriptionMonths: 6,
     baziUnlock: false,
@@ -59,7 +59,7 @@ export const PACKAGES: Record<PackageSku, PackageDef> = {
   },
   goi_12thang: {
     sku: "goi_12thang",
-    amountVnd: 799_000,
+    amountVnd: 549_000,
     creditsToAdd: null,
     subscriptionMonths: 12,
     baziUnlock: true,
