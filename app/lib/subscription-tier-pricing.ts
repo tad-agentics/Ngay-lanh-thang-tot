@@ -5,6 +5,17 @@ import { formatVndDigits } from "~/lib/vnd-format";
 
 const P = PACKAGE_AMOUNT_VND;
 
+/** Gói 3 tháng — 90 ngày lịch (landing + product copy). */
+export const STARTER_SUBSCRIPTION_DAYS = 90;
+
+export function subscriptionStarterDailyVnd(): number {
+  return Math.round(P.goi_1thang / STARTER_SUBSCRIPTION_DAYS);
+}
+
+export function subscriptionStarterPerDaySubtitle(): string {
+  return `Chỉ ${formatVndDigits(subscriptionStarterDailyVnd())} đ mỗi ngày`;
+}
+
 /** 6 tháng lịch = 2× gói 3 tháng (compare-at calendar-only). */
 export function subscriptionSixMonthCalendarBaselineVnd(): number {
   return 2 * P.goi_1thang;

@@ -8,6 +8,7 @@ import {
   LUAN_LUU_NIEN_NGUYET_TITLE_SHORT,
 } from "~/lib/luan-luu-nien-nguyet-labels";
 import { PACKAGE_AMOUNT_VND } from "~/lib/package-amount-vnd";
+import { subscriptionStarterPerDaySubtitle } from "~/lib/subscription-tier-pricing";
 import { formatVndPriceDisplay } from "~/lib/vnd-format";
 
 /** Intl `299.000 ₫` for catalog list price by SKU. */
@@ -41,7 +42,7 @@ export const UI_PACKAGES: {
   {
     sku: "goi_1thang",
     title: "3 tháng",
-    subtitle: "Chỉ lịch cá nhân — dùng thử trước khi nâng gói.",
+    subtitle: subscriptionStarterPerDaySubtitle(),
     priceLabel: catalogPriceLabel("goi_1thang"),
     featured: false,
     kind: "subscription",

@@ -41,7 +41,7 @@ export const PACKAGES: Record<PackageSku, PackageDef> = {
   },
   goi_1thang: {
     sku: "goi_1thang",
-    amountVnd: 149_000,
+    amountVnd: 99_000,
     creditsToAdd: null,
     subscriptionMonths: 3,
     baziUnlock: false,

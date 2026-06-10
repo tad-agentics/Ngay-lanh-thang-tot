@@ -11,6 +11,7 @@ import {
   formatTierBaselineDigits,
   formatTierSaveLabel,
   subscriptionSixMonthBaselineVnd,
+  subscriptionStarterPerDaySubtitle,
   subscriptionTierSavingsVnd,
   subscriptionYearBaselineVnd,
 } from "~/lib/subscription-tier-pricing";
@@ -28,7 +29,7 @@ export const PAY_CONFIRM_TIER_META: Partial<
     baseline: null,
     per: "3 tháng",
     save: null,
-    sub: "Chỉ lịch · dùng thử",
+    sub: subscriptionStarterPerDaySubtitle(),
   },
   goi_6thang: {
     baseline:

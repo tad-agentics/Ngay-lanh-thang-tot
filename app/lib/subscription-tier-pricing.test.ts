@@ -6,12 +6,22 @@ import {
   addonReadingsBundleVnd,
   subscriptionSixMonthBaselineVnd,
   subscriptionSixMonthCalendarBaselineVnd,
+  subscriptionStarterDailyVnd,
+  subscriptionStarterPerDaySubtitle,
+  STARTER_SUBSCRIPTION_DAYS,
   subscriptionTierSavingsVnd,
   subscriptionYearBaselineVnd,
   subscriptionYearSavingsPercentLabel,
 } from "~/lib/subscription-tier-pricing";
 
 describe("subscription tier compare-at math", () => {
+  it("starter per-day subtitle from 90-day package", () => {
+    expect(subscriptionStarterDailyVnd()).toBe(
+      Math.round(PACKAGE_AMOUNT_VND.goi_1thang / STARTER_SUBSCRIPTION_DAYS),
+    );
+    expect(subscriptionStarterPerDaySubtitle()).toBe("Chỉ 1.100 đ mỗi ngày");
+  });
+
   it("6-month calendar baseline = 2× gói 3 tháng", () => {
     expect(subscriptionSixMonthCalendarBaselineVnd()).toBe(
       2 * PACKAGE_AMOUNT_VND.goi_1thang,

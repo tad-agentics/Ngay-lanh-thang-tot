@@ -21,13 +21,13 @@ describe("resolveOrderChargeAmounts", () => {
       packageSku: "goi_1thang",
       amountVnd: null,
       discountBreakdown: {
-        list_amount_vnd: 149_000,
-        amount_vnd: 134_100,
-        coupon_discount_vnd: 14_900,
+        list_amount_vnd: 99_000,
+        amount_vnd: 89_100,
+        coupon_discount_vnd: 9_900,
       },
     });
-    expect(charge?.finalVnd).toBe(134_100);
-    expect(charge?.listVnd).toBe(149_000);
+    expect(charge?.finalVnd).toBe(89_100);
+    expect(charge?.listVnd).toBe(99_000);
   });
 
   it("uses pending session quote before catalog fallback", () => {

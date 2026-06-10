@@ -34,7 +34,7 @@ describe("validateWebhookSkuAmount", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.sku).toBe("goi_1thang");
-      expect(result.canonicalAmountVnd).toBe(149_000);
+      expect(result.canonicalAmountVnd).toBe(99_000);
     }
   });
 
@@ -54,7 +54,7 @@ describe("validateWebhookSkuAmount", () => {
 
   it("accepts discounted paid amount matching webhook", () => {
     const pkg = PACKAGES.goi_1thang;
-    const discounted = 134_100;
+    const discounted = 89_100;
     const result = validateWebhookSkuAmount(
       {
         package_sku: pkg.sku,
