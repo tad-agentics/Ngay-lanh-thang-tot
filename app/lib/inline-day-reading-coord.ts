@@ -52,6 +52,8 @@ export type InlineReadingRunResult = {
   failed: boolean;
   /** Daily shared-quota cap reached — FE shows the limit state, no retry. */
   dailyLimit?: boolean;
+  /** Onboarding trial pool exhausted — modal + profile refresh. */
+  trialExhausted?: boolean;
 };
 
 const inflight = new Map<string, Promise<InlineReadingRunResult>>();

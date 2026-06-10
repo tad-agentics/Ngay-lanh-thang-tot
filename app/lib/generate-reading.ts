@@ -59,7 +59,7 @@ export type GenerateReadingTransportError =
   /** Tab background / đổi mạng — Chrome ERR_NETWORK_* */
   | "network_interrupted";
 
-export type GenerateReadingErrorCode = "DAILY_LIMIT";
+export type GenerateReadingErrorCode = "DAILY_LIMIT" | "TRIAL_EXHAUSTED";
 
 export type GenerateReadingResponse = {
   reading: string | null;
@@ -482,8 +482,14 @@ export async function invokeGenerateReading(
           const parsed = parseGenerateReadingError(body);
           if (parsed) {
             handleGenerateReadingErrorCode(parsed.code);
-            if (parsed.code === "DAILY_LIMIT") {
-              return { ...EMPTY_GENERATE_READING, errorCode: "DAILY_LIMIT" };
+            if (
+              parsed.code === "DAILY_LIMIT" ||
+              parsed.code === "TRIAL_EXHAUSTED"
+            ) {
+              return {
+                ...EMPTY_GENERATE_READING,
+                errorCode: parsed.code,
+              };
             }
           }
           if (import.meta.env.DEV) {
@@ -509,8 +515,14 @@ export async function invokeGenerateReading(
       const parsedErr = parseGenerateReadingError(data);
       if (parsedErr) {
         handleGenerateReadingErrorCode(parsedErr.code);
-        if (parsedErr.code === "DAILY_LIMIT") {
-          return { ...EMPTY_GENERATE_READING, errorCode: "DAILY_LIMIT" };
+        if (
+          parsedErr.code === "DAILY_LIMIT" ||
+          parsedErr.code === "TRIAL_EXHAUSTED"
+        ) {
+          return {
+            ...EMPTY_GENERATE_READING,
+            errorCode: parsedErr.code,
+          };
         }
         return { ...EMPTY_GENERATE_READING, transportError: "invoke_failed" };
       }

@@ -13,7 +13,7 @@ type COnboardingTrialExhaustedModalProps = {
   onPurchase: () => void;
 };
 
-/** Direction C — hết 5 lượt chat onboarding; nền blur. */
+/** Direction C — hết lượt chat onboarding trial; nền blur. */
 export function COnboardingTrialExhaustedModal({
   open,
   onDismiss,

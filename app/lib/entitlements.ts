@@ -31,7 +31,7 @@ export function hasOnboardingTrialAccess(
   return coreHasOnboardingTrialAccess(profile);
 }
 
-/** Never-sub đã dùng hết pool 5 lượt chat onboarding. */
+/** Never-sub đã dùng hết pool onboarding trial chat. */
 export function isOnboardingTrialExhausted(
   profile: ProfileTrialEntitlements | null | undefined,
 ): boolean {

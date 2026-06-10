@@ -13,7 +13,7 @@ export type ProfileTrialEntitlements = ProfileEntitlements & {
 };
 
 /** Default when `app_config.onboarding_trial_questions_max` is unset. */
-export const DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX = 5;
+export const DEFAULT_ONBOARDING_TRIAL_QUESTIONS_MAX = 3;
 
 export function subscriptionActive(
   expires: string | null | undefined,

@@ -24,10 +24,10 @@ import { sha256Prefix16, stableStringify } from "../core/cache.ts";
 import { MAX_BODY_CHARS } from "../core/config.ts";
 import { dayIsoFromDayDetailData, todayIsoVietnam } from "../core/dates.ts";
 import {
-  refundDailyQuota,
-  tryIncrementDaily,
-} from "../../day-luan-daily-quota.ts";
-import { dailyLimited, ok } from "../core/response.ts";
+  consumeDayDetailAnchorQuota,
+  preflightDayDetailAnchorQuota,
+} from "../../day-detail-anchor-quota.ts";
+import { ok } from "../core/response.ts";
 import type { GenerateReadingFn, LaSoChiTietSection } from "../core/types.ts";
 
 function parseStringIdArray(v: unknown): string[] {
@@ -395,6 +395,28 @@ export function createGenerateReadingHandler(
       supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
     let phongThuySeedSections: LaSoChiTietSection[] | undefined;
 
+    const isBillableFullDayDetail =
+      endpoint === "day-detail" &&
+      !variant &&
+      !question &&
+      Boolean(rateLimitUserId) &&
+      admin != null;
+
+    async function cacheResponseIfAllowed(
+      hit: Awaited<ReturnType<typeof tryReadingCacheHit>>,
+    ): Promise<Response | null> {
+      if (hit.kind !== "response") return null;
+      if (isBillableFullDayDetail && admin && rateLimitUserId) {
+        const gate = await preflightDayDetailAnchorQuota(
+          admin,
+          rateLimitUserId,
+          req,
+        );
+        if (!gate.ok) return gate.response;
+      }
+      return hit.response;
+    }
+
     if (admin) {
       const { getReadingCacheL2, setReadingCacheL2, readingCacheL2TtlSec } =
         await import("../../reading-cache-l2.ts");
@@ -419,7 +441,8 @@ export function createGenerateReadingHandler(
           reading: l2Raw,
           expiresAt: null,
         });
-        if (l2Hit.kind === "response") return l2Hit.response;
+        const l2Response = await cacheResponseIfAllowed(l2Hit);
+        if (l2Response) return l2Response;
         if (l2Hit.kind === "phong-seed") {
           phongThuySeedSections = l2Hit.sections;
         }
@@ -442,7 +465,8 @@ export function createGenerateReadingHandler(
           reading: row.reading,
           expiresAt: row.expires_at as string,
         });
-        if (pgHit.kind === "response") return pgHit.response;
+        const pgResponse = await cacheResponseIfAllowed(pgHit);
+        if (pgResponse) return pgResponse;
         if (pgHit.kind === "phong-seed") {
           phongThuySeedSections = pgHit.sections;
         }
@@ -475,21 +499,18 @@ export function createGenerateReadingHandler(
       }
     }
 
-    const fullDayDetailQuota =
-      endpoint === "day-detail" &&
-      !variant &&
-      !question &&
-      rateLimitUserId &&
-      admin;
-    let dayDetailQuotaReserved = false;
-    const vnToday = todayIsoVietnam();
+    let dayDetailConsumeTrial = false;
+    let dayDetailQuotaPending = false;
 
-    if (fullDayDetailQuota) {
-      const inc = await tryIncrementDaily(admin, rateLimitUserId, vnToday);
-      if (inc.limited) {
-        return dailyLimited(req, inc.count);
-      }
-      dayDetailQuotaReserved = true;
+    if (isBillableFullDayDetail && admin && rateLimitUserId) {
+      const gate = await preflightDayDetailAnchorQuota(
+        admin,
+        rateLimitUserId,
+        req,
+      );
+      if (!gate.ok) return gate.response;
+      dayDetailConsumeTrial = gate.consumeTrial;
+      dayDetailQuotaPending = true;
     }
 
     const result = await generate({
@@ -512,8 +533,18 @@ export function createGenerateReadingHandler(
       phongThuySeedSections,
     });
 
-    if (dayDetailQuotaReserved && !result.reading?.trim()) {
-      await refundDailyQuota(admin!, rateLimitUserId!, vnToday);
+    if (
+      dayDetailQuotaPending &&
+      result.reading?.trim() &&
+      admin &&
+      rateLimitUserId
+    ) {
+      await consumeDayDetailAnchorQuota(
+        admin,
+        rateLimitUserId,
+        dayDetailConsumeTrial,
+        "generate-reading:day-detail:anchor",
+      );
     }
 
     return ok(

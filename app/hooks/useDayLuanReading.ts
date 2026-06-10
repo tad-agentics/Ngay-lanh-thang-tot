@@ -14,6 +14,7 @@ import {
   isOnboardingTrialExhausted,
 } from "~/lib/entitlements";
 import { useOnboardingTrialExhaustedModal } from "~/lib/onboarding-trial-exhausted-context";
+import { ONBOARDING_TRIAL_EXHAUSTED_TITLE } from "~/lib/onboarding-trial-exhausted-copy";
 import {
   clearInlineReadingFailCooldown,
   isInlineReadingFailCooldown,
@@ -25,6 +26,7 @@ import {
   DAY_LUAN_MAX_FOLLOW_UPS,
   invokeDayLuanChatAsk,
   invokeDayLuanChatOpen,
+  invokeDayLuanDailyQuota,
 } from "~/lib/day-luan-chat";
 import {
   invokeGenerateReadingWithRetry,
@@ -148,15 +150,28 @@ export function useDayLuanReading(iso: string) {
         });
         if (r.reading) {
           clearInlineReadingFailCooldown(userId, dayIso);
-          return { text: r.reading, failed: false, dailyLimit: false };
+          return {
+            text: r.reading,
+            failed: false,
+            dailyLimit: false,
+            trialExhausted: false,
+          };
         }
         if (r.errorCode === "DAILY_LIMIT") {
           return { text: null, failed: true, dailyLimit: true };
         }
+        if (r.errorCode === "TRIAL_EXHAUSTED") {
+          return { text: null, failed: true, dailyLimit: false, trialExhausted: true };
+        }
         if (r.transportError) {
           markInlineReadingFailCooldown(userId, dayIso);
         }
-        return { text: null, failed: true, dailyLimit: false };
+        return {
+          text: null,
+          failed: true,
+          dailyLimit: false,
+          trialExhausted: false,
+        };
       });
       if (gen !== loadGenRef.current) return;
       setReading(result.text);
@@ -166,8 +181,16 @@ export function useDayLuanReading(iso: string) {
         setDailyLimitReached(true);
         setFollowUpRemaining(0);
       }
+      if (result.trialExhausted) {
+        showOnboardingTrialExhaustedModal();
+        void refreshProfile();
+      } else if (result.text) {
+        const quota = await invokeDayLuanDailyQuota();
+        if (quota.ok) setFollowUpRemaining(quota.follow_up_remaining);
+        if (trialAccess) void refreshProfile();
+      }
     },
-    [userId],
+    [userId, trialAccess, refreshProfile, showOnboardingTrialExhaustedModal],
   );
 
   useEffect(() => {
@@ -359,7 +382,7 @@ export function useDayLuanReading(iso: string) {
         return {
           ok: false as const,
           reading: null as string | null,
-          message: "Bạn đã dùng hết 5 lượt chat miễn phí.",
+          message: ONBOARDING_TRIAL_EXHAUSTED_TITLE,
         };
       }
       const q = question.trim();

@@ -18,6 +18,25 @@ export function rateLimited(req: Request): Response {
   );
 }
 
+export function trialExhausted(req: Request): Response {
+  return new Response(
+    JSON.stringify({
+      reading: null,
+      error: {
+        code: "TRIAL_EXHAUSTED",
+        message: "Bạn đã dùng hết lượt thử. Đặt lịch để tiếp tục.",
+      },
+    }),
+    {
+      status: 402,
+      headers: {
+        ...corsHeadersForRequest(req),
+        "Content-Type": "application/json",
+      },
+    },
+  );
+}
+
 export function dailyLimited(
   req: Request,
   followUpCount: number,

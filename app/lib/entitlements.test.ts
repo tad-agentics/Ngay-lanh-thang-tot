@@ -178,14 +178,14 @@ describe("onboarding trial questions", () => {
     onboarding_trial_questions_used: 0,
   };
 
-  it("grants 5 remaining for new never-sub users", () => {
-    expect(onboardingTrialQuestionsRemaining(neverSub)).toBe(5);
+  it("grants 3 remaining for new never-sub users", () => {
+    expect(onboardingTrialQuestionsRemaining(neverSub)).toBe(3);
     expect(hasOnboardingTrialAccess(neverSub)).toBe(true);
     expect(canAccessPaidCalendar(neverSub)).toBe(true);
   });
 
   it("blocks when trial quota is exhausted", () => {
-    const exhausted = { ...neverSub, onboarding_trial_questions_used: 5 };
+    const exhausted = { ...neverSub, onboarding_trial_questions_used: 3 };
     expect(onboardingTrialQuestionsRemaining(exhausted)).toBe(0);
     expect(hasOnboardingTrialAccess(exhausted)).toBe(false);
     expect(canAccessPaidCalendar(exhausted)).toBe(false);
@@ -214,7 +214,7 @@ describe("effectiveChatQuotaRemaining", () => {
   };
 
   it("caps daily pool by trial remaining for never-sub", () => {
-    expect(effectiveChatQuotaRemaining(neverSub, 10)).toBe(3);
+    expect(effectiveChatQuotaRemaining(neverSub, 10)).toBe(1);
     expect(isOnboardingTrialChatMode(neverSub)).toBe(true);
   });
 
@@ -225,7 +225,7 @@ describe("effectiveChatQuotaRemaining", () => {
           subscription_expires_at: null,
           bazi_reading_unlocked_at: null,
           tieu_van_reading_expires_at: null,
-          onboarding_trial_questions_used: 5,
+          onboarding_trial_questions_used: 3,
         },
         10,
       ),
