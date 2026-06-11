@@ -2,7 +2,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1
 
 /** Khớp `app/lib/bazi-reading-content-version.ts`. */
 export const BAZI_READING_DELIVERY_CONTENT_VERSION =
-  "2026-05-31-tinh-cach-500c-v1";
+  "2026-05-28-hoa-hop-god-groups-v1";
 
 export type BaziDeliverySection = {
   id: string;
@@ -71,6 +71,20 @@ export type UpsertBaziDeliveryInput = {
   phongThuyFacts: unknown | null;
   yearCanChi: string;
 };
+
+/** Xóa luận giải đã lưu khi lá số thay đổi (heal / recompute). */
+export async function deleteBaziReadingDeliveriesForUser(
+  admin: SupabaseClient,
+  userId: string,
+): Promise<void> {
+  const { error } = await admin
+    .from("bazi_reading_deliveries")
+    .delete()
+    .eq("user_id", userId);
+  if (error) {
+    console.error("bazi_reading_deliveries delete", error.message);
+  }
+}
 
 export async function upsertBaziReadingDelivery(
   admin: SupabaseClient,

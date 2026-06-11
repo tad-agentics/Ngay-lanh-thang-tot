@@ -23,6 +23,8 @@ import {
   type PrewarmProfileRow,
 } from "../_shared/bazi-reading-prewarm/profile-bat-tu.ts";
 import { laSoMatchesBatTuBody } from "../../../shared/la-so-birth-identity.ts";
+import { shouldInvalidateBaziReadingDeliveries } from "../../../shared/la-so-delivery-invalidation.ts";
+import { deleteBaziReadingDeliveriesForUser } from "../_shared/bazi-reading-delivery.ts";
 import {
   canUseBaziReading,
   canUseCalendar,
@@ -902,6 +904,12 @@ async function persistTuTruToProfile(
   body: Record<string, unknown>,
   laSoPayload: unknown,
 ): Promise<string | null> {
+  const { data: existingRow } = await admin
+    .from("profiles")
+    .select("la_so")
+    .eq("id", userId)
+    .maybeSingle();
+
   const iso = typeof body.birth_date === "string"
     ? birthDdMmYyyyToIso(body.birth_date)
     : null;
@@ -920,6 +928,15 @@ async function persistTuTruToProfile(
   if (error) {
     console.error("persistTuTruToProfile", error);
     return "Không lưu lá số vào hồ sơ được.";
+  }
+  if (
+    shouldInvalidateBaziReadingDeliveries(
+      existingRow?.la_so,
+      laSoPayload,
+      body,
+    )
+  ) {
+    await deleteBaziReadingDeliveriesForUser(admin, userId);
   }
   return null;
 }
@@ -1017,6 +1034,8 @@ async function persistRecomputeLaSo(
     .delete()
     .eq("user_id", userId)
     .like("idempotency_key", "ai_reading%");
+
+  await deleteBaziReadingDeliveriesForUser(admin, userId);
 
   return null;
 }

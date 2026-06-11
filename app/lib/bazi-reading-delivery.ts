@@ -1,5 +1,6 @@
 import type { LaSoJson } from "~/lib/api-types";
 import { BAZI_READING_DELIVERY_CONTENT_VERSION } from "~/lib/bazi-reading-content-version";
+import { laSoPillarsMatch } from "../../shared/la-so-pillar-identity.ts";
 import {
   baziReadingBirthRevision,
   type BaziReadingSessionData,
@@ -61,6 +62,13 @@ export async function fetchBaziReadingDelivery(
 
   if (delivery.birthRevision !== birthRevision) return null;
   if (delivery.contentVersion !== BAZI_READING_DELIVERY_CONTENT_VERSION) {
+    return null;
+  }
+  if (
+    delivery.laSoDisplay &&
+    profile.la_so &&
+    !laSoPillarsMatch(delivery.laSoDisplay, profile.la_so)
+  ) {
     return null;
   }
 

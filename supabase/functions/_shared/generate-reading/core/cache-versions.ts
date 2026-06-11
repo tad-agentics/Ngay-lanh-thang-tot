@@ -1,7 +1,7 @@
 /** Cache invalidation versions per endpoint/prompt. */
 
 export const DAY_DETAIL_FOLLOW_UP_VER = "2026-05-28-citations-v1";
-export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-31-bazi-bundle-v4";
+export const LA_SO_CHI_TIET_CACHE_VER = "2026-05-28-hoa-hop-facts-v1";
 export const LUU_NIEN_ONLY_LIFE_CACHE_VER = "2026-05-31-luu-life-scoped-v4";
 export const LUU_NIEN_ONLY_CORE_CACHE_VER = "2026-05-31-luu-quy-800c-v1";
 export const LA_SO_CHI_TIET_ONLY_TINH_CACH_CACHE_VER =
