@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 
 import { AuthenticatedMobileShell } from "~/components/AuthenticatedMobileShell";
+import { LaSoIdentityHealGate } from "~/components/LaSoIdentityHealGate";
 import { ReadingPrewarmGate } from "~/components/ReadingPrewarmGate";
 import { SavedPicksRouteGate } from "~/components/SavedPicksRouteGate";
 import { AppShellViewport } from "~/components/AppShellViewport";
@@ -193,6 +194,7 @@ function AuthenticatedShellWithProfile({
 
   return (
     <OnboardingTrialExhaustedProvider>
+      <LaSoIdentityHealGate />
       <ReadingPrewarmGate />
       <SavedPicksRouteGate>
         <AuthenticatedMobileShell>

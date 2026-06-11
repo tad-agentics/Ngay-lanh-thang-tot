@@ -334,6 +334,18 @@ describe("laSoJsonToChiTiet", () => {
     expect(d.nguHanh.tho).toBe(15);
   });
 
+  it("mergeLaSoJsonForChiTietDisplay dùng enrichment khi không có stored", () => {
+    const enrichment = {
+      birth_date: "2020-10-07",
+      birth_time: 10,
+      pillars: {
+        year: { can: { name: "Canh" }, chi: { name: "Tý" } },
+      },
+    };
+    const merged = mergeLaSoJsonForChiTietDisplay(null, enrichment);
+    expect(merged).toEqual(enrichment);
+  });
+
   it("mergeLaSoJsonForChiTietDisplay gộp sâu _raw, không ghi đè field khác", () => {
     const merged = mergeLaSoJsonForChiTietDisplay(
       {

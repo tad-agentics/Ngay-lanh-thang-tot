@@ -13,6 +13,7 @@ import {
   extractTuTruPillarLabels,
   profileHasStoredLaso,
 } from "~/lib/la-so-ui";
+import { laSoMatchesBatTuBody } from "../../shared/la-so-birth-identity.ts";
 import {
   hasFirstRunBuildDone,
   markFirstRunBuildDone,
@@ -98,7 +99,10 @@ export default function DangDungLichRoute() {
         void invokeBatTu<unknown>({ op: "profile", body }).catch(() => {});
 
         let tuTruPayload: unknown;
-        if (profileHasStoredLaso(storedLaso)) {
+        const lasoMatchesBirth =
+          profileHasStoredLaso(storedLaso) &&
+          laSoMatchesBatTuBody(storedLaso, body);
+        if (lasoMatchesBirth) {
           tuTruPayload = storedLaso;
         } else {
           const res = await invokeBatTu<unknown>({ op: "tu-tru", body });
@@ -111,6 +115,7 @@ export default function DangDungLichRoute() {
             return;
           }
           tuTruPayload = res.data;
+          window.dispatchEvent(new Event("ngaytot:profile-refresh"));
         }
 
         if (cancelled) return;

@@ -37,6 +37,8 @@ export async function applyBirthToProfile(
   fields: SignupBirthFields,
   displayName?: string | null,
 ): Promise<string | null> {
+  // Chỉ birth fields — `la_so` / `la_so_recompute_status` do Edge (service_role) ghi.
+  // Stale lá số được xử lý ở `dang-dung-lich` + `bat-tu` op `tu-tru` (laSoMatchesBatTuBody).
   const patch = {
     display_name: displayName?.trim() || undefined,
     ngay_sinh: fields.ngay_sinh,
