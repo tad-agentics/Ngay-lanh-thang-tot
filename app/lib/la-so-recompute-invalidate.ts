@@ -11,6 +11,7 @@ const USER_SESSION_PREFIXES = (userId: string) =>
     `ngaytot_today_ai_reading:${userId}:`,
     `bazi-reading-ai:${userId}`,
     `van-trinh-nam-ai:${userId}`,
+    `la-so-identity-heal:${userId}:`,
   ] as const;
 
 /** G1 — drop stale session caches tied to old lá số / readings. */

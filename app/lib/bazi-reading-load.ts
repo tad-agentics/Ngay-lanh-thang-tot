@@ -30,10 +30,8 @@ import {
   type GenerateReadingResponse,
   type LaSoChiTietSection,
 } from "~/lib/generate-reading";
-import {
-  extractLaSoChiTietEnrichment,
-  mergeLaSoJsonForChiTietDisplay,
-} from "~/lib/la-so-ui";
+import { extractLaSoChiTietEnrichment } from "~/lib/la-so-ui";
+import { mergeLaSoForProfileDisplay } from "~/lib/la-so-display-merge";
 import { fetchLuuNienYearFacts } from "~/lib/luu-nien-facts";
 import { parseLuuNienFactsView } from "~/lib/luu-nien-facts-ui";
 import {
@@ -143,11 +141,7 @@ export async function fetchBaziReadingFactsBundle(
   }
 
   const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
-  const laSoDisplay =
-    mergeLaSoJsonForChiTietDisplay(
-      profile.la_so as LaSoJson,
-      enrichment,
-    ) ?? (profile.la_so as LaSoJson);
+  const laSoDisplay = mergeLaSoForProfileDisplay(profile, enrichment);
 
   const luuNienFactsRaw = luuNienRes.ok ? luuNienRes.data : null;
   const phongThuyFactsRaw = phongThuyRes.ok ? phongThuyRes.data : null;
@@ -234,7 +228,9 @@ export async function loadBaziPaywallBundle(
 
   const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
   const laSoDisplay =
-    mergeLaSoJsonForChiTietDisplay(cachedLaSo, enrichment) ?? cachedLaSo;
+    mergeLaSoForProfileDisplay(profile, enrichment, {
+      allowStaleFallback: true,
+    }) ?? cachedLaSo;
 
   // Parity với Wave 1 của `loadBaziReadingFull`: teaser không có prewarm/cache,
   // nên một lần gọi đơn (không retry) sẽ ra rỗng khi Edge trả 200 rỗng (rate
@@ -426,11 +422,7 @@ export async function loadBaziReadingFull(
     }
 
     const enrichment = extractLaSoChiTietEnrichment(lasoRes.data);
-    const laSoDisplay =
-      mergeLaSoJsonForChiTietDisplay(
-        profile.la_so as LaSoJson,
-        enrichment,
-      ) ?? (profile.la_so as LaSoJson);
+    const laSoDisplay = mergeLaSoForProfileDisplay(profile, enrichment);
 
     const luuNienFactsRaw = luuNienRes.ok ? luuNienRes.data : null;
     const phongThuyFactsRaw = phongThuyRes.ok ? phongThuyRes.data : null;

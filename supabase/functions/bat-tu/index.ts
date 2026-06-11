@@ -22,6 +22,7 @@ import {
   profileToBatTuPersonQuery,
   type PrewarmProfileRow,
 } from "../_shared/bazi-reading-prewarm/profile-bat-tu.ts";
+import { laSoMatchesBatTuBody } from "../../../shared/la-so-birth-identity.ts";
 import {
   canUseBaziReading,
   canUseCalendar,
@@ -1267,8 +1268,11 @@ Deno.serve(async (req) => {
       return json(
         { error: { code: "DB_ERROR", message: "Không đọc hồ sơ." } }, 500, req);
     }
-    if (profileHasStoredLaso(lasoRow?.la_so)) {
-      // Idempotent onboarding retry — return cached lá số, skip upstream recompute.
+    if (
+      profileHasStoredLaso(lasoRow?.la_so) &&
+      laSoMatchesBatTuBody(lasoRow!.la_so, body)
+    ) {
+      // Idempotent onboarding retry — same birth identity only.
       return json({ data: lasoRow!.la_so }, 200, req);
     }
   }
@@ -1496,6 +1500,16 @@ Deno.serve(async (req) => {
       return json(
         { error: { code: "DB_ERROR", message: persistMsg } }, 500, req);
     }
+    await invalidateBatTuCacheForBody(
+      {
+        ...body,
+        year: currentYearVn(),
+        purpose: "NHA_O",
+        detail: "full",
+      },
+      buildUpstream,
+      batUrl,
+    );
   }
 
   if (op === "recompute-la-so" && userId) {

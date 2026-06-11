@@ -6,20 +6,19 @@ import { useProfile } from "~/hooks/useProfile";
 import { invokeBatTu } from "~/lib/bat-tu";
 import { profileToBatTuPersonQuery } from "~/lib/bat-tu-birth";
 import { CT, DISPLAY2 } from "~/lib/c-tokens";
-import { normalizeLaSoPayload } from "~/lib/la-so-normalize";
 import {
   buildLaSoFullPillarRows,
   buildLaSoNlttTeaser,
-  extractLaSoChiTietEnrichment,
   extractMenhMoTa,
   laSoJsonToChiTiet,
   laSoJsonToRevealProps,
-  mergeLaSoJsonForChiTietDisplay,
   profileHasLaso,
   thanColorsHintVi,
 } from "~/lib/la-so-ui";
 import type { LaSoJson } from "~/lib/api-types";
+import { mergeLaSoForProfileDisplay } from "~/lib/la-so-display-merge";
 import { formatProfileBirthSubline } from "~/lib/profile-birth-line";
+import { enrichmentFromLaSoUpstream } from "~/lib/la-so-upstream-enrichment";
 
 const NGU_HANH_BAR: Record<string, string> = {
   kim: "#c8c5a0",
@@ -50,7 +49,11 @@ export function CLaSoFullScreen() {
     }
     const body = profileToBatTuPersonQuery(profile);
     if (!body.birth_date || body.birth_time == null) {
-      setDisplayLaSo(profile.la_so as LaSoJson);
+      setDisplayLaSo(
+        mergeLaSoForProfileDisplay(profile, null, {
+          allowStaleFallback: true,
+        }),
+      );
       return;
     }
 
@@ -58,19 +61,20 @@ export function CLaSoFullScreen() {
     void invokeBatTu<unknown>({ op: "la-so", body }).then((res) => {
       if (cancelled) return;
       if (!res.ok) {
-        setDisplayLaSo(profile.la_so as LaSoJson);
+        setDisplayLaSo(
+          mergeLaSoForProfileDisplay(profile, null, {
+            allowStaleFallback: true,
+          }),
+        );
         return;
       }
-      const liveNorm = normalizeLaSoPayload(res.data);
-      const enrichment =
-        liveNorm && typeof liveNorm === "object" && !Array.isArray(liveNorm)
-          ? (liveNorm as Record<string, unknown>)
-          : extractLaSoChiTietEnrichment(res.data);
-      const merged = mergeLaSoJsonForChiTietDisplay(
-        profile.la_so as LaSoJson,
-        enrichment,
+      const enrichment = enrichmentFromLaSoUpstream(res.data);
+      setDisplayLaSo(
+        mergeLaSoForProfileDisplay(profile, enrichment) ??
+          mergeLaSoForProfileDisplay(profile, null, {
+            allowStaleFallback: true,
+          }),
       );
-      setDisplayLaSo(merged ?? (profile.la_so as LaSoJson));
     });
 
     return () => {

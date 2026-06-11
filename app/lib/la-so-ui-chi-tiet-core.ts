@@ -308,8 +308,8 @@ export function mergeLaSoJsonForChiTietDisplay(
   stored: LaSoJson | null | undefined,
   enrichment: Record<string, unknown> | null | undefined,
 ): LaSoJson | null | undefined {
-  if (!stored) return stored;
   if (!enrichment || Object.keys(enrichment).length === 0) return stored;
+  if (!stored) return enrichment as LaSoJson;
   const s = stored as Record<string, unknown>;
   const e = enrichment;
   const out: Record<string, unknown> = { ...s, ...e };
